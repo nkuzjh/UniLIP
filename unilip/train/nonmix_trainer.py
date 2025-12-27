@@ -9,9 +9,10 @@ from transformers.trainer import (
     is_sagemaker_mp_enabled,
     get_parameter_names,
     has_length,
-    ALL_LAYERNORM_LAYERS,
+    # ALL_LAYERNORM_LAYERS,
     logger,
 )
+ALL_LAYERNORM_LAYERS = [nn.LayerNorm]
 from typing import List, Optional
 from transformers.utils import is_torch_xla_available
 
@@ -198,17 +199,17 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
         self.type_to_indices = {}
         for idx, t in enumerate(type_list):
             self.type_to_indices.setdefault(t, []).append(idx)
-        
+
         # 计算所有可能的完整批次
         self.total_batches = self._calculate_total_batches()
-        
+
         # 计算每个副本的样本数（这里是批次数）
         if self.drop_last and self.total_batches % self.num_replicas != 0:
             # Split to nearest available length that is evenly divisible.
             self.num_samples = math.ceil((self.total_batches - self.num_replicas) / self.num_replicas)
         else:
             self.num_samples = math.ceil(self.total_batches / self.num_replicas)
-            
+
         self.total_size = self.num_samples * self.num_replicas
 
     def _calculate_total_batches(self) -> int:
@@ -228,7 +229,7 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
                 # 使用带种子的生成器进行打乱
                 perm = torch.randperm(len(idxs), generator=g).tolist()
                 idxs = [idxs[i] for i in perm]
-            
+
             # 按 batch_size 切分，并只保留完整的批次
             for i in range(0, len(idxs) - self.batch_size + 1, self.batch_size):
                 all_batches.append(idxs[i : i + self.batch_size])
@@ -237,7 +238,7 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
         if self.shuffle:
             perm = torch.randperm(len(all_batches), generator=g).tolist()
             all_batches = [all_batches[i] for i in perm]
-        
+
         # 2. 填充或截断批次列表以适应分布式设置
         if not self.drop_last:
             # add extra samples to make it evenly divisible
@@ -306,7 +307,7 @@ class NonMixTrainer(Trainer):
         我们可以让它返回 None，因为我们使用的是 batch_sampler。
         或者，如果你的逻辑在某些情况下回退到使用这个方法，
         你需要确保它不会与 get_train_dataloader 中的 batch_sampler 冲突。
-        
+
         在当前实现中，由于我们重写了 get_train_dataloader，这个方法不会被调用来创建训练数据加载器。
         """
         # 返回 None，因为我们使用的是 batch_sampler

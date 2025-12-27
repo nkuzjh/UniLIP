@@ -59,7 +59,7 @@ def set_global_seed(seed=42):
 
 generator = torch.Generator(device=multi_model.device).manual_seed(42)
 prompt = "Replace the camper van in the image with a hot air balloon."
-input_image_path = "../demo/edit_input.jpg"
+input_image_path = "demo/edit_input.jpg"
 input_image = Image.open(input_image_path)
 set_global_seed(seed=42)
 gen_images = []

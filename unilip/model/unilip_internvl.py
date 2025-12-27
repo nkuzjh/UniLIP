@@ -163,7 +163,7 @@ class UniLIP_InternVL_MetaModel:
         if self.fix_dit:
             for p in self.dit.parameters():
                 p.requires_grad = False
-        
+
         if getattr(self, 'llm_connector', None) is None:
             print("initialize the llm connector !!!")
             path = model_args.mllm_hf_path
@@ -202,7 +202,7 @@ class UniLIP_InternVL_MetaModel:
         else:
             print("latent_queries load from checkpoint!!!")
             self.latent_queries.requires_grad = True
-        
+
         connect_require_grad = not self.fix_connect
         for p in self.llm_connector.parameters():
             p.requires_grad = connect_require_grad
@@ -274,8 +274,8 @@ class UniLIP_InternVL_MetaForCausalLM(ABC):
         input_indicator = labels == -100
         text_embeds = self.get_model().language_model.embed_tokens(input_ids)
         gen_img_idx = torch.logical_and(output_indicator, image_idx)
-       
-        text_embeds = text_embeds.clone() 
+
+        text_embeds = text_embeds.clone()
         text_embeds[gen_img_idx] = latent_queries.to(text_embeds.dtype)
         und_img_idx = torch.logical_and(input_indicator, und_image_idx)
 
@@ -294,11 +294,11 @@ class UniLIP_InternVL_MetaForCausalLM(ABC):
 
 
     def initialize_vision_tokenizer(self, model_args, tokenizer):
-        if model_args.mm_use_im_patch_token:
+        if model_args.mm_use_im_patch_token: #False
             tokenizer.add_tokens([DEFAULT_IMAGE_PATCH_TOKEN], special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))
 
-        if model_args.mm_use_im_start_end:
+        if model_args.mm_use_im_start_end: #False
             num_new_tokens = tokenizer.add_tokens([DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN], special_tokens=True)
             self.resize_token_embeddings(len(tokenizer))
 
@@ -330,7 +330,7 @@ class UniLIP_InternVL_MetaForCausalLM(ABC):
                     input_embeddings[-num_new_tokens:] = embed_tokens_weight
                 else:
                     raise ValueError(f"Unexpected embed_tokens_weight shape. Pretrained: {embed_tokens_weight.shape}. Current: {input_embeddings.shape}. Numer of new tokens: {num_new_tokens}.")
-        elif model_args.mm_use_im_patch_token:
+        elif model_args.mm_use_im_patch_token: #False
             if model_args.tune_mm_mlp_adapter:
                 for p in self.get_input_embeddings().parameters():
                     p.requires_grad = False

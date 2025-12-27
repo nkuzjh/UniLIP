@@ -11,9 +11,9 @@ from tqdm import tqdm
 import json
 Image.MAX_IMAGE_PIXELS = 10000000000
 
-save_dir = './edit_sft'
-data_root = './ShareGPT-4o-Image'
-json_path = './ShareGPT-4o-Image/text_and_image_to_image.json'
+save_dir = './data/edit_sft'
+data_root = './data/ShareGPT-4o-Image'
+json_path = './data/ShareGPT-4o-Image/text_and_image_to_image.json'
 os.makedirs(save_dir, exist_ok=True)
 list_data_dict = []
 with open(json_path) as f:

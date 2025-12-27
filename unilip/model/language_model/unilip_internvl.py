@@ -42,8 +42,8 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
     def __init__(self, config):
         InternVLForConditionalGeneration.__init__(self, config)
         config.model_type = "unilip_internvl"
-        self.model = UniLIP_InternVLModel(config)   
-        
+        self.model = UniLIP_InternVLModel(config)  #父类InternVLForConditionalGeneration中已经定义了self.model = InternVLModel(); 这里覆盖掉新的self.model = UniLIP_InternVLModel(config)，而UniLIP_InternVLModel也是继承自InternVLModel，所以到最后self.model还是一个InternVLModel类，且包含InternVLModel中的vision_tower, language_model, multi_modal_projector等module
+
         self.lm_head = nn.Linear(config.text_config.hidden_size, config.text_config.vocab_size, bias=False)
         # Initialize weights and apply final processing
         self.post_init()
@@ -78,7 +78,7 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
-        
+
         if inputs_embeds is None:
             (
                 input_ids,
@@ -114,10 +114,10 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
             return_dict=return_dict,
             use_cache=False
         )
-        
+
         hidden_states = outputs.hidden_states[-1]
         logits = None
-        
+
         total_loss = None
         if labels is not None:
             img_loss_funct = torch.nn.MSELoss()
@@ -165,7 +165,7 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
-        
+
 
     @torch.no_grad()
     def generate(
@@ -218,11 +218,11 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
         max_var: Optional[float] = None,
         generator=None,
         guidance_scale: float = 4.5,
-    ):  
+    ):
         dit_path = self.model.config.dit_path
         scheduler = DPMSolverMultistepScheduler.from_pretrained(dit_path, subfolder="scheduler")
 
-        N_QUERY = self.get_n_query()            
+        N_QUERY = self.get_n_query()
         inputs = tokenizer(text, padding="longest", return_tensors="pt")
         device = self.get_model().device
         attention_mask = inputs.attention_mask.to(device)
@@ -274,7 +274,7 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
             output_hidden_states=True,
             return_dict=True,
         ).hidden_states[-1]
-        img_hidden_states = self.get_model().projector(img_hidden_states) 
+        img_hidden_states = self.get_model().projector(img_hidden_states)
         steps = 20
         print("steps, guiance scale", steps, guidance_scale)
         # null first
@@ -284,7 +284,7 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
         output_img = self.sample_images(img_hidden_states, scheduler, encoder_attention_mask=attention_mask, generator=generator, num_inference_steps=steps, guidance_scale=guidance_scale)
         print(self.model.config.unilip_factor)
         output_img = self.model.vae_decoder.vae_decode(output_img.float()/ self.model.config.unilip_factor)
-        
+
         output_img = ((output_img[0].permute(1,2,0).clamp(-1,1).float().cpu().numpy() + 1)/2)
         import cv2
 

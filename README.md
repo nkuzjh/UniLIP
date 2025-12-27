@@ -3,7 +3,7 @@
 
 [![hf_paper](https://img.shields.io/badge/🤗-Paper%20In%20HF-red.svg)](https://huggingface.co/papers/2507.23278)
 [![arXiv](https://img.shields.io/badge/Arxiv-2503.01342-b31b1b.svg?logo=arXiv)](https://www.arxiv.org/abs/2507.23278)
-[![License](https://img.shields.io/badge/License-Apache%202.0-yellow)](https://github.com/nnnth/UniLIP/blob/main/LICENSE) 
+[![License](https://img.shields.io/badge/License-Apache%202.0-yellow)](https://github.com/nnnth/UniLIP/blob/main/LICENSE)
 [![Hits](https://hitscounter.dev/api/hit?url=https%3A%2F%2Fgithub.com%2Fnnnth%2FUniLIP&label=&icon=github&color=%23198754&message=&style=flat&tz=UTC)]()
 [![GitHub issues](https://img.shields.io/github/issues/nnnth/UniLIP?color=critical&label=Issues)](https://github.com/nnnth/UniLIP/issues)
 [![GitHub closed issues](https://img.shields.io/github/issues-closed/nnnth/UniLIP?color=success&label=Issues)](https://github.com/nnnth/UniLIP/issues?q=is%3Aissue%20state%3Aclosed)  <br>
@@ -50,7 +50,7 @@ Previous CLIP-based unified methods fail to balance understanding and reconstruc
 | **UniLIP** | 256 | 32 | **0.79** | **22.99** | **0.747** |
 | Emu2 | 448 | 14 | 3.27 | 13.49 | 0.423 |
 | **UniLIP** | 448 | 32 | **0.31** | **24.62** | **0.788** |
- 
+
 
 ### Image Understanding
 | Model | # LLM Params | MME-P | MMB | MMMU | MM-Vet | SEED | AI2D | MMVP |
@@ -82,8 +82,13 @@ Previous CLIP-based unified methods fail to balance understanding and reconstruc
 ```shell
 conda create -n UniLIP python=3.11
 conda activate UniLIP
-pip install torch==2.6.0+cu118 torchvision==0.21.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+# pip install torch==2.6.0+cu118 torchvision==0.21.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+pip install torch==2.9.1+cu128 torchvision==0.24.1+cu128 --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
+pip install ninja packaging==25.0
+# pip install flash-attn==2.6.2 --no-build-isolation
+pip install flash-attn --no-build-isolation --no-cache-dir --upgrade
+pip install xformers --no-build-isolation --no-cache-dir
 pip install -e .
 ```
 
@@ -104,7 +109,7 @@ python scripts/inference_gen.py ./UniLIP-3B
 
 Run demo on image editing
 ```shell
-python scipts/inference_edit.py ./UniLIP-3B
+python scripts/inference_edit.py ./UniLIP-3B
 
 ```
 
