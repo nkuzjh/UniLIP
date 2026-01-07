@@ -55,8 +55,16 @@ class PairedImageDataset(Dataset):
 
 class SingleImageDataset(Dataset):
     """用于 Aesthetic Score 或 FID (如果不需要配对加载)"""
-    def __init__(self, img_dir, size=(224, 224)):
-        self.img_paths = sorted(glob(os.path.join(img_dir, "*.*")))
+    def __init__(self, img_dir, pred_dir, size=(224, 224)):
+        # self.img_paths = sorted(glob(os.path.join(img_dir, "*.*")))
+        self.img_dir = img_dir
+        self.pred_dir = pred_dir
+        # 获取文件名交集，确保pred和gt配对
+        # 在收集的cs2数据集中train_images/val_images/test_images都是imgs的子集, 且放在一个目录下由splits.json划分
+        self.images = sorted(os.listdir(img_dir))
+        self.pred_images = sorted(os.listdir(pred_dir))
+        self.filenames = [f for f in self.images if f in self.pred_images]
+
         self.transform = transforms.Compose([
             transforms.Resize(size),
             transforms.ToTensor(), # [0, 1]
@@ -70,10 +78,12 @@ class SingleImageDataset(Dataset):
         ])
 
     def __len__(self):
-        return len(self.img_paths)
+        return len(self.filenames)
 
     def __getitem__(self, idx):
-        path = self.img_paths[idx]
+        # path = self.img_paths[idx]
+        filename = self.filenames[idx]
+        path = os.path.join(self.img_dir, filename)
         img = Image.open(path).convert('RGB')
         return self.transform(img), self.raw_transform(img) # 返回 uint8 和 float 两种格式
 
@@ -85,8 +95,8 @@ def compute_fid(gt_dir, pred_dir, batch_size, device):
     fid = FrechetInceptionDistance(feature=2048).to(device)
 
     # 定义简单的 Dataset，FID 不需要配对，只需要两个分布
-    dataset_gt = SingleImageDataset(gt_dir, size=(299, 299)) # Inception 需要 299
-    dataset_pred = SingleImageDataset(pred_dir, size=(299, 299))
+    dataset_gt = SingleImageDataset(gt_dir, pred_dir, size=(299, 299)) # Inception 需要 299
+    dataset_pred = SingleImageDataset(pred_dir, pred_dir, size=(299, 299))
 
     loader_gt = DataLoader(dataset_gt, batch_size=batch_size, num_workers=4)
     loader_pred = DataLoader(dataset_pred, batch_size=batch_size, num_workers=4)
@@ -138,7 +148,7 @@ def compute_lpips(gt_dir, pred_dir, batch_size, device):
 # ---------------------------------------------------------
 def compute_psnr_ssim(gt_dir, pred_dir, batch_size, device):
     print(f"🔄 Calculating PSNR & SSIM on {device}...")
-    psnr_metric = PeakSignalNoiseRatio().to(device)
+    psnr_metric = PeakSignalNoiseRatio(data_range=1.0).to(device)
     ssim_metric = StructuralSimilarityIndexMeasure(data_range=1.0).to(device)
 
     dataset = PairedImageDataset(gt_dir, pred_dir)
@@ -262,7 +272,7 @@ def compute_aesthetic_score(pred_dir, batch_size, device):
     predictor.to(device)
     predictor.eval()
 
-    dataset = SingleImageDataset(pred_dir, size=(224, 224))
+    dataset = SingleImageDataset(pred_dir, pred_dir, size=(224, 224))
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=4)
 
     total_score = 0.0
@@ -343,4 +353,8 @@ if __name__ == "__main__":
 # python eval_metrics.py --gt ./data/gt --pred ./data/pred --all
 # python eval_metrics.py --gt ./data/gt --pred ./data/pred --fid --lpips
 # python eval_metrics.py --gt ./data/gt --pred ./data/pred --all --batch_size 8
+
+
+# python eval_metrics.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_dust2 --all --batch_size 8
+
 
