@@ -1,0 +1,18 @@
+# config.yaml
+debug: False
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2','de_nuke', 'de_ancient']
+val_maps: ['de_dust2','de_nuke', 'de_ancient']
+test_maps: ['de_dust2','de_nuke', 'de_ancient']
+# debug_num_train_data: 100
+# debug_num_val_data: 100
+# map_size: [224, 224]
+# fps_size: [224, 224]
+# is_fps_aug: True
+# erasing_p: 0.3
+
+ckpt_path: "outputs/csgo_1b/exp2/checkpoint-46800/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
+guidance_scale: 4.5
+batch_size: 1
+is_conti_gen: True

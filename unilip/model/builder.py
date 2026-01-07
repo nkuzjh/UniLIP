@@ -32,7 +32,11 @@ def load_pretrained_model_general(model_name, model_path, load_8bit=False, load_
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
     print("class name!!!!!!", model_name, globals()[model_name])
-    model = globals()[model_name].from_pretrained(model_path, low_cpu_mem_usage=True, torch_dtype=torch.bfloat16).to('cuda:0')
+    model = globals()[model_name].from_pretrained(
+        model_path,
+        low_cpu_mem_usage=True,
+        torch_dtype=torch.bfloat16,
+    ).to('cuda:0')
 
     image_processor = None
     mm_use_im_start_end = getattr(model.config, "mm_use_im_start_end", False)

@@ -1,17 +1,17 @@
 # config.yaml
-debug: True
+debug: False
 
 data_dir: "data/preprocessed_data"
 train_maps: ['de_dust2'] #['de_dust2', 'de_inferno', 'de_mirage', 'de_nuke']
 val_maps: ['de_dust2']
 test_maps: ['de_dust2']
-debug_num_train_data: 100
-debug_num_val_data: 100
+# debug_num_train_data: 50
+# debug_num_val_data: 50
 # map_size: [224, 224]
 # fps_size: [224, 224]
 # is_fps_aug: True
 # erasing_p: 0.3
 
-ckpt_path: "outputs/csgo_1b/exp0/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
+ckpt_path: "outputs/csgo_1b/exp1/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
 guidance_scale: 4.5
 batch_size: 1

@@ -11,13 +11,14 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoProcessor
 import matplotlib.pyplot as plt
+from safetensors.torch import load_file as safe_load_file
+import textwrap
 
 # 引入 UniLIP 核心模块
 from unilip.utils import disable_torch_init
-from unilip.model.builder import load_pretrained_model_general
 from unilip.pipeline_edit import CustomEditPipeline
 from unilip.mm_utils import get_model_name_from_path
-
+from unilip.model.builder import load_pretrained_model_general
 
 
 def set_seed(seed=42):
@@ -104,7 +105,10 @@ class CSGOInferenceDataset(Dataset):
         for map_name in self.map_names:
             # 读取测试集 split
             # 注意：这里强制读取 test_split.json
-            split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/test_split.json"
+            if self.config.get("is_conti_gen", False):
+                split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/continuous_unseen_clips.json"
+            else:
+                split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/test_split.json"
 
             with open(split_path, "r", encoding="utf-8") as f:
                 positions_data = json.load(f)
@@ -130,12 +134,15 @@ class CSGOInferenceDataset(Dataset):
         if config['debug'] and config.get('debug_num_train_data', False):
             sampled_num = config.get('debug_num_train_data', len(self.data_entries))
             self.data_entries = self.data_entries[:sampled_num]
+            print([data['file_frame'] for data in self.data_entries])
         elif config['debug'] and config.get('debug_num_train_data', False) == False:
             indices = [335, 535, 707, 288, 21, 240, 20, 30, 809, 423, 857, 459, 557, 882, 893, 406, 24, 477, 407, 427, 453, 923, 925, 399, 752, 867, 547, 563, 424, 217, 789, 681]
             self.data_entries = [self.data_entries[i] for i in indices]
+            print([data['file_frame'] for data in self.data_entries])
         elif config['debug']==False and config.get('debug_num_train_data', False):
             sampled_num = config.get('debug_num_train_data', len(self.data_entries))
             self.data_entries = random.sample(self.data_entries, sampled_num)
+            print([data['file_frame'] for data in self.data_entries])
 
         # 仅取前N个做测试，避免跑太久 (可选)
         # self.data_entries = self.data_entries[:50]
@@ -180,6 +187,7 @@ class CSGOInferenceDataset(Dataset):
         raw_prompt = build_sft_instruction_custom(pose_dict, map_name, z_max, z_min)
 
         return {
+            "map_name": map_name,
             "radar_img": radar_img,
             "gt_img": gt_img,
             "raw_prompt": raw_prompt,
@@ -208,6 +216,85 @@ map_path_dict = {
 }
 
 # ==========================================
+# 0. 升级版：权重加载辅助函数 (支持 .bin 和 .safetensors)
+# ==========================================
+def load_custom_checkpoint(model, ckpt_path):
+    """
+    智能加载权重：
+    1. 区分 .bin 和 .safetensors
+    2. 支持加载 pytorch_model.bin / model.safetensors
+    3. 支持加载分离保存的 mm_projector
+    """
+    print(f"🚀 Processing checkpoint path: {ckpt_path}")
+    ckpt_path = os.path.abspath(ckpt_path)
+
+    state_dict = None
+
+    # --- 情况 A: 这是一个文件 (例如 model.safetensors) ---
+    if os.path.isfile(ckpt_path):
+        print(f"   -> Loading directly from file {ckpt_path} ...")
+        if ckpt_path.endswith(".safetensors"):
+            state_dict = safe_load_file(ckpt_path, device="cpu")
+        else:
+            state_dict = torch.load(ckpt_path, map_location="cpu")
+
+        msg = model.load_state_dict(state_dict, strict=False)
+        print(f"   -> Direct load msg: {msg}")
+        return # 这是一个完整权重文件，加载完直接返回
+
+    # --- 情况 B: 这是一个文件夹 (例如 checkpoint-1000) ---
+    # 1. 尝试加载基础权重 (Base Weights)
+    potential_base_files = ["model.safetensors", "pytorch_model.bin"]
+    for f in potential_base_files:
+        full_path = os.path.join(ckpt_path, f)
+        if os.path.exists(full_path):
+            print(f"   -> Found base weights: {full_path}")
+            if f.endswith(".safetensors"):
+                state_dict = safe_load_file(full_path, device="cpu")
+            else:
+                state_dict = torch.load(full_path, map_location="cpu")
+
+            msg = model.load_state_dict(state_dict, strict=False)
+            print(f"   -> Base load msg: {msg}")
+            break
+
+    # 2. 尝试加载 Projector (如果训练代码将其单独保存了)
+    # 逻辑：检查当前目录或上级目录的 mm_projector 文件夹
+    folder_name = os.path.basename(ckpt_path)
+    parent_dir = os.path.dirname(ckpt_path)
+
+    projector_types = ["mm_projector", "gen_projector"]
+
+    for proj_type in projector_types:
+        candidates = []
+        # 候选 1: 在当前目录内
+        candidates.append(os.path.join(ckpt_path, f"{proj_type}.bin"))
+        candidates.append(os.path.join(ckpt_path, f"{proj_type}.safetensors"))
+
+        # 候选 2: 在上级平行目录 (针对 checkpoint-xxx 结构)
+        if folder_name.startswith("checkpoint-"):
+            candidates.append(os.path.join(parent_dir, proj_type, f"{folder_name}.bin"))
+            candidates.append(os.path.join(parent_dir, proj_type, f"{folder_name}.safetensors"))
+
+        loaded_proj = False
+        for p_path in candidates:
+            if os.path.exists(p_path):
+                print(f"   -> Found {proj_type} at: {p_path}")
+                if p_path.endswith(".safetensors"):
+                    proj_weights = safe_load_file(p_path, device="cpu")
+                else:
+                    proj_weights = torch.load(p_path, map_location="cpu")
+
+                # 加载
+                model.load_state_dict(proj_weights, strict=False)
+                loaded_proj = True
+                print(f"      ✅ Loaded {proj_type} successfully.")
+                break
+
+        if not loaded_proj and state_dict is None:
+             print(f"⚠️ Warning: Did not find separate {proj_type} file and no base model loaded.")
+
+# ==========================================
 # 3. 主推理逻辑
 # ==========================================
 def main():
@@ -224,15 +311,21 @@ def main():
 
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = f"outputs_eval/{args.csgo_config.split('/')[-1][:-5]}/test_{cur_time_str}"
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir+"/gen_imgs", exist_ok=True)
 
     # 1. 加载模型
     disable_torch_init()
-    model_name = get_model_name_from_path(csgo_config["ckpt_path"])
-    print(f"🚀 Loading model from {csgo_config['ckpt_path']}...")
+    # tokenizer, model, context_len = load_pretrained_model_general(
+    #     'UniLIP_InternVLForCausalLM', csgo_config['ckpt_path']
+    # )
+    disable_torch_init()
     tokenizer, model, context_len = load_pretrained_model_general(
-        'UniLIP_InternVLForCausalLM', csgo_config["ckpt_path"], None, model_name
+        'UniLIP_InternVLForCausalLM', 'UniLIP-1B'
     )
+
+    ckpt_path = csgo_config['ckpt_path']
+    print(f"🚀 Loading model from {csgo_config['ckpt_path']}...")
+    load_custom_checkpoint(model, ckpt_path)
 
     image_processor = AutoProcessor.from_pretrained(model.config.mllm_hf_path).image_processor
 
@@ -251,6 +344,8 @@ def main():
     print("🚀 Starting Inference...")
 
     vis_data = [] # 存储第一批次用于可视化
+    is_vis = True
+    vis_data_num = 30
 
     for batch_idx, batch in enumerate(tqdm(dataloader)):
         # 批次内的每个样本逐个处理 (因为 Pipe 接口通常接受 List[Prompt] 但对应单张图片输入)
@@ -274,13 +369,16 @@ def main():
                     generator=generator
                 )
 
-            # 保存单张图片
-            save_name = f"{file_frame}.png"
+            os.makedirs(output_dir+f"/gen_imgs/{sample['map_name']}", exist_ok=True)
+            save_name = f"gen_imgs/{sample['map_name']}/{file_frame}.jpg"
             gen_img.save(os.path.join(output_dir, save_name))
 
             # 收集数据用于可视化
-            if len(vis_data) < 4:
+            if len(vis_data) < vis_data_num:
+                # 保存单张图片
+
                 vis_data.append({
+                    "map_name": sample['map_name'],
                     "radar": radar_img,
                     "gt": sample['gt_img'],
                     "gen": gen_img,
@@ -288,36 +386,74 @@ def main():
                     "prompt": raw_prompt
                 })
 
-    # 4. 可视化对比图 (Radar | GT | Gen)
-    if len(vis_data) > 0:
-        print("📊 Generating Visualization for the first batch...")
-        fig, axes = plt.subplots(len(vis_data), 3, figsize=(15, 5 * len(vis_data)))
-        if len(vis_data) == 1: axes = [axes]
+            if is_vis and len(vis_data) == vis_data_num:
+                print(f"📊 Generating Visualization for {len(vis_data)} samples...")
+                batch_size = 5
+                # 按步长 batch_size 循环
+                for batch_start in range(0, len(vis_data), batch_size):
+                    batch_end = min(batch_start + batch_size, len(vis_data))
+                    batch_items = vis_data[batch_start:batch_end]
 
-        for i, item in enumerate(vis_data):
-            # Radar
-            axes[i][0].imshow(item['radar'])
-            axes[i][0].set_title("Input: Radar Map")
-            axes[i][0].axis('off')
+                    # 创建画布：5行4列
+                    # figsize 需要设置宽一点以容纳文本，高一点以容纳5行
+                    fig, axes = plt.subplots(batch_size, 4, figsize=(24, 6 * batch_size))
 
-            # GT FPS
-            axes[i][1].imshow(item['gt'])
-            axes[i][1].set_title("Ground Truth (FPS)")
-            axes[i][1].axis('off')
+                    # 如果只有一行（batch_size=1的情况），axes是一维数组，强制转为二维
+                    if batch_size == 1:
+                        axes = [axes]
+                    # 如果最后不满5个，axes仍然是5行，需要处理空行
+                    elif len(batch_items) < batch_size:
+                        pass
 
-            # Generated FPS
-            axes[i][2].imshow(item['gen'])
+                    for i in range(batch_size):
+                        # 获取当前行对应的 axes
+                        ax_row = axes[i]
 
-            # 提取 Pose 字符串用于展示
-            p = item['pose']
-            title_str = f"Generated\nPos: ({p['x']:.1f}, {p['y']:.1f}, {p['z']:.2f})\nAng: ({p['angle_v']:.1f}, {p['angle_h']:.1f})"
-            axes[i][2].set_title(title_str, color='blue', fontsize=10)
-            axes[i][2].axis('off')
+                        # 如果当前批次的数据已经用完（处理最后余数的情况），隐藏剩下的空图
+                        if i >= len(batch_items):
+                            for ax in ax_row:
+                                ax.axis('off')
+                            continue
 
-        plt.tight_layout()
-        vis_save_path = os.path.join(output_dir, "vis_batch_0.png")
-        plt.savefig(vis_save_path, dpi=150)
-        print(f"✨ Visualization saved to {vis_save_path}")
+                        item = batch_items[i]
+
+                        # --- 第1列：Prompt Text ---
+                        # 使用 textwrap 自动换行，防止文本溢出
+                        wrapped_prompt = "\n".join(textwrap.wrap(item['prompt'], width=40))
+
+                        ax_row[0].text(0, 1, wrapped_prompt, ha='left', va='top', fontsize=18, wrap=True)
+                        ax_row[0].axis('off') # 关闭坐标轴
+                        if i == 0: ax_row[0].set_title("Input Prompt", fontsize=14, fontweight='bold')
+
+                        # --- 第2列：Radar ---
+                        ax_row[1].imshow(item['radar'])
+                        ax_row[1].axis('off')
+                        if i == 0: ax_row[1].set_title("Input Radar", fontsize=14, fontweight='bold')
+
+                        # --- 第3列：GT ---
+                        ax_row[2].imshow(item['gt'])
+                        ax_row[2].axis('off')
+                        if i == 0: ax_row[2].set_title("Ground Truth", fontsize=14, fontweight='bold')
+
+                        # --- 第4列：Generated ---
+                        ax_row[3].imshow(item['gen'])
+                        ax_row[3].axis('off')
+
+                        # 把具体的 Pose 数值放在生成图的标题上，作为补充信息
+                        p = item['pose']
+                        pose_str = f"{item['map_name']}, Pred View\nPos:({p['x']:.0f},{p['y']:.0f},{p['z']:.0f}) Ang:({p['angle_v']:.0f},{p['angle_h']:.0f})"
+                        ax_row[3].set_title(pose_str if i > 0 else f"Generated\n{pose_str}", fontsize=10, color='blue')
+
+                    plt.tight_layout()
+
+                    # 保存文件名：vis_0_5.jpg, vis_5_10.jpg ...
+                    vis_save_path = os.path.join(output_dir, f"vis_batch_{batch_start}_{batch_end}.jpg")
+                    plt.savefig(vis_save_path, dpi=100) # dpi 100 足够清晰且体积适中
+                    plt.close(fig) # 极其重要：循环画图必须 close，否则内存泄漏
+
+                    print(f"   -> Saved visualization batch: {vis_save_path}")
+
+                is_vis = False
 
     print(f"✅ Inference finished. Results saved to {output_dir}")
 

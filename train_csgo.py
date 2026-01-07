@@ -35,6 +35,14 @@ from copy import deepcopy
 import numpy as np
 import yaml
 from visual_utils import visualize_dataset_samples
+from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset
+import datetime
+import wandb
+
+
+import os
+# 设置为 false，禁止 tokenizers 并行，防止死锁
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -51,7 +59,7 @@ IMG_CONTEXT_TOKEN = '<IMG_CONTEXT>'
 
 def rank0_print(*args):
     if local_rank == 0:
-        print(*args)
+        logging.info(*args)
 
 
 from packaging import version
@@ -77,7 +85,7 @@ def set_seed(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    print(f"随机种子已设置为: {seed}")
+    logging.info(f"随机种子已设置为: {seed}")
 
 
 @dataclass
@@ -113,6 +121,8 @@ class ModelArguments:
     mllm_hf_path: Optional[str] = field(default="")
     vae_path: Optional[str] = field(default="")
     dit_path: Optional[str] = field(default="")
+
+    action_dit_layer: Optional[int] = field(default=3)
 
 
 
@@ -316,6 +326,8 @@ def smart_tokenizer_and_embedding_resize(
         input_embeddings = model.get_input_embeddings().weight.data
         input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
+
+    model.text_tokenizer = tokenizer
 
 
 def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict:
@@ -634,7 +646,7 @@ def preprocess(
         header = f"{conversation_lib.default_conversation.system}\n\n"
         conversation = _add_speaker_and_signal(header, source)
         conversations.append(conversation)
-    print("conversations", conversations)
+    logging.info(f"conversations: {conversations}")
     # tokenize conversations
     def get_tokenize_len(prompts):
         return [len(tokenizer_image_token(prompt, tokenizer)) for prompt in prompts]
@@ -677,21 +689,21 @@ class LazySupervisedMixDataset(Dataset):
             train_dataset = self.load_gen(self.data_args.gen_image_folder)
             for _ in range(self.data_args.gen_repeat):
                 list_data_dict.append(train_dataset)
-            print(f"finish loading gen image {len(train_dataset)}")
+            logging.info(f"finish loading gen image {len(train_dataset)}")
 
         # image editing
         if self.data_args.edit_image_folder is not None:
             train_dataset = self.load_edit(self.data_args.edit_image_folder)
             for _ in range(self.data_args.edit_repeat):
                 list_data_dict.append(train_dataset)
-            print(f"finish loading edit image {len(train_dataset)}")
+            logging.info(f"finish loading edit image {len(train_dataset)}")
 
         if len(list_data_dict) > 1:
             list_data_dict = concatenate_datasets(list_data_dict)
         else:
             list_data_dict = list_data_dict[0]
 
-        rank0_print(f"Totoal number of training instance: {len(list_data_dict)}")
+        logging.info(f"Totoal number of training instance: {len(list_data_dict)}")
         self.tokenizer = tokenizer
         self.list_data_dict = list_data_dict
 
@@ -749,7 +761,7 @@ class LazySupervisedMixDataset(Dataset):
             try:
                 sources = self.list_data_dict[i]
             except Exception as e:
-                print(f"data error", i)
+                logging.info(f"data error {i}")
                 i = random.randint(0, len(self.list_data_dict) - 1)
                 continue
             use_und = False
@@ -823,12 +835,12 @@ class LazySupervisedMixDataset(Dataset):
                     try:
                         img = img.convert("RGB")
                         if img.size[0] == 1 or img.size[1] == 1:
-                            print("wrong size", img.size)
+                            logging.info(f"wrong size: {img.size}", )
                             all_pil_images = None
                             break
                         all_pil_images.append(img)
                     except Exception as e:
-                        print(f"Error opening image {img}: {e}")
+                        logging.info(f"Error opening image {img}: {e}")
                         all_pil_images = None
                         break  # Skip to the next image if there's an error
 
@@ -836,8 +848,8 @@ class LazySupervisedMixDataset(Dataset):
 
                 # If no valid images were found, randomly pick another item
                 if all_pil_images is None:
-                    print(sources)
-                    print(f"warning false image!!!!!!")
+                    logging.info(sources)
+                    logging.info(f"warning false image!!!!!!")
                     i = random.choice(self.type_to_indices[sources['type']])
                     continue
 
@@ -956,7 +968,7 @@ class CSGOWorldModelDataset(Dataset):
         # 你的地图文件映射
         self.map_path_dict = map_path_dict
 
-        print("🔄 Loading CS2 Dataset Index...")
+        logging.info("🔄 Loading CS2 Dataset Index...")
         for map_name in config["train_maps"]:
             # 1. 确定路径
             if config['data_dir'] == 'data/preprocessed_data':
@@ -969,9 +981,10 @@ class CSGOWorldModelDataset(Dataset):
 
             # 2. 读取 JSON
             if not os.path.exists(position_data_path):
-                print(f"⚠️ Warning: Path not found {position_data_path}, skipping.")
+                logging.info(f"⚠️ Warning: Path not found {position_data_path}, skipping.")
                 continue
 
+            logging.info(f"Loading CS2 Data Split {position_data_path}...")
             with open(position_data_path, "r", encoding="utf-8") as f:
                 positions_data = json.load(f)
 
@@ -998,23 +1011,26 @@ class CSGOWorldModelDataset(Dataset):
 
         # 5. 数据过滤 (CSBS/Dust2 only logic)
         if config['data_dir'] == 'data/processed_data':
-            print(f"📊 Final total entries : {len(self.data_entries)}")
+            logging.info(f"📊 Final total entries : {len(self.data_entries)}")
             self.data_entries = [data for data in self.data_entries if (data['map']=='de_dust2' and data['x']!=562 and data['y']!=736) or (data['map']!='de_dust2')]
-            print(f"📊 after filter damaged entries: {len(self.data_entries)}")
+            logging.info(f"📊 after filter damaged entries: {len(self.data_entries)}")
             self.data_entries = self.data_entries[:-2000]
 
         if config['debug'] and config.get('debug_num_train_data', False):
             sampled_num = config.get('debug_num_train_data', len(self.data_entries))
             self.data_entries = self.data_entries[:sampled_num]
+            logging.info([data['file_frame'] for data in self.data_entries])
         elif config['debug'] and config.get('debug_num_train_data', False) == False:
             indices = [335, 535, 707, 288, 21, 240, 20, 30, 809, 423, 857, 459, 557, 882, 893, 406, 24, 477, 407, 427, 453, 923, 925, 399, 752, 867, 547, 563, 424, 217, 789, 681]
             self.data_entries = [self.data_entries[i] for i in indices]
+            logging.info([data['file_frame'] for data in self.data_entries])
         elif config['debug']==False and config.get('debug_num_train_data', False):
             # self.data_entries = self.data_entries[:config.get('debug_num_train_data', len(self.data_entries))]
             sampled_num = config.get('debug_num_train_data', len(self.data_entries))
             self.data_entries = random.sample(self.data_entries, sampled_num)
+            logging.info([data['file_frame'] for data in self.data_entries])
 
-        print(f"✅ CS2 Dataset Loaded. Total train entries: {len(self.data_entries)}")
+        logging.info(f"✅ CS2 Dataset Loaded. Total train entries: {len(self.data_entries)}")
         self.list_data_dict = {
             "type": ["CS2_Gen"] * len(self.data_entries),
             "id": [str(entry['file_frame']) for entry in self.data_entries]
@@ -1124,7 +1140,7 @@ class CSGOWorldModelDataset(Dataset):
                 return data_dict
 
             except Exception as e:
-                print(f"Error loading index {i}: {e}")
+                logging.info(f"Error loading index {i}: {e}")
                 # 随机换一个数据重试，防止训练中断
                 i = random.randint(0, len(self.data_entries) - 1)
 
@@ -1162,7 +1178,7 @@ class DataCollatorForSupervisedDataset(object):
         input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id)
         labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
         if input_ids.shape[1] > self.tokenizer.model_max_length:
-            print(f"Warning input with length {input_ids.shape[1]} is longer than max length {self.tokenizer.model_max_length}")
+            logging.info(f"Warning input with length {input_ids.shape[1]} is longer than max length {self.tokenizer.model_max_length}")
         input_ids = input_ids[:, : self.tokenizer.model_max_length]
         labels = labels[:, : self.tokenizer.model_max_length]
         batch = dict(
@@ -1193,7 +1209,7 @@ class DataCollatorForSupervisedDataset(object):
                 batch_und_images.append(instance["und_image"])  ## 1*1024*1176
 
 
-        # print(f"batch_und_images {batch_und_images}")
+        # logging.info(f"batch_und_images {batch_und_images}")
         if len(batch_und_images) > 0:
             batch["und_image"] = torch.cat([images for images in batch_und_images], dim=0)
         else:
@@ -1230,14 +1246,53 @@ def train(attn_implementation=None):
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     training_args.lr_scheduler_kwargs = {"min_lr": 1e-5}
-    print("model_args: ", model_args)
-    print("data_args: ", data_args)
-    print("training_args: ", training_args)
-
 
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
-    print("csgo_config: ", csgo_config)
+
+    cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_dir = f"{training_args.output_dir.replace('outputs', 'logs')}/train_{cur_time_str}"
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
+            format=f'%(asctime)s - %(levelname)s - %(message)s - (%(process)d:%(filename)s:%(lineno)s)',
+            datefmt='%Y-%m-%d %H:%M:%S',
+            handlers=[
+                logging.FileHandler(os.path.join(log_dir, 'train.log')),
+                logging.StreamHandler()
+            ],
+            force=True
+    )
+    transformers.utils.logging.set_verbosity_info()
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
+    logger = logging.getLogger(__name__)
+
+    if "wandb" in training_args.report_to and training_args.local_rank in [-1, 0]:
+        # 如果 args 里有 run_name 就用，没有就自动生成
+        run_name = training_args.run_name if training_args.run_name else f"{pathlib.Path(training_args.output_dir).name}"
+
+        key_file = Path(".wandb_api_key.txt")
+        api_key = None
+        if key_file.exists():
+            api_key = key_file.read_text(encoding="utf-8").strip()
+            logging.info(f"Loaded WandB API key from {key_file}")
+
+        if api_key:
+            wandb.login(key=api_key)
+        wandb.init(
+            entity="zhh",
+            project="UniLIP_csgo_fpsgen",
+            name=run_name,
+            config={**vars(model_args), **vars(data_args), **vars(training_args), **csgo_config},
+        )
+
+
+    logging.info(f"model_args: {model_args}")
+    logging.info(f"data_args: {data_args}")
+    logging.info(f"training_args: {training_args}")
+    logging.info(f"csgo_config: {csgo_config}")
 
     local_rank = training_args.local_rank
     compute_dtype = torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32)
@@ -1264,13 +1319,22 @@ def train(attn_implementation=None):
             )
         )
 
-    model = UniLIP_InternVLForCausalLM.from_pretrained(
-        model_args.model_name_or_path, #UniLIP-1B
-        cache_dir=training_args.cache_dir,
-        attn_implementation=attn_implementation,
-        torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
-        **bnb_model_from_pretrained_args,
-    )
+    if csgo_config.get("is_multi_task"):
+        model = Unified_UniLIP_InternVLForCausalLM.from_pretrained(
+            model_args.model_name_or_path, # UniLIP-1B with new unified_unilip config
+            cache_dir=training_args.cache_dir,
+            attn_implementation=attn_implementation,
+            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
+            **bnb_model_from_pretrained_args,
+        )
+    else:
+        model = UniLIP_InternVLForCausalLM.from_pretrained(
+            model_args.model_name_or_path, #UniLIP-1B
+            cache_dir=training_args.cache_dir,
+            attn_implementation=attn_implementation,
+            torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
+            **bnb_model_from_pretrained_args,
+        )
     model.config.use_cache = False
 
     if model_args.freeze_backbone: # True
@@ -1310,7 +1374,7 @@ def train(attn_implementation=None):
         conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
     else:
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
-    rank0_print(f"Using conversation format: {conversation_lib.default_conversation.version}")
+    logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False
@@ -1319,6 +1383,10 @@ def train(attn_implementation=None):
     # DiT load from checkpoint!!!
     # Connector load from checkpoint!!! = llm_connector + projector
     # latent_queries load from checkpoint!!!
+
+    # Unified_UniLIP_InternVLForCausalLM.from_pretrained()启用了low_mem和accelerator且UniLIP权重中不包含新增的定位模块action_dit，导致action_dit没有正确加载Qwen2Model的权重，这里避开Unified_UniLIP_InternVLForCausalLM的初始化和from_pretrained方法。重新加载action_dit的权重，防止梯度爆炸
+    model.get_model().initialize_localization_modules(model_args=model_args)
+
 
     if not model_args.fix_vit:
         for p in model.get_model().vision_tower.parameters():
@@ -1351,11 +1419,11 @@ def train(attn_implementation=None):
     for name, param in model.named_parameters():
         if param.requires_grad:
             train_param_names.append(name)
-            print("     trainable params: ", name)
-    # print("trainable params", train_param_names)
-    print(f"Total parameters: {total_params}")
-    print(f"Trainable parameters: {trainable_params}")
-    print(f"trainable percent: {100*trainable_params / total_params}%")
+            logging.info(f"     trainable params: {name}")
+    # logging.info("trainable params", train_param_names)
+    logging.info(f"Total parameters: {total_params}")
+    logging.info(f"Trainable parameters: {trainable_params}")
+    logging.info(f"trainable percent: {100*trainable_params / total_params:2f} %")
 
 
     model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
@@ -1368,8 +1436,8 @@ def train(attn_implementation=None):
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
         msg = model.load_state_dict(torch.load(pretrain_path), strict=False)
-        print("load pretrain", pretrain_path)
-        print(msg)
+        logging.info(f"load pretrain: {pretrain_path}")
+        logging.info(msg)
 
     # def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
 
@@ -1382,11 +1450,22 @@ def train(attn_implementation=None):
     # return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
     # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
 
-    train_dataset = CSGOWorldModelDataset(csgo_config, tokenizer, data_args)
-    eval_dataset = None
-    data_collator = data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
+    if csgo_config.get("is_multi_task", False):
+        train_dataset = UniLIPMultiTaskDataset(csgo_config, tokenizer, data_args)
+        eval_dataset = None
+        data_collator = DataCollatorForUniLIPMultiTaskDataset(tokenizer=tokenizer)
+    else:
+        train_dataset = CSGOWorldModelDataset(csgo_config, tokenizer, data_args)
+        eval_dataset = None
+        data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     if local_rank in [-1, 0]:
-        visualize_dataset_samples(train_dataset, data_args.image_processor)
+        visualize_dataset_samples(
+            train_dataset,
+            data_args.image_processor,
+            num_samples=20,
+            save_path="_debug_dataset_samples.jpg",
+            is_multi_task=csgo_config.get("is_multi_task", False)
+        )
 
     trainer = NonMixTrainer(
         model=model,
@@ -1404,7 +1483,7 @@ def train(attn_implementation=None):
         stat = []
         for i, (n, p) in enumerate(trainer.model.named_parameters()):
             stat.append([i, n, p.shape, p.requires_grad])
-        print(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+        logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
@@ -1419,6 +1498,9 @@ def train(attn_implementation=None):
         vision_tower=model_args.vision_tower,
     )
 
+    if training_args.local_rank in [-1, 0]:
+        wandb.finish()
+
 
 if __name__ == "__main__":
     train(attn_implementation="flash_attention_2")
@@ -1428,7 +1510,10 @@ if __name__ == "__main__":
 
 
 
-# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp0.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs_csgo_1b --num_train_epochs 5 --per_device_train_batch_size 32 --per_device_eval_batch_size 4 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to none --run_name unilip_intern_vl_1b --fix_dit False --fix_connect False --fix_llm True
+# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp0.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs_csgo_1b --num_train_epochs 5 --per_device_train_batch_size 32 --per_device_eval_batch_size 4 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True
+
+
+# --report_to none --run_name unilip_intern_vl_1b
 
 # --pretrain_path UniLIP-1B/model.safetensors
 
@@ -1447,3 +1532,8 @@ if __name__ == "__main__":
 # --edit_image_folder ${EDIT_IMG_FOLDER} \
 # --gen_repeat 1 \
 # --edit_repeat 3 \
+
+
+
+
+# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp1 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 5000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True

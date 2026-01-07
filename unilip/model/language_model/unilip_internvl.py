@@ -45,6 +45,8 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
         self.model = UniLIP_InternVLModel(config)  #父类InternVLForConditionalGeneration中已经定义了self.model = InternVLModel(); 这里覆盖掉新的self.model = UniLIP_InternVLModel(config)，而UniLIP_InternVLModel也是继承自InternVLModel，所以到最后self.model还是一个InternVLModel类，且包含InternVLModel中的vision_tower, language_model, multi_modal_projector等module
 
         self.lm_head = nn.Linear(config.text_config.hidden_size, config.text_config.vocab_size, bias=False)
+
+        self.text_tokenizer = None
         # Initialize weights and apply final processing
         self.post_init()
 
@@ -54,19 +56,19 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
 
     def forward(
         self,
-        input_ids: torch.LongTensor = None,
-        attention_mask: Optional[torch.Tensor] = None,
+        input_ids: torch.LongTensor = None, # torch.Size([bs, 707])
+        attention_mask: Optional[torch.Tensor] = None, # torch.Size([bs, 707])
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
-        labels: Optional[torch.LongTensor] = None,
-        ids: Optional[list] = None,
-        i_s_pos: Optional[list] = None,
+        labels: Optional[torch.LongTensor] = None, # torch.Size([bs, 707])
+        ids: Optional[list] = None, # ['file_num135_frame_183', 'file_num296_frame_131']
+        i_s_pos: Optional[list] = None, # [451, 450]
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
-        gen_image: Optional[torch.FloatTensor] = None,
-        und_image: Optional[torch.FloatTensor] = None,
+        gen_image: Optional[torch.FloatTensor] = None, # torch.Size([2, 3, 448, 448])
+        und_image: Optional[torch.FloatTensor] = None, # torch.Size([2, 3, 448, 448])
         grid_thw: Optional[torch.FloatTensor] = None,
         image_sizes: Optional[List[List[int]]] = None,
         return_dict: Optional[bool] = None,
@@ -80,7 +82,7 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
 
         if inputs_embeds is None:
-            (
+            ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, und_img_idx, und_image_embeds, bidr_attention_mask
                 input_ids,
                 position_ids,
                 attention_mask,
@@ -107,50 +109,52 @@ class UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, UniLIP_Intern
         position_ids = torch.cumsum(attention_mask, dim=1) - 1
         position_ids[position_ids < 0] = 0
         outputs = self.model.language_model(
-            attention_mask=attention_mask,
-            position_ids=position_ids,
-            inputs_embeds=inputs_embeds,
+            attention_mask=attention_mask, # torch.Size([2, 707])
+            position_ids=position_ids, # torch.Size([2, 707])
+            inputs_embeds=inputs_embeds, # torch.Size([2, 707, 896])
             output_hidden_states=True,
-            return_dict=return_dict,
+            return_dict=return_dict, # True
             use_cache=False
-        )
+        )# tuple( 25 * torch.Size([2, 707, 896]) )
 
-        hidden_states = outputs.hidden_states[-1]
+        hidden_states = outputs.hidden_states[-1] #torch.Size([2, 707, 896])
         logits = None
 
         total_loss = None
-        if labels is not None:
+        if labels is not None: # torch.Size([2, 707])
             img_loss_funct = torch.nn.MSELoss()
             # replace und image embeds llm processed -> vit processed
             if und_image_embeds is not None:
-                hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+                hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1) #und_img_idx=形状为torch.Size([2, 707])的T/F矩阵，只有und_img_token的位置为True #und_image_embeds=torch.Size([2, 256, 896]) # und_img_idx为True的token数量和und_image_embeds的length相等 #hidden_states=torch.Size([2, 707, 896])在und_img_idx对应token位置上的feature实际是图像占位符的feature #在进入language_model之前的inputs_embeds已经在self.prepare_inputs_labels_for_multimodal()中把und_img_idx位置的token替换为und_image_embeds了，这里在经过language_model之后再次替换，来保证und_image_embeds保持原有的特征。
+                # 从代码逻辑上看，这确实显得有些“多此一举”，因为在 prepare_inputs 阶段确实已经填过一次了。但实际上，这一步**“再次替换” (Re-filling)** 是 UniLIP（以及很多类似架构如 InternVL, LLaVA-Next 等）设计中至关重要的一环。原因在于：经过 LLM 之后的特征，已经“变质”了。1. 核心原因：LLM 的“语义污染” (Semantic Contextualization) $V_{out}$ 不再是“这张图片长什么样”，而是变成了“结合了上下文后，LLM 认为这张图片在这个语境下意味着什么”。这种特征对于文本生成（Chat）是有益的，但对于图像生成（Generation/Reconstruction）往往是有害的。2. 扩散模型 (DiT) 需要“原以此真”的视觉信号 UniLIP 的下游任务是让 DiT 根据 Radar 图（Condition）生成 FPV 图。DiT 的需求：DiT 需要极其精确的空间结构信息和像素级特征（比如墙在哪里、路在哪里）。LLM 输出的特征：经过 LLM 处理后，特征更加高层语义化（High-level semantic），且混入了文本信息，导致原始的空间几何细节（Spatial Geometry）被模糊或稀释了。
+                # 这一行代码 hidden_states[und_img_idx] = und_image_embeds... 实现了一种 Skip Connection（残差连接） 的效果：对 Text Token：使用 LLM 处理后的深层语义特征。对 Latent Queries (生成占位符)：使用 LLM 处理后的特征（这是 LLM 的核心产出）。对 Und Image (Radar 条件)：强制回滚到 ViT 的原始特征，保证作为生成条件的视觉信号不失真。
             img_hidden_states = self.model.llm_connector(
-                attention_mask=bidr_attention_mask,
-                position_ids=position_ids,
-                inputs_embeds=hidden_states,
+                attention_mask=bidr_attention_mask, #torch.Size([2, 1, 707, 707]) 可视化后发现只有最右侧一列和最下面一排的值为-100000，其他位置为0
+                position_ids=position_ids, #torch.Size([2, 707])
+                inputs_embeds=hidden_states, #torch.Size([2, 707, 896])带上了und_img_embeds
                 output_hidden_states=True,
                 return_dict=return_dict,
                 use_cache=False
-            ).hidden_states[-1]
-            img_hidden_states = self.get_model().projector(img_hidden_states)
-            if latents is None:
-                img_loss = img_loss_funct(img_hidden_states, torch.clone(img_hidden_states.detach()))
+            ).hidden_states[-1] # tuple( 7 * img_hidden_states = torch.Size([2, 707, 896]) )
+            img_hidden_states = self.get_model().projector(img_hidden_states) #torch.Size([2, 707, 2304])
+            if latents is None: #latents=torch.Size([2, 32, 16, 16])
+                img_loss = img_loss_funct(img_hidden_states, torch.clone(img_hidden_states.detach())) #这段代码的作用非常直接：在没有提供目标生成图像（Ground Truth）的情况下，构造一个数值为 0 的“哑损失”（Dummy Loss）。主要是为了工程实现的兼容性和防止程序崩溃，特别是在 PyTorch 分布式训练（DDP）和 Hugging Face Trainer 的框架下。
             else:
                 bsz = latents.shape[0]
                 dtype = latents.dtype
-                noise = torch.randn_like(latents, device=latents.device)
-                u = compute_density_for_timestep_sampling(weighting_scheme="logit_normal", batch_size=bsz, logit_mean=0.0, logit_std=1.0)
-                indices = (u * self.get_model().noise_scheduler.config.num_train_timesteps).long()
-                timesteps = self.get_model().noise_scheduler.timesteps[indices].to(device=latents.device)
-                sigmas = self.get_sigmas(timesteps, latents.device, n_dim=latents.ndim, dtype=dtype)
-                noisy_latents = (1.0 - sigmas) * latents + sigmas * noise
-                noise_pred = self.get_model().dit(
-                    noisy_latents,
-                    timestep=timesteps,
-                    encoder_hidden_states=img_hidden_states,
-                    encoder_attention_mask=attention_mask,
+                noise = torch.randn_like(latents, device=latents.device) #torch.Size([2, 32, 16, 16])
+                u = compute_density_for_timestep_sampling(weighting_scheme="logit_normal", batch_size=bsz, logit_mean=0.0, logit_std=1.0) #u=torch.Size([2])
+                indices = (u * self.get_model().noise_scheduler.config.num_train_timesteps).long()#indices=tensor([616, 549])
+                timesteps = self.get_model().noise_scheduler.timesteps[indices].to(device=latents.device) #timesteps=tensor([384., 451.], device='cuda:0')
+                sigmas = self.get_sigmas(timesteps, latents.device, n_dim=latents.ndim, dtype=dtype)#sigmas=tensor([[[[0.3848]]],[[[0.4512]]]], device='cuda:0', dtype=torch.bfloat16)=torch.Size([2, 1, 1, 1])
+                noisy_latents = (1.0 - sigmas) * latents + sigmas * noise #noisy_latents=torch.Size([2, 32, 16, 16])
+                noise_pred = self.get_model().dit(#SanaTransformer2DModel()
+                    noisy_latents, #torch.Size([2, 32, 16, 16])
+                    timestep=timesteps,#timesteps=tensor([384., 451.], device='cuda:0')
+                    encoder_hidden_states=img_hidden_states, #torch.Size([2, 707, 2304])
+                    encoder_attention_mask=attention_mask,# torch.Size([2, 707])
                     return_dict=False
-                )[0]
+                )[0] #noise_pred=torch.Size([2, 32, 16, 16])
                 target = noise - latents
 
                 img_loss = F.mse_loss(noise_pred.float(), target.float(), reduction="mean")

@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import os
 
-def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_debug_dataset_samples.png"):
+def visualize_dataset_samples(dataset, processor, num_samples=20, save_path="_debug_dataset_samples.jpg", is_multi_task=False):
     """
     直接对已加载的 Dataset 进行抽样可视化，验证 Radar(Input) -> FPS(Target) 及 Prompt 对齐情况。
 
@@ -22,13 +22,14 @@ def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_deb
     mean = np.array(img_processor.image_mean)
     std = np.array(img_processor.image_std)
 
-    fig, axes = plt.subplots(num_samples, 2, figsize=(10, 4 * num_samples))
+    if is_multi_task:
+        fig, axes = plt.subplots(num_samples, 3, figsize=(12, 4 * num_samples))
+    else:
+        fig, axes = plt.subplots(num_samples, 2, figsize=(10, 4 * num_samples))
     plt.subplots_adjust(hspace=0.4, wspace=0.1)
 
     # 兼容 num_samples=1 的情况
     if num_samples == 1: axes = np.array([axes])
-
-
 
     for i in range(num_samples):
         # 1. 获取数据 (__getitem__)
@@ -41,8 +42,9 @@ def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_deb
         # 2. 提取图像 Tensor [1, C, H, W] -> Squeeze -> [C, H, W]
         # 注意: dataset 返回的是 'und_image' (Radar) 和 'gen_image' (FPS)
         radar_tensor = sample['und_image'].squeeze(0)
+        aux_tensor = sample['aux_image'].squeeze(0) if sample.get('aux_image') is not None else None
         fps_tensor = sample['gen_image'].squeeze(0)
-        loc_coords = sample['loc_coords']
+        loc_coords = sample['loc_coords'] if sample.get('loc_coords') is not None else sample['actions'][0]
         x,y,z,v,h = loc_coords[0],loc_coords[1],loc_coords[2],loc_coords[3],loc_coords[4]
         x=x*1024
         y=y*1024
@@ -57,6 +59,7 @@ def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_deb
             return np.clip(img, 0, 1)
 
         img_radar = denorm(radar_tensor)
+        img_aux = denorm(aux_tensor) if aux_tensor is not None else None
         img_fps = denorm(fps_tensor)
 
         # 4. 解码文本 Prompt (验证坐标是否正确)
@@ -74,7 +77,10 @@ def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_deb
             pose_str = decoded_text.split("Current Camera Pose:")[-1].split("<img>")[0].strip()
             # 如果太长，换行显示
             if len(pose_str) > 50:
-                pose_str = pose_str[:50] + "\n" + pose_str[50:]
+                # pose_str = pose_str[:50] + "\n" + pose_str[50:]
+                # pose_str = '\n'.join([pose_str[i:i+50] for i in range(0, len(pose_str), 50)])
+                import textwrap
+                pose_str = textwrap.fill(pose_str, width=50)
         except:
             pose_str = "Prompt parsing failed"
 
@@ -89,10 +95,21 @@ def visualize_dataset_samples(dataset, processor, num_samples=5, save_path="_deb
         axes[i, 1].set_title(f"Target: FPS {fps_img_name}, \ngt_pose{x,y,z,v,h}", fontsize=9, color='darkblue')
         axes[i, 1].axis('off')
 
+        if img_aux is not None:
+            axes[i, 2].imshow(img_aux)
+            axes[i, 2].set_title(f"Auxilliary for Multi-Task Training", fontsize=9, color='green')
+            axes[i, 2].axis('off')
+
     # 保存
     plt.savefig(save_path, bbox_inches='tight', dpi=120)
     print(f"✨ Visualization saved to: {os.path.abspath(save_path)}")
     plt.close()
+
+
+### MultiTaskDataset:
+# sample.keys()
+# dict_keys(['task_id', 'und_image', 'aux_image', 'gen_image', 'input_ids', 'labels', 'raw_prompt', 'actions', 'loss_mask', 'map_id', 'map_name', 'pose_dict'])
+
 
 
 # print(train_dataset[0].keys())

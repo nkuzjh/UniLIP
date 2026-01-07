@@ -13,3 +13,5 @@
 from .language_model.unilip_vae_internvl import UniLIP_VAE_InternVLForCausalLM, UniLIP_VAE_InternVLConfig
 
 from .language_model.unilip_internvl import UniLIP_InternVLForCausalLM, UniLIP_InternVLConfig
+
+from .language_model.unified_unilip import Unified_UniLIP_InternVLForCausalLM, Unified_UniLIP_InternVLConfig

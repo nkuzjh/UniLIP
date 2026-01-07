@@ -238,6 +238,10 @@ class UniLIP_InternVL_MetaForCausalLM(ABC):
         self, input_ids, position_ids, attention_mask, past_key_values, labels,
         gen_images, und_images, grid_thw, i_s_pos, image_sizes=None
     ):
+        #特征对齐：把输入的图片像素变成向量，并区分是“输入图（理解）”还是“目标图（生成）”。
+        #嵌入替换：在文本 Embedding 序列中“挖坑”，把文本占位符 [IMG] 替换成真实的图片特征（对于理解任务）或可学习的 Query 向量（对于生成任务）。
+        #训练目标设定：屏蔽 LLM 对图片位置的分类 Loss，准备好回归用的 Target Embeddings。
+
         # Unilip: use same vision encoder for gen. and und.
         if (gen_images is None and und_images is None) or input_ids.shape[1] == 1:
             return input_ids, position_ids, attention_mask, past_key_values, None, labels, None, None, None
@@ -282,11 +286,11 @@ class UniLIP_InternVL_MetaForCausalLM(ABC):
         if not und_images is None:
             text_embeds[und_img_idx] = und_image_embeds.to(text_embeds.device).flatten(0,1)
 
-        labels[image_idx] = -100
+        labels[image_idx] = -100 #在标准的 LLM 训练中，Next Token Prediction 是离散分类任务。 #但在这里，图片生成是回归任务（预测特征向量）。这部分损失计算不由 LLM 的 CrossEntropyLoss 处理，而是由专门的回归 Loss 处理。因此，将这些位置的 Label 设为 -100，告诉 LLM 的 Loss 函数忽略这些位置。
 
-        target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor)
+        target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor) #self.model.unilip_factor=10.6
 
-        bidr_attention_mask = attention_mask.unsqueeze(2) & attention_mask.unsqueeze(1)
+        bidr_attention_mask = attention_mask.unsqueeze(2) & attention_mask.unsqueeze(1) #attention_mask=torch.Size([2, 707]) #通过广播机制生成一个 (Batch, Seq_Len, Seq_Len) 的矩阵。
         bidr_attention_mask = bidr_attention_mask.unsqueeze(1)
         bidr_attention_mask = (1-bidr_attention_mask.float())*-100000
         return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, und_img_idx, und_image_embeds, bidr_attention_mask
