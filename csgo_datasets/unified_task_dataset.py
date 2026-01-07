@@ -637,8 +637,7 @@ class UniLIPMultiTaskDataset(Dataset):
             }
             # 处理 <image> token 替换
             sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]))
-            # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX)
-            # has_image=True 很重要，防止 tokenizer 报错
+            # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
             labels = preprocess_dict["labels"][0]
