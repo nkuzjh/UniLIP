@@ -4815,3 +4815,6 @@ weight_decay=0.0,
 2026-01-07 23:25:17 - INFO - total_loss: 0.37507838010787964, masked_loc_loss: 0.030035492032766342, masked_gen_loss: 0.345042884349823 - (2851716:unified_unilip.py:926)
 2026-01-07 23:25:23 - INFO - total_loss: 0.38350558280944824, masked_loc_loss: 0.01220017857849598, masked_gen_loss: 0.3713054060935974 - (2851716:unified_unilip.py:926)
 2026-01-07 23:25:30 - INFO - total_loss: 0.32707035541534424, masked_loc_loss: 0.041678085923194885, masked_gen_loss: 0.28539228439331055 - (2851716:unified_unilip.py:926)
+2026-01-07 23:25:36 - INFO - total_loss: 0.37799912691116333, masked_loc_loss: 0.031174063682556152, masked_gen_loss: 0.3468250632286072 - (2851716:unified_unilip.py:926)
+2026-01-07 23:25:43 - INFO - total_loss: 0.3881153464317322, masked_loc_loss: 0.048705004155635834, masked_gen_loss: 0.33941033482551575 - (2851716:unified_unilip.py:926)
+2026-01-07 23:25:49 - INFO - total_loss: 0.36656028032302856, masked_loc_loss: 0.05843473598361015, masked_gen_loss: 0.3081255555152893 - (2851716:unified_unilip.py:926)
