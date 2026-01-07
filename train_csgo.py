@@ -123,6 +123,7 @@ class ModelArguments:
     dit_path: Optional[str] = field(default="")
 
     action_dit_layer: Optional[int] = field(default=3)
+    is_action_dit_dense_timestep: Optional[bool] = field(default=False)
 
 
 
@@ -1449,6 +1450,8 @@ def train(attn_implementation=None):
     #     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     # return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
     # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
+
+    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
 
     if csgo_config.get("is_multi_task", False):
         train_dataset = UniLIPMultiTaskDataset(csgo_config, tokenizer, data_args)

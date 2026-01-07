@@ -137,11 +137,14 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.projector = nn.Linear(llm_hidden_size, self.dit.config.caption_channels)
 
             # --- C. [NEW] Localization Path (Action Connector & Flow Matching Heads) ---
-            # 1. Action Connector: 同样使用 InternVL 的后几层切片 (复用 llm_connector 的思路)
-            # 这里的 config.action_dit_layer 可以在 model_args 中定义，默认比如 3 或 6
 
+            # # 输入action_dit前的feature首先进行normalize
             # self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
+            # 1. Action Dit
+            # 这里的 config.action_dit_layer 可以在 model_args 中定义，默认比如 3 或 6
+            action_layers = getattr(config, "action_dit_layer", 3)
+            # 同样使用 InternVL 的后几层切片 (复用 llm_connector 的思路)
             internvl_model2 = AutoModel.from_pretrained(
                 path,
                 torch_dtype=torch.bfloat16,
@@ -149,7 +152,6 @@ class Unified_UniLIP_InternVL_MetaModel:
                 trust_remote_code=True,
                 attn_implementation="eager"
             )
-            action_layers = getattr(config, "action_dit_layer", 3)
             self.action_dit = copy.deepcopy(internvl_model2.language_model)#.to(torch.bfloat16)
             del self.action_dit.layers[:-action_layers]
             del self.action_dit.embed_tokens # 不需要 Embedding 层，直接吃 Hidden States
@@ -160,11 +162,11 @@ class Unified_UniLIP_InternVL_MetaModel:
             # self.action_norm = nn.LayerNorm(llm_hidden_size, eps=1e-6)#.to(torch.bfloat16)
             self.action_in_proj = nn.Linear(self.action_dim, llm_hidden_size)#.to(torch.bfloat16)
 
-            # 时间步 MLP
+            # 3. 时间步 MLP
             self.time_mlp_in = nn.Linear(llm_hidden_size, llm_hidden_size)#.to(torch.bfloat16)
             self.time_mlp_out = nn.Linear(llm_hidden_size, llm_hidden_size)#.to(torch.bfloat16)
 
-            # 输出投影 (Hidden -> Action Velocity)
+            # 4. 输出投影 (Hidden -> Action Velocity)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.action_dim)#.to(torch.bfloat16)
 
             self.action_in_proj.apply(init_weights)
@@ -319,6 +321,7 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [Simulating previous code structure for brevity]
         self.config.action_horizon = getattr(model_args, 'action_horizon', 1) # CS2 Pose is typically single step
         self.config.action_dim = getattr(model_args, 'action_dim', 5)
+        self.config.is_action_dit_dense_timestep = getattr(model_args, 'is_action_dit_dense_timestep', False)
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         if 1:
@@ -337,6 +340,29 @@ class Unified_UniLIP_InternVL_MetaModel:
             del self.action_dit.layers[:-getattr(model_args, "action_dit_layer", 3)]
             del self.action_dit.embed_tokens
             logging.info("Action DiT weights initialized successfully!")
+
+            if getattr(self.config, 'is_action_dit_dense_timestep', False):
+                # 替换 Norm 层为 AdaRMS
+                logging.info("Replacing action_dit norms with AdaRMS...")
+                # 1. 替换每一层的 Norm
+                for layer in self.action_dit.layers:
+                    # 替换 input_layernorm
+                    old_norm = layer.input_layernorm
+                    new_norm = Qwen2RMSNormAdaRMS(llm_hidden_size, cond_dim=llm_hidden_size, eps=old_norm.variance_epsilon)
+                    new_norm.weight.data = old_norm.weight.data # 继承预训练权重
+                    layer.input_layernorm = new_norm
+
+                    # 替换 post_attention_layernorm
+                    old_post_norm = layer.post_attention_layernorm
+                    new_post_norm = Qwen2RMSNormAdaRMS(llm_hidden_size, cond_dim=llm_hidden_size, eps=old_post_norm.variance_epsilon)
+                    new_post_norm.weight.data = old_post_norm.weight.data
+                    layer.post_attention_layernorm = new_post_norm
+
+                # 2. 替换 Final Norm
+                old_final_norm = self.action_dit.norm
+                new_final_norm = Qwen2RMSNormAdaRMS(llm_hidden_size, cond_dim=llm_hidden_size, eps=old_final_norm.variance_epsilon)
+                new_final_norm.weight.data = old_final_norm.weight.data
+                self.action_dit.norm = new_final_norm
 
             # Initialize Heads
             llm_hidden_size = self.config.text_config.hidden_size
@@ -422,8 +448,9 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
         # noisy_actions: [BS, 1, Action_Dim]
         action_emb = self.get_model().action_in_proj(noisy_actions) # [BS, 1, Hidden]
 
-        # 这里action_emb + adarms_cond，显式地将time传入action_embed，避免修改action_dit(internvl)的代码
-        action_emb = action_emb + adarms_cond.unsqueeze(1)
+        if not getattr(self.config, 'is_action_dit_dense_timestep', False):
+            # 这里action_emb + adarms_cond，显式地将time传入action_embed，避免修改action_dit(internvl)的代码
+            action_emb = action_emb + adarms_cond.unsqueeze(1)
 
         return action_emb, adarms_cond
 
@@ -583,6 +610,142 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
                 for p in self.get_output_embeddings().parameters():
                     p.requires_grad = False
 
+
+## transformers fix/lerobot_openpi branch
+class GemmaRMSNorm(nn.Module):
+    def __init__(self, dim: int, eps: float = 1e-6, cond_dim: Optional[int] = None):
+        super().__init__()
+        self.eps = eps
+        self.dim = dim
+        self.cond_dim = cond_dim
+
+        # Dense layer for adaptive normalization (if cond_dim is provided)
+        if cond_dim is not None:
+            #self.dense = nn.Linear(cond_dim, dim * 3, bias=True, dtype=torch.bfloat16)
+            self.dense = nn.Linear(cond_dim, dim * 3, bias=True)
+            # Initialize with zeros (matches source implementation)
+            nn.init.zeros_(self.dense.weight)
+        else:
+            self.weight = nn.Parameter(torch.zeros(dim, dtype=torch.bfloat16))
+            self.dense = None
+
+    def _norm(self, x):
+        # Compute variance in float32 (like the source implementation)
+        var = torch.mean(torch.square(x.float()), dim=-1, keepdim=True)
+        # Compute normalization in float32
+        normed_inputs = x * torch.rsqrt(var + self.eps)
+        return normed_inputs
+
+    def forward(self, x, cond=None):
+        dtype = x.dtype  # original dtype, could be half-precision
+        normed_inputs = self._norm(x)
+
+        if cond is None or self.dense is None:
+            # regular RMSNorm
+            # scale by learned parameter in float32 (matches source implementation)
+            normed_inputs = normed_inputs * (1.0 + self.weight.float())
+            return normed_inputs.to(dtype), None  # return in original dtype with None gate
+
+        # adaptive RMSNorm (if cond is provided and dense layer exists)
+        if cond.shape[-1] != self.cond_dim:
+            raise ValueError(f"Expected cond dimension {self.cond_dim}, got {cond.shape[-1]}")
+
+        #self.dense.to(dtype=torch.bfloat16).to(dtype=torch.float32)
+        modulation = self.dense(cond)
+        # Reshape modulation to broadcast properly: [batch, 1, features] for [batch, seq, features]
+        if len(x.shape) == 3:  # [batch, seq, features]
+            modulation = modulation.unsqueeze(1)
+
+        scale, shift, gate = torch.chunk(modulation, 3, dim=-1)
+
+        # Apply adaptive normalization: use model weight dtype to ensure compatibility
+        # model_dtype = self.dense.weight.dtype  # Use the model's dtype (bfloat16)
+        # scale = scale.to(model_dtype)
+        # shift = shift.to(model_dtype)
+        # gate = gate.to(model_dtype)
+        # normed_inputs = normed_inputs.to(model_dtype)  # Convert normed_inputs to model dtype
+
+        normed_inputs = normed_inputs * (1 + scale.to(torch.float32)) + shift.to(torch.float32)
+
+        return normed_inputs.to(dtype), gate.to(dtype)
+
+    def extra_repr(self):
+        repr_str = f"{tuple(self.weight.shape)}, eps={self.eps}"
+        if self.dense is not None:
+            repr_str += f", adaptive=True, cond_dim={self.cond_dim}"
+        return repr_str
+
+# 将此类添加到 unified_unilip.py
+class Qwen2RMSNormAdaRMS(nn.Module):
+    def __init__(self, hidden_size, cond_dim, eps=1e-6):
+        super().__init__()
+        # self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.variance_epsilon = eps
+
+        # [修改] 输出维度变为 3倍 (Scale, Shift, Gate)
+        self.linear = nn.Linear(cond_dim, hidden_size * 3)
+
+        # 零初始化 (保持 AdaLN-Zero 的特性)
+        nn.init.zeros_(self.linear.weight)
+        nn.init.zeros_(self.linear.bias)
+
+    def forward(self, hidden_states, cond):
+        # 1. 基础 RMSNorm 计算 (不带仿射变换)
+        input_dtype = hidden_states.dtype
+        hidden_states = hidden_states.to(torch.float32)
+        variance = hidden_states.pow(2).mean(-1, keepdim=True)
+        hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+
+        # 使用预训练的 weight 进行缩放 (保留原模型知识)
+        # normed = self.weight * hidden_states.to(input_dtype)
+
+        # 2. AdaRMS 调制
+        # 投影: [BS, Cond_Dim] -> [BS, 3 * Hidden]
+        modulation = self.linear(cond)
+        modulation = modulation.unsqueeze(1) # [BS, 1, 3 * Hidden]
+
+        # 切分: Scale, Shift, Gate
+        scale, shift, gate = torch.chunk(modulation, 3, dim=-1)
+
+        # 应用: Norm(x) * (1 + scale) + shift
+        # 即使是 RMSNorm，在 Diffusion 中也习惯加上 Shift 以增强表达能力
+        normed = hidden_states.to(input_dtype) * (1 + scale) + shift
+
+        # [关键] 返回 归一化后的特征 和 门控值
+        return normed, gate
+
+# class Qwen2RMSNormAdaRMS(nn.Module):
+#     def __init__(self, hidden_size, cond_dim, eps=1e-6):
+#         super().__init__()
+#         self.weight = nn.Parameter(torch.ones(hidden_size))
+#         self.variance_epsilon = eps
+
+#         # [AdaRMS 核心] 条件投影层
+#         # 将 cond (时间步特征) 映射为缩放系数
+#         self.linear = nn.Linear(cond_dim, hidden_size)
+
+#         # [关键] 零初始化
+#         # 确保初始状态下 scale=0，输出等于原始 RMSNorm，不破坏预训练权重
+#         nn.init.zeros_(self.linear.weight)
+#         nn.init.zeros_(self.linear.bias)
+
+#     def forward(self, hidden_states, cond):
+#         # 1. 标准 RMSNorm 计算
+#         input_dtype = hidden_states.dtype
+#         hidden_states = hidden_states.to(torch.float32)
+#         variance = hidden_states.pow(2).mean(-1, keepdim=True)
+#         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
+#         normed = self.weight * hidden_states.to(input_dtype)
+
+#         # 2. AdaRMS 调制
+#         # cond: [BS, Cond_Dim] -> scale: [BS, Hidden]
+#         scale = self.linear(cond)
+
+#         # 广播维度: [BS, Hidden] -> [BS, 1, Hidden] 以匹配序列长度
+#         scale = scale.unsqueeze(1)
+
+#         # 调制: Norm(x) * (1 + scale)
+#         return normed * (1 + scale)
 
 
 # ==========================================
@@ -883,18 +1046,29 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # Reuse bidr mask logic or standard causal. Since it's InternVL, it expects eager/causal usually.
                 # For simplicity, we assume bidr mask logic handles the sequence extension as default.
                 # 注意在OpenPi0.5中使用的gemma_expert_model还会接受adarms_cond(一个跟timestep有关的embedding)作为输入
-                action_outputs = self.model.action_dit(
-                    inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
-                    attention_mask=action_dit_att_mask, #torch.Size([128, 708])
-                    position_ids=action_dit_pos_ids, #torch.Size([128, 708])
-                    output_hidden_states=True,
-                    # adarms_cond=[None, adarms_cond],
-                    # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
-                        # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
-                        # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
-                    return_dict=return_dict,
-                    use_cache=False
-                )
+                if getattr(self.config, 'is_action_dit_dense_timestep', False):
+                    action_outputs = self.action_dit_forward_with_adarmscond(
+                        inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
+                        attention_mask=action_dit_att_mask, #torch.Size([128, 708])
+                        position_ids=action_dit_pos_ids, #torch.Size([128, 708])
+                        adarms_cond=adarms_cond,
+                        # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+                            # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+                            # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+                    )
+                else:
+                    action_outputs = self.model.action_dit(
+                        inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
+                        attention_mask=action_dit_att_mask, #torch.Size([128, 708])
+                        position_ids=action_dit_pos_ids, #torch.Size([128, 708])
+                        output_hidden_states=True,
+                        # adarms_cond=[None, adarms_cond],
+                        # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+                            # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+                            # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+                        return_dict=return_dict,
+                        use_cache=False
+                    )
 
                 # Get output corresponding to the Action Token (Last token)
                 # output: [BS, Seq+1, Hidden]
@@ -932,6 +1106,67 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+    def action_dit_forward_with_adarmscond(
+        self,
+        hidden_states,#torch.Size([128, 708, 896])
+        attention_mask, #torch.Size([128, 708])
+        position_ids, #torch.Size([128, 708])
+        adarms_cond,
+        # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+            # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+            # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+
+    ):
+        # 1. 准备 Rotary Embedding (Qwen2 需要)
+        kv_seq_len = hidden_states.shape[1]
+        cos, sin = self.model.action_dit.rotary_emb(hidden_states, position_ids)
+
+        # [可选] 在 Loop 之前
+        # 利用 transformers 提供的 helper 扩展 mask
+        # 注意：Qwen2 的实现可能需要 4D mask
+        extended_attention_mask = self.model.get_extended_attention_mask(
+            attention_mask,
+            attention_mask.shape,
+            attention_mask.device
+        )# 在 layer.self_attn 中使用 extended_attention_mask
+
+        # 2. 逐层前向传播
+        for i, layer in enumerate(self.model.action_dit.layers):
+
+            # --- Attention Block ---
+            residual = hidden_states
+
+            # [关键] 调用 AdaRMS Input Norm (传入 cond)
+            # adarms_cond 是我们在 embed_action_suffix 里算出来的
+            hidden_states, gate_attn = layer.input_layernorm(hidden_states, cond=adarms_cond)
+
+            # Self Attention
+            # Qwen2 的 self_attn forward 签名通常是:
+            # (hidden_states, attention_mask, position_ids, past_key_values, output_attentions, use_cache, **kwargs)
+            # 注意：我们需要手动处理 cos/sin 的传入，Qwen2 内部通常会自动处理，但我们需要确保 position_ids 正确
+            hidden_states, self_attn_weights, present_key_value = layer.self_attn(
+                hidden_states=hidden_states,
+                attention_mask=attention_mask[:, None, :, :], # 需要广播为 [BS, 1, Seq, Seq] 或者是 FlashAttn 格式
+                position_ids=position_ids,
+                past_key_values=None,
+                output_attentions=False,
+                use_cache=False,
+            )
+            hidden_states = residual + gate_attn * hidden_states
+            # --- MLP Block ---
+            residual = hidden_states
+            # [关键] 调用 AdaRMS Post Norm (传入 cond)
+            hidden_states, gate_mlp = layer.post_attention_layernorm(hidden_states, cond=adarms_cond)
+            hidden_states = layer.mlp(hidden_states)
+            hidden_states = residual + gate_mlp * hidden_states
+
+        # 3. Final Norm
+        hidden_states, _ = self.model.action_dit.norm(hidden_states, cond=adarms_cond)
+        # 4. 提取输出 (保持原逻辑)
+        action_outputs = hidden_states
+
+        return action_outputs
 
     @torch.no_grad()
     def generate_image(
