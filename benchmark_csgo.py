@@ -350,11 +350,111 @@ if __name__ == "__main__":
 
 
 
-# python eval_metrics.py --gt ./data/gt --pred ./data/pred --all
-# python eval_metrics.py --gt ./data/gt --pred ./data/pred --fid --lpips
-# python eval_metrics.py --gt ./data/gt --pred ./data/pred --all --batch_size 8
+# python benchmark_csgo.py --gt ./data/gt --pred ./data/pred --all
+# python benchmark_csgo.py --gt ./data/gt --pred ./data/pred --fid --lpips
+# python benchmark_csgo.py --gt ./data/gt --pred ./data/pred --all --batch_size 8
 
 
-# python eval_metrics.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_dust2 --all --batch_size 8
+# python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_dust2 --all --batch_size 8
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 33.4978
+# LPIPS: 0.2629
+# PSNR: 19.8852
+# SSIM: 0.5160
+# CLIP: 0.8988
+# Aesthetic: 4.4276
+# ==============================
+
+# CUDA_VISIBLE_DEVICES=1  python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_nuke --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 14.9368
+# LPIPS: 0.3799
+# PSNR: 16.8579
+# SSIM: 0.4600
+# CLIP: 0.9020
+# Aesthetic: 4.9152
+# ==============================
+
+# CUDA_VISIBLE_DEVICES=0  python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_ancient --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 17.6177
+# LPIPS: 0.2699
+# PSNR: 21.3446
+# SSIM: 0.4513
+# CLIP: 0.9346
+# Aesthetic: 4.9462
 
 
+
+
+# python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp1/test_20251231_005658/gen_imgs --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 14.7104
+# LPIPS: 0.2806
+# PSNR: 17.8349
+# SSIM: 0.4711
+# CLIP: 0.9099
+# Aesthetic: 4.7625
+# ==============================
+
+
+
+
+# python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp2/test_20260103_144824/gen_imgs/de_dust2 --all --batch_size
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 14.8917
+# LPIPS: 0.2797
+# PSNR: 17.8463
+# SSIM: 0.4699
+# CLIP: 0.9114
+# Aesthetic: 4.7218
+# ==============================
+
+
+# python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp2/test_20260103_144824/gen_imgs/de_nuke --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 13.7437
+# LPIPS: 0.3116
+# PSNR: 18.9030
+# SSIM: 0.5467
+# CLIP: 0.9117
+# Aesthetic: 4.8210
+# ==============================
+
+
+# python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp2/test_20260103_144824/gen_imgs/de_ancient --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 15.1631
+# LPIPS: 0.2801
+# PSNR: 21.0726
+# SSIM: 0.4663
+# CLIP: 0.9327
+# Aesthetic: 4.9281
+# ==============================
+
+
+# python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp3_1/test_20260109_013431/gen_imgs/de_dust2 --all --batch_size 2
+# ==============================
+# 📊 Final Results
+# ==============================
+# FID: 38.8108
+# LPIPS: 0.5660
+# PSNR: 11.9137
+# SSIM: 0.3808
+# CLIP: 0.8030
+# Aesthetic: 4.7126
+# ==============================

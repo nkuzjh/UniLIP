@@ -1377,6 +1377,8 @@ def train(attn_implementation=None):
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
     logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
+    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
+
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False
     # fix dit False
@@ -1450,8 +1452,6 @@ def train(attn_implementation=None):
     #     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     # return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
     # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-
-    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
 
     if csgo_config.get("is_multi_task", False):
         train_dataset = UniLIPMultiTaskDataset(csgo_config, tokenizer, data_args)

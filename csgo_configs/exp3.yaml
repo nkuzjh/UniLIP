@@ -11,7 +11,7 @@ data_dir: "data/preprocessed_data"
 train_maps: ['de_dust2','de_nuke', 'de_ancient']
 val_maps: ['de_dust2','de_nuke', 'de_ancient']
 test_maps: ['de_dust2','de_nuke', 'de_ancient']
-# debug_num_train_data: 1000
+# debug_num_train_data: 5000
 # debug_num_val_data: 1000
 
 # ckpt_path: "outputs/csgo_1b/exp2/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"

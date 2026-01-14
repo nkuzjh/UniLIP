@@ -322,6 +322,7 @@ class Unified_UniLIP_InternVL_MetaModel:
         self.config.action_horizon = getattr(model_args, 'action_horizon', 1) # CS2 Pose is typically single step
         self.config.action_dim = getattr(model_args, 'action_dim', 5)
         self.config.is_action_dit_dense_timestep = getattr(model_args, 'is_action_dit_dense_timestep', False)
+        llm_hidden_size = self.multi_modal_projector[-1].weight.shape[-1]
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         if 1:
@@ -341,7 +342,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             del self.action_dit.embed_tokens
             logging.info("Action DiT weights initialized successfully!")
 
-            if getattr(self.config, 'is_action_dit_dense_timestep', False):
+            if getattr(model_args, 'is_action_dit_dense_timestep', False):
                 # 替换 Norm 层为 AdaRMS
                 logging.info("Replacing action_dit norms with AdaRMS...")
                 # 1. 替换每一层的 Norm
@@ -679,7 +680,7 @@ class GemmaRMSNorm(nn.Module):
 class Qwen2RMSNormAdaRMS(nn.Module):
     def __init__(self, hidden_size, cond_dim, eps=1e-6):
         super().__init__()
-        # self.weight = nn.Parameter(torch.ones(hidden_size))
+        self.weight = nn.Parameter(torch.ones(hidden_size))
         self.variance_epsilon = eps
 
         # [修改] 输出维度变为 3倍 (Scale, Shift, Gate)
@@ -692,24 +693,24 @@ class Qwen2RMSNormAdaRMS(nn.Module):
     def forward(self, hidden_states, cond):
         # 1. 基础 RMSNorm 计算 (不带仿射变换)
         input_dtype = hidden_states.dtype
-        hidden_states = hidden_states.to(torch.float32)
-        variance = hidden_states.pow(2).mean(-1, keepdim=True)
+        hidden_states = hidden_states.to(torch.float32)#torch.Size([2, 708, 896])
+        variance = hidden_states.pow(2).mean(-1, keepdim=True)#torch.Size([2, 708, 1])
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
 
         # 使用预训练的 weight 进行缩放 (保留原模型知识)
-        # normed = self.weight * hidden_states.to(input_dtype)
+        normed = self.weight * hidden_states.to(input_dtype)
 
         # 2. AdaRMS 调制
         # 投影: [BS, Cond_Dim] -> [BS, 3 * Hidden]
-        modulation = self.linear(cond)
+        modulation = self.linear(cond)#torch.Size([2, 2688])
         modulation = modulation.unsqueeze(1) # [BS, 1, 3 * Hidden]
 
         # 切分: Scale, Shift, Gate
-        scale, shift, gate = torch.chunk(modulation, 3, dim=-1)
+        scale, shift, gate = torch.chunk(modulation, 3, dim=-1)#3 * torch.Size([2, 1, 896])
 
         # 应用: Norm(x) * (1 + scale) + shift
         # 即使是 RMSNorm，在 Diffusion 中也习惯加上 Shift 以增强表达能力
-        normed = hidden_states.to(input_dtype) * (1 + scale) + shift
+        normed = normed.to(input_dtype) * (1 + scale) + shift
 
         # [关键] 返回 归一化后的特征 和 门控值
         return normed, gate
@@ -831,7 +832,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # We need to concat them for processing if both exist.
 
         combined_und_images = und_image
-        if aux_image is not None and aux_image.sum() != 0:
+        if aux_image is not None:# and aux_image.sum() != 0:
             if combined_und_images is not None:
                 # Assuming simple concat in batch dimension for processing, then splitting?
                 # Or Dataset handles embedding replacement.
@@ -962,9 +963,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Apply Mask: Only count loss for Gen samples
                     masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
                 else:
-                    masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
+                    masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
             else:
-                masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
+                masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
@@ -1048,7 +1049,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # 注意在OpenPi0.5中使用的gemma_expert_model还会接受adarms_cond(一个跟timestep有关的embedding)作为输入
                 if getattr(self.config, 'is_action_dit_dense_timestep', False):
                     action_outputs = self.action_dit_forward_with_adarmscond(
-                        inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
+                        hidden_states=action_dit_inputs, #torch.Size([128, 708, 896])
                         attention_mask=action_dit_att_mask, #torch.Size([128, 708])
                         position_ids=action_dit_pos_ids, #torch.Size([128, 708])
                         adarms_cond=adarms_cond,
@@ -1056,6 +1057,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                             # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
                             # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
                     )
+                    action_hidden = action_outputs
                 else:
                     action_outputs = self.model.action_dit(
                         inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
@@ -1070,9 +1072,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         use_cache=False
                     )
 
-                # Get output corresponding to the Action Token (Last token)
-                # output: [BS, Seq+1, Hidden]
-                action_hidden = action_outputs.hidden_states[-1][:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+                    # Get output corresponding to the Action Token (Last token)
+                    # output: [BS, Seq+1, Hidden]
+                    action_hidden = action_outputs.hidden_states[-1][:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
 
                 #### TODO
                 # # 第二次综上所述，先忽略zeros填充的风险点，跑通模型。后续再修改action_dit的代码来适配adarms_cond
@@ -1094,7 +1096,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # Apply Mask: Only count loss for Loc samples
                 masked_loc_loss = (loc_loss * loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
             else:
-                masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
+                masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
         total_loss = masked_gen_loss + masked_loc_loss
         logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item()}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item()}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item()}")
@@ -1120,16 +1122,71 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     ):
         # 1. 准备 Rotary Embedding (Qwen2 需要)
         kv_seq_len = hidden_states.shape[1]
-        cos, sin = self.model.action_dit.rotary_emb(hidden_states, position_ids)
+        # cos, sin = self.model.action_dit.rotary_emb(hidden_states, position_ids)
+        position_embeddings = self.model.action_dit.rotary_emb(hidden_states, position_ids)
 
         # [可选] 在 Loop 之前
         # 利用 transformers 提供的 helper 扩展 mask
         # 注意：Qwen2 的实现可能需要 4D mask
-        extended_attention_mask = self.model.get_extended_attention_mask(
-            attention_mask,
-            attention_mask.shape,
-            attention_mask.device
-        )# 在 layer.self_attn 中使用 extended_attention_mask
+        # extended_attention_mask = self.model.action_dit.get_extended_attention_mask(
+        #     attention_mask,
+        #     attention_mask.shape,
+        #     attention_mask.device
+        # )# 在 layer.self_attn 中使用 extended_attention_mask
+
+        # from transformers.masking_utils import create_causal_mask
+        # mask_kwargs = {
+        #         "config": self.model.action_dit.config,
+        #         "input_embeds": hidden_states,
+        #         "attention_mask": attention_mask,
+        #         "cache_position": None,
+        #         "past_key_values": None,
+        #         "position_ids": position_ids,
+        #     }
+        # extended_attention_mask = create_causal_mask(**mask_kwargs)
+        # ============================================================
+        # [修复] 使用 Qwen2 内部的 _update_causal_mask
+        # ============================================================
+        # 这个方法会自动处理：
+        # 1. Causal Mask (下三角)
+        # 2. Padding Mask (根据传入的 attention_mask)
+        # 3. 维度扩展 -> [BS, 1, Seq, Seq]
+        # 4. Flash Attention 兼容性 (如果是 FA2，它可能返回 None 或特定格式)
+
+        # 为了兼容 transformers 版本，我们需要构造 cache_position (通常是 arange)
+        # 如果报错缺少 cache_position，可以用下面的简单逻辑生成
+        # cache_position = torch.arange(
+        #     0, kv_seq_len, device=hidden_states.device
+        # )
+        # causal_mask = self.model.action_dit._update_causal_mask(
+        #     attention_mask,
+        #     hidden_states,
+        #     cache_position,
+        #     past_key_values=None,
+        #     output_attentions=False
+        # )
+        # 备用方案：手动构建 4D Causal Mask
+        batch_size, seq_len = hidden_states.shape[:2]
+
+        # 1. 创建下三角 Causal Mask [Seq, Seq]
+        # min_dtype 是 float 的最小值 (e.g. -65504 for fp16, -3.4e38 for fp32)
+        min_dtype = torch.finfo(hidden_states.dtype).min
+        causal_mask = torch.full((seq_len, seq_len), min_dtype, device=hidden_states.device, dtype=hidden_states.dtype)
+        causal_mask = torch.triu(causal_mask, diagonal=1) # 上三角为负无穷，下三角为0
+
+        # 2. 扩展维度 [1, 1, Seq, Seq]
+        causal_mask = causal_mask[None, None, :, :]
+
+        # 3. 处理 Padding Mask [BS, Seq] -> [BS, 1, 1, Seq]
+        # 注意：attention_mask 是 1=Valid, 0=Pad
+        # 我们需要把 0 变成负无穷，1 变成 0
+        padding_mask = torch.zeros_like(attention_mask, dtype=hidden_states.dtype)
+        padding_mask = padding_mask.masked_fill(attention_mask == 0, min_dtype)
+        padding_mask = padding_mask[:, None, None, :]
+
+        # 4. 合并 [BS, 1, Seq, Seq]
+        # 利用广播机制：Causal (mask future) + Padding (mask pad tokens)
+        combined_mask = causal_mask + padding_mask
 
         # 2. 逐层前向传播
         for i, layer in enumerate(self.model.action_dit.layers):
@@ -1145,10 +1202,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Qwen2 的 self_attn forward 签名通常是:
             # (hidden_states, attention_mask, position_ids, past_key_values, output_attentions, use_cache, **kwargs)
             # 注意：我们需要手动处理 cos/sin 的传入，Qwen2 内部通常会自动处理，但我们需要确保 position_ids 正确
-            hidden_states, self_attn_weights, present_key_value = layer.self_attn(
-                hidden_states=hidden_states,
-                attention_mask=attention_mask[:, None, :, :], # 需要广播为 [BS, 1, Seq, Seq] 或者是 FlashAttn 格式
+            hidden_states, _ = layer.self_attn(
+                hidden_states=hidden_states,#torch.Size([2, 708, 896])
+                attention_mask=combined_mask,#causal_mask,#extended_attention_mask[:, None, :, :], # 需要广播为 [BS, 1, Seq, Seq] 或者是 FlashAttn 格式
                 position_ids=position_ids,
+                position_embeddings=position_embeddings,
                 past_key_values=None,
                 output_attentions=False,
                 use_cache=False,
@@ -1453,6 +1511,197 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             v_t = self.get_model().action_out_proj(action_feat)
 
             # Euler Step
+            x_t = x_t + dt * v_t
+            t += dt
+
+        return x_t # Final Denoised Action [BS, 1, 5]
+
+
+
+    # ==========================================
+    # 4. [NEW] Inference: Generate Action (Flow Matching)
+    # ==========================================
+    @torch.no_grad()
+    def generate_action2(
+        self,
+        text: List[str],
+        tokenizer: AutoTokenizer,
+        und_images: Optional[torch.Tensor] = None,
+        aux_images: Optional[torch.Tensor] = None,
+        num_steps: int = 10,
+        generator: Optional[torch.Generator] = None
+    ):
+        """
+        Run inference for Localization task using Flow Matching Euler Solver.
+        Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
+        """
+        # 1. Tokenize & Prepare Inputs
+        inputs = tokenizer(text, padding="longest", return_tensors="pt")
+        device = self.get_model().device
+        attention_mask = inputs.attention_mask.to(device)
+        input_ids = inputs.input_ids.to(device)  # B x N
+
+        # 2. Get Vision Features
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+
+        und_image_embeds = None
+        if und_images is not None:
+            und_image_embeds = self.model.get_image_features(
+                pixel_values=und_images.to(device, dtype=self.get_model().vision_tower.dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        aux_image_embeds = None
+        if aux_images is not None:
+            aux_image_embeds = self.model.get_image_features(
+                pixel_values=aux_images.to(device, dtype=self.get_model().vision_tower.dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        # 3. Embed Text & Replace Image Tokens
+        text_embeds = self.get_model().language_model.embed_tokens(input_ids)
+        und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
+
+        if und_images is not None and und_image_idx.any():
+            # Broadcast embeddings to batch size if needed (e.g. 1 image for all prompts)
+            # Assuming standard [BS, C, H, W] input for simplicity based on collator
+            # If batch sizes match, no repeat needed. If single image for batch, repeat.
+            if und_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                 und_image_embeds = und_image_embeds.repeat(text_embeds.shape[0], 1, 1)
+            text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).flatten(0,1)
+
+        if aux_images is not None and aux_image_idx.any():
+            if aux_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                 aux_image_embeds = aux_image_embeds.repeat(text_embeds.shape[0], 1, 1)
+            text_embeds[aux_image_idx] = aux_image_embeds.to(text_embeds.device).flatten(0,1)
+
+        # 4. Prepare Context Position IDs
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
+
+        # 5. Forward Context (LLM)
+        # We need the last hidden state as the "Context" for the Action Head
+        outputs = self.model.language_model(
+            inputs_embeds=text_embeds,
+            attention_mask=attention_mask.bool(),
+            position_ids=position_ids,
+            output_hidden_states=True,
+            return_dict=True,
+            use_cache=False # Inference usually benefits from cache, but here we just need the last state once
+        )
+        # [BS, Seq, Hidden]
+        hidden_states = outputs.hidden_states[-1]
+
+        # Re-fill image embeddings (Skip Connection logic)
+        # Important: indices must match flattened structure or batch structure
+        if und_image_embeds is not None and und_image_idx.any():
+             hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+        if aux_image_embeds is not None and aux_image_idx.any():
+             hidden_states[aux_image_idx] = aux_image_embeds.to(hidden_states.device).flatten(0,1)
+
+        # 6. Initialize Flow Matching Loop
+        bsize = input_ids.shape[0]
+        action_dim = self.model.config.action_dim
+        # # Sample initial noise x_1
+        # x_t = randn_tensor(
+        #     (bsize, 1, action_dim),
+        #     generator=generator,
+        #     device=device,
+        #     dtype=hidden_states.dtype
+        # )
+        noise = self.sample_noise((bsize, 1, action_dim), device=device)
+
+        dt = -1.0 / num_steps
+        # dt tensor for calculation
+        dt = torch.tensor(dt, device=device, dtype=hidden_states.dtype)
+
+        x_t = noise
+        t = torch.tensor(1.0, device=device, dtype=hidden_states.dtype)
+
+        # Calculate Valid Lengths for Right-Shift Insertion
+        # [BS, 1]
+        valid_lens = attention_mask.sum(dim=1, keepdim=True).long()
+        bs, seq_len, hidden_dim = hidden_states.shape
+
+        # 7. Euler Solver Loop
+        # Stop at t=0 (or close to it, Pi0 uses -dt/2 for safety)
+        while t >= -dt / 2:
+
+            # A. Embed Suffix (Noisy Action + Time)
+            expanded_time = t.expand(bsize)
+            suffix_emb, adarms_cond = self.embed_action_suffix(
+                x_t,
+                expanded_time,
+                llm_hidden_size=self.model.config.text_config.hidden_size,
+                device=device,
+                dtype=hidden_states.dtype
+            )
+
+            # B. Construct Action Inputs (Right Shift & Fill Strategy)
+            # Reusing the robust logic from forward pass to avoid NaN
+
+            # 1. Inputs: Concat Hidden + Last Token (Safe Padding)
+            last_token_states = hidden_states[:, -1:, :]
+            extended_inputs = torch.cat([hidden_states, last_token_states], dim=1)
+
+            # Scatter Suffix to valid positions
+            scatter_indices = valid_lens.unsqueeze(-1).expand(-1, -1, hidden_dim)
+            action_dit_inputs = extended_inputs.scatter(1, scatter_indices, suffix_emb)
+
+            # 2. Mask: Extend and Set True at Action Position
+            extended_mask = torch.cat([
+                attention_mask,
+                torch.zeros((bs, 1), device=device, dtype=attention_mask.dtype)
+            ], dim=1)
+            mask_indices = valid_lens.view(-1, 1)
+            action_dit_att_mask = extended_mask.scatter(1, mask_indices, 1)
+
+            # 3. Position IDs: Extend and Set to Valid Length Index
+            extended_pos_ids = torch.cat([
+                position_ids,
+                torch.zeros((bs, 1), device=device, dtype=position_ids.dtype)
+            ], dim=1)
+            action_pos_ids = valid_lens.view(-1, 1)
+            action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
+
+            # # Safety Clamp
+            # max_seq_len = action_dit_inputs.shape[1]
+            # action_dit_pos_ids = action_dit_pos_ids.clamp(max=max_seq_len - 1)
+
+            # C. Forward Action DiT
+            if getattr(self.config, 'is_action_dit_dense_timestep', False):
+                # Use custom forward loop with AdaRMS
+                action_outputs = self.action_dit_forward_with_adarmscond(
+                    hidden_states=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    adarms_cond=adarms_cond
+                )
+                # Note: custom forward returns hidden_states directly
+                all_hidden_states = action_outputs
+            else:
+                # Use standard model forward
+                action_outputs = self.model.action_dit(
+                    inputs_embeds=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    output_hidden_states=True,
+                    return_dict=True,
+                    use_cache=False
+                )
+                all_hidden_states = action_outputs.hidden_states[-1]
+
+            # D. Extract Action Token Output
+            # Gather from the same indices we scattered to
+            gather_indices = valid_lens.unsqueeze(-1).expand(-1, -1, hidden_dim)
+            action_feat = all_hidden_states.gather(1, gather_indices) # [BS, 1, Hidden]
+
+            # E. Predict Velocity & Step
+            v_t = self.get_model().action_out_proj(action_feat)
+
             x_t = x_t + dt * v_t
             t += dt
 

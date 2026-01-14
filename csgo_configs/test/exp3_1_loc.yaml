@@ -1,0 +1,28 @@
+###################
+### config.yaml
+###################
+debug: True
+
+
+is_multi_task: True
+
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2']
+val_maps: ['de_dust2']
+test_maps: ['de_dust2']
+debug_num_train_data: 5000
+debug_num_val_data: 1000
+
+ckpt_path: "outputs/csgo_1b/exp3_1/checkpoint-3900/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+# is_conti_gen: True
+
+
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dit_layer: 3
+is_action_dit_dense_timestep: False  # 或者是 False，视训练配置而定
+action_dim: 5

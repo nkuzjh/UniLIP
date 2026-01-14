@@ -9,6 +9,8 @@ import datetime
 from PIL import Image
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
+import transformers
+from typing import Dict, Optional, Sequence, List
 from transformers import AutoProcessor
 import matplotlib.pyplot as plt
 from safetensors.torch import load_file as safe_load_file
@@ -19,6 +21,7 @@ from unilip.utils import disable_torch_init
 from unilip.pipeline_edit import CustomEditPipeline
 from unilip.mm_utils import get_model_name_from_path
 from unilip.model.builder import load_pretrained_model_general
+from unilip.model import *
 
 
 def set_seed(seed=42):
@@ -131,16 +134,16 @@ class CSGOInferenceDataset(Dataset):
                 }
                 self.data_entries.append(entry)
 
-        if config['debug'] and config.get('debug_num_train_data', False):
-            sampled_num = config.get('debug_num_train_data', len(self.data_entries))
+        if config['debug'] and config.get('debug_num_val_data', False):
+            sampled_num = config.get('debug_num_val_data', len(self.data_entries))
             self.data_entries = self.data_entries[:sampled_num]
             print([data['file_frame'] for data in self.data_entries])
-        elif config['debug'] and config.get('debug_num_train_data', False) == False:
+        elif config['debug'] and config.get('debug_num_val_data', False) == False:
             indices = [335, 535, 707, 288, 21, 240, 20, 30, 809, 423, 857, 459, 557, 882, 893, 406, 24, 477, 407, 427, 453, 923, 925, 399, 752, 867, 547, 563, 424, 217, 789, 681]
             self.data_entries = [self.data_entries[i] for i in indices]
             print([data['file_frame'] for data in self.data_entries])
-        elif config['debug']==False and config.get('debug_num_train_data', False):
-            sampled_num = config.get('debug_num_train_data', len(self.data_entries))
+        elif config['debug']==False and config.get('debug_num_val_data', False):
+            sampled_num = config.get('debug_num_val_data', len(self.data_entries))
             self.data_entries = random.sample(self.data_entries, sampled_num)
             print([data['file_frame'] for data in self.data_entries])
 

@@ -12,7 +12,7 @@ train_maps: ['de_dust2']
 val_maps: ['de_dust2']
 test_maps: ['de_dust2']
 debug_num_train_data: 5000
-debug_num_val_data: 5000
+debug_num_val_data: 1000
 
 # ckpt_path: "outputs/csgo_1b/exp2/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
 # guidance_scale: 4.5
