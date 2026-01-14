@@ -20,10 +20,3 @@ batch_size: 1
 # is_conti_gen: True
 
 
-is_multi_task: True
-mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
-action_dit_layer: 3
-is_action_dit_dense_timestep: True  # 或者是 False，视训练配置而定
-action_dim: 5
-ckpt_path: "path/to/your/checkpoint"
-# ... 其他数据路径配置
