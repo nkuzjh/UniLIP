@@ -812,6 +812,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loss_mask: Optional[torch.FloatTensor] = None, # [NEW] [BS, 2] -> [Loc_Weight, Gen_Weight]  # torch.Size([128, 2])
         aux_loc_input_ids: torch.LongTensor = None,
         aux_loc_labels: Optional[torch.LongTensor] = None,
+        aux_loc_attention_mask: Optional[torch.Tensor] = None,
 
         # Others
         grid_thw: Optional[torch.FloatTensor] = None, # None
@@ -973,20 +974,21 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     if getattr(self.config, 'is_loc_aux_loss', False) and actions is not None:
                         # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
                         masked_loc_aux_loss = self.forward_for_aux_loc_loss(
-                            sigmas,
-                            noisy_latents,
-                            noise_pred,
-                            aux_loc_input_ids,
-                            aux_loc_labels,
-                            und_image,
-                            gen_image,
-                            grid_thw,
-                            i_s_pos,
-                            image_sizes,
-                            task_id,
-                            return_dict,
-                            actions,
-                            loss_mask
+                            sigmas, #torch.Size([16, 1, 1, 1])
+                            noisy_latents, #torch.Size([16, 32, 16, 16])
+                            noise_pred, #torch.Size([16, 32, 16, 16])
+                            aux_loc_input_ids, #torch.Size([16, 617])
+                            aux_loc_labels, #torch.Size([16, 617])
+                            aux_loc_attention_mask, #torch.Size([128, 707])
+                            und_image, #torch.Size([16, 3, 448, 448])
+                            gen_image, #torch.Size([16, 3, 448, 448])
+                            grid_thw, #None
+                            i_s_pos, #None
+                            image_sizes, #None
+                            torch.zeros_like(task_id), #torch.Size([16])
+                            return_dict, #True
+                            actions, #torch.Size([16, 1, 5])
+                            loss_mask #torch.Size([16, 2])
                         )
                     else:
                         masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
@@ -1102,7 +1104,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                     # Get output corresponding to the Action Token (Last token)
                     # output: [BS, Seq+1, Hidden]
-                    action_hidden = action_outputs.hidden_states[-1][:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+                    action_hidden = action_outputs.hidden_states[-1] # [BS, seq+1, Hidden] # [:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
 
                 #### TODO
                 # # 第二次综上所述，先忽略zeros填充的风险点，跑通模型。后续再修改action_dit的代码来适配adarms_cond
@@ -1113,6 +1115,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 #     encoder_attention_mask=attention_mask, #torch.Size([128, 707])
                 #     return_dict=False
                 # )[0] #[BS, 1, Hidden]
+
+                # Gather from the same indices we scattered to
+                gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
+                action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
 
                 # 4. Final Projection (Velocity Prediction)
                 v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
@@ -1145,6 +1151,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         noise_pred,
         aux_loc_input_ids,
         aux_loc_labels,
+        attention_mask,
         und_image_map,
         gen_image,
         grid_thw,
@@ -1169,7 +1176,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # scale back: UniLIP Factor
         pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
         # VAE Decode is heavy! Use with caution.
-        pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
+        with torch.no_grad():
+            pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
 
         # 3. Process for Vision Encoder (SigLIP)
         # SigLIP expects [0, 1] and specific normalization
@@ -1217,7 +1225,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             None, #grid_thw,
             None, #i_s_pos,
             None, #image_sizes,
-            torch.zeros_like(task_id),
+            task_id,
         )
         und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
         aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
@@ -1229,9 +1237,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         position_ids[position_ids < 0] = 0
 
         outputs = self.model.language_model(
-            attention_mask=attention_mask, #torch.Size([128, 707])
-            position_ids=position_ids, #torch.Size([128, 707])
-            inputs_embeds=inputs_embeds, #torch.Size([128, 707, 896])
+            attention_mask=attention_mask, #torch.Size([2, 617])
+            position_ids=position_ids, #torch.Size([2, 617])
+            inputs_embeds=inputs_embeds, #torch.Size([2, 617, 896])
             output_hidden_states=True,
             return_dict=return_dict, #True
             use_cache=False
@@ -1245,9 +1253,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if und_image_embeds is not None and und_img_idx is not None:
             hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
 
+        # 在传入forward_for_aux_loc_loss之前，已经将所有task_id转换为0，即该batch中所有样本都是loc任务
         is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
         if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
-            hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([57, 256, 896])
+            hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([2, 256, 896])
 
         # 5. Original LOCALIZATION Branch (Flow Matching Path)
         actions = actions#torch.Size([128, 5])
@@ -1280,7 +1289,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             valid_lens = attention_mask.sum(dim=1).long()
 
             action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
-            target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)#把
+            target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)
             action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
 
             action_dit_att_mask = torch.cat([attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1)
@@ -1288,7 +1297,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
 
             action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
-            action_pos_ids = valid_lens.view(-1, 1) # Action 的位置索引就是它的序列位置
+            action_pos_ids = valid_lens.view(-1, 1)
             action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
 
             if getattr(self.config, 'is_action_dit_dense_timestep', False):
@@ -1310,7 +1319,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 )
                 # Get output corresponding to the Action Token (Last token)
                 # output: [BS, Seq+1, Hidden]
-                action_hidden = action_outputs.hidden_states[-1][:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+                action_hidden = action_outputs.hidden_states[-1]# [BS, seq+1, Hidden] #[:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+
+            # Gather from the same indices we scattered to
+            gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
+            action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
 
             v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
             loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])

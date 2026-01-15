@@ -757,7 +757,7 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             _input_id = _input_id[:safe_len]
             _label = _label[:safe_len]
             _aux_loc_input_ids = _aux_loc_input_ids[:safe_len]
-            _aux_loc_labels = _label[:_aux_loc_labels]
+            _aux_loc_labels = _aux_loc_labels[:safe_len]
 
             # [关键分支]
             if task_id == 1:
@@ -854,6 +854,7 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             ids=ids_list,
             aux_loc_input_ids=aux_loc_input_ids,
             aux_loc_labels=aux_loc_labels,
+            aux_loc_attention_mask=aux_loc_input_ids.ne(self.tokenizer.pad_token_id),
         )
 
         # 5. 堆叠图像 (Stack Images)
