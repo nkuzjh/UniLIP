@@ -1378,6 +1378,8 @@ def train(attn_implementation=None):
     logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
+    model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
+    model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False

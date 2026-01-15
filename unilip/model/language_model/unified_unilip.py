@@ -810,6 +810,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         aux_image: Optional[torch.FloatTensor] = None, # [NEW] Support Aux Image (Wrist/Map) #torch.Size([128, 3, 448, 448])
         actions: Optional[torch.FloatTensor] = None,   # [NEW] GT 5D Pose [BS, 1, 5]  # torch.Size([128, 5])
         loss_mask: Optional[torch.FloatTensor] = None, # [NEW] [BS, 2] -> [Loc_Weight, Gen_Weight]  # torch.Size([128, 2])
+        aux_loc_input_ids: torch.LongTensor = None,
+        aux_loc_labels: Optional[torch.LongTensor] = None,
 
         # Others
         grid_thw: Optional[torch.FloatTensor] = None, # None
@@ -962,10 +964,36 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                     # Apply Mask: Only count loss for Gen samples
                     masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
-                else:
-                    masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+
+                    # =========================================================
+                    # [NEW] Auxiliary Localization Loss (Consistency Check)
+                    # =========================================================
+                    # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
+                    # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
+                    if getattr(self.config, 'is_loc_aux_loss', False) and actions is not None:
+                        # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
+                        masked_loc_aux_loss = self.forward_for_aux_loc_loss(
+                            sigmas,
+                            noisy_latents,
+                            noise_pred,
+                            aux_loc_input_ids,
+                            aux_loc_labels,
+                            und_image,
+                            gen_image,
+                            grid_thw,
+                            i_s_pos,
+                            image_sizes,
+                            task_id,
+                            return_dict,
+                            actions,
+                            loss_mask
+                        )
+                    else:
+                        masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+
             else:
                 masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+                masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
@@ -1098,8 +1126,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             else:
                 masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
-        total_loss = masked_gen_loss + masked_loc_loss
-        logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item()}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item()}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item()}")
+        alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
+        total_loss = masked_gen_loss + masked_loc_loss + masked_loc_aux_loss * alpha_loc_aux_loss
+        logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
 
         return CausalLMOutputWithPast(
             loss=total_loss,
@@ -1108,6 +1137,206 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+    def forward_for_aux_loc_loss(
+        self,
+        sigmas,
+        noisy_latents,
+        noise_pred,
+        aux_loc_input_ids,
+        aux_loc_labels,
+        und_image_map,
+        gen_image,
+        grid_thw,
+        i_s_pos,
+        image_sizes,
+        task_id,
+        return_dict,
+        actions,
+        loss_mask
+    ):
+        # 1. Estimate x_0 (Clean Latent) from current prediction
+        # Flow Matching (Euler): x_t = (1-t)x_0 + t*x_1; v = x_1 - x_0
+        # => x_0 = x_t - t * v (approx)
+        # 注意: 这里的 sigmas 对应 t。target 对应 v (如果 noise_scheduler 是 rectified flow)
+        # 如果是 standard diffusion, 公式不同。这里假设是 Rectified Flow (Sana Default)
+        t_broadcast = sigmas
+        pred_latents_x0 = noisy_latents - t_broadcast * noise_pred # \hat{x}_0 (Latent Space)
+
+        # 2. VAE Decode (Latent -> Pixel)
+        # [Gradient Flow] 梯度需要流经 pred_latents_x0 -> noise_pred -> DiT
+        # 因此这里不能用 no_grad
+        # scale back: UniLIP Factor
+        pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
+        # VAE Decode is heavy! Use with caution.
+        pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
+
+        # 3. Process for Vision Encoder (SigLIP)
+        # SigLIP expects [0, 1] and specific normalization
+        # pred_pixels is [-1, 1], convert to [0, 1]
+        pred_pixels_norm = (pred_pixels + 1.0) / 2.0
+        # Resize to Vision Encoder size (e.g. 448) if needed
+        # VAE output is usually 512 or 1024. SigLIP is 448.
+        if pred_pixels_norm.shape[-1] != 448:
+            pred_pixels_norm = F.interpolate(pred_pixels_norm, size=(448, 448), mode='bilinear', align_corners=False)
+        # SigLIP Normalization (Mean/Std) - Approximate or use processor values
+        # mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5] for simplicity/speed in training loop
+        # Or use self.image_processor logic
+        pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
+
+        # 4. Forward Localization Branch with Generated Image
+        # [Important] Freeze Loc Branch weights to avoid updating them with noisy gradients
+        # We only want gradients to flow back to the Image (pred_pixels_input)
+
+        # 构造 Loc 分支输入
+        # Und Image = Generated Fps Image (pred_pixels_input)
+        # Aux Image = Original Map (und_image passed in forward, which is actually map for Gen task)
+        # Prompt = Loc Prompt (aux_loc_input_ids)
+
+        # 获取 Gen 任务原本的 Map 输入 (在 prepare_inputs 里它是 und_image)
+        combined_und_images = torch.cat([pred_pixels_input, und_image_map], dim=0)
+        ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
+            aux_loc_input_ids,
+            position_ids,
+            attention_mask,
+            past_key_values,
+            inputs_embeds,
+            aux_loc_labels,
+            target_image_embeds, #latents
+            combined_img_idx,
+            combined_image_embeds,
+            bidr_attention_mask
+        ) = self.prepare_inputs_labels_for_multimodal(
+            aux_loc_input_ids,
+            None, #position_ids,
+            attention_mask,
+            None, #past_key_values,
+            aux_loc_labels,
+            gen_image,
+            combined_und_images, # Pass und_image (which contains all input visuals)
+            None, #grid_thw,
+            None, #i_s_pos,
+            None, #image_sizes,
+            torch.zeros_like(task_id),
+        )
+        und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
+        aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
+        und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
+        aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
+
+        # --- B. Main LLM Forward (Understanding) ---
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
+
+        outputs = self.model.language_model(
+            attention_mask=attention_mask, #torch.Size([128, 707])
+            position_ids=position_ids, #torch.Size([128, 707])
+            inputs_embeds=inputs_embeds, #torch.Size([128, 707, 896])
+            output_hidden_states=True,
+            return_dict=return_dict, #True
+            use_cache=False
+        )
+
+        # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
+        # This contains contextualized features of both text and images.
+        hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
+
+        # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
+        if und_image_embeds is not None and und_img_idx is not None:
+            hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+
+        is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
+        if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
+            hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([57, 256, 896])
+
+        # 5. Original LOCALIZATION Branch (Flow Matching Path)
+        actions = actions#torch.Size([128, 5])
+        noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
+        time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
+        time_expanded = time[:, None, None].to(actions.dtype)
+        x_t = time_expanded * noise + (1 - time_expanded) * actions
+        u_t = noise - actions
+
+        # 临时冻结 Action Dit
+        self.model.action_dit.requires_grad_(False)
+        self.model.action_in_proj.requires_grad_(False)
+        self.model.action_out_proj.requires_grad_(False)
+        self.model.time_mlp_in.requires_grad_(False)
+        self.model.time_mlp_out.requires_grad_(False)
+        self.model.action_dit.eval()
+        self.model.action_in_proj.eval()
+        self.model.action_out_proj.eval()
+        self.model.time_mlp_in.eval()
+        self.model.time_mlp_out.eval()
+        with torch.no_grad():
+            suffix_emb, adarms_cond = self.embed_action_suffix(
+                    x_t, #torch.Size([128, 1, 5])
+                    time, #torch.Size([128])
+                    llm_hidden_size=self.model.config.text_config.hidden_size,
+                    device=actions.device,
+                    dtype=hidden_states.dtype
+                )
+            bs, seq_len, hidden_dim = hidden_states.shape
+            valid_lens = attention_mask.sum(dim=1).long()
+
+            action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
+            target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)#把
+            action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
+
+            action_dit_att_mask = torch.cat([attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1)
+            mask_indices = valid_lens.view(-1, 1)
+            action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
+
+            action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
+            action_pos_ids = valid_lens.view(-1, 1) # Action 的位置索引就是它的序列位置
+            action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+
+            if getattr(self.config, 'is_action_dit_dense_timestep', False):
+                action_outputs = self.action_dit_forward_with_adarmscond(
+                    hidden_states=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    adarms_cond=adarms_cond,
+                )
+                action_hidden = action_outputs
+            else:
+                action_outputs = self.model.action_dit(
+                    inputs_embeds=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    output_hidden_states=True,
+                    return_dict=return_dict,
+                    use_cache=False
+                )
+                # Get output corresponding to the Action Token (Last token)
+                # output: [BS, Seq+1, Hidden]
+                action_hidden = action_outputs.hidden_states[-1][:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+
+            v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
+            loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
+            loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
+
+            # 加权：只在 t 小的时候 (生成接近完成) 计算 Loss
+            # sigmas 越大噪声越大。我们希望 sigma 小的时候权重高。
+            weight = (1.0 - sigmas).clamp(min=0)
+            loc_loss = (loc_loss * weight.squeeze())
+
+            # Apply Mask: Only count aux loc loss for Gen samples
+            masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
+
+        # 临时冻结 Action Dit
+        self.model.action_dit.requires_grad_(True)
+        self.model.action_in_proj.requires_grad_(True)
+        self.model.action_out_proj.requires_grad_(True)
+        self.model.time_mlp_in.requires_grad_(True)
+        self.model.time_mlp_out.requires_grad_(True)
+        self.model.action_dit.train()
+        self.model.action_in_proj.train()
+        self.model.action_out_proj.train()
+        self.model.time_mlp_in.train()
+        self.model.time_mlp_out.train()
+
+        return masked_loc_loss
 
     def action_dit_forward_with_adarmscond(
         self,
@@ -1385,136 +1614,136 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         return latents
 
-    # ==========================================
-    # 4. [NEW] Inference: Generate Action (Flow Matching)
-    # ==========================================
-    @torch.no_grad()
-    def generate_action(
-        self,
-        text: List[str],
-        tokenizer: AutoTokenizer,
-        und_images: Optional[torch.Tensor] = None,
-        aux_images: Optional[torch.Tensor] = None,
-        num_steps: int = 10
-    ):
-        """
-        Run inference for Localization task using Flow Matching Euler Solver.
-        Analogous to Pi0.5 `sample_actions`.
-        """
-        # 1. Precompute Context (LLM Forward)
-        inputs = tokenizer(text, padding="longest", return_tensors="pt")
-        device = self.get_model().device
-        attention_mask = inputs.attention_mask.to(device)
-        input_ids = inputs.input_ids.to(device)  # B x N
-        text_embeds = self.get_model().language_model.embed_tokens(input_ids)
+    # # ==========================================
+    # # 4. [NEW] Inference: Generate Action (Flow Matching)
+    # # ==========================================
+    # @torch.no_grad()
+    # def generate_action(
+    #     self,
+    #     text: List[str],
+    #     tokenizer: AutoTokenizer,
+    #     und_images: Optional[torch.Tensor] = None,
+    #     aux_images: Optional[torch.Tensor] = None,
+    #     num_steps: int = 10
+    # ):
+    #     """
+    #     Run inference for Localization task using Flow Matching Euler Solver.
+    #     Analogous to Pi0.5 `sample_actions`.
+    #     """
+    #     # 1. Precompute Context (LLM Forward)
+    #     inputs = tokenizer(text, padding="longest", return_tensors="pt")
+    #     device = self.get_model().device
+    #     attention_mask = inputs.attention_mask.to(device)
+    #     input_ids = inputs.input_ids.to(device)  # B x N
+    #     text_embeds = self.get_model().language_model.embed_tokens(input_ids)
 
-        vision_feature_layer = self.config.vision_feature_layer
-        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+    #     vision_feature_layer = self.config.vision_feature_layer
+    #     vision_feature_select_strategy = self.config.vision_feature_select_strategy
 
-        if und_images is not None:
-            und_image_embeds = self.model.get_image_features(
-                pixel_values=und_images,
-                vision_feature_layer=vision_feature_layer,
-                vision_feature_select_strategy=vision_feature_select_strategy,
-                image_sizes=None,
-            )
+    #     if und_images is not None:
+    #         und_image_embeds = self.model.get_image_features(
+    #             pixel_values=und_images,
+    #             vision_feature_layer=vision_feature_layer,
+    #             vision_feature_select_strategy=vision_feature_select_strategy,
+    #             image_sizes=None,
+    #         )
 
-        if aux_images is not None:
-            aux_image_embeds = self.model.get_image_features(
-                pixel_values=aux_images,
-                vision_feature_layer=vision_feature_layer,
-                vision_feature_select_strategy=vision_feature_select_strategy,
-                image_sizes=None,
-            )
+    #     if aux_images is not None:
+    #         aux_image_embeds = self.model.get_image_features(
+    #             pixel_values=aux_images,
+    #             vision_feature_layer=vision_feature_layer,
+    #             vision_feature_select_strategy=vision_feature_select_strategy,
+    #             image_sizes=None,
+    #         )
 
-        und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
-        if und_images is not None and und_image_idx.any():
-            text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).repeat(2,1,1).flatten(0,1)
-        if aux_images is not None and aux_image_idx.any():
-            text_embeds[aux_image_idx] = aux_image_embeds.to(text_embeds.device).repeat(2,1,1).flatten(0,1)
+    #     und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
+    #     if und_images is not None and und_image_idx.any():
+    #         text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).repeat(2,1,1).flatten(0,1)
+    #     if aux_images is not None and aux_image_idx.any():
+    #         text_embeds[aux_image_idx] = aux_image_embeds.to(text_embeds.device).repeat(2,1,1).flatten(0,1)
 
-        attention_mask = torch.cat([attention_mask, torch.ones_like(x_t[:, :, 0])], dim=1).int()
-        position_ids = torch.cumsum(attention_mask, dim=1) - 1
-        position_ids[position_ids < 0] = 0
+    #     attention_mask = torch.cat([attention_mask, torch.ones_like(x_t[:, :, 0])], dim=1).int()
+    #     position_ids = torch.cumsum(attention_mask, dim=1) - 1
+    #     position_ids[position_ids < 0] = 0
 
-        # Forward Context (LLM)
-        outputs = self.model.language_model(
-            inputs_embeds=text_embeds,
-            attention_mask=attention_mask.bool(),
-            position_ids=position_ids,
-            output_hidden_states=True,
-            return_dict=True,
-            use_cache=True # Enable KV Cache for efficiency?
-            # Note: Action Connector might not share KV cache structure easily if distinct models.
-            # Pi0.5 uses cache for Prefix. Here Context is separate model.
-            # We can cache the Context Output (Hidden States).
-        )
-        hidden_states = outputs.hidden_states[-1] # [BS, Seq, Hidden]
+    #     # Forward Context (LLM)
+    #     outputs = self.model.language_model(
+    #         inputs_embeds=text_embeds,
+    #         attention_mask=attention_mask.bool(),
+    #         position_ids=position_ids,
+    #         output_hidden_states=True,
+    #         return_dict=True,
+    #         use_cache=True # Enable KV Cache for efficiency?
+    #         # Note: Action Connector might not share KV cache structure easily if distinct models.
+    #         # Pi0.5 uses cache for Prefix. Here Context is separate model.
+    #         # We can cache the Context Output (Hidden States).
+    #     )
+    #     hidden_states = outputs.hidden_states[-1] # [BS, Seq, Hidden]
 
-        if und_images is not None and und_image_idx.any():
-            hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).repeat(2,1,1).flatten(0,1)
-        if aux_images is not None and aux_image_idx.any():
-            hidden_states[aux_image_idx] = aux_image_embeds.to(hidden_states.device).repeat(2,1,1).flatten(0,1)
+    #     if und_images is not None and und_image_idx.any():
+    #         hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).repeat(2,1,1).flatten(0,1)
+    #     if aux_images is not None and aux_image_idx.any():
+    #         hidden_states[aux_image_idx] = aux_image_embeds.to(hidden_states.device).repeat(2,1,1).flatten(0,1)
 
-        # Pre-prepare Context inputs for Action DiT
-        # Since Action DiT is just layers, we concat inputs every step.
-        # Optimization: Pi0 uses KV cache for prefix.
-        # Here, `action_dit` is a separate module instance.
-        # We can treat `hidden_states` as the "Prefix Embeddings".
+    #     # Pre-prepare Context inputs for Action DiT
+    #     # Since Action DiT is just layers, we concat inputs every step.
+    #     # Optimization: Pi0 uses KV cache for prefix.
+    #     # Here, `action_dit` is a separate module instance.
+    #     # We can treat `hidden_states` as the "Prefix Embeddings".
 
-        # 2. Initialize Noise
-        bsize = input_ids.shape[0]
-        action_dim = self.model.config.action_dim
-        noise = self.sample_noise((bsize, 1, action_dim), device=device)
+    #     # 2. Initialize Noise
+    #     bsize = input_ids.shape[0]
+    #     action_dim = self.model.config.action_dim
+    #     noise = self.sample_noise((bsize, 1, action_dim), device=device)
 
-        # 3. Euler Solver Loop
+    #     # 3. Euler Solver Loop
 
-        dt = -1.0 / num_steps
-        dt = torch.tensor(1.0, device=device, dtype=torch.float32)
+    #     dt = -1.0 / num_steps
+    #     dt = torch.tensor(1.0, device=device, dtype=torch.float32)
 
-        x_t = noise
-        t = torch.tensor(1.0, dtype=torch.float32, device=device)
-        while t >= -dt / 2: # Stop near 0
-            # Embed Suffix
-            expanded_time = t.expand(bsize)
-            suffix_emb, adarms_cond = self.embed_action_suffix(
-                x_t,
-                expanded_time,
-                llm_hidden_size=self.model.config.text_config.hidden_size,
-                device=device,
-                dtype=hidden_states.dtype
-            )
+    #     x_t = noise
+    #     t = torch.tensor(1.0, dtype=torch.float32, device=device)
+    #     while t >= -dt / 2: # Stop near 0
+    #         # Embed Suffix
+    #         expanded_time = t.expand(bsize)
+    #         suffix_emb, adarms_cond = self.embed_action_suffix(
+    #             x_t,
+    #             expanded_time,
+    #             llm_hidden_size=self.model.config.text_config.hidden_size,
+    #             device=device,
+    #             dtype=hidden_states.dtype
+    #         )
 
-            # Concat
-            action_dit_inputs = torch.cat([hidden_states, suffix_emb], dim=1)
+    #         # Concat
+    #         action_dit_inputs = torch.cat([hidden_states, suffix_emb], dim=1)
 
-            # Masks & Pos IDs (Same as Forward)
-            action_mask = torch.ones((bsize, 1), device=device, dtype=attention_mask.dtype)
-            action_dit_att_mask = torch.cat([attention_mask, action_mask], dim=1)
-            action_pos_id = position_ids.max(dim=1)[0].unsqueeze(1) + 1
-            action_dit_pos_ids = torch.cat([position_ids, action_pos_id], dim=1)
+    #         # Masks & Pos IDs (Same as Forward)
+    #         action_mask = torch.ones((bsize, 1), device=device, dtype=attention_mask.dtype)
+    #         action_dit_att_mask = torch.cat([attention_mask, action_mask], dim=1)
+    #         action_pos_id = position_ids.max(dim=1)[0].unsqueeze(1) + 1
+    #         action_dit_pos_ids = torch.cat([position_ids, action_pos_id], dim=1)
 
-            # Forward Connector
-            action_out = self.model.action_dit(
-                inputs_embeds=action_dit_inputs,
-                attention_mask=action_dit_att_mask,
-                position_ids=action_dit_pos_ids,
-                output_hidden_states=True,
-                # adarms_cond=[None, adarms_cond],
-                # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
-                    # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
-                    # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
-            )
+    #         # Forward Connector
+    #         action_out = self.model.action_dit(
+    #             inputs_embeds=action_dit_inputs,
+    #             attention_mask=action_dit_att_mask,
+    #             position_ids=action_dit_pos_ids,
+    #             output_hidden_states=True,
+    #             # adarms_cond=[None, adarms_cond],
+    #             # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+    #                 # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+    #                 # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+    #         )
 
-            # Predict Velocity
-            action_feat = action_out.hidden_states[-1][:, -1:, :]
-            v_t = self.get_model().action_out_proj(action_feat)
+    #         # Predict Velocity
+    #         action_feat = action_out.hidden_states[-1][:, -1:, :]
+    #         v_t = self.get_model().action_out_proj(action_feat)
 
-            # Euler Step
-            x_t = x_t + dt * v_t
-            t += dt
+    #         # Euler Step
+    #         x_t = x_t + dt * v_t
+    #         t += dt
 
-        return x_t # Final Denoised Action [BS, 1, 5]
+    #     return x_t # Final Denoised Action [BS, 1, 5]
 
 
 

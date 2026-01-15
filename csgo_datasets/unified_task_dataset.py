@@ -614,6 +614,9 @@ class UniLIPMultiTaskDataset(Dataset):
             # [Loc_Loss_Weight, Gen_Loss_Weight]
             loss_mask = torch.tensor([1.0, 0.0], dtype=torch.float32)
 
+            aux_loc_input_ids = copy.deepcopy(input_ids)
+            aux_loc_labels = copy.deepcopy(labels)
+
         else:
             # =========================================
             # Task: GENERATION (Map + Pose -> FPS)
@@ -657,6 +660,20 @@ class UniLIPMultiTaskDataset(Dataset):
 
             loss_mask = torch.tensor([0.0, 1.0], dtype=torch.float32)
 
+            if self.config.get('is_loc_aux_loss', False):
+                aux_loc_user_text = get_loc_prompt(map_name)
+                aux_loc_sources = {
+                    "conversations": [
+                        {"from": "human", "value": aux_loc_user_text},
+                        {"from": "gpt", "value": ""} # Assistant 回复位置Token
+                    ]
+                }
+                aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]))
+                aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
+                aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
+                aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
+
+
         # 6. 返回字典
         # 兼容 UniLIP 和 OpenPI 的字段命名
         return {
@@ -673,6 +690,8 @@ class UniLIPMultiTaskDataset(Dataset):
             "map_id": map_to_id_dict.get(map_name, 0),
             "map_name": map_name,
             "pose_dict": pose_dict,
+            "aux_loc_input_ids": aux_loc_input_ids,
+            "aux_loc_labels": aux_loc_labels,
         }
 
     def loc_fps_transform(self, config, fps_img_pil):
@@ -707,6 +726,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
         input_ids_list = []
         labels_list = []
         ids_list = []
+        aux_loc_input_ids_list = []
+        aux_loc_labels_list = []
 
         # 新增字段的容器
         batch_gen_images = []
@@ -726,6 +747,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             _input_id = instance["input_ids"]
             _label = instance["labels"]
             _id = instance.get("ids", "unknown")
+            _aux_loc_input_ids = instance["aux_loc_input_ids"]
+            _aux_loc_labels = instance["aux_loc_labels"]
 
             # === Token 处理逻辑 ===
             # 为了防止超过模型最大长度，先做截断 (预留 257 个位置给生成 Token)
@@ -733,6 +756,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             safe_len = self.tokenizer.model_max_length - 257
             _input_id = _input_id[:safe_len]
             _label = _label[:safe_len]
+            _aux_loc_input_ids = _aux_loc_input_ids[:safe_len]
+            _aux_loc_labels = _label[:_aux_loc_labels]
 
             # [关键分支]
             if task_id == 1:
@@ -762,6 +787,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             input_ids_list.append(_input_id)
             labels_list.append(_label)
             ids_list.append(_id)
+            aux_loc_input_ids_list.append(_aux_loc_input_ids)
+            aux_loc_labels_list.append(_aux_loc_labels)
 
             # === 收集 Tensor 数据 ===
             if "gen_image" in instance and instance["gen_image"] is not None:
@@ -801,12 +828,23 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
         labels = torch.nn.utils.rnn.pad_sequence(
             labels_list, batch_first=True, padding_value=IGNORE_INDEX
         )
+        aux_loc_input_ids = torch.nn.utils.rnn.pad_sequence(
+            aux_loc_input_ids_list, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        aux_loc_labels = torch.nn.utils.rnn.pad_sequence(
+            aux_loc_labels_list, batch_first=True, padding_value=IGNORE_INDEX
+        )
+
 
         # 再次检查最大长度 (Padding 后可能会变长)
         if input_ids.shape[1] > self.tokenizer.model_max_length:
             logging.warning(f"Input length {input_ids.shape[1]} > {self.tokenizer.model_max_length}, truncating.")
             input_ids = input_ids[:, :self.tokenizer.model_max_length]
             labels = labels[:, :self.tokenizer.model_max_length]
+        if aux_loc_input_ids.shape[1] > self.tokenizer.model_max_length:
+            logging.warning(f"Input length {aux_loc_input_ids.shape[1]} > {self.tokenizer.model_max_length}, truncating.")
+            input_ids = aux_loc_input_ids[:, :self.tokenizer.model_max_length]
+            aux_loc_labels = aux_loc_labels[:, :self.tokenizer.model_max_length]
 
         # 4. 构建 Batch 字典
         batch = dict(
@@ -814,6 +852,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             labels=labels,
             attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
             ids=ids_list,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
         )
 
         # 5. 堆叠图像 (Stack Images)
