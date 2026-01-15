@@ -660,18 +660,18 @@ class UniLIPMultiTaskDataset(Dataset):
 
             loss_mask = torch.tensor([0.0, 1.0], dtype=torch.float32)
 
-            if self.config.get('is_loc_aux_loss', False):
-                aux_loc_user_text = get_loc_prompt(map_name)
-                aux_loc_sources = {
-                    "conversations": [
-                        {"from": "human", "value": aux_loc_user_text},
-                        {"from": "gpt", "value": ""} # Assistant 回复位置Token
-                    ]
-                }
-                aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]))
-                aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
-                aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
-                aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
+            # if self.config.get('is_loc_aux_loss', False):
+            aux_loc_user_text = get_loc_prompt(map_name)
+            aux_loc_sources = {
+                "conversations": [
+                    {"from": "human", "value": aux_loc_user_text},
+                    {"from": "gpt", "value": ""} # Assistant 回复位置Token
+                ]
+            }
+            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]))
+            aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
+            aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
+            aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
 
 
         # 6. 返回字典
