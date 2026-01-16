@@ -7,7 +7,7 @@ debug: False
 is_multi_task: True
 is_action_dit_dense_timestep: True
 is_loc_aux_loss: True
-alpha_loc_aux_loss: 0.1
+alpha_loc_aux_loss: 0.01
 
 
 data_dir: "data/preprocessed_data"

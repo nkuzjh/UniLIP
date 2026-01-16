@@ -90,6 +90,8 @@ pip install ninja packaging==25.0
 pip install flash-attn --no-build-isolation --no-cache-dir --upgrade
 pip install xformers --no-build-isolation --no-cache-dir
 pip install matplotlib wandb
+pip install dreamsim
+pip install "torchmetrics[video]"
 pip install -e .
 ```
 
