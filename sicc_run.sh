@@ -21,7 +21,7 @@
 # Insert your commands here
 cd ~/task/UniLIP
 
-conda init
+source ~/miniconda3/etc/profile.d/conda.sh
 conda activate UniLIP
 
 python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}'); print(f'CUDA Version: {torch.version.cuda}'); print(f'GPU Name: {torch.cuda.get_device_name(0)}'); print(f'BF16 Supported: {torch.cuda.is_bf16_supported()}')"
