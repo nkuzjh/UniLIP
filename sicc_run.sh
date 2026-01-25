@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name              unilip
+#SBATCH --job-name              train
 #SBATCH --partition             h800_batch
 #SBATCH --nodes                 1
 #SBATCH --tasks-per-node        1

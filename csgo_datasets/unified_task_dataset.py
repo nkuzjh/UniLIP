@@ -480,7 +480,7 @@ class UniLIPMultiTaskDataset(Dataset):
         self.tokenizer = tokenizer
         self.data_args = data_args
 
-        # 任务混合比例: 0.5 表示 50% 概率定位, 50% 概率生成
+        # 任务混合比例: 0.6 表示 60% 概率定位, 40% 概率生成
         self.mix_ratio = config.get('task_mix_ratio', 0.5)
 
         self.data_entries = []
