@@ -92,7 +92,8 @@ pip install -r requirements.txt
 pip install ninja==1.13.0 packaging==25.0
 # pip install flash-attn==2.6.2 --no-build-isolation
 pip install flash-attn --no-build-isolation --no-cache-dir --upgrade
-pip install xformers --no-build-isolation --no-cache-dir
+# xformers和flash-attn根据cuda、torch等版本选择一个安装即可
+# pip install xformers --no-build-isolation --no-cache-dir
 pip install matplotlib wandb
 pip install dreamsim
 pip install "torchmetrics[video]"

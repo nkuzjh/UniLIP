@@ -859,7 +859,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         if inputs_embeds is None:
             ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
-                input_ids,
+                _,
                 position_ids,
                 attention_mask,
                 past_key_values,
@@ -888,6 +888,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
         # --- B. Main LLM Forward (Understanding) ---
+
         position_ids = torch.cumsum(attention_mask, dim=1) - 1
         position_ids[position_ids < 0] = 0
 
@@ -903,6 +904,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
         # This contains contextualized features of both text and images.
         hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
+
+        # 在 --- B. Main LLM Forward --- 之后插入
+        logging.info(f"DEBUG Check:")
+        logging.info(f"  Input IDs Shape: {input_ids. shape}")
+        logging.info(f"  Hidden States Shape: {hidden_states.shape}")
+        logging.info(f"  Combined Img Idx Shape: {combined_img_idx.shape}") # 关键！看是不是 2*BS
+        logging.info(f"  Valid Lens Sample (0-5): {attention_mask.sum(dim=1)[:5]}")
+        logging.info(f"  Loss Mask Sum (Loc/Gen): {loss_mask.sum(dim=0)}")
 
         # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
         if und_image_embeds is not None and und_img_idx is not None:
@@ -1122,6 +1131,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 # 4. Final Projection (Velocity Prediction)
                 v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
+                # 在 --- Localiztion Branch --- 内部，v_t_pred 计算出来后插入
+                logging.info(f"  Action Pred Mean: {v_t_pred.mean().item():.4f}, Std: {v_t_pred.std().item():.4f}")
+                logging.info(f"  Action GT Mean: {u_t.mean().item():.4f}, Std: {u_t.std().item():.4f}")
 
                 # 5. Calculate Loss (MSE)
                 loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
