@@ -446,10 +446,21 @@ def main():
 
     tokenizer = AutoProcessor.from_pretrained(model_args.mllm_hf_path).tokenizer
     tokenizer.model_max_length = 1024
-    smart_tokenizer_and_embedding_resize(
-        dict(pad_token="<pad>", additional_special_tokens=["[IMG]", "[/IMG]", "<image>"]),
-        tokenizer, model
-    )
+    if tokenizer.pad_token is None:
+        smart_tokenizer_and_embedding_resize(
+            special_tokens_dict=dict(
+                pad_token="<pad>",
+                additional_special_tokens=["[IMG]", "[/IMG]", "<image>"],
+            ),
+            tokenizer=tokenizer,
+            model=model,
+        )
+    elif not "<image>" in tokenizer.get_added_vocab():
+        smart_tokenizer_and_embedding_resize(
+            special_tokens_dict=dict(additional_special_tokens=["[IMG]", "[/IMG]", "<image>"]),
+            tokenizer=tokenizer,
+            model=model,
+        )
 
     # Load Weights
     ckpt_path = csgo_config['ckpt_path']

@@ -82,9 +82,11 @@ Previous CLIP-based unified methods fail to balance understanding and reconstruc
 ```shell
 conda create -n UniLIP python=3.11
 conda activate UniLIP
+# 原作者环境依赖
 # pip install torch==2.6.0+cu118 torchvision==0.21.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+# A100以及sm90以下架构的显卡使用torch2.9.1和对应版本的flash-attn
 # pip install torch==2.9.1+cu128 torchvision==0.24.1+cu128 --index-url https://download.pytorch.org/whl/cu128
-# torch==2.11-dev
+# Pro6000以及sm120以上架构的显卡使用最新开发版本的torch==2.11-dev和对应版本的flash-attn
 pip3 install --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
 pip install -r requirements.txt
 pip install ninja==1.13.0 packaging==25.0
