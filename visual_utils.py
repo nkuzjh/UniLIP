@@ -90,15 +90,17 @@ def visualize_dataset_samples(dataset, processor, num_samples=20, save_path="_de
         axes[i, 0].set_title(f"Sample {i} | Input: Radar, \npose {pose_str}", fontsize=10, fontweight='bold')
         axes[i, 0].axis('off')
 
-        # 右侧: FPS View
-        axes[i, 1].imshow(img_fps)
-        axes[i, 1].set_title(f"Target: FPS {fps_img_name}, \ngt_pose{x,y,z,v,h}", fontsize=9, color='darkblue')
-        axes[i, 1].axis('off')
-
         if img_aux is not None:
-            axes[i, 2].imshow(img_aux)
-            axes[i, 2].set_title(f"Auxilliary for Multi-Task Training", fontsize=9, color='green')
-            axes[i, 2].axis('off')
+            axes[i, 1].imshow(img_aux)
+            axes[i, 1].set_title(f"Auxilliary for \nMulti-Task Training", fontsize=9, color='green')
+            axes[i, 1].axis('off')
+
+        # 右侧: FPS View
+        axes[i, 2].imshow(img_fps)
+        axes[i, 2].set_title(f"Target: FPS {fps_img_name}, \ngt_pose{x,y,z,v,h}", fontsize=9, color='darkblue')
+        axes[i, 2].axis('off')
+
+
 
     # 保存
     plt.savefig(save_path, bbox_inches='tight', dpi=120)
