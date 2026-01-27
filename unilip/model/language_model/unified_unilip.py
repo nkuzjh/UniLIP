@@ -139,7 +139,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             # --- C. [NEW] Localization Path (Action Connector & Flow Matching Heads) ---
 
             # # 输入action_dit前的feature首先进行normalize
-            # self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
+            self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
             # 1. Action Dit
             # 这里的 config.action_dit_layer 可以在 model_args 中定义，默认比如 3 或 6
@@ -326,7 +326,7 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         if 1:
-            # self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
+            self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
             path = model_args.mllm_hf_path
             logging.info(f"Initializing Action Connector from {path} slice...")
@@ -1036,7 +1036,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 ) # suffix_emb: [BS, 1, Hidden] #torch.Size([128, 1, 896])
 
                 # 防止；anguage_model输出的last_hidden_state出现max=266，min=-256，而导致梯度nan
-                # hidden_states = self.get_model().action_dit_norm(hidden_states)
+                hidden_states = self.get_model().action_dit_norm(hidden_states)
                 # action_emb = self.get_model().action_norm(action_emb)
 
                 # scaler = self.model.config.text_config.hidden_size ** 0.5
@@ -1072,7 +1072,22 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # Action 的 Pos ID 应该是上一个 token 的 pos + 1，或者直接就是 valid_lens (如果从0开始)
                 # 假设你的 position_ids 在 padding 处是 0 或其他，我们这里显式计算一下 action 的 pos
                 action_pos_ids = valid_lens.view(-1, 1) # Action 的位置索引就是它的序列位置
-                action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+                # action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+                # [核心修改] 生成掩码并填充
+                # 我们要找到所有 index >= valid_lens 的位置
+                # 构造一个 range 矩阵: [0, 1, 2, ..., Seq]
+                current_seq_len = action_dit_pos_ids.shape[1]
+                range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+                # 生成掩码：如果当前位置 index >= valid_lens，则为 True
+                # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
+                mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+                # 使用 torch.where 进行批量填充
+                # 逻辑：Mask 为 True 的地方填入 action_pos_id，False 的地方保持原样
+                action_dit_pos_ids = torch.where(
+                    mask_after_valid,
+                    action_pos_ids,      # 广播填充 [BS, 1] -> [BS, Mask区域]
+                    action_dit_pos_ids  # 保持原值
+                )
 
                 #### TODO
                 # 这里action_dit_inputs和action_dit_pos_ids有一个风险点，为了将suffix_emb和action_pos_ids拼接到正确的位置，我们先使用zeros填充到正确的seq长度，然后再使用scatter找到正确位置valid_lens填充。而这样做会导致原先padding位置的tensor被zeros替代，虽然action_dit_att_mask不受影响且会忽略padding位置的tensor的梯度计算，但还是有风险(剧烈数值波动、某些bf16计算、特定FlashAttention算子等)。
@@ -1880,6 +1895,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         valid_lens = attention_mask.sum(dim=1, keepdim=True).long()
         bs, seq_len, hidden_dim = hidden_states.shape
 
+        hidden_states = self.get_model().action_dit_norm(hidden_states)
+
         # 7. Euler Solver Loop
         # Stop at t=0 (or close to it, Pi0 uses -dt/2 for safety)
         while t >= -dt / 2:
@@ -1898,9 +1915,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Reusing the robust logic from forward pass to avoid NaN
 
             # 1. Inputs: Concat Hidden + Last Token (Safe Padding)
-            last_token_states = hidden_states[:, -1:, :]
-            extended_inputs = torch.cat([hidden_states, last_token_states], dim=1)
-
+            # last_token_states = hidden_states[:, -1:, :]
+            # extended_inputs = torch.cat([hidden_states, last_token_states], dim=1)
+            extended_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
             # Scatter Suffix to valid positions
             scatter_indices = valid_lens.unsqueeze(-1).expand(-1, -1, hidden_dim)
             action_dit_inputs = extended_inputs.scatter(1, scatter_indices, suffix_emb)
@@ -1919,7 +1936,19 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 torch.zeros((bs, 1), device=device, dtype=position_ids.dtype)
             ], dim=1)
             action_pos_ids = valid_lens.view(-1, 1)
-            action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
+            # action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
+            current_seq_len = extended_pos_ids.shape[1]
+            range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+            # 生成掩码：如果当前位置 index >= valid_lens，则为 True
+            # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
+            mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+            # 使用 torch.where 进行批量填充
+            # 逻辑：Mask 为 True 的地方填入 action_pos_id，False 的地方保持原样
+            extended_pos_ids = torch.where(
+                mask_after_valid,
+                action_pos_ids,      # 广播填充 [BS, 1] -> [BS, Mask区域]
+                extended_pos_ids  # 保持原值
+            )
 
             # # Safety Clamp
             # max_seq_len = action_dit_inputs.shape[1]
@@ -1931,7 +1960,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 action_outputs = self.action_dit_forward_with_adarmscond(
                     hidden_states=action_dit_inputs,
                     attention_mask=action_dit_att_mask,
-                    position_ids=action_dit_pos_ids,
+                    position_ids=extended_pos_ids,
                     adarms_cond=adarms_cond
                 )
                 # Note: custom forward returns hidden_states directly
@@ -1941,7 +1970,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 action_outputs = self.model.action_dit(
                     inputs_embeds=action_dit_inputs,
                     attention_mask=action_dit_att_mask,
-                    position_ids=action_dit_pos_ids,
+                    position_ids=extended_pos_ids,
                     output_hidden_states=True,
                     return_dict=True,
                     use_cache=False
