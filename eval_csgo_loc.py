@@ -72,53 +72,43 @@ def calculate_metrics(results):
     """
     gt_norm = torch.tensor([item['gt_norm'] for item in results], dtype=torch.float32)
     pred_norm = torch.tensor([item['pred_norm'] for item in results], dtype=torch.float32)
-    abs_diff = torch.abs(pred_norm - gt_norm)
 
     # --- 1. 计算绝对差值 (Abs Diff) ---
     # abs_diff = |pred - gt|
-    abs_diff = torch.abs(pred_norm - gt_norm)
+    norm_abs_diff = torch.abs(pred_norm - gt_norm)
 
     # --- 2. 处理 Yaw (Index 4) 的周期性 ---
     # 在 0~1 空间中，周期是 1.0
     # 修正后的误差 = min(raw_diff, 1.0 - raw_diff)
-    yaw_diff = abs_diff[:, 4]
+    yaw_diff = norm_abs_diff[:, 4]
     yaw_diff_wrapped = torch.min(yaw_diff, 1.0 - yaw_diff)
-    abs_diff[:, 4] = yaw_diff_wrapped # 更新 Diff Tensor
+    norm_abs_diff[:, 4] = yaw_diff_wrapped # 更新 Diff Tensor
 
-    norm_l2_norm_xy = torch.norm(abs_diff[:, :2], p=2, dim=1).mean().item()
-
+    norm_l2_xy = torch.norm(norm_abs_diff[:, :2], p=2, dim=1).mean().item()
     # 2. 5D L2 Norm (Normalized Space)
     # sqrt(dx^2 + dy^2 + dz^2 + dpitch^2 + dyaw^2)
-    norm_l2_norm_5d = torch.norm(abs_diff, p=2, dim=1).mean().item()
+    norm_l2_5d = torch.norm(norm_abs_diff, p=2, dim=1).mean().item()
 
     # ==========================================
     # Metric B: Losses (MSE & SmoothL1)
     # ==========================================
-
-    # 注意：我们要计算的是 "Diff Tensor" 也就是 "Error" 的 Loss
-    # 即相当于 target 是 0 向量
-    zeros_target = torch.zeros_like(abs_diff)
-
+    zeros_target = torch.zeros_like(norm_abs_diff)
     # 1. MSE Loss (5D)
     # mean(error^2)
-    norm_mse_loss_5d = F.mse_loss(abs_diff, zeros_target, reduction='mean').item()
-
+    norm_mse_loss_5d = F.mse_loss(norm_abs_diff, zeros_target, reduction='mean').item()
     # 2. SmoothL1 Loss (5D)
     # 这里的 beta=1.0 是默认值，可根据训练时的设定调整
-    norm_smooth_l1_loss_5d = F.smooth_l1_loss(abs_diff, zeros_target, reduction='mean', beta=1.0).item()
+    norm_smooth_l1_loss_5d = F.smooth_l1_loss(norm_abs_diff, zeros_target, reduction='mean', beta=1.0).item()
 
     # 1. 提取数据并转换为 Tensor 以利用 PyTorch 的 Loss 函数
     gt_list = []
     pred_list = []
-
     for item in results:
         gt = item['gt']
         pred = item['pred']
-
         # 构造向量 [x, y, z, pitch, yaw]
         gt_vec = [gt['x'], gt['y'], gt['z'], gt['angle_v'], gt['angle_h']]
         pred_vec = [pred['x'], pred['y'], pred['z'], pred['angle_v'], pred['angle_h']]
-
         gt_list.append(gt_vec)
         pred_list.append(pred_vec)
 
@@ -129,30 +119,27 @@ def calculate_metrics(results):
     # 我们计算差值 diff，而不是直接用 pred，这样 Loss 计算才符合物理直觉
     # diff = pred - gt
     diff_tensor = pred_tensor - gt_tensor
+    abs_diff = torch.abs(diff_tensor)
 
     # 对 Yaw (第4列) 做 wrap 处理: diff = (diff + 180) % 360 - 180
     # 或者更简单的 min(|d|, 360-|d|) 逻辑，但为了保留符号给 Loss 用，通常取最小夹角
     # 这里为了 L2/MSE/SmoothL1 计算距离（即误差大小），我们取绝对误差
-    abs_diff = torch.abs(diff_tensor)
-
     # 修正 Yaw 的绝对误差: min(err, 360 - err)
     yaw_err = abs_diff[:, 4]
     yaw_err = torch.min(yaw_err, 360.0 - yaw_err)
     abs_diff[:, 4] = yaw_err
 
     # --- Metric 1: 单项误差 ---
-    mean_xy_error = torch.sqrt(abs_diff[:, 0]**2 + abs_diff[:, 1]**2).mean().item()
-    mean_z_error = abs_diff[:, 2].mean().item()
-    mean_pitch_error = abs_diff[:, 3].mean().item()
-    mean_yaw_error = abs_diff[:, 4].mean().item()
+    xy_dist = torch.sqrt(abs_diff[:, 0]**2 + abs_diff[:, 1]**2).mean().item()
+    z_dist = abs_diff[:, 2].mean().item()
+    pitch_dist = abs_diff[:, 3].mean().item()
+    yaw_dist = abs_diff[:, 4].mean().item()
 
     # --- Metric 2: XY L2 Norm (同 Mean XY Error) ---
-    l2_norm_xy = torch.norm(abs_diff[:, :2], p=2, dim=1).mean().item()
-
+    l2_xy = torch.norm(abs_diff[:, :2], p=2, dim=1).mean().item()
     # --- Metric 3: 5D L2 Norm ---
     # 定义：sqrt(dx^2 + dy^2 + dz^2 + dp^2 + dyaw^2)
-    l2_norm_5d = torch.norm(abs_diff, p=2, dim=1).mean().item()
-
+    l2_5d = torch.norm(abs_diff, p=2, dim=1).mean().item()
     # --- Metric 4: 5D Loss (MSE & SmoothL1) ---
     # 这里的 Loss 是基于物理坐标的，所以数值会很大，但能反映物理偏离程度
     # 使用 abs_diff 作为输入，也就是计算 Loss(abs_diff, 0)
@@ -160,25 +147,27 @@ def calculate_metrics(results):
     smooth_l1_loss_5d = F.smooth_l1_loss(abs_diff, torch.zeros_like(abs_diff), beta=1.0)
 
     metrics = {
-        "Mean_XY_Error": mean_xy_error,
-        "L2_Norm_XY": l2_norm_xy,       # 实际上等于 Mean_XY_Error
-        "Mean_Z_Error": mean_z_error,
-        "Mean_Pitch_Error": mean_pitch_error,
-        "Mean_Yaw_Error": mean_yaw_error,
-        "L2_Norm_5D": l2_norm_5d,
-        "MSE_Loss_5D": mse_loss_5d.item(),
-        "SmoothL1_Loss_5D": smooth_l1_loss_5d.item(),
-
-        "Norm_L2_XY": norm_l2_norm_xy,
-        "Norm_L2_5D": norm_l2_norm_5d,
+        "Norm_L2_XY": norm_l2_xy,
+        "Norm_L2_5D": norm_l2_5d,
         "Norm_MSE_5D": norm_mse_loss_5d,
         "Norm_SmoothL1_5D": norm_smooth_l1_loss_5d,
+
+        "XY_Dist": xy_dist,
+        "Z_Dist": z_dist,
+        "Pitch_Dist": pitch_dist,
+        "Yaw_Dist": yaw_dist,
+
         # 顺便保留单项的平均绝对误差 (L1)
         "Norm_L1_X": abs_diff[:, 0].mean().item(),
         "Norm_L1_Y": abs_diff[:, 1].mean().item(),
         "Norm_L1_Z": abs_diff[:, 2].mean().item(),
         "Norm_L1_Pitch": abs_diff[:, 3].mean().item(),
         "Norm_L1_Yaw": abs_diff[:, 4].mean().item(),
+
+        "L2_XY": l2_xy,       # 实际上等于 XY_Dist
+        "L2_5D": l2_5d,
+        "MSE_Loss_5D": mse_loss_5d.item(),
+        "SmoothL1_Loss_5D": smooth_l1_loss_5d.item(),
     }
     return metrics
 
