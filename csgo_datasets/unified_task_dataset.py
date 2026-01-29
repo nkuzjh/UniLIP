@@ -5,7 +5,7 @@ import logging
 import numpy as np
 from PIL import Image
 import copy
-from typing import Dict, Sequence
+from typing import Dict, Sequence, Union, List
 from dataclasses import dataclass
 
 import torch
@@ -531,6 +531,18 @@ class UniLIPMultiTaskDataset(Dataset):
             "id": [str(entry['map'] + "_" + entry['file_frame']) for entry in self.data_entries]
         }
 
+        # 预加载所有地图图片到内存
+        self.map_images = {}
+        for map_name, filename in map_path_dict.items():
+            path = f"{config['data_dir']}/{map_name}/{filename}"
+            if os.path.exists(path):
+                img = Image.open(path).convert('RGB')
+                # 预先做 Resize 以省内存 (如果 processor 需要 448)
+                # img = img.resize((448, 448))
+                self.map_images[map_name] = img
+            else:
+                logging.warning(f"Map image not found: {path}")
+
 
     def __len__(self):
         return len(self.data_entries)
@@ -547,9 +559,10 @@ class UniLIPMultiTaskDataset(Dataset):
 
         # 3. 加载图像资源
         # Map Image
-        map_filename = map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
-        map_path = f"{self.config['data_dir']}/{map_name}/{map_filename}"
-        map_img_pil = Image.open(map_path).convert('RGB')
+        # map_filename = map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
+        # map_path = f"{self.config['data_dir']}/{map_name}/{map_filename}"
+        # map_img_pil = Image.open(map_path).convert('RGB')
+        map_img_pil = self.map_images.get(map_name).copy()
 
         # FPS Image
         ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
@@ -711,6 +724,8 @@ class UniLIPMultiTaskDataset(Dataset):
 
 
 
+
+
 @dataclass
 class DataCollatorForUniLIPMultiTaskDataset(object):
     """
@@ -719,7 +734,21 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
     """
     tokenizer: transformers.PreTrainedTokenizer
 
-    def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
+    def __call__(self, instances: Sequence[Union[Dict, List[Dict]]]) -> Dict[str, torch.Tensor]:
+        # 1. 提取基础数据
+        # [NEW] Flatten logic
+        # 如果 Dataset 返回的是成对的列表，先展平
+        flat_instances = []
+        for item in instances:
+            if isinstance(item, list):
+                flat_instances.extend(item) # [Loc, Gen] -> Loc, Gen
+            else:
+                flat_instances.append(item)
+
+        # 将展平后的列表赋值回 instances，后续逻辑保持完全不变
+        instances = flat_instances
+        # ... (以下原有的处理逻辑保持不变) ...
+
         # 1. 提取基础数据
         # 注意：这里需要处理 task_id 来决定是否添加生成专用的占位符 token
         task_id_list = []
@@ -898,6 +927,232 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             batch["pose_dict"] = batch_pose_dict_list
 
         return batch
+
+
+
+
+
+class UniLIPMultiTaskBalancedDataset(Dataset):
+    def __init__(self, config, tokenizer, data_args):
+        super().__init__()
+        self.config = config
+        self.tokenizer = tokenizer
+        self.data_args = data_args
+
+        # 任务混合比例: 0.6 表示 60% 概率定位, 40% 概率生成
+        self.mix_ratio = config.get('task_mix_ratio', 0.5)
+
+        self.data_entries = []
+        self.map_z_range = {}
+
+        logging.info("🔄 Loading Multi-Task CS2 Dataset...")
+
+        # --- 1. 加载数据索引 (逻辑复用 CsgoTrainDataset_IT) ---
+        for map_name in config["train_maps"]:
+            position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
+            if config['debug']:
+                position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
+
+            logging.info(f"Loading CS2 Data Split {position_data_path}...")
+            with open(position_data_path, "r", encoding="utf-8") as f:
+                positions_data = json.load(f)
+
+            # 计算 Z 轴范围
+            max_z, min_z = -float('inf'), float('inf')
+            for data in positions_data:
+                if data['z'] > max_z: max_z = data['z']
+                if data['z'] < min_z: min_z = data['z']
+            self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+
+            # 载入数据
+            for pos_data in positions_data:
+                entry = {
+                    'map': map_name,
+                    'file_frame': pos_data['file_frame'],
+                    'x': pos_data['x'],
+                    'y': pos_data['y'],
+                    'z': pos_data['z'],
+                    'angle_v': pos_data['angle_v'], # Radian
+                    'angle_h': pos_data['angle_h'], # Radian
+                }
+                self.data_entries.append(entry)
+
+        # Debug 采样
+        if config.get('debug', False):
+            sampled_num = config.get('debug_num_train_data', 100)
+            # self.data_entries = self.data_entries[:sampled_num]
+            self.data_entries = random.sample(self.data_entries, sampled_num)
+            logging.info([(data['map'], data['file_frame']) for data in self.data_entries])
+
+        logging.info(f"✅ Total entries: {len(self.data_entries)}")
+        self.list_data_dict = {
+            "type": ["CS2_Multi_Task"] * len(self.data_entries),
+            "id": [str(entry['map'] + "_" + entry['file_frame']) for entry in self.data_entries]
+        }
+
+        # 预加载所有地图图片到内存
+        self.map_images = {}
+        for map_name, filename in map_path_dict.items():
+            path = f"{config['data_dir']}/{map_name}/{filename}"
+            if os.path.exists(path):
+                img = Image.open(path).convert('RGB')
+                # 预先做 Resize 以省内存 (如果 processor 需要 448)
+                # img = img.resize((448, 448))
+                self.map_images[map_name] = img
+            else:
+                logging.warning(f"Map image not found: {path}")
+
+
+    def __len__(self):
+        return len(self.data_entries)
+
+    def __getitem__(self, idx):
+        # 1. 获取基础数据
+        data = self.data_entries[idx]
+        map_name = data['map']
+
+        # 2. 加载图像资源
+        # Map Image
+        map_img_pil = self.map_images.get(map_name).copy()
+        # FPS Image
+        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+        fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        fps_img_pil = Image.open(fps_path).convert('RGB')
+        if self.config.get('is_fps_dropout', False):
+            fps_img_pil = self.loc_fps_transform(self.config, fps_img_pil)
+        # Und Image & Aux Image & Gen Image
+        all_images = [fps_img_pil, map_img_pil]
+        process_images = img_process(
+            all_images,
+            self.data_args.image_processor,
+            self.data_args.image_aspect_ratio
+        ) # shape: [2, C, H, W]
+        # 拆分出 Tensor
+        tensor_fps = process_images[:-1] # [1, C, H, W]
+        tensor_map = process_images[-1:] # [1, C, H, W]
+        tensor_empty = torch.zeros_like(und_image)
+
+        # 3. 计算归一化坐标 (Common for both tasks)
+        z_info = self.map_z_range[map_name]
+        x_norm = data['x'] / 1024.0
+        y_norm = data['y'] / 1024.0
+        z_norm = (data['z'] - z_info['min_z']) / (z_info['max_z'] - z_info['min_z'] + 1e-6)
+        v_norm = data['angle_v'] / (2 * np.pi) # Pitch 0-1
+        pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
+        h_norm = data['angle_h'] / (2 * np.pi) # Yaw 0-1
+        yaw_deg = (data['angle_h'] / (2 * np.pi)) * 360.0
+        # Ground Truth Tensor for Localization Head
+        loc_coords_norm = torch.tensor([x_norm, y_norm, z_norm, v_norm, h_norm], dtype=torch.bfloat16)
+        pose_dict = {
+                    'x': data['x'],
+                    'y': data['y'],
+                    'z': data['z'],
+                    'angle_v': pitch_deg,
+                    'angle_h': yaw_deg,
+                }
+
+        # 4. 任务分流处理
+
+        # =========================================
+        # 4.1 Task: LOCALIZATION (Map + FPS -> Pose)
+        # =========================================
+        task_id_loc = 0
+        # Text Prompt
+        user_text_loc = get_loc_prompt(map_name)
+        sources_loc = {
+            "conversations": [
+                {"from": "human", "value": user_text_loc},
+                {"from": "gpt", "value": ""} # Assistant 回复位置Token
+            ]
+        }
+        # Tokenize Loc
+        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]))
+        pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
+
+        # 构造 Loc 样本字典
+        sample_loc = {
+            "task_id": task_id_loc,
+            "ids": f"{data['file_frame']}_loc",
+            "und_image": tensor_fps,   # Input: FPS
+            "aux_image": tensor_map,   # Aux: Map
+            "gen_image": tensor_empty, # Target: None (Empty)
+            "input_ids": pre_dict_loc["input_ids"][0],
+            "labels": pre_dict_loc["labels"][0],
+            "raw_prompt": user_text_loc,
+            "actions": loc_coords_norm.unsqueeze(0),
+            "loss_mask": torch.tensor([1.0, 0.0], dtype=torch.float32), # [Loc_Loss_Weight, Gen_Loss_Weight]
+            "map_id": map_to_id_dict.get(map_name, 0),
+            "map_name": map_name,
+            "pose_dict": pose_dict,
+            # Loc 任务的 Aux Loc Input 就是它自己
+            "aux_loc_input_ids": copy.deepcopy(pre_dict_loc["input_ids"][0]),
+            "aux_loc_labels": copy.deepcopy(pre_dict_loc["labels"][0]),
+        }
+
+        # =========================================
+        # 4.2 Task: GENERATION (Map + Pose -> FPS)
+        # =========================================
+        task_id_gen = 1
+        # 模拟 Classifier-Free Guidance (CFG) 训练
+        # 10% 概率给空 Prompt ("Generate...")，90% 概率给完整 Prompt
+        if random.random() > 0.1:
+            user_text_gen = build_sft_instruction_custom(pose_dict, map_name, z_info['max_z'], z_info['min_z'])
+        else:
+            user_text_gen = "Generate the view.\n<image>"
+        sources_gen = {
+            "conversations": [
+                {"from": "human", "value": user_text_gen},
+                {"from": "gpt", "value": "<image>"} # Assistant 回复生成的图片 Token, collator中使用256*learnable_latent_query替换
+            ]
+        }
+        # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
+        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]))
+        # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
+        pre_dict_gen = preprocess(sources_gen, self.tokenizer, has_image=True)
+
+        # 这里的 Aux Loc Input 需要单独构建 (Prompt 为 Loc Prompt)
+        # 为了给 Gen 任务提供计算 Loc Aux Loss 的上下文
+        # 我们可以直接复用上面 Loc 任务算好的 input_ids，或者重新算一遍
+        # 为了效率，直接复用 pre_dict_loc 即可 (因为是同一个样本)
+
+        # 构造 Gen 样本字典
+        sample_gen = {
+            "task_id": task_id_gen,
+            "ids": f"{data['file_frame']}_gen",
+            "und_image": tensor_map,   # Input: Map
+            "aux_image": tensor_empty, # Aux: None
+            "gen_image": tensor_fps,   # Target: FPS
+            "input_ids": pre_dict_gen["input_ids"][0],
+            "labels": pre_dict_gen["labels"][0],
+            "raw_prompt": user_text_gen,
+            "actions": loc_coords_norm.unsqueeze(0),
+            "loss_mask": torch.tensor([0.0, 1.0], dtype=torch.float32), # [Loc_Loss_Weight, Gen_Loss_Weight]
+            "map_id": map_to_id_dict.get(map_name, 0),
+            "map_name": map_name,
+            "pose_dict": pose_dict,
+            # Gen 任务携带 Loc Prompt 用于一致性 Loss
+            "aux_loc_input_ids":  copy.deepcopy(pre_dict_loc["input_ids"][0]),
+            "aux_loc_labels":  copy.deepcopy(pre_dict_loc["labels"][0]),
+        }
+
+        # 5. 返回列表 [Loc, Gen]
+        return [sample_loc, sample_gen]
+
+    def loc_fps_transform(self, config, fps_img_pil):
+        fps_transform = transforms.Compose([
+            transforms.ToTensor(),
+            CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
+            GridDropout(grid_size=4, p=0.3),
+            RandomErasing(probability=config['erasing_p'], mean=[0.0, 0.0, 0.0])
+        ])
+        fps_img = fps_transform(fps_img_pil)
+        fps_img = np.array(fps_img.permute(1,2,0))
+        fps_img = Image.fromarray((fps_img*255).astype(np.uint8))
+
+        return fps_img
+
+
+
 
 
 

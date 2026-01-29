@@ -124,6 +124,7 @@ class ModelArguments:
 
     action_dit_layer: Optional[int] = field(default=3)
     is_action_dit_dense_timestep: Optional[bool] = field(default=False)
+    gradient_checkpointing: bool = True
 
 
 
@@ -172,6 +173,11 @@ class TrainingArguments(transformers.TrainingArguments):
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
     pretrain_path : str = "none"
+
+    action_dit_projector_lr: float = 1e-3
+    is_action_dit_projector: bool = False
+    loc_learnable_query_lr: float = 5e-4
+    is_loc_learnable_query: bool = False
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -1380,6 +1386,11 @@ def train(attn_implementation=None):
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
+    model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", False)
+    model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
+    model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", False)
+    model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False

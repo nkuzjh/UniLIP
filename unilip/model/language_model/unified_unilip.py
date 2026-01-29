@@ -137,7 +137,18 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.projector = nn.Linear(llm_hidden_size, self.dit.config.caption_channels)
 
             # --- C. [NEW] Localization Path (Action Connector & Flow Matching Heads) ---
-
+            if self.config.is_loc_learnable_query:
+                self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, hidden_size))
+            # from transformers.models.internvl.modeling_internvl import InternVLMultiModalProjector
+            # self.action_dit_projector = InternVLMultiModalProjector(config)
+            if self.config.is_action_dit_projector:
+                self.action_dit_projector = nn.Sequential(
+                    nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
+                    nn.GELU(),
+                    nn.Linear(llm_hidden_size*4, llm_hidden_size*2, bias=True),
+                    nn.GELU(),
+                    nn.Linear(llm_hidden_size*2, llm_hidden_size, bias=True),
+                )
             # # 输入action_dit前的feature首先进行normalize
             self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
@@ -169,6 +180,10 @@ class Unified_UniLIP_InternVL_MetaModel:
             # 4. 输出投影 (Hidden -> Action Velocity)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.action_dim)#.to(torch.bfloat16)
 
+            if self.config.is_loc_learnable_query:
+                self.loc_learnable_query.apply(init_weights)
+            if self.config.is_action_dit_projector:
+                self.action_dit_projector.apply(init_weights)
             self.action_in_proj.apply(init_weights)
             self.time_mlp_in.apply(init_weights)
             self.time_mlp_out.apply(init_weights)
@@ -326,6 +341,16 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         if 1:
+            if self.config.is_loc_learnable_query:
+                self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, llm_hidden_size))
+            if self.config.is_action_dit_projector:
+                self.action_dit_projector = nn.Sequential(
+                    nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
+                    nn.GELU(),
+                    nn.Linear(llm_hidden_size*4, llm_hidden_size*2, bias=True),
+                    nn.GELU(),
+                    nn.Linear(llm_hidden_size*2, llm_hidden_size, bias=True),
+                )
             self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
             path = model_args.mllm_hf_path
@@ -374,16 +399,27 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.action_out_proj = nn.Linear(llm_hidden_size, self.config.action_dim)#.to(torch.bfloat16)
 
         # Enable Gradients for Action Path
+        if self.config.is_loc_learnable_query:
+            for p in self.loc_learnable_query.parameters(): p.requires_grad = True
+        if self.config.is_action_dit_projector:
+            for p in self.action_dit_projector.parameters(): p.requires_grad = True
         for p in self.action_dit.parameters(): p.requires_grad = True
         for p in self.action_in_proj.parameters(): p.requires_grad = True
         for p in self.time_mlp_in.parameters(): p.requires_grad = True
         for p in self.time_mlp_out.parameters(): p.requires_grad = True
         for p in self.action_out_proj.parameters(): p.requires_grad = True
 
+        if self.config.is_loc_learnable_query:
+            self.loc_learnable_query.apply(init_weights)
+        if self.config.is_action_dit_projector:
+            self.action_dit_projector.apply(init_weights)
         self.action_in_proj.apply(init_weights)
         self.time_mlp_in.apply(init_weights)
         self.time_mlp_out.apply(init_weights)
         self.action_out_proj.apply(init_weights)
+
+        if getattr(model_args, "gradient_checkpointing", False):
+            self.action_dit.gradient_checkpointing_enable()
         logging.info("Action VAE weights initialized successfully!")
 
 
@@ -928,16 +964,37 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             total_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
         else:
             # ==========================================
+            # 按索引拆分生成/定位样本
+            # ==========================================
+            loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
+            gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
+            logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {gen_indices}")
+
+            # ==========================================
             # Branch 1: GENERATION (DiT Path)
             # ==========================================
-            if loss_mask[:, 1].sum() > 0: # If any sample needs Generation
+            if loss_mask[gen_indices][:, 1].sum() > 0: # If any sample needs Generation
                 is_gen_task = (task_id == 1)#is_gen_task.sum()=tensor(71, device='cuda:0')
-                # TODO 如果这里使用[is_gen_task]过滤后再进行llm_connector和dit，能节约显存，但是由于[is_gen_task]的数目不一定恰好等于2的次方，所以可能会影响cuda加速运算。除非数据集collactor手动设置loc:gen=64:64。
+                # TODO_Done 如果这里使用[is_gen_task]过滤后再进行llm_connector和dit，能节约显存，但是由于[is_gen_task]的数目不一定恰好等于2的次方，所以可能会影响cuda加速运算。除非数据集collactor手动设置loc:gen=64:64。
+                genbrh_bidr_attention_mask = bidr_attention_mask[gen_indices]
+                genbrh_position_ids = position_ids[gen_indices]
+                genbrh_hidden_states = hidden_states[gen_indices]
+                genbrh_target_image_embeds = target_image_embeds[gen_indices]
+                genbrh_attention_mask = attention_mask[gen_indices]
+                genbrh_loss_mask = loss_mask[gen_indices]
+                genbrh_aux_loc_input_ids = aux_loc_input_ids[gen_indices]
+                genbrh_aux_loc_labels = aux_loc_labels[gen_indices]
+                genbrh_aux_loc_attention_mask = aux_loc_attention_mask[gen_indices]
+                genbrh_und_image = und_image[gen_indices]
+                genbrh_gen_image = gen_image[gen_indices]
+                genbrh_task_id = task_id[gen_indices]
+                genbrh_actions = actions[gen_indices]
+
                 # 1. Process features via LLM Connector
                 img_hidden_states = self.model.llm_connector(
-                    attention_mask=bidr_attention_mask,#torch.Size([128, 1, 707, 707])
-                    position_ids=position_ids,#torch.Size([128, 707])
-                    inputs_embeds=hidden_states,#torch.Size([128, 707, 896])
+                    attention_mask=genbrh_bidr_attention_mask,#torch.Size([128, 1, 707, 707])
+                    position_ids=genbrh_position_ids,#torch.Size([128, 707])
+                    inputs_embeds=genbrh_hidden_states,#torch.Size([128, 707, 896])
                     output_hidden_states=True,
                     return_dict=return_dict,#True
                     use_cache=False
@@ -947,8 +1004,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 img_hidden_states = self.get_model().projector(img_hidden_states) #torch.Size([128, 707, 2304])
 
                 # 3. Calculate DiT Loss
-                if target_image_embeds is not None:#target_image_embeds=torch.Size([128, 32, 16, 16])
-                    latents = target_image_embeds # [BS_Gen, C, H, W]
+                if genbrh_target_image_embeds is not None:#target_image_embeds=torch.Size([128, 32, 16, 16])
+                    latents = genbrh_target_image_embeds # [BS_Gen, C, H, W]
                     bsz = latents.shape[0] #128
                     noise = torch.randn_like(latents, device=latents.device)#torch.Size([128, 32, 16, 16])
                     u = compute_density_for_timestep_sampling(weighting_scheme="logit_normal", batch_size=bsz, logit_mean=0.0, logit_std=1.0) #torch.Size([128])
@@ -963,7 +1020,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         noisy_latents, #torch.Size([128, 32, 16, 16])
                         timestep=timesteps, #128
                         encoder_hidden_states=img_hidden_states, # [BS, Seq, C] ##torch.Size([128, 707, 2304])
-                        encoder_attention_mask=attention_mask, #torch.Size([128, 707])
+                        encoder_attention_mask=genbrh_attention_mask, #torch.Size([128, 707])
                         return_dict=False
                     )[0] #torch.Size([128, 32, 16, 16])
 
@@ -973,34 +1030,35 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     gen_loss = gen_loss.mean(dim=[1, 2, 3]) # [BS]
 
                     # Apply Mask: Only count loss for Gen samples
-                    masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
+                    # masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
+                    masked_gen_loss = (gen_loss * genbrh_loss_mask[:, 1]).mean()
 
                     # =========================================================
                     # [NEW] Auxiliary Localization Loss (Consistency Check)
                     # =========================================================
                     # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
-                    if getattr(self.config, 'is_loc_aux_loss', False) and actions is not None:
+                    if getattr(self.config, 'is_loc_aux_loss', False) and genbrh_actions is not None:
                         # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
                         masked_loc_aux_loss = self.forward_for_aux_loc_loss(
                             sigmas, #torch.Size([16, 1, 1, 1])
                             noisy_latents, #torch.Size([16, 32, 16, 16])
                             noise_pred, #torch.Size([16, 32, 16, 16])
-                            aux_loc_input_ids, #torch.Size([16, 617])
-                            aux_loc_labels, #torch.Size([16, 617])
-                            aux_loc_attention_mask, #torch.Size([128, 707])
-                            und_image, #torch.Size([16, 3, 448, 448])
-                            gen_image, #torch.Size([16, 3, 448, 448])
+                            genbrh_aux_loc_input_ids, #torch.Size([16, 617])
+                            genbrh_aux_loc_labels, #torch.Size([16, 617])
+                            genbrh_aux_loc_attention_mask, #torch.Size([128, 707])
+                            genbrh_und_image, #torch.Size([16, 3, 448, 448])
+                            genbrh_gen_image, #torch.Size([16, 3, 448, 448])
                             grid_thw, #None
                             i_s_pos, #None
                             image_sizes, #None
-                            torch.zeros_like(task_id), #torch.Size([16])
+                            torch.zeros_like(genbrh_task_id), #torch.Size([16])
                             return_dict, #True
-                            actions, #torch.Size([16, 1, 5])
-                            loss_mask #torch.Size([16, 2])
+                            genbrh_actions, #torch.Size([16, 1, 5])
+                            genbrh_loss_mask #torch.Size([16, 2])
                         )
                     else:
-                        masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+                        masked_loc_aux_loss = torch.nn.MSELoss()(genbrh_hidden_states, torch.clone(genbrh_hidden_states.detach())).to(torch.float32)
 
             else:
                 masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
@@ -1009,20 +1067,24 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
-            if loss_mask[:, 0].sum() > 0: # If any sample needs Localization
+            if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
                 # actions: [BS, 1, 5]
-                actions = actions#torch.Size([128, 5])
+                locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
+                locbrh_hidden_states = hidden_states[loc_indices]
+                locbrh_attention_mask = attention_mask[loc_indices]
+                locbrh_position_ids = position_ids[loc_indices]
+                locbrh_loss_mask = loss_mask[loc_indices]
                 # # TODO 这里也一样！如果使用[is_loc_task]过滤actions和其他中间tensor后再进行embed_action_suffix和action_dit，能节约显存，但是由于[is_loc_task]的数目不一定恰好等于2的次方，所以可能会影响cuda加速运算。除非数据集collactor手动设置loc:gen=64:64。
                 # 1. Flow Matching Setup
                 # Sample Noise & Time
-                noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
-                time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
+                noise = self.sample_noise(locbrh_actions.shape, locbrh_actions.device)#torch.Size([128, 5])
+                time = self.sample_time(locbrh_actions.shape[0], locbrh_actions.device)#torch.Size([128])
 
                 # Interpolate: x_t = t * noise + (1-t) * x_1 (Actions)
-                time_expanded = time[:, None, None].to(actions.dtype) # [BS, 1, 1] #torch.Size([128, 1, 1])
-                x_t = time_expanded * noise + (1 - time_expanded) * actions # 带噪声的中间向量x_t #torch.Size([128, 1, 5])
+                time_expanded = time[:, None, None].to(locbrh_actions.dtype) # [BS, 1, 1] #torch.Size([128, 1, 1])
+                x_t = time_expanded * noise + (1 - time_expanded) * locbrh_actions # 带噪声的中间向量x_t #torch.Size([128, 1, 5])
 
-                u_t = noise - actions # 需要模型预测的 Velocity Target 速度场 #torch.Size([128, 5])
+                u_t = noise - locbrh_actions # 需要模型预测的 Velocity Target 速度场 #torch.Size([128, 5])
 
                 # 2. Prepare Inputs for Action Connector
                 # We treat LLM hidden_states as "Prefix" (Context)
@@ -1031,12 +1093,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     x_t, #torch.Size([128, 1, 5])
                     time, #torch.Size([128])
                     llm_hidden_size=self.model.config.text_config.hidden_size,
-                    device=actions.device,
-                    dtype=hidden_states.dtype
+                    device=locbrh_actions.device,
+                    dtype=locbrh_hidden_states.dtype
                 ) # suffix_emb: [BS, 1, Hidden] #torch.Size([128, 1, 896])
 
                 # 防止；anguage_model输出的last_hidden_state出现max=266，min=-256，而导致梯度nan
-                hidden_states = self.get_model().action_dit_norm(hidden_states)
+                locbrh_hidden_states = self.get_model().action_dit_norm(locbrh_hidden_states)
                 # action_emb = self.get_model().action_norm(action_emb)
 
                 # scaler = self.model.config.text_config.hidden_size ** 0.5
@@ -1048,11 +1110,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 # Concat Embeddings
                 # Scatter 填充 # “右移填空” (Right Shift & Fill) 操作 # 实现"Left Padding" 或 "Packing"的效果
-                bs, seq_len, hidden_dim = hidden_states.shape
-                valid_lens = attention_mask.sum(dim=1).long()
+                bs, seq_len, hidden_dim = locbrh_hidden_states.shape
+                valid_lens = locbrh_attention_mask.sum(dim=1).long()
 
                 # action_dit_inputs = torch.cat([hidden_states, suffix_emb], dim=1) # [BS, Seq+1, Hidden] #hidden_states=torch.Size([128, 707, 896]) #suffix_emb=torch.Size([128, 1, 896]) #action_dit_inputs #torch.Size([128, 708, 896])
-                action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
+                action_dit_inputs = torch.cat([locbrh_hidden_states, torch.zeros_like(suffix_emb)], dim=1)
                 target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)#把 suffix_emb 放到 valid_lens 的位置 # 构造索引：我们需要修改的位置是 (b, valid_lens[b]) # view(-1, 1, 1) 是为了广播到 hidden_dim
                 action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
 
@@ -1061,14 +1123,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # action_mask = torch.ones((bsz, 1, 1, 1), device=attention_mask.device, dtype=attention_mask.dtype)
                 # action_mask = torch.ones((bsz, 1), device=attention_mask.device, dtype=attention_mask.dtype)
                 # action_dit_att_mask = torch.cat([attention_mask, action_mask], dim=1) #torch.Size([128, 708])
-                action_dit_att_mask = torch.cat([attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1)
+                action_dit_att_mask = torch.cat([locbrh_attention_mask, torch.zeros((bs, 1), device=locbrh_attention_mask.device, dtype=locbrh_attention_mask.dtype)], dim=1)
                 mask_indices = valid_lens.view(-1, 1)
                 action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
 
                 # Position IDs
                 # action_pos_id = position_ids.max(dim=1)[0].unsqueeze(1) + 1
                 # action_dit_pos_ids = torch.cat([position_ids, action_pos_id], dim=1) #position_ids=torch.Size([128, 707]) #action_pos_id=torch.Size([128, 1])
-                action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
+                action_dit_pos_ids = torch.cat([locbrh_position_ids, torch.zeros((bs, 1), device=locbrh_position_ids.device, dtype=locbrh_position_ids.dtype)], dim=1)
                 # Action 的 Pos ID 应该是上一个 token 的 pos + 1，或者直接就是 valid_lens (如果从0开始)
                 # 假设你的 position_ids 在 padding 处是 0 或其他，我们这里显式计算一下 action 的 pos
                 action_pos_ids = valid_lens.view(-1, 1) # Action 的位置索引就是它的序列位置
@@ -1077,7 +1139,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # 我们要找到所有 index >= valid_lens 的位置
                 # 构造一个 range 矩阵: [0, 1, 2, ..., Seq]
                 current_seq_len = action_dit_pos_ids.shape[1]
-                range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+                range_ids = torch.arange(current_seq_len, device=locbrh_position_ids.device).unsqueeze(0) # [1, Seq+1]
                 # 生成掩码：如果当前位置 index >= valid_lens，则为 True
                 # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
                 mask_after_valid = range_ids >= valid_lens.view(-1, 1)
@@ -1097,34 +1159,57 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # 第二次综上所述，先忽略zeros填充的风险点，跑通模型。后续再修改action_dit的代码来适配adarms_cond
                 #### TODO
 
+                if self.config.is_action_dit_projector:
+                    action_dit_inputs = self.action_dit_projector(action_dit_inputs)
+
                 # Forward Action Connector (InternVL Slice)
                 # Reuse bidr mask logic or standard causal. Since it's InternVL, it expects eager/causal usually.
                 # For simplicity, we assume bidr mask logic handles the sequence extension as default.
                 # 注意在OpenPi0.5中使用的gemma_expert_model还会接受adarms_cond(一个跟timestep有关的embedding)作为输入
                 if getattr(self.config, 'is_action_dit_dense_timestep', False):
-                    action_outputs = self.action_dit_forward_with_adarmscond(
-                        hidden_states=action_dit_inputs, #torch.Size([128, 708, 896])
-                        attention_mask=action_dit_att_mask, #torch.Size([128, 708])
-                        position_ids=action_dit_pos_ids, #torch.Size([128, 708])
-                        adarms_cond=adarms_cond,
-                        # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
-                            # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
-                            # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
-                    )
+                    if self.config.is_loc_learnable_query:
+                        action_outputs = self.action_dit_forward_with_adarmscond(
+                            hidden_states=self.loc_learnable_query,
+                            encoder_hidden_states=locbrh_hidden_states, #torch.Size([128, 708, 896])
+                            encoder_attention_mask=locbrh_attention_mask, #torch.Size([128, 708])
+                            encoder_position_ids=locbrh_position_ids, #torch.Size([128, 708])
+                            adarms_cond=adarms_cond,
+                        )
+                    else:
+                        action_outputs = self.action_dit_forward_with_adarmscond(
+                            hidden_states=action_dit_inputs, #torch.Size([128, 708, 896])
+                            attention_mask=action_dit_att_mask, #torch.Size([128, 708])
+                            position_ids=action_dit_pos_ids, #torch.Size([128, 708])
+                            adarms_cond=adarms_cond,
+                            # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+                                # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+                                # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+                        )
                     action_hidden = action_outputs
                 else:
-                    action_outputs = self.model.action_dit(
-                        inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
-                        attention_mask=action_dit_att_mask, #torch.Size([128, 708])
-                        position_ids=action_dit_pos_ids, #torch.Size([128, 708])
-                        output_hidden_states=True,
-                        # adarms_cond=[None, adarms_cond],
-                        # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
-                            # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
-                            # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
-                        return_dict=return_dict,
-                        use_cache=False
-                    )
+                    if self.config.is_loc_learnable_query:
+                        action_outputs = self.model.action_dit(
+                            inputs_embeds=self.loc_learnable_query,
+                            encoder_inputs_embeds=locbrh_hidden_states, #torch.Size([128, 708, 896])
+                            encoder_attention_mask=locbrh_attention_mask, #torch.Size([128, 708])
+                            encoder_position_ids=locbrh_position_ids, #torch.Size([128, 708])
+                            output_hidden_states=True,
+                            return_dict=return_dict,
+                            use_cache=False
+                        )
+                    else:
+                        action_outputs = self.model.action_dit(
+                            inputs_embeds=action_dit_inputs, #torch.Size([128, 708, 896])
+                            attention_mask=action_dit_att_mask, #torch.Size([128, 708])
+                            position_ids=action_dit_pos_ids, #torch.Size([128, 708])
+                            output_hidden_states=True,
+                            # adarms_cond=[None, adarms_cond],
+                            # 和Pi05的不同：除了没有使用adarms_cond之外，action_dit也没有使用full_att_2d_masks_4d
+                                # Pi05的language_model和DiT都使用了prefix双向，suffix单向的mask；
+                                # 而UniLIP的language_model和DiT使用了单向mask，但是中间的llm_connector使用了单向mask；
+                            return_dict=return_dict,
+                            use_cache=False
+                        )
 
                     # Get output corresponding to the Action Token (Last token)
                     # output: [BS, Seq+1, Hidden]
@@ -1140,9 +1225,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 #     return_dict=False
                 # )[0] #[BS, 1, Hidden]
 
-                # Gather from the same indices we scattered to
-                gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
-                action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
+                if self.config.is_loc_learnable_query:
+                    action_hidden = action_hidden[:,-1,:]
+                else:
+                    # Gather from the same indices we scattered to
+                    gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
+                    action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
 
                 # 4. Final Projection (Velocity Prediction)
                 v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
@@ -1155,7 +1243,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
                 # Apply Mask: Only count loss for Loc samples
-                masked_loc_loss = (loc_loss * loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
+                masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
             else:
                 masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
@@ -1953,6 +2041,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # # Safety Clamp
             # max_seq_len = action_dit_inputs.shape[1]
             # action_dit_pos_ids = action_dit_pos_ids.clamp(max=max_seq_len - 1)
+
+            if self.config.is_action_dit_projector:
+                action_dit_inputs = self.action_dit_projector(action_dit_inputs)
 
             # C. Forward Action DiT
             if getattr(self.config, 'is_action_dit_dense_timestep', False):
