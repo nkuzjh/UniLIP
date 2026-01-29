@@ -638,7 +638,7 @@ class UniLIPMultiTaskDataset(Dataset):
                     {"from": "gpt", "value": "<image>"} # Assistant 回复生成的图片 Token
                 ]
             }
-            # 处理 <image> token 替换
+            # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
             sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]))
             # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
