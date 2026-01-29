@@ -262,7 +262,7 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_nuke --all --batch_size 8       ``
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_ancient --all --batch_size 8       ``
     **frames to video todo**
-**eval_csgo_loc.py** step=5000 60000
+**eval_csgo_loc.py** step=5000 60000 80000
 ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp5_loc.yaml      ``
 
 
