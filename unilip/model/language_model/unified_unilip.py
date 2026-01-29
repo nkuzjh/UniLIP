@@ -137,18 +137,18 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.projector = nn.Linear(llm_hidden_size, self.dit.config.caption_channels)
 
             # --- C. [NEW] Localization Path (Action Connector & Flow Matching Heads) ---
-            if self.config.is_loc_learnable_query:
-                self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, hidden_size))
-            # from transformers.models.internvl.modeling_internvl import InternVLMultiModalProjector
-            # self.action_dit_projector = InternVLMultiModalProjector(config)
-            if self.config.is_action_dit_projector:
-                self.action_dit_projector = nn.Sequential(
-                    nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
-                    nn.GELU(),
-                    nn.Linear(llm_hidden_size*4, llm_hidden_size*2, bias=True),
-                    nn.GELU(),
-                    nn.Linear(llm_hidden_size*2, llm_hidden_size, bias=True),
-                )
+            # if self.config.is_loc_learnable_query:
+            #     self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, hidden_size))
+            # # from transformers.models.internvl.modeling_internvl import InternVLMultiModalProjector
+            # # self.action_dit_projector = InternVLMultiModalProjector(config)
+            # if self.config.is_action_dit_projector:
+            #     self.action_dit_projector = nn.Sequential(
+            #         nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
+            #         nn.GELU(),
+            #         nn.Linear(llm_hidden_size*4, llm_hidden_size*2, bias=True),
+            #         nn.GELU(),
+            #         nn.Linear(llm_hidden_size*2, llm_hidden_size, bias=True),
+            #     )
             # # 输入action_dit前的feature首先进行normalize
             self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
@@ -180,10 +180,10 @@ class Unified_UniLIP_InternVL_MetaModel:
             # 4. 输出投影 (Hidden -> Action Velocity)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.action_dim)#.to(torch.bfloat16)
 
-            if self.config.is_loc_learnable_query:
-                self.loc_learnable_query.apply(init_weights)
-            if self.config.is_action_dit_projector:
-                self.action_dit_projector.apply(init_weights)
+            # if self.config.is_loc_learnable_query:
+            #     self.loc_learnable_query.apply(init_weights)
+            # if self.config.is_action_dit_projector:
+            #     self.action_dit_projector.apply(init_weights)
             self.action_in_proj.apply(init_weights)
             self.time_mlp_in.apply(init_weights)
             self.time_mlp_out.apply(init_weights)

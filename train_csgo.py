@@ -124,7 +124,6 @@ class ModelArguments:
 
     action_dit_layer: Optional[int] = field(default=3)
     is_action_dit_dense_timestep: Optional[bool] = field(default=False)
-    gradient_checkpointing: bool = True
 
 
 
