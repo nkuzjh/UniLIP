@@ -34,7 +34,7 @@ from copy import deepcopy
 
 import numpy as np
 import yaml
-from visual_utils import visualize_dataset_samples
+from visual_utils import visualize_dataset_samples, visualize_dataset_samples_paired
 from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset, UniLIPMultiTaskBalancedDataset
 import datetime
 import wandb
@@ -1386,9 +1386,9 @@ def train(attn_implementation=None):
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
-    model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", False)
+    model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
-    model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", False)
+    model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
@@ -1477,13 +1477,16 @@ def train(attn_implementation=None):
         eval_dataset = None
         data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     if local_rank in [-1, 0]:
-        visualize_dataset_samples(
-            train_dataset,
-            data_args.image_processor,
-            num_samples=20,
-            save_path="_debug_dataset_samples.jpg",
-            is_multi_task=csgo_config.get("is_multi_task", False)
-        )
+        if csgo_config.get("is_multi_task_balanced", False):
+            visualize_dataset_samples_paired
+        else:
+            visualize_dataset_samples(
+                train_dataset,
+                data_args.image_processor,
+                num_samples=20,
+                save_path="_debug_dataset_samples.jpg",
+                is_multi_task=csgo_config.get("is_multi_task", False)
+            )
 
     trainer = NonMixTrainer(
         model=model,

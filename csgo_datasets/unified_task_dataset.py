@@ -1030,7 +1030,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         # 拆分出 Tensor
         tensor_fps = process_images[:-1] # [1, C, H, W]
         tensor_map = process_images[-1:] # [1, C, H, W]
-        tensor_empty = torch.zeros_like(und_image)
+        tensor_empty = torch.zeros_like(tensor_map)
 
         # 3. 计算归一化坐标 (Common for both tasks)
         z_info = self.map_z_range[map_name]

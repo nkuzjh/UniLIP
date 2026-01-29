@@ -135,3 +135,125 @@ def visualize_dataset_samples(dataset, processor, num_samples=20, save_path="_de
 # loc_array = np.array([data['x'] / 1024, data['y'] / 1024, z_norm, pitch_deg, yaw_deg])
 # loc_coords = torch.tensor(loc_array, dtype=torch.float32)
 
+
+
+
+def visualize_dataset_samples_paired(dataset, processor, num_samples=5, save_path="_debug_dataset_paired.jpg"):
+    """
+    可视化成对采样 (Pair-wise Sampling) 的数据集。
+    验证同一个 Index 返回的 Loc 和 Gen 任务数据是否共享同一场景，但输入/输出互逆。
+
+    Args:
+        dataset: 返回 [sample_loc, sample_gen] 的 Dataset
+        processor: ImageProcessor (用于反归一化)
+    """
+    print(f"👀 Visualizing first {num_samples} pairs from dataset...")
+
+    # 1. 获取反归一化参数
+    img_processor = getattr(processor, "image_processor", processor)
+    mean = np.array(img_processor.image_mean)
+    std = np.array(img_processor.image_std)
+
+    def denorm(tensor):
+        """Tensor [C, H, W] -> Numpy [H, W, C] (0-1)"""
+        if tensor is None: return np.zeros((448, 448, 3))
+        # 处理可能存在的 Batch 维度 [1, C, H, W]
+        if tensor.dim() == 4: tensor = tensor.squeeze(0)
+
+        img = tensor.permute(1, 2, 0).cpu().numpy()
+        img = img * std + mean
+        return np.clip(img, 0, 1)
+
+    # 2. 设置画布: 每行 3 列 (Map, FPS, Info Panel)
+    fig, axes = plt.subplots(num_samples, 3, figsize=(18, 6 * num_samples))
+    plt.subplots_adjust(hspace=0.3, wspace=0.1)
+    if num_samples == 1: axes = axes.reshape(1, -1)
+
+    for i in range(num_samples):
+        # --- A. 获取成对数据 ---
+        # dataset[i] 现在返回的是一个 list: [sample_loc, sample_gen]
+        pair_data = dataset[i]
+        sample_loc = pair_data[0]
+        sample_gen = pair_data[1]
+
+        # 校验 Task ID
+        assert sample_loc['task_id'] == 0, f"Index 0 should be Loc, got {sample_loc['task_id']}"
+        assert sample_gen['task_id'] == 1, f"Index 1 should be Gen, got {sample_gen['task_id']}"
+
+        # --- B. 提取图像 ---
+        # 逻辑验证：
+        # Loc Task: Input(Und)=FPS, Aux=Map
+        # Gen Task: Input(Und)=Map, Target(Gen)=FPS
+
+        # 我们从 Gen 任务取 Map (Und)，从 Loc 任务取 FPS (Und)
+        # 这样能同时验证两个任务的 Input 也是正确的
+        tensor_map = sample_gen['und_image']
+        tensor_fps = sample_loc['und_image']
+
+        # 也可以验证 Loc 的 Aux 是否等于 Map
+        tensor_map_aux = sample_loc['aux_image']
+
+        img_map = denorm(tensor_map)
+        img_fps = denorm(tensor_fps)
+        img_map_aux = denorm(tensor_map_aux)
+
+        # --- C. 提取 Meta 信息 ---
+        map_name = sample_loc['map_name']
+        pose = sample_loc['pose_dict']
+
+        # 解码 Prompt
+        input_ids_loc = sample_loc['input_ids']
+        if isinstance(input_ids_loc, torch.Tensor): input_ids_loc = input_ids_loc.tolist()
+        text_loc = dataset.tokenizer.decode(input_ids_loc, skip_special_tokens=False)
+
+        input_ids_gen = sample_gen['input_ids']
+        if isinstance(input_ids_gen, torch.Tensor): input_ids_gen = input_ids_gen.tolist()
+        text_gen = dataset.tokenizer.decode(input_ids_gen, skip_special_tokens=False)
+
+        # --- D. 绘图 ---
+
+        # Column 1: Radar Map (Gen Input / Loc Aux)
+        # 为了展示 Aux 是否正确，我们在 Map 上叠加一个小图或者标题说明
+        ax_map = axes[i, 0]
+        ax_map.imshow(img_map)
+        diff = np.mean(np.abs(img_map - img_map_aux)) # 验证一致性
+        ax_map.set_title(f"Map '{map_name}'\nGen Input / Loc Aux\n(Consistency Diff: {diff:.1e})", fontsize=11, fontweight='bold')
+        ax_map.axis('off')
+
+        # Column 2: FPS View (Loc Input / Gen Target)
+        ax_fps = axes[i, 1]
+        ax_fps.imshow(img_fps)
+        ax_fps.set_title(f"FPS View\nLoc Input / Gen Target\nID: {sample_loc['ids']}", fontsize=11, fontweight='bold')
+        ax_fps.axis('off')
+
+        # Column 3: Info Panel (Text & Pose)
+        ax_text = axes[i, 2]
+        ax_text.axis('off')
+
+        # 构造信息文本
+        pose_str = f"x={pose['x']:.1f}, y={pose['y']:.1f}, z={pose['z']:.2f}\npitch={pose['angle_v']:.1f}, yaw={pose['angle_h']:.1f}"
+
+        # 截取 Prompt 关键部分
+        prompt_loc_short = text_loc.split("Task:")[-1].split("Predict")[0].strip()[:100] + "..."
+        prompt_gen_short = text_gen.split("Task:")[-1].split("Coordinate")[0].strip()[:100] + "..."
+
+        info_text = (
+            f"Sample Pair Index: {i}\n"
+            f"--------------------------------\n"
+            f"Map: {map_name}\n"
+            f"GT Pose:\n{pose_str}\n"
+            f"--------------------------------\n"
+            f"[Task Loc] Raw Prompt Snippet:\n...{textwrap.fill(prompt_loc_short, 35)}\n"
+            f"Loss Mask: {sample_loc['loss_mask'].tolist()}\n"
+            f"--------------------------------\n"
+            f"[Task Gen] Raw Prompt Snippet:\n...{textwrap.fill(prompt_gen_short, 35)}\n"
+            f"Loss Mask: {sample_gen['loss_mask'].tolist()}\n"
+        )
+
+        ax_text.text(0, 0.95, info_text, fontsize=10, verticalalignment='top', fontfamily='monospace',
+                     bbox=dict(boxstyle="round,pad=0.5", fc="#f9f9f9", ec="gray", alpha=0.5))
+
+    # 保存
+    plt.savefig(save_path, bbox_inches='tight', dpi=100)
+    print(f"✨ Paired visualization saved to: {os.path.abspath(save_path)}")
+    plt.close()

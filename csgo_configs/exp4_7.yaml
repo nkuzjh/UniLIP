@@ -5,13 +5,14 @@ debug: False
 
 
 is_multi_task: True
+is_multi_task_balanced: True
 is_action_dit_dense_timestep: True
 task_mix_ratio: 1.0
 is_action_dit_projector: False
-action_dit_projector_lr: 1e-3
+action_dit_projector_lr: 0.001
 # action_dit_layer: 3 #这个参数在启动命令中实现
 is_action_learnable_query: True
-action_learnable_query_lr: 5e-4
+action_learnable_query_lr: 0.0005
 
 data_dir: "data/preprocessed_data"
 train_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']

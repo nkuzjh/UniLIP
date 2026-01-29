@@ -968,7 +968,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # ==========================================
             loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
             gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
-            logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {gen_indices}")
+            logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {len(gen_indices)}")
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -1160,7 +1160,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 #### TODO
 
                 if self.config.is_action_dit_projector:
-                    action_dit_inputs = self.action_dit_projector(action_dit_inputs)
+                    action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
 
                 # Forward Action Connector (InternVL Slice)
                 # Reuse bidr mask logic or standard causal. Since it's InternVL, it expects eager/causal usually.
