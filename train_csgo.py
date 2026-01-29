@@ -35,7 +35,7 @@ from copy import deepcopy
 import numpy as np
 import yaml
 from visual_utils import visualize_dataset_samples
-from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset
+from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset, UniLIPMultiTaskBalancedDataset
 import datetime
 import wandb
 
@@ -1466,7 +1466,10 @@ def train(attn_implementation=None):
     # data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
 
     if csgo_config.get("is_multi_task", False):
-        train_dataset = UniLIPMultiTaskDataset(csgo_config, tokenizer, data_args)
+        if csgo_config.get("is_multi_task_balanced", False):
+            train_dataset = UniLIPMultiTaskBalancedDataset(csgo_config, tokenizer, data_args)
+        else:
+            train_dataset = UniLIPMultiTaskDataset(csgo_config, tokenizer, data_args)
         eval_dataset = None
         data_collator = DataCollatorForUniLIPMultiTaskDataset(tokenizer=tokenizer)
     else:

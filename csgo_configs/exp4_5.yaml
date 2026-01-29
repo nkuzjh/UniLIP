@@ -9,6 +9,7 @@ is_action_dit_dense_timestep: True
 task_mix_ratio: 1.0
 is_action_dit_projector: True
 action_dit_projector_lr: 1e-3
+is_multi_task_balanced: True
 
 data_dir: "data/preprocessed_data"
 train_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']
