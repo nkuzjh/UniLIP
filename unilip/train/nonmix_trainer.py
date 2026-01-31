@@ -552,6 +552,10 @@ class NonMixTrainer(Trainer):
 
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
+            optimizer_grouped_parameters = [
+                group for group in optimizer_grouped_parameters
+                if len(group["params"]) > 0
+            ]
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
             if optimizer_cls.__name__ == "Adam8bit":
                 import bitsandbytes
