@@ -341,9 +341,9 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         if 1:
-            if self.config.is_loc_learnable_query:
+            if getattr(self.config, "is_loc_learnable_query", False):
                 self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, llm_hidden_size))
-            if self.config.is_action_dit_projector:
+            if getattr(self.config, "is_action_dit_projector", False):
                 self.action_dit_projector = nn.Sequential(
                     nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
                     nn.GELU(),
@@ -399,9 +399,9 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.action_out_proj = nn.Linear(llm_hidden_size, self.config.action_dim)#.to(torch.bfloat16)
 
         # Enable Gradients for Action Path
-        if self.config.is_loc_learnable_query:
+        if getattr(self.config, "is_loc_learnable_query", False):
             for p in self.loc_learnable_query.parameters(): p.requires_grad = True
-        if self.config.is_action_dit_projector:
+        if getattr(self.config, "is_action_dit_projector", False):
             for p in self.action_dit_projector.parameters(): p.requires_grad = True
         for p in self.action_dit.parameters(): p.requires_grad = True
         for p in self.action_in_proj.parameters(): p.requires_grad = True
@@ -409,9 +409,9 @@ class Unified_UniLIP_InternVL_MetaModel:
         for p in self.time_mlp_out.parameters(): p.requires_grad = True
         for p in self.action_out_proj.parameters(): p.requires_grad = True
 
-        if self.config.is_loc_learnable_query:
+        if getattr(self.config, "is_loc_learnable_query", False):
             self.loc_learnable_query.apply(init_weights)
-        if self.config.is_action_dit_projector:
+        if getattr(self.config, "is_action_dit_projector", False):
             self.action_dit_projector.apply(init_weights)
         self.action_in_proj.apply(init_weights)
         self.time_mlp_in.apply(init_weights)
@@ -1159,7 +1159,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # 第二次综上所述，先忽略zeros填充的风险点，跑通模型。后续再修改action_dit的代码来适配adarms_cond
                 #### TODO
 
-                if self.config.is_action_dit_projector:
+                if getattr(self.config, "is_action_dit_projector", False):
                     action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
 
                 # Forward Action Connector (InternVL Slice)
@@ -1167,7 +1167,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # For simplicity, we assume bidr mask logic handles the sequence extension as default.
                 # 注意在OpenPi0.5中使用的gemma_expert_model还会接受adarms_cond(一个跟timestep有关的embedding)作为输入
                 if getattr(self.config, 'is_action_dit_dense_timestep', False):
-                    if self.config.is_loc_learnable_query:
+                    if getattr(self.config, "is_loc_learnable_query", False):
                         action_outputs = self.action_dit_forward_with_adarmscond(
                             hidden_states=self.loc_learnable_query,
                             encoder_hidden_states=locbrh_hidden_states, #torch.Size([128, 708, 896])
@@ -1187,7 +1187,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         )
                     action_hidden = action_outputs
                 else:
-                    if self.config.is_loc_learnable_query:
+                    if getattr(self.config, "is_loc_learnable_query", False):
                         action_outputs = self.model.action_dit(
                             inputs_embeds=self.loc_learnable_query,
                             encoder_inputs_embeds=locbrh_hidden_states, #torch.Size([128, 708, 896])
@@ -1225,7 +1225,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 #     return_dict=False
                 # )[0] #[BS, 1, Hidden]
 
-                if self.config.is_loc_learnable_query:
+                if getattr(self.config, "is_loc_learnable_query", False):
                     action_hidden = action_hidden[:,-1,:]
                 else:
                     # Gather from the same indices we scattered to
@@ -2042,7 +2042,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # max_seq_len = action_dit_inputs.shape[1]
             # action_dit_pos_ids = action_dit_pos_ids.clamp(max=max_seq_len - 1)
 
-            if self.config.is_action_dit_projector:
+            if getattr(self.config, 'is_action_dit_projector', False):
                 action_dit_inputs = self.action_dit_projector(action_dit_inputs)
 
             # C. Forward Action DiT
