@@ -15,7 +15,8 @@ test_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']
 # debug_num_train_data: 5000
 # debug_num_val_data: 1000
 
-ckpt_path: "outputs/csgo_1b/exp4_4/checkpoint-8000/model.safetensors"
+# ckpt_path: "outputs/csgo_1b/exp4_4/checkpoint-8000/model.safetensors" #65
+ckpt_path: "outputs/csgo_1b/exp4_4/checkpoint-26000/model.safetensors" #实际上是exp4_5的ckpt，exp4_5训练路径写错了 #fst
 guidance_scale: 4.5
 batch_size: 1
 # is_conti_gen: True
