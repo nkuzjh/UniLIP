@@ -403,6 +403,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             for p in self.loc_learnable_query.parameters(): p.requires_grad = True
         if getattr(self.config, "is_action_dit_projector", False):
             for p in self.action_dit_projector.parameters(): p.requires_grad = True
+        for p in self.action_dit_norm.parameters(): p.requires_grad = True
         for p in self.action_dit.parameters(): p.requires_grad = True
         for p in self.action_in_proj.parameters(): p.requires_grad = True
         for p in self.time_mlp_in.parameters(): p.requires_grad = True
@@ -413,6 +414,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.loc_learnable_query.apply(init_weights)
         if getattr(self.config, "is_action_dit_projector", False):
             self.action_dit_projector.apply(init_weights)
+        # self.action_dit_norm.apply(init_weights) # 不需要手动初始化，保持原初始weights即可
         self.action_in_proj.apply(init_weights)
         self.time_mlp_in.apply(init_weights)
         self.time_mlp_out.apply(init_weights)
@@ -1373,26 +1375,31 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
             hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([2, 256, 896])
 
-        # 5. Original LOCALIZATION Branch (Flow Matching Path)
-        actions = actions#torch.Size([128, 5])
-        noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
-        time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
-        time_expanded = time[:, None, None].to(actions.dtype)
-        x_t = time_expanded * noise + (1 - time_expanded) * actions
-        u_t = noise - actions
-
         # 临时冻结 Action Dit
+        self.model.action_dit_norm.requires_grad_(False)
+        self.model.action_dit_projector.requires_grad_(False)
         self.model.action_dit.requires_grad_(False)
         self.model.action_in_proj.requires_grad_(False)
         self.model.action_out_proj.requires_grad_(False)
         self.model.time_mlp_in.requires_grad_(False)
         self.model.time_mlp_out.requires_grad_(False)
+        self.model.action_dit_projector.eval()
+        self.model.action_dit.eval()
         self.model.action_dit.eval()
         self.model.action_in_proj.eval()
         self.model.action_out_proj.eval()
         self.model.time_mlp_in.eval()
         self.model.time_mlp_out.eval()
+
+        # 5. Original LOCALIZATION Branch (Flow Matching Path)
         with torch.no_grad():
+            actions = actions#torch.Size([128, 5])
+            noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
+            time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
+            time_expanded = time[:, None, None].to(actions.dtype)
+            x_t = time_expanded * noise + (1 - time_expanded) * actions
+            u_t = noise - actions
+
             suffix_emb, adarms_cond = self.embed_action_suffix(
                     x_t, #torch.Size([128, 1, 5])
                     time, #torch.Size([128])
@@ -1400,6 +1407,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     device=actions.device,
                     dtype=hidden_states.dtype
                 )
+
+            hidden_states = self.get_model().action_dit_norm(hidden_states)
+
             bs, seq_len, hidden_dim = hidden_states.shape
             valid_lens = attention_mask.sum(dim=1).long()
 
@@ -1413,7 +1423,18 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
             action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
             action_pos_ids = valid_lens.view(-1, 1)
-            action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+            # action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+            current_seq_len = action_dit_pos_ids.shape[1]
+            range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+            mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+            action_dit_pos_ids = torch.where(
+                mask_after_valid,
+                action_pos_ids,
+                action_dit_pos_ids
+            )
+
+            if getattr(self.config, "is_action_dit_projector", False):
+                action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
 
             if getattr(self.config, 'is_action_dit_dense_timestep', False):
                 action_outputs = self.action_dit_forward_with_adarmscond(
@@ -1452,12 +1473,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Apply Mask: Only count aux loc loss for Gen samples
             masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
 
-        # 临时冻结 Action Dit
+        # 恢复训练 Action Dit
+        self.model.action_dit_norm.requires_grad_(True)
+        self.model.action_dit_projector.requires_grad_(True)
         self.model.action_dit.requires_grad_(True)
         self.model.action_in_proj.requires_grad_(True)
         self.model.action_out_proj.requires_grad_(True)
         self.model.time_mlp_in.requires_grad_(True)
         self.model.time_mlp_out.requires_grad_(True)
+        self.model.action_dit_norm.train()
+        self.model.action_dit_projector.train()
         self.model.action_dit.train()
         self.model.action_in_proj.train()
         self.model.action_out_proj.train()
@@ -1881,10 +1906,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     @torch.no_grad()
     def generate_action2(
         self,
-        text: List[str],
-        tokenizer: AutoTokenizer,
-        und_images: Optional[torch.Tensor] = None,
-        aux_images: Optional[torch.Tensor] = None,
+        input_ids: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        labels: Optional[torch.Tensor] = None,
+        und_image: Optional[torch.Tensor] = None,
+        aux_image: Optional[torch.Tensor] = None,
         num_steps: int = 10,
         generator: Optional[torch.Generator] = None
     ):
@@ -1892,48 +1918,44 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         Run inference for Localization task using Flow Matching Euler Solver.
         Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
         """
-        # 1. Tokenize & Prepare Inputs
-        inputs = tokenizer(text, padding="longest", return_tensors="pt")
-        device = self.get_model().device
-        attention_mask = inputs.attention_mask.to(device)
-        input_ids = inputs.input_ids.to(device)  # B x N
 
-        # 2. Get Vision Features
+        # 1. Get Vision Features
         vision_feature_layer = self.config.vision_feature_layer
         vision_feature_select_strategy = self.config.vision_feature_select_strategy
 
         und_image_embeds = None
-        if und_images is not None:
+        if und_image is not None:
             und_image_embeds = self.model.get_image_features(
-                pixel_values=und_images.to(device, dtype=self.get_model().vision_tower.dtype),
+                pixel_values=und_image,
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
 
         aux_image_embeds = None
-        if aux_images is not None:
+        if aux_image is not None:
             aux_image_embeds = self.model.get_image_features(
-                pixel_values=aux_images.to(device, dtype=self.get_model().vision_tower.dtype),
+                pixel_values=aux_image,
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
 
-        # 3. Embed Text & Replace Image Tokens
+        # 2. Embed Text & Replace Image Tokens
         text_embeds = self.get_model().language_model.embed_tokens(input_ids)
         und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
 
-        if und_images is not None and und_image_idx.any():
+        # 3. Replace Image Features
+        if und_image is not None and und_image_idx.any():
             # Broadcast embeddings to batch size if needed (e.g. 1 image for all prompts)
             # Assuming standard [BS, C, H, W] input for simplicity based on collator
             # If batch sizes match, no repeat needed. If single image for batch, repeat.
             if und_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
                  und_image_embeds = und_image_embeds.repeat(text_embeds.shape[0], 1, 1)
-            text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).flatten(0,1)
+            text_embeds[und_image_idx] = und_image_embeds.flatten(0,1)
 
-        if aux_images is not None and aux_image_idx.any():
+        if aux_image is not None and aux_image_idx.any():
             if aux_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
                  aux_image_embeds = aux_image_embeds.repeat(text_embeds.shape[0], 1, 1)
-            text_embeds[aux_image_idx] = aux_image_embeds.to(text_embeds.device).flatten(0,1)
+            text_embeds[aux_image_idx] = aux_image_embeds.flatten(0,1)
 
         # 4. Prepare Context Position IDs
         position_ids = torch.cumsum(attention_mask, dim=1) - 1
@@ -1955,73 +1977,67 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Re-fill image embeddings (Skip Connection logic)
         # Important: indices must match flattened structure or batch structure
         if und_image_embeds is not None and und_image_idx.any():
-             hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+             hidden_states[und_image_idx] = und_image_embeds.flatten(0,1)
         if aux_image_embeds is not None and aux_image_idx.any():
-             hidden_states[aux_image_idx] = aux_image_embeds.to(hidden_states.device).flatten(0,1)
+             hidden_states[aux_image_idx] = aux_image_embeds.flatten(0,1)
 
-        # 6. Initialize Flow Matching Loop
-        bsize = input_ids.shape[0]
-        action_dim = self.model.config.action_dim
-        # # Sample initial noise x_1
-        # x_t = randn_tensor(
-        #     (bsize, 1, action_dim),
-        #     generator=generator,
-        #     device=device,
-        #     dtype=hidden_states.dtype
-        # )
-        noise = self.sample_noise((bsize, 1, action_dim), device=device)
-
-        dt = -1.0 / num_steps
-        # dt tensor for calculation
-        dt = torch.tensor(dt, device=device, dtype=hidden_states.dtype)
-
-        x_t = noise
-        t = torch.tensor(1.0, device=device, dtype=hidden_states.dtype)
-
-        # Calculate Valid Lengths for Right-Shift Insertion
-        # [BS, 1]
-        valid_lens = attention_mask.sum(dim=1, keepdim=True).long()
-        bs, seq_len, hidden_dim = hidden_states.shape
-
+        # 6. action_dit_norm
         hidden_states = self.get_model().action_dit_norm(hidden_states)
 
-        # 7. Euler Solver Loop
-        # Stop at t=0 (or close to it, Pi0 uses -dt/2 for safety)
-        while t >= -dt / 2:
+        # 7. Initialize Flow Matching Loop
+        bsize = input_ids.shape[0]
+        action_dim = self.model.config.action_dim
 
-            # A. Embed Suffix (Noisy Action + Time)
+        # Sample initial noise x_1
+        noise = self.sample_noise((bsize, 1, action_dim), device=hidden_states.device)
+
+        # dt tensor for calculation
+        dt = -1.0 / num_steps
+        dt = torch.tensor(dt, device=hidden_states.device, dtype=hidden_states.dtype)
+
+        # Calculate Valid Lengths for Right-Shift Insertion
+        valid_lens = attention_mask.sum(dim=1, keepdim=True).long() # [BS, 1]
+        bs, seq_len, hidden_dim = hidden_states.shape
+
+        # 8. Euler Solver Loop
+        # Stop at t=0 (or close to it, Pi0 uses -dt/2 for safety)
+        x_t = noise
+        t = torch.tensor(1.0, device=hidden_states.device, dtype=hidden_states.dtype)
+        while t >= -dt / 2:
+            # 8.1. Embed Suffix (Noisy Action + Time)
             expanded_time = t.expand(bsize)
             suffix_emb, adarms_cond = self.embed_action_suffix(
                 x_t,
                 expanded_time,
                 llm_hidden_size=self.model.config.text_config.hidden_size,
-                device=device,
+                device=hidden_states.device,
                 dtype=hidden_states.dtype
             )
 
-            # B. Construct Action Inputs (Right Shift & Fill Strategy)
+            # 8.2. Construct Action Inputs (Right Shift & Fill Strategy)
             # Reusing the robust logic from forward pass to avoid NaN
 
-            # 1. Inputs: Concat Hidden + Last Token (Safe Padding)
+            # 8.2.1. Inputs: Concat Hidden + Last Token (Safe Padding)
             # last_token_states = hidden_states[:, -1:, :]
             # extended_inputs = torch.cat([hidden_states, last_token_states], dim=1)
+            # 8.2.1. Inputs: Concat Hidden + Zero Token
             extended_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
             # Scatter Suffix to valid positions
             scatter_indices = valid_lens.unsqueeze(-1).expand(-1, -1, hidden_dim)
             action_dit_inputs = extended_inputs.scatter(1, scatter_indices, suffix_emb)
 
-            # 2. Mask: Extend and Set True at Action Position
+            # 8.2.2. Mask: Extend and Set True at Action Position
             extended_mask = torch.cat([
                 attention_mask,
-                torch.zeros((bs, 1), device=device, dtype=attention_mask.dtype)
+                torch.zeros((bs, 1), device=hidden_states.device, dtype=attention_mask.dtype)
             ], dim=1)
             mask_indices = valid_lens.view(-1, 1)
             action_dit_att_mask = extended_mask.scatter(1, mask_indices, 1)
 
-            # 3. Position IDs: Extend and Set to Valid Length Index
+            # 8.2.3. Position IDs: Extend and Set to Valid Length Index
             extended_pos_ids = torch.cat([
                 position_ids,
-                torch.zeros((bs, 1), device=device, dtype=position_ids.dtype)
+                torch.zeros((bs, 1), device=hidden_states.device, dtype=position_ids.dtype)
             ], dim=1)
             action_pos_ids = valid_lens.view(-1, 1)
             # action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
@@ -2030,7 +2046,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # 生成掩码：如果当前位置 index >= valid_lens，则为 True
             # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
             mask_after_valid = range_ids >= valid_lens.view(-1, 1)
-            # 使用 torch.where 进行批量填充
+            # 使用 torch.where 进行批量填充,保证pos_ids在valid_lens以后的位置继承action_pos_ids的值作为padding_pos_ids
             # 逻辑：Mask 为 True 的地方填入 action_pos_id，False 的地方保持原样
             extended_pos_ids = torch.where(
                 mask_after_valid,
@@ -2038,14 +2054,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 extended_pos_ids  # 保持原值
             )
 
-            # # Safety Clamp
-            # max_seq_len = action_dit_inputs.shape[1]
-            # action_dit_pos_ids = action_dit_pos_ids.clamp(max=max_seq_len - 1)
-
+            # 8.3 action_dit_projector
             if getattr(self.config, 'is_action_dit_projector', False):
-                action_dit_inputs = self.action_dit_projector(action_dit_inputs)
+                action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
 
-            # C. Forward Action DiT
+            # 8.4. Forward Action DiT
             if getattr(self.config, 'is_action_dit_dense_timestep', False):
                 # Use custom forward loop with AdaRMS
                 action_outputs = self.action_dit_forward_with_adarmscond(
@@ -2068,15 +2081,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 )
                 all_hidden_states = action_outputs.hidden_states[-1]
 
-            # D. Extract Action Token Output
+            # 8.5. Extract Action Token Output
             # Gather from the same indices we scattered to
             gather_indices = valid_lens.unsqueeze(-1).expand(-1, -1, hidden_dim)
             action_feat = all_hidden_states.gather(1, gather_indices) # [BS, 1, Hidden]
 
-            # E. Predict Velocity & Step
+            # 8.6. Predict Velocity & Step
             v_t = self.get_model().action_out_proj(action_feat)
-
             x_t = x_t + dt * v_t
+
             t += dt
 
         return x_t # Final Denoised Action [BS, 1, 5]

@@ -984,7 +984,6 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             self.data_entries = random.sample(self.data_entries, sampled_num)
             logging.info([(data['map'], data['file_frame']) for data in self.data_entries])
 
-        logging.info(f"✅ Total entries: {len(self.data_entries)}")
         self.list_data_dict = {
             "type": ["CS2_Multi_Task"] * len(self.data_entries),
             "id": [str(entry['map'] + "_" + entry['file_frame']) for entry in self.data_entries]
@@ -1002,6 +1001,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             else:
                 logging.warning(f"Map image not found: {path}")
 
+        logging.info(f"✅ Total entries: {len(self.data_entries)}")
 
     def __len__(self):
         return len(self.data_entries)

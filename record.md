@@ -190,6 +190,17 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 - 修改hidden_states的zero_padding
 - 修改pos_id拼接后的继承
 
+**20260201实验小结**
+- 目前exp4_3 exp4_4等仅微调lr、norm、hidden_states的方法与exp4_2无异，diffusion预测都集中在0.5左右(Z和pitch由于label大多集中在0.5，所以显得预测准确，实际results.json中也是都在0.5不能覆盖样本实际不在0.5的情况)。
+- 等同于**没有获取到fps的condition**，仅在map上最小化normed(0~1)的均值。
+- exp4_5和exp4_6等初始化了新的action_dit_projector，导致diffusion预测更加粗放，5D loc的MSE全都更大(xy上千error, pitch几百，z和yaw几十)；
+- 这说明**fps的condition依旧没有生效**，**且初始化的action_dit_projector没有正确训练**导致预测随机性更大。
+
+**20260202已修复小结**
+- eval和generate_action2代码导致prompt中的<Image> token未正确的替换为UniLIP的256*<IMAGE_CONTEXT> token，使得fps和map的embeds没有拼接到hidden_states上。
+- 虽然这与aciton_dit_norm、zero_padding、pos_id继承、action_dit_projector没有关系，但还是保持新增的这两个模块作为新的baseline进行exp8实验训练。
+- 其次这个问题的修复也与balanceddataset没有关系，但为了优化显存提高训练速度，同样把balanceddataset作为baseline进行exp8实验训练。
+
 **train_csgo.py**
 - exp4_3_lr1e-4
 ```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_3.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_3 --num_train_epochs 50 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
@@ -222,6 +233,8 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ``    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_6_loc_67.yaml      ``
 - exp4_6_1_lr1e-4_locditproj_locditly6 + exp7  \wo balancedataset
 ```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_6_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_6_1 --num_train_epochs 50 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 6       ```
+**eval_csgo_loc.py** 65:14000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_6_1_loc.yaml      ``
 - exp4_7_lr1e-4_loclrnq **todo** + exp7
 ```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_6.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_6 --num_train_epochs 50 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
 
@@ -306,7 +319,7 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ## exp7
 **改造完成后整合进入其他exp运行**
 - Action_Dit：增加gradient_checkpointing
-- MultiTaskUniLIP代码：增加按照loc/gen切分数据进入branch的功能，节省现存
+- MultiTaskUniLIP代码：增加按照loc/gen切分数据进入branch的功能，节省显存
 - MultiTaskDataset代码：增加loc/gen均衡采样的代码 **需单独配置yaml参数 is_multi_task_balanced: True**
 
     Batch Size 设置： 在 TrainingArguments 中，per_device_train_batch_size 代表的是 Sampler 采样的次数。如果设置 BS=64，实际上 Collator 会收到 64 个列表，展平后变成 128 个样本。
@@ -315,3 +328,28 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
         将原本的 BS 减半 (例如设为 64)，这样最终进入模型的 Batch Size 依然是 128 (64 Loc + 64 Gen)。
         如果 BS 减半， Epoch 相比单任务训练翻倍，那模型见到的数据量和之前一致，但是迭代次数会翻倍
         如果将 BS 不变，Epoch 不变， 那模型见到的数据量和迭代次数都和之前一致，但是需要显存翻倍（假设gen和loc所需显存一样）
+
+
+## exp8
+**exp5 + exp7 + exp4_5_1/exp4_6_1**
+- 已在exp4_5_1和exp4_6_1修复了eval和generate_action2代码导致的定位推理结果都等于0.5的问题
+**exp5**
+- Unified Multi-Task UniLIP (Localization + Generation)
+- is_action_dit_dense_timestep: True
+- 修复loc_head bug，详细说明见exp5_1
+- 3maps
+- is_loc_aux_loss
+**exp7**
+- Action_Dit：增加gradient_checkpointing
+- MultiTaskUniLIP代码：增加按照loc/gen切分数据进入branch的功能，节省显存
+- MultiTaskDataset代码：增加loc/gen均衡采样的代码。需单独配置yaml参数 is_multi_task_balanced: True，且会令参数task_mix_ratio用于控制定位/生成数据比例的功能失效
+**exp4_5_1**
+- 增加action_dit_norm
+- 修改hidden_states的zero_padding
+- 修改pos_id拼接后的继承
+- is_action_dit_projector: True
+**exp4_6_1暂不使用**
+- action_dit_layer: 6 #仅exp4_6_1，在启动命令中实现
+
+**train_csgo.py**
+```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp8.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp8 --num_train_epochs 100 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
