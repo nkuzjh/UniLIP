@@ -414,7 +414,7 @@ step=(alpha_loc_loss: 5, masked_loc_loss:, eval结果) running~
     ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp8_1_loc.yaml      ``
 
 
-## exp8
+## exp9
 **exp8 + autodl**
 - 在autodl上多卡训练exp8
 **train_csgo.py**
