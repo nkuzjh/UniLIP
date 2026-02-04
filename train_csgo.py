@@ -1385,6 +1385,7 @@ def train(attn_implementation=None):
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)

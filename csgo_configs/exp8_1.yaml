@@ -1,0 +1,30 @@
+###################
+### config.yaml
+###################
+debug: False
+
+
+is_multi_task: True
+is_action_dit_dense_timestep: True
+alpha_loc_loss: 5
+
+is_loc_aux_loss: True
+alpha_loc_aux_loss: 0.1
+
+is_multi_task_balanced: True
+# task_mix_ratio: 0.5 # 当is_multi_task_balanced==True时失效
+
+is_action_dit_projector: True
+action_dit_projector_lr: 0.001
+# action_dit_layer: 3 #这个参数在启动命令中实现
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2', 'de_nuke', 'de_ancient']
+val_maps: ['de_dust2','de_nuke', 'de_ancient']
+test_maps: ['de_dust2','de_nuke', 'de_ancient']
+# debug_num_train_data: 5000
+# debug_num_val_data: 1000
+
+# ckpt_path: "outputs/csgo_1b/exp2/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
+# guidance_scale: 4.5
+# batch_size: 1

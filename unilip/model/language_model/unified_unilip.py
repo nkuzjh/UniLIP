@@ -1250,8 +1250,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
 
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
-        total_loss = masked_gen_loss + masked_loc_loss + masked_loc_aux_loss * alpha_loc_aux_loss
-        logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
+        alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
+        total_loss = masked_gen_loss + masked_loc_loss * alpha_loc_loss + masked_loc_aux_loss * alpha_loc_aux_loss
+        logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
 
         return CausalLMOutputWithPast(
             loss=total_loss,
@@ -1922,11 +1923,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 1. Get Vision Features
         vision_feature_layer = self.config.vision_feature_layer
         vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
 
         und_image_embeds = None
         if und_image is not None:
             und_image_embeds = self.model.get_image_features(
-                pixel_values=und_image,
+                pixel_values=und_image.to(dtype=vision_dtype),
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
@@ -1934,7 +1936,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         aux_image_embeds = None
         if aux_image is not None:
             aux_image_embeds = self.model.get_image_features(
-                pixel_values=aux_image,
+                pixel_values=aux_image.to(dtype=vision_dtype),
                 vision_feature_layer=vision_feature_layer,
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
