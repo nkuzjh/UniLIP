@@ -75,6 +75,14 @@ def init_weights(m):
         if m.bias is not None:
             nn.init.zeros_(m.bias)
 
+# Aution_AE.decoder初始化0.002
+def small_init_weights(m):
+    if isinstance(m, nn.Linear):
+        # 使用较小的标准差，确保初始输出接近 0
+        nn.init.normal_(m.weight, std=0.001)
+        if m.bias is not None:
+            nn.init.zeros_(m.bias)
+
 # ==========================================
 # 1. MetaModel: 定义组件 (Connectors & Heads)
 # ==========================================
@@ -184,10 +192,16 @@ class Unified_UniLIP_InternVL_MetaModel:
             #     self.loc_learnable_query.apply(init_weights)
             # if self.config.is_action_dit_projector:
             #     self.action_dit_projector.apply(init_weights)
-            self.action_in_proj.apply(init_weights)
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_in_proj.apply(small_init_weights)
+            else:
+                self.action_in_proj.apply(init_weights)
             self.time_mlp_in.apply(init_weights)
             self.time_mlp_out.apply(init_weights)
-            self.action_out_proj.apply(init_weights)
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_out_proj.apply(small_init_weights)
+            else:
+                self.action_out_proj.apply(init_weights)
 
 
     def initialize_vision_modules(self, model_args, fsdp=None):
@@ -415,10 +429,16 @@ class Unified_UniLIP_InternVL_MetaModel:
         if getattr(self.config, "is_action_dit_projector", False):
             self.action_dit_projector.apply(init_weights)
         # self.action_dit_norm.apply(init_weights) # 不需要手动初始化，保持原初始weights即可
-        self.action_in_proj.apply(init_weights)
+        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+            self.action_in_proj.apply(small_init_weights)
+        else:
+            self.action_in_proj.apply(init_weights)
         self.time_mlp_in.apply(init_weights)
         self.time_mlp_out.apply(init_weights)
-        self.action_out_proj.apply(init_weights)
+        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+            self.action_out_proj.apply(small_init_weights)
+        else:
+            self.action_out_proj.apply(init_weights)
 
         if getattr(model_args, "gradient_checkpointing", False):
             self.action_dit.gradient_checkpointing_enable()
