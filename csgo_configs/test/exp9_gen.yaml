@@ -24,8 +24,8 @@ test_maps: ['de_dust2','de_nuke', 'de_ancient']
 # debug_num_train_data: 5000
 # debug_num_val_data: 1000
 
-ckpt_path: "outputs/csgo_1b/exp8/checkpoint-16000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp9/autodl/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
-is_conti_gen: True
+# is_conti_gen: True
 

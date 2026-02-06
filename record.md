@@ -330,14 +330,17 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp5/test_20260124_232313/gen_imgs/de_dust2 --all --batch_size 8       ``
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp5/test_20260124_232313/gen_imgs/de_nuke --all --batch_size 8       ``
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp5/test_20260124_232313/gen_imgs/de_ancient --all --batch_size 8       ``
-**continuous gen todo** step=65000
+**continuous gen** step=65000
 ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp5_conti.yaml      ``
-    **benchmark_csgo.py todo**
+    **benchmark_csgo.py**
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_dust2 --all --batch_size 8       ``
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_nuke --all --batch_size 8       ``
     ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_ancient --all --batch_size 8       ``
-    **frames to video todo**
-**eval_csgo_loc.py** step=5000 60000 80000
+    **frames to video**
+    ``    python frames_to_video.py --img_dir outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp5_conti/test_20260125_172550/gen_compared_videos/de_dust2 --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_nuke --gt_dir data/preprocessed_data/de_nuke/imgs --output_dir outputs_eval/exp5_conti/test_20260125_172550/gen_compared_videos/de_nuke --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp5_conti/test_20260125_172550/gen_imgs/de_ancient --gt_dir data/preprocessed_data/de_ancient/imgs --output_dir outputs_eval/exp5_conti/test_20260125_172550/gen_compared_videos/de_ancient --max_duration 10        ``
+**eval_csgo_loc.py** step=5000 60000 80000 90000
 ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp5_loc.yaml      ``
 
 
@@ -371,6 +374,7 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
         如果将 BS 不变，Epoch 不变， 那模型见到的数据量和迭代次数都和之前一致，但是需要显存翻倍（假设gen和loc所需显存一样）
 
 
+
 ## exp8
 **exp5 + exp7 + exp4_5_1/exp4_6_1**
 - 已在exp4_5_1和exp4_6_1修复了eval和generate_action2代码导致的定位推理结果都等于0.5的问题
@@ -398,6 +402,22 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp8_loc.yaml      ```
 **eval_csgo.py** step=12000
 ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp8_gen.yaml      ``
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp8_gen/test_20260204_195820/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp8_gen/test_20260204_195820/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp8_gen/test_20260204_195820/gen_imgs/de_ancient --all --batch_size 8       ``
+**continuous gen**  step=16000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp8_gen.yaml      ``
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_ancient --all --batch_size 8       ``
+    **frames to video**
+    ``    python frames_to_video.py --img_dir outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp8_gen/test_20260205_134439/gen_compared_videos/de_dust2 --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_nuke --gt_dir data/preprocessed_data/de_nuke/imgs --output_dir outputs_eval/exp8_gen/test_20260205_134439/gen_compared_videos/de_nuke --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp8_gen/test_20260205_134439/gen_imgs/de_ancient --gt_dir data/preprocessed_data/de_ancient/imgs --output_dir outputs_eval/exp8_gen/test_20260205_134439/gen_compared_videos/de_ancient --max_duration 10        ``
+
+
 
 ## exp8_1
 - epoch 50
@@ -418,4 +438,22 @@ step=(alpha_loc_loss: 5, masked_loc_loss:, eval结果) running~
 **exp8 + autodl**
 - 在autodl上多卡训练exp8
 **train_csgo.py**
-```     CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp9.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp9 --num_train_epochs 100 --per_device_train_batch_size 96 --per_device_eval_batch_size 96 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
+```     CUDA_VISIBLE_DEVICES=0,1,2,3 torchrun --nproc_per_node=4 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp9.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp9 --num_train_epochs 100 --per_device_train_batch_size 112 --per_device_eval_batch_size 112 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 8 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
+**eval_csgo_loc.py** step=2000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp9_loc.yaml      ```
+**eval_csgo.py** step=2000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp9_gen.yaml      ``
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp9_gen/test_20260205_234138/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp9_gen/test_20260205_234138/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp9_gen/test_20260205_234138/gen_imgs/de_ancient --all --batch_size 8       ``
+**continuous gen**  step=2000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp9_gen_conti.yaml      ``
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_ancient --all --batch_size 8       ``
+    **frames to video**
+    ``    python frames_to_video.py --img_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_compared_videos/de_dust2 --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_nuke --gt_dir data/preprocessed_data/de_nuke/imgs --output_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_compared_videos/de_nuke --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_imgs/de_ancient --gt_dir data/preprocessed_data/de_ancient/imgs --output_dir outputs_eval/exp9_gen_conti/test_20260205_234140/gen_compared_videos/de_ancient --max_duration 10        ``

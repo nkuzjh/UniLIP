@@ -659,6 +659,7 @@ def main():
 
     # 3. Init Action Modules
     model.config.is_action_dit_dense_timestep = inference_args.is_action_dit_dense_timestep
+    model.config.is_exp5_eval_without_aciton_dit_premodules = inference_args.is_exp5_eval_without_aciton_dit_premodules
     model.config.is_action_dit_projector =  inference_args.is_action_dit_projector
     model.config.is_loc_learnable_query =  inference_args.is_loc_learnable_query
 
