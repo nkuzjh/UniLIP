@@ -75,6 +75,14 @@ def init_weights(m):
         if m.bias is not None:
             nn.init.zeros_(m.bias)
 
+# Aution_AE.decoder初始化0.002
+def small_init_weights(m):
+    if isinstance(m, nn.Linear):
+        # 使用较小的标准差，确保初始输出接近 0
+        nn.init.normal_(m.weight, std=0.001)
+        if m.bias is not None:
+            nn.init.zeros_(m.bias)
+
 # ==========================================
 # 1. MetaModel: 定义组件 (Connectors & Heads)
 # ==========================================
@@ -184,10 +192,16 @@ class Unified_UniLIP_InternVL_MetaModel:
             #     self.loc_learnable_query.apply(init_weights)
             # if self.config.is_action_dit_projector:
             #     self.action_dit_projector.apply(init_weights)
-            self.action_in_proj.apply(init_weights)
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_in_proj.apply(small_init_weights)
+            else:
+                self.action_in_proj.apply(init_weights)
             self.time_mlp_in.apply(init_weights)
             self.time_mlp_out.apply(init_weights)
-            self.action_out_proj.apply(init_weights)
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_out_proj.apply(small_init_weights)
+            else:
+                self.action_out_proj.apply(init_weights)
 
 
     def initialize_vision_modules(self, model_args, fsdp=None):
@@ -415,10 +429,16 @@ class Unified_UniLIP_InternVL_MetaModel:
         if getattr(self.config, "is_action_dit_projector", False):
             self.action_dit_projector.apply(init_weights)
         # self.action_dit_norm.apply(init_weights) # 不需要手动初始化，保持原初始weights即可
-        self.action_in_proj.apply(init_weights)
+        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+            self.action_in_proj.apply(small_init_weights)
+        else:
+            self.action_in_proj.apply(init_weights)
         self.time_mlp_in.apply(init_weights)
         self.time_mlp_out.apply(init_weights)
-        self.action_out_proj.apply(init_weights)
+        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+            self.action_out_proj.apply(small_init_weights)
+        else:
+            self.action_out_proj.apply(init_weights)
 
         if getattr(model_args, "gradient_checkpointing", False):
             self.action_dit.gradient_checkpointing_enable()
@@ -1984,7 +2004,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
              hidden_states[aux_image_idx] = aux_image_embeds.flatten(0,1)
 
         # 6. action_dit_norm
-        hidden_states = self.get_model().action_dit_norm(hidden_states)
+        if not getattr(self.config, 'is_exp5_eval_without_aciton_dit_premodules', False):
+            hidden_states = self.get_model().action_dit_norm(hidden_states)
 
         # 7. Initialize Flow Matching Loop
         bsize = input_ids.shape[0]
@@ -2042,23 +2063,26 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 torch.zeros((bs, 1), device=hidden_states.device, dtype=position_ids.dtype)
             ], dim=1)
             action_pos_ids = valid_lens.view(-1, 1)
-            # action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
-            current_seq_len = extended_pos_ids.shape[1]
-            range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
-            # 生成掩码：如果当前位置 index >= valid_lens，则为 True
-            # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
-            mask_after_valid = range_ids >= valid_lens.view(-1, 1)
-            # 使用 torch.where 进行批量填充,保证pos_ids在valid_lens以后的位置继承action_pos_ids的值作为padding_pos_ids
-            # 逻辑：Mask 为 True 的地方填入 action_pos_id，False 的地方保持原样
-            extended_pos_ids = torch.where(
+            if getattr(self.config, 'is_exp5_eval_without_aciton_dit_premodules', False):
+                action_dit_pos_ids = extended_pos_ids.scatter(1, mask_indices, action_pos_ids)
+            else:
+                current_seq_len = extended_pos_ids.shape[1]
+                range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+                # 生成掩码：如果当前位置 index >= valid_lens，则为 True
+                # [BS, 1] vs [1, Seq+1] -> Broadcast -> [BS, Seq+1]
+                mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+                # 使用 torch.where 进行批量填充,保证pos_ids在valid_lens以后的位置继承action_pos_ids的值作为padding_pos_ids
+                # 逻辑：Mask 为 True 的地方填入 action_pos_id，False 的地方保持原样
+                extended_pos_ids = torch.where(
                 mask_after_valid,
                 action_pos_ids,      # 广播填充 [BS, 1] -> [BS, Mask区域]
                 extended_pos_ids  # 保持原值
             )
 
             # 8.3 action_dit_projector
-            if getattr(self.config, 'is_action_dit_projector', False):
-                action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
+            if not getattr(self.config, 'is_exp5_eval_without_aciton_dit_premodules', False):
+                if getattr(self.config, 'is_action_dit_projector', False):
+                    action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
 
             # 8.4. Forward Action DiT
             if getattr(self.config, 'is_action_dit_dense_timestep', False):
