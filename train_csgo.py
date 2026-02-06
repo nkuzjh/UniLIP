@@ -1386,10 +1386,13 @@ def train(attn_implementation=None):
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
+    model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", 5e-4)
+
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
+
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
