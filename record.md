@@ -401,17 +401,20 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 
 ## exp8_1
 - epoch 50
-- lr 5e-4
+- lr 1e-4 #5e-4
 - alpha_loc_aux_loss: 0.1
-- alpha_loc_loss: 5
+- alpha_loc_loss: 2
 
 **train_csgo.py**
-```     CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp8_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp8_1 --num_train_epochs 50 --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 5e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
+```     CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp8_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp8_1 --num_train_epochs 50 --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3       ```
 **eval_csgo_loc.py**
-step=6000(alpha_loc_loss: 10, masked_loc_loss: 1.229501, eval结果不收敛)
+step=6000(5e-4 alpha_loc_loss: 10, masked_loc_loss: 1.229501, eval结果不收敛)
     ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp8_1_loc.yaml      ``
-step=(alpha_loc_loss: 5, masked_loc_loss:, eval结果) running~
+step=6000(5e-4 alpha_loc_loss: 5, masked_loc_loss: 1.663208, eval结果稍好但仍不收敛)
     ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp8_1_loc.yaml      ``
+step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
+    ``    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp8_1_loc.yaml      ``
+
 
 
 ## exp8
