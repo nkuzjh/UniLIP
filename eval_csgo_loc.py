@@ -658,10 +658,10 @@ def main():
     print(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     # 3. Init Action Modules
-    model.config.is_action_dit_dense_timestep = inference_args.is_action_dit_dense_timestep
-    model.config.is_exp5_eval_without_aciton_dit_premodules = inference_args.is_exp5_eval_without_aciton_dit_premodules
-    model.config.is_action_dit_projector =  inference_args.is_action_dit_projector
-    model.config.is_loc_learnable_query =  inference_args.is_loc_learnable_query
+    model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
+    model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", False)
+    model.config.is_action_dit_projector = getattr(inference_args, "is_action_dit_projector", False)
+    model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", False)
 
     model.get_model().initialize_vision_modules(model_args=inference_args)
     model.get_model().initialize_localization_modules(model_args=inference_args)
