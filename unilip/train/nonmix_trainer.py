@@ -14,7 +14,29 @@ from transformers.trainer import (
 )
 ALL_LAYERNORM_LAYERS = [nn.LayerNorm]
 from typing import List, Optional
-from transformers.utils import is_torch_xla_available
+from transformers.utils import is_torch_xla_available, is_peft_available
+from transformers.trainer_utils import speed_metrics
+from transformers.models.auto.modeling_auto import (
+    MODEL_FOR_CAUSAL_LM_MAPPING_NAMES,
+)
+import importlib.metadata
+from packaging import version
+
+if is_peft_available():
+    from peft import PeftModel
+
+def _is_peft_model(model):
+    if is_peft_available():
+        classes_to_check = (PeftModel,)
+        # Here we also check if the model is an instance of `PeftMixedModel` introduced in peft>=0.7.0: https://github.com/huggingface/transformers/pull/28321
+        if version.parse(importlib.metadata.version("peft")) >= version.parse("0.7.0"):
+            from peft import PeftMixedModel
+
+            classes_to_check = (*classes_to_check, PeftMixedModel)
+        return isinstance(model, classes_to_check)
+    return False
+
+
 
 if is_torch_xla_available():
     import torch_xla.core.xla_model as xm
@@ -274,6 +296,12 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
 
 
 class NonMixTrainer(Trainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Initialize a dictionary to store the latest loss values
+        # Since the model returns python floats (scalars), we just need to store the latest value
+        self.latest_loss_info = {}
+
     def get_train_dataloader(self):
         """
         重写此方法以使用我们自定义的分布式批次采样器。
@@ -572,4 +600,110 @@ class NonMixTrainer(Trainer):
                 logger.info(f"skipped: {skipped/2**20}M params")
 
         return self.optimizer
+
+    def compute_loss(
+        self,
+        model,
+        inputs,
+        return_outputs=False,
+        num_items_in_batch=None,
+    ):
+        """
+        Overridden to capture 'extras' from the model output.
+        """
+        # --- 1. Prepare inputs (Standard Trainer logic) ---
+        if (self.label_smoother is not None or self.compute_loss_func is not None) and "labels" in inputs:
+            labels = inputs.pop("labels")
+        else:
+            labels = None
+
+        if self.model_accepts_loss_kwargs:
+            kwargs = {}
+            if num_items_in_batch is not None:
+                kwargs["num_items_in_batch"] = num_items_in_batch
+            inputs = {**inputs, **kwargs}
+
+        # --- 2. Forward pass ---
+        outputs = model(**inputs)
+
+        # Save past state if it exists
+        if self.args.past_index >= 0:
+            self._past = outputs[self.args.past_index]
+
+        # --- 3. [CUSTOM] Capture extra loss info ---
+        # We capture the 'extras' attribute attached in your model's forward
+        if hasattr(outputs, "extras") and "other_info" in outputs.extras:
+            # We store it in self.latest_loss_info to be used later in log()
+            # Since you already detached and converted to item() in the model, we just copy it.
+            self.latest_loss_info = outputs.extras["other_info"]
+
+        # --- 4. Compute final scalar loss (Standard Trainer logic) ---
+        if self.compute_loss_func is not None:
+            if labels is None:
+                logger.warning(
+                    "Trainer: `compute_loss_func` is defined but `labels=None`. "
+                    "Your custom loss function will still be called with labels=None. "
+                )
+            loss = self.compute_loss_func(outputs, labels, num_items_in_batch=num_items_in_batch)
+        elif labels is not None:
+            # Handle label smoothing / PEFT unwrapping
+            unwrapped_model = self.accelerator.unwrap_model(model)
+            model_name = (
+                unwrapped_model.base_model.model._get_name()
+                if _is_peft_model(unwrapped_model)
+                else unwrapped_model._get_name()
+            )
+            if model_name in MODEL_FOR_CAUSAL_LM_MAPPING_NAMES.values():
+                loss = self.label_smoother(outputs, labels, shift_labels=True)
+            else:
+                loss = self.label_smoother(outputs, labels)
+        else:
+            # Standard causal LM loss extraction
+            if isinstance(outputs, dict) and "loss" not in outputs:
+                raise ValueError(
+                    "The model did not return a loss from the inputs, only the following keys: "
+                    f"{','.join(outputs.keys())}. For reference, the inputs it received are {','.join(inputs.keys())}."
+                )
+            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+
+        # Handle average tokens across devices
+        if (
+            self.args.average_tokens_across_devices
+            and (self.model_accepts_loss_kwargs or self.compute_loss_func)
+            and num_items_in_batch is not None
+        ):
+            loss *= self.accelerator.num_processes if self.args.n_gpu <= 1 else self.args.n_gpu
+
+        return (loss, outputs) if return_outputs else loss
+
+    def log(self, logs: dict[str, float], start_time=None) -> None:
+        """
+        Overridden to inject 'other_info' into the logs dict.
+        """
+        # --- 1. [CUSTOM] Inject stored loss info ---
+        if self.latest_loss_info:
+            # Add the 'other_info' dictionary to the logs
+            # Your Callback expects 'other_info' key
+            logs["other_info"] = self.latest_loss_info
+
+            # Optional: Clear it to avoid stale data (though typically overwritten next step)
+            # self.latest_loss_info = {}
+
+        # --- 2. Standard Trainer logging logic ---
+        if self.state.epoch is not None:
+            logs["epoch"] = self.state.epoch
+
+        if self.args.include_num_input_tokens_seen != "no":
+            logs["num_input_tokens_seen"] = self.state.num_input_tokens_seen
+            if start_time is not None:
+                logs.update(speed_metrics("train", start_time, num_tokens=self.state.num_input_tokens_seen))
+
+        output = {**logs, **{"step": self.state.global_step}}
+        self.state.log_history.append(output)
+
+        # Triggers your UniLIPLogCallback.on_log
+        self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
+
+
+
 

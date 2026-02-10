@@ -478,7 +478,7 @@
 
 
 # Total parameters: 1649898211
-# Trainable parameters: 683519136
+## Trainable parameters: 683519136
 ## model.latent_queries
      trainable params:  model.latent_queries
 ## model.dit
@@ -1202,3 +1202,518 @@ Qwen2Model(
 
 
 
+# Exp10 Model Before LoRA
+
+## Unified_UniLIP_InternVLForCausalLM(
+  ### (model): Unified_UniLIP_InternVLModel(
+  #### (vision_tower): InternVisionModel(
+      (embeddings): InternVisionEmbeddings(
+        (patch_embedding): Conv2d(3, 1024, kernel_size=(14, 14), stride=(14, 14))
+      )
+      (encoder): InternVisionEncoder(
+        (layers): ModuleList(
+          (0): InternVisionEncoderLayer(
+            (attn): InternAttention(
+              (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+              (attn_drop): Dropout(p=0.0, inplace=False)
+              (proj_drop): Dropout(p=0.0, inplace=False)
+              (inner_attn): FlashAttention()
+              (proj): Linear(in_features=1024, out_features=1024, bias=True)
+            )
+            (mlp): InternMLP(
+              (act): GELUActivation()
+              (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+              (fc2): Linear(in_features=4096, out_features=1024, bias=True)
+            )
+            (norm1): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+            (norm2): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+            (drop_path1): Identity()
+            (drop_path2): Identity()
+          )
+          (1-23): 23 x InternVisionEncoderLayer(
+            (attn): InternAttention(
+              (qkv): Linear(in_features=1024, out_features=3072, bias=True)
+              (attn_drop): Dropout(p=0.0, inplace=False)
+              (proj_drop): Dropout(p=0.0, inplace=False)
+              (inner_attn): FlashAttention()
+              (proj): Linear(in_features=1024, out_features=1024, bias=True)
+            )
+            (mlp): InternMLP(
+              (act): GELUActivation()
+              (fc1): Linear(in_features=1024, out_features=4096, bias=True)
+              (fc2): Linear(in_features=4096, out_features=1024, bias=True)
+            )
+            (norm1): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+            (norm2): LayerNorm((1024,), eps=1e-06, elementwise_affine=True)
+            (drop_path1): DropPath(drop_prob=0.000)
+            (drop_path2): DropPath(drop_prob=0.000)
+          )
+        )
+      )
+    )
+  #### (multi_modal_projector): Sequential(
+      (0): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
+      (1): Linear(in_features=4096, out_features=896, bias=True)
+      (2): GELU(approximate='none')
+      (3): Linear(in_features=896, out_features=896, bias=True)
+    )
+  #### (language_model): Qwen2Model(
+      (embed_tokens): Embedding(151678, 896)
+      (layers): ModuleList(
+        (0-23): 24 x Qwen2DecoderLayer(
+          (self_attn): Qwen2Attention(
+            (q_proj): Linear(in_features=896, out_features=896, bias=True)
+            (k_proj): Linear(in_features=896, out_features=128, bias=True)
+            (v_proj): Linear(in_features=896, out_features=128, bias=True)
+            (o_proj): Linear(in_features=896, out_features=896, bias=False)
+          )
+          (mlp): Qwen2MLP(
+            (gate_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (up_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (down_proj): Linear(in_features=4864, out_features=896, bias=False)
+            (act_fn): SiLUActivation()
+          )
+          (input_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
+          (post_attention_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
+        )
+      )
+      (norm): Qwen2RMSNorm((896,), eps=1e-06)
+      (rotary_emb): Qwen2RotaryEmbedding()
+    )
+  #### (dit): SanaTransformer2DModel(
+      (patch_embed): PatchEmbed(
+        (proj): Conv2d(32, 1152, kernel_size=(1, 1), stride=(1, 1))
+      )
+      (time_embed): AdaLayerNormSingle(
+        (emb): PixArtAlphaCombinedTimestepSizeEmbeddings(
+          (time_proj): Timesteps()
+          (timestep_embedder): TimestepEmbedding(
+            (linear_1): Linear(in_features=256, out_features=1152, bias=True)
+            (act): SiLU()
+            (linear_2): Linear(in_features=1152, out_features=1152, bias=True)
+          )
+        )
+        (silu): SiLU()
+        (linear): Linear(in_features=1152, out_features=6912, bias=True)
+      )
+      (caption_projection): PixArtAlphaTextProjection(
+        (linear_1): Linear(in_features=2304, out_features=1152, bias=True)
+        (act_1): GELU(approximate='tanh')
+        (linear_2): Linear(in_features=1152, out_features=1152, bias=True)
+      )
+      (caption_norm): RMSNorm()
+      (transformer_blocks): ModuleList(
+        (0-27): 28 x SanaTransformerBlock(
+          (norm1): LayerNorm((1152,), eps=1e-06, elementwise_affine=False)
+          (attn1): Attention(
+            (to_q): Linear(in_features=1152, out_features=1152, bias=False)
+            (to_k): Linear(in_features=1152, out_features=1152, bias=False)
+            (to_v): Linear(in_features=1152, out_features=1152, bias=False)
+            (to_out): ModuleList(
+              (0): Linear(in_features=1152, out_features=1152, bias=True)
+              (1): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (norm2): LayerNorm((1152,), eps=1e-06, elementwise_affine=False)
+          (attn2): Attention(
+            (to_q): Linear(in_features=1152, out_features=1152, bias=True)
+            (to_k): Linear(in_features=1152, out_features=1152, bias=True)
+            (to_v): Linear(in_features=1152, out_features=1152, bias=True)
+            (to_out): ModuleList(
+              (0): Linear(in_features=1152, out_features=1152, bias=True)
+              (1): Dropout(p=0.0, inplace=False)
+            )
+          )
+          (ff): GLUMBConv(
+            (nonlinearity): SiLU()
+            (conv_inverted): Conv2d(1152, 5760, kernel_size=(1, 1), stride=(1, 1))
+            (conv_depth): Conv2d(5760, 5760, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=5760)
+            (conv_point): Conv2d(2880, 1152, kernel_size=(1, 1), stride=(1, 1), bias=False)
+          )
+        )
+      )
+      (norm_out): SanaModulatedNorm(
+        (norm): LayerNorm((1152,), eps=1e-06, elementwise_affine=False)
+      )
+      (proj_out): Linear(in_features=1152, out_features=32, bias=True)
+    )
+  #### (vae_decoder): DCAE_Decoder(
+      (decoder): Decoder(
+        (conv_in): Conv2d(32, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (up_blocks): ModuleList(
+          (0): Sequential(
+            (0): DCUpBlock2d(
+              (conv): Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            )
+            (1): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (2): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (3): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(128, 128, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+          )
+          (1): Sequential(
+            (0): DCUpBlock2d(
+              (conv): Conv2d(512, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            )
+            (1): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (2): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (3): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(256, 256, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+          )
+          (2): Sequential(
+            (0): DCUpBlock2d(
+              (conv): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            )
+            (1): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (2): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+            (3): ResBlock(
+              (nonlinearity): SiLU()
+              (conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+              (conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False)
+              (norm): RMSNorm()
+            )
+          )
+          (3): Sequential(
+            (0): DCUpBlock2d(
+              (conv): Conv2d(1024, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            )
+            (1): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=512, out_features=512, bias=False)
+                (to_k): Linear(in_features=512, out_features=512, bias=False)
+                (to_v): Linear(in_features=512, out_features=512, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(1536, 1536, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=1536, bias=False)
+                    (proj_out): Conv2d(1536, 1536, kernel_size=(1, 1), stride=(1, 1), groups=48, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=1024, out_features=512, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(512, 4096, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(4096, 4096, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4096)
+                (conv_point): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (2): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=512, out_features=512, bias=False)
+                (to_k): Linear(in_features=512, out_features=512, bias=False)
+                (to_v): Linear(in_features=512, out_features=512, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(1536, 1536, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=1536, bias=False)
+                    (proj_out): Conv2d(1536, 1536, kernel_size=(1, 1), stride=(1, 1), groups=48, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=1024, out_features=512, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(512, 4096, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(4096, 4096, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4096)
+                (conv_point): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (3): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=512, out_features=512, bias=False)
+                (to_k): Linear(in_features=512, out_features=512, bias=False)
+                (to_v): Linear(in_features=512, out_features=512, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(1536, 1536, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=1536, bias=False)
+                    (proj_out): Conv2d(1536, 1536, kernel_size=(1, 1), stride=(1, 1), groups=48, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=1024, out_features=512, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(512, 4096, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(4096, 4096, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=4096)
+                (conv_point): Conv2d(2048, 512, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+          )
+          (4): Sequential(
+            (0): DCUpBlock2d(
+              (conv): Conv2d(1024, 1024, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+            )
+            (1): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (2): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (3): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+          )
+          (5): Sequential(
+            (0): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (1): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+            (2): EfficientViTBlock(
+              (attn): SanaMultiscaleLinearAttention(
+                (to_q): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_k): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_v): Linear(in_features=1024, out_features=1024, bias=False)
+                (to_qkv_multiscale): ModuleList(
+                  (0): SanaMultiscaleAttentionProjection(
+                    (proj_in): Conv2d(3072, 3072, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2), groups=3072, bias=False)
+                    (proj_out): Conv2d(3072, 3072, kernel_size=(1, 1), stride=(1, 1), groups=96, bias=False)
+                  )
+                )
+                (nonlinearity): ReLU()
+                (to_out): Linear(in_features=2048, out_features=1024, bias=False)
+                (norm_out): RMSNorm()
+              )
+              (conv_out): GLUMBConv(
+                (nonlinearity): SiLU()
+                (conv_inverted): Conv2d(1024, 8192, kernel_size=(1, 1), stride=(1, 1))
+                (conv_depth): Conv2d(8192, 8192, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), groups=8192)
+                (conv_point): Conv2d(4096, 1024, kernel_size=(1, 1), stride=(1, 1), bias=False)
+                (norm): RMSNorm()
+              )
+            )
+          )
+        )
+        (norm_out): RMSNorm()
+        (conv_act): ReLU()
+        (conv_out): Conv2d(128, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+      )
+      (down_blocks): ModuleList(
+        (0-2): 3 x ResBlock(
+          (mlp): Sequential(
+            (0): LayerNorm((896,), eps=1e-06, elementwise_affine=True)
+            (1): Linear(in_features=896, out_features=896, bias=True)
+            (2): GELU(approximate='none')
+            (3): Linear(in_features=896, out_features=896, bias=True)
+          )
+        )
+      )
+      (down_mlp): Sequential(
+        (0): LayerNorm((896,), eps=1e-05, elementwise_affine=True)
+        (1): Linear(in_features=896, out_features=32, bias=True)
+        (2): GELU(approximate='none')
+        (3): Linear(in_features=32, out_features=32, bias=True)
+      )
+    )
+  #### (llm_connector): Qwen2Model(
+      (layers): ModuleList(
+        (0-5): 6 x Qwen2DecoderLayer(
+          (self_attn): Qwen2Attention(
+            (q_proj): Linear(in_features=896, out_features=896, bias=True)
+            (k_proj): Linear(in_features=896, out_features=128, bias=True)
+            (v_proj): Linear(in_features=896, out_features=128, bias=True)
+            (o_proj): Linear(in_features=896, out_features=896, bias=False)
+          )
+          (mlp): Qwen2MLP(
+            (gate_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (up_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (down_proj): Linear(in_features=4864, out_features=896, bias=False)
+            (act_fn): SiLUActivation()
+          )
+          (input_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
+          (post_attention_layernorm): Qwen2RMSNorm((896,), eps=1e-06)
+        )
+      )
+      (norm): Qwen2RMSNorm((896,), eps=1e-06)
+      (rotary_emb): Qwen2RotaryEmbedding()
+    )
+  #### (projector): Linear(in_features=896, out_features=2304, bias=True)
+  #### (action_dit_norm): Qwen2RMSNorm((896,), eps=1e-06)
+  #### (action_dit): Qwen2Model(
+      (layers): ModuleList(
+        (0-2): 3 x Qwen2DecoderLayer(
+          (self_attn): Qwen2Attention(
+            (q_proj): Linear(in_features=896, out_features=896, bias=True)
+            (k_proj): Linear(in_features=896, out_features=128, bias=True)
+            (v_proj): Linear(in_features=896, out_features=128, bias=True)
+            (o_proj): Linear(in_features=896, out_features=896, bias=False)
+          )
+          (mlp): Qwen2MLP(
+            (gate_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (up_proj): Linear(in_features=896, out_features=4864, bias=False)
+            (down_proj): Linear(in_features=4864, out_features=896, bias=False)
+            (act_fn): SiLUActivation()
+          )
+          (input_layernorm): Qwen2RMSNormAdaRMS(
+            (linear): Linear(in_features=896, out_features=2688, bias=True)
+          )
+          (post_attention_layernorm): Qwen2RMSNormAdaRMS(
+            (linear): Linear(in_features=896, out_features=2688, bias=True)
+          )
+        )
+      )
+      (norm): Qwen2RMSNormAdaRMS(
+        (linear): Linear(in_features=896, out_features=2688, bias=True)
+      )
+      (rotary_emb): Qwen2RotaryEmbedding()
+    )
+  #### (action_in_proj): Linear(in_features=5, out_features=896, bias=True)
+  #### (time_mlp_in): Linear(in_features=896, out_features=896, bias=True)
+  #### (time_mlp_out): Linear(in_features=896, out_features=896, bias=True)
+  #### (action_out_proj): Linear(in_features=896, out_features=5, bias=True)
+  #### (action_dit_projector): Sequential(
+      (0): Linear(in_features=896, out_features=3584, bias=True)
+      (1): GELU(approximate='none')
+      (2): Linear(in_features=3584, out_features=1792, bias=True)
+      (3): GELU(approximate='none')
+      (4): Linear(in_features=1792, out_features=896, bias=True)
+    )
+  )
+  ### (lm_head): Linear(in_features=896, out_features=151678, bias=False)
+)

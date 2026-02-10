@@ -77,6 +77,11 @@ def img_process(images, processor, image_aspect_ratio):
         images = processor.preprocess(images, return_tensors="pt")["pixel_values"]
     return images
 
+from torchvision import transforms
+img_resize_transform = transforms.Compose([
+    transforms.Resize((224, 224), interpolation=InterpolationMode.BICUBIC),
+])
+
 # ==========================================
 # B.2 Prompt 构建函数
 # ==========================================
@@ -97,9 +102,12 @@ def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min):
     full_instruction = f"{definition_text}\n\nCurrent Camera Pose: {pose_str}\n<image>"
     return full_instruction
 
-def preprocess_multimodal(sources: Sequence[str]) -> Dict:
+def preprocess_multimodal(sources: Sequence[str], img_size: int = 448) -> Dict:
     # NOTE: default to 256 tokens for 448x448
-    und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
+    if img_size==224:
+        und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 64}{IMG_END_TOKEN}' # resize224
+    else:
+        und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
     gen_placeholder = ""
     # "[IMG]" + "<image>" * data_args.n_query + "[/IMG]"
     inst_type = None
@@ -602,7 +610,7 @@ class UniLIPMultiTaskDataset(Dataset):
                     {"from": "gpt", "value": ""} # Assistant 回复位置Token
                 ]
             }
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]))
+            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.img_size)
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
             labels = preprocess_dict["labels"][0]
@@ -616,12 +624,16 @@ class UniLIPMultiTaskDataset(Dataset):
                 self.data_args.image_processor,
                 self.data_args.image_aspect_ratio
             ) # shape: [2, C, H, W]
-            und_image = process_images[:-1] # [1, C, H, W]
-            aux_image = process_images[-1:] # [1, C, H, W]
+            if self.config.img_size==224:
+                und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+                aux_image = img_resize_transform(process_images[-1:]) # [1, C, H, W]
+            else:
+                und_image = process_images[:-1] # [1, C, H, W]
+                aux_image = process_images[-1:] # [1, C, H, W]
 
             # Target Image for Generator (DiT)
             # 定位任务不需要生成，所以给一个全黑的或者随机的占位符，Loss Mask 会把它忽略
-            gen_image = torch.zeros_like(und_image)
+            gen_image = torch.zeros_like(process_images[:-1])
 
             # Head Mask: 开启 Pose Head，关闭 Gen Head
             # [Loc_Loss_Weight, Gen_Loss_Weight]
@@ -652,7 +664,7 @@ class UniLIPMultiTaskDataset(Dataset):
                 ]
             }
             # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]))
+            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.img_size)
             # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
@@ -666,7 +678,10 @@ class UniLIPMultiTaskDataset(Dataset):
                 self.data_args.image_processor,
                 self.data_args.image_aspect_ratio
             ) # shape: [2, C, H, W]
-            und_image = process_images[:-1] # [1, C, H, W]
+            if self.config.img_size==224:
+                und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+            else:
+                und_image = process_images[:-1] # [1, C, H, W]
             gen_image = process_images[-1:] # [1, C, H, W]
 
             aux_image = torch.zeros_like(und_image)
@@ -681,7 +696,7 @@ class UniLIPMultiTaskDataset(Dataset):
                     {"from": "gpt", "value": ""} # Assistant 回复位置Token
                 ]
             }
-            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]))
+            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]), self.config.img_size)
             aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
             aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
             aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
@@ -1028,9 +1043,17 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             self.data_args.image_aspect_ratio
         ) # shape: [2, C, H, W]
         # 拆分出 Tensor
-        tensor_fps = process_images[:-1] # [1, C, H, W]
-        tensor_map = process_images[-1:] # [1, C, H, W]
+        if self.config.img_size==224:
+            tensor_fps = img_resize_transform(process_images[:-1])
+            tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
+        else:
+            tensor_fps = process_images[:-1]
+            tensor_map = process_images[-1:]
         tensor_empty = torch.zeros_like(tensor_map)
+
+        tensor_fps_448 = process_images[:-1] # [1, C, H, W]
+        tensor_empty_448 = torch.zeros_like(tensor_fps_448)
+
 
         # 3. 计算归一化坐标 (Common for both tasks)
         z_info = self.map_z_range[map_name]
@@ -1066,7 +1089,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             ]
         }
         # Tokenize Loc
-        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]))
+        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.img_size)
         pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
 
         # 构造 Loc 样本字典
@@ -1075,7 +1098,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "ids": f"{data['file_frame']}_loc",
             "und_image": tensor_fps,   # Input: FPS
             "aux_image": tensor_map,   # Aux: Map
-            "gen_image": tensor_empty, # Target: None (Empty)
+            "gen_image": tensor_empty_448, # Target: None (Empty)
             "input_ids": pre_dict_loc["input_ids"][0],
             "labels": pre_dict_loc["labels"][0],
             "raw_prompt": user_text_loc,
@@ -1106,7 +1129,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             ]
         }
         # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]))
+        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]), self.config.img_size)
         # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
         pre_dict_gen = preprocess(sources_gen, self.tokenizer, has_image=True)
 
@@ -1121,7 +1144,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "ids": f"{data['file_frame']}_gen",
             "und_image": tensor_map,   # Input: Map
             "aux_image": tensor_empty, # Aux: None
-            "gen_image": tensor_fps,   # Target: FPS
+            "gen_image": tensor_fps_448,   # Target: FPS
             "input_ids": pre_dict_gen["input_ids"][0],
             "labels": pre_dict_gen["labels"][0],
             "raw_prompt": user_text_gen,
