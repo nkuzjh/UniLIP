@@ -30,7 +30,9 @@ from transformers import AutoProcessor
 from unilip.conversation import Conversation, SeparatorStyle
 from tqdm import tqdm
 from copy import deepcopy
+from transformers import TrainerCallback
 
+from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
 import numpy as np
 import yaml
@@ -47,6 +49,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 transform_und_images = T.Compose([T.Resize(448, interpolation=InterpolationMode.BICUBIC, antialias=True), T.CenterCrop(448)])
+# transform_und_images = T.Compose([T.Resize(224, interpolation=InterpolationMode.BICUBIC, antialias=True), T.CenterCrop(224)]) #resize224
+img_resize_transform = T.Compose([
+    T.Resize((224, 224), interpolation=InterpolationMode.BICUBIC),
+])#resize224
 
 set_verbosity_info()
 tf_logging.set_verbosity_info()
@@ -162,12 +168,15 @@ class TrainingArguments(transformers.TrainingArguments):
         metadata={"help": "Quantization data type to use. Should be one of `fp4` or `nf4`."},
     )
     bits: int = field(default=16, metadata={"help": "How many bits to use."})
-    lora_enable: bool = False
+
+    # lora_enable: bool = False
+    is_lora: bool = False
     lora_r: int = 64
     lora_alpha: int = 16
     lora_dropout: float = 0.05
     lora_weight_path: str = ""
     lora_bias: str = "none"
+
     mm_projector_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
@@ -177,6 +186,8 @@ class TrainingArguments(transformers.TrainingArguments):
     is_action_dit_projector: bool = False
     loc_learnable_query_lr: float = 5e-4
     is_loc_learnable_query: bool = False
+    logging_steps=1,
+    logging_strategy="steps",
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -256,7 +267,9 @@ def find_all_linear_names(model):
     return list(lora_module_names)
 
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str, vision_tower: str):
+
+
+def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str, vision_tower: str, is_lora: bool):
     """Collects the state dict and dump to disk."""
 
     # if getattr(trainer.args, "tune_vision_model", False):
@@ -264,8 +277,17 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
     if trainer.deepspeed:
         torch.cuda.synchronize()
 
+    def save_weight_dict(weights, folder_name, filename):
+        if trainer.args.local_rank in [0, -1]:
+            if current_folder.startswith("checkpoint-"):
+                save_folder = os.path.join(parent_folder, folder_name)
+                os.makedirs(save_folder, exist_ok=True)
+                torch.save(weights, os.path.join(save_folder, f"{current_folder}.bin"))
+            else:
+                torch.save(weights, os.path.join(output_dir, f"{filename}.bin"))
 
     # Only save Adapter
+    ## mm_projector
     keys_to_match = ["mm_projector"]
     if getattr(trainer.args, "use_im_start_end", False):
         keys_to_match.extend(["embed_tokens", "embed_in"])
@@ -275,17 +297,9 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
 
     current_folder = output_dir.split("/")[-1]
     parent_folder = os.path.dirname(output_dir)
-    if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-        if current_folder.startswith("checkpoint-"):
-            mm_projector_folder = os.path.join(parent_folder, "mm_projector")
-            os.makedirs(mm_projector_folder, exist_ok=True)
-            torch.save(
-                weight_to_save,
-                os.path.join(mm_projector_folder, f"{current_folder}.bin"),
-            )
-        else:
-            torch.save(weight_to_save, os.path.join(output_dir, f"mm_projector.bin"))
+    save_weight_dict(weight_to_save, "mm_projector", "mm_projector")
 
+    ## gen_projector
     keys_to_match = ["gen_projector"]
     if getattr(trainer.args, "use_im_start_end", False):
         keys_to_match.extend(["embed_tokens", "embed_in"])
@@ -295,16 +309,50 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
 
     current_folder = output_dir.split("/")[-1]
     parent_folder = os.path.dirname(output_dir)
-    if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
-        if current_folder.startswith("checkpoint-"):
-            mm_projector_folder = os.path.join(parent_folder, "gen_projector")
-            os.makedirs(mm_projector_folder, exist_ok=True)
-            torch.save(
-                weight_to_save,
-                os.path.join(mm_projector_folder, f"{current_folder}.bin"),
-            )
-        else:
-            torch.save(weight_to_save, os.path.join(output_dir, f"gen_projector.bin"))
+    save_weight_dict(weight_to_save, "gen_projector", "gen_projector")
+
+    ## localization head
+    action_keys = [
+        "action_dit_projector",
+        "action_dit_norm",
+        "action_in_proj",
+        "action_out_proj",
+        "time_mlp_in",
+        "time_mlp_out",
+        "loc_learnable_query"
+    ]
+    # 使用 fuzzy match 提取这些模块的权重
+    action_weights = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), action_keys)
+    if len(action_weights) > 0:
+        save_weight_dict(action_weights, "action_heads", "action_heads")
+
+    # LoRA Adapter 保存逻辑
+    if is_lora:
+        # LoRA Adapter 保存需要特殊处理，因为它们散落在各个子模块中
+        # 我们需要遍历所有子模块，找到 PeftModel 并调用其 save_pretrained
+        if trainer.args.local_rank in [0, -1]:
+            # 获取原始模型 (解包 DDP/DeepSpeed)
+            model_to_save = trainer.model
+            # 如果被 DeepSpeed 包装，尝试获取 module
+            if hasattr(model_to_save, "module"):
+                model_to_save = model_to_save.module
+
+            # 这里的 get_model() 是 Unified_UniLIP_InternVLModel
+            base_model = model_to_save.get_model()
+
+            # 定义可能包含 LoRA 的子模块名称
+            lora_module_names = ["vision_tower", "language_model", "llm_connector", "dit", "action_dit"]
+
+            for module_name in lora_module_names:
+                if hasattr(base_model, module_name):
+                    sub_module = getattr(base_model, module_name)
+                    # 检查是否为 PeftModel
+                    if isinstance(sub_module, PeftModel):
+                        # 构造保存路径，例如: output_dir/checkpoint-500/lora_adapters/vision_tower
+                        adapter_save_dir = os.path.join(output_dir, "lora_adapters", module_name)
+                        os.makedirs(adapter_save_dir, exist_ok=True)
+                        logging.info(f"💾 Saving LoRA adapter for {module_name} to {adapter_save_dir}")
+                        sub_module.save_pretrained(adapter_save_dir)
 
     if trainer.deepspeed:
         torch.cuda.synchronize()
@@ -390,12 +438,15 @@ def _add_speaker_and_signal(header, source, get_conversation=True):
 
 
 
-def preprocess_multimodal(sources: Sequence[str], data_args: DataArguments) -> Dict:
+def preprocess_multimodal(sources: Sequence[str], data_args: DataArguments, img_size: int = 448) -> Dict:
     is_multimodal = data_args.is_multimodal
     if not is_multimodal:
         return sources
     # NOTE: default to 256 tokens for 448x448
-    und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
+    if img_size==224:
+        und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 64}{IMG_END_TOKEN}' # resize224
+    else:
+        und_placeholder = f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
     gen_placeholder = ""
     # "[IMG]" + "<image>" * data_args.n_query + "[/IMG]"
     inst_type = None
@@ -1135,7 +1186,10 @@ class CSGOWorldModelDataset(Dataset):
                 # 分配给 UniLIP 训练脚本识别的 Key
                 # und_image: 输入条件 (Radar)
                 # gen_image: 监督目标 (FPS)
-                data_dict["und_image"] = process_images[:-1] # [1, C, H, W]
+                if self.config.img_size==224:
+                    data_dict["und_image"] = process_images[:-1] # [1, C, H, W]
+                else:
+                    data_dict["und_image"] = img_resize_transform(process_images[:-1]) # [1, C, H, W]
                 data_dict["gen_image"] = process_images[-1:] # [1, C, H, W]
 
                 # 这里的 id 是为了 logging 方便
@@ -1241,6 +1295,38 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
 def unlock_vit(training_args, model_args, vision_tower):
     for n, p in vision_tower.named_parameters():
         p.requires_grad = True
+
+
+class UniLIPLogCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        """
+        每当达到 logging_steps 时触发。
+        logs 字典通常包含: {'loss': ..., 'learning_rate': ..., 'epoch': ...}
+        """
+        if state.is_local_process_zero and logs is not None:
+            # 格式化打印
+            log_msg = f"[ Step {state.global_step} ] "
+
+            # 打印 Loss
+            if "loss" in logs:
+                log_msg += f"Loss: {logs['loss']:.6f} | "
+
+            # 打印 LR
+            if "learning_rate" in logs:
+                log_msg += f"LR: {logs['learning_rate']:.4e} | "
+
+            # 打印 Epoch
+            if "epoch" in logs:
+                log_msg += f"Epoch: {logs['epoch']:.2f}"
+
+            # 如果你有自定义的 loss (需要配合修改 Trainer.compute_loss 才能看到)
+            if "other_info" in logs:
+                log_msg += f" | Other Info: {logs['other_info']}"
+
+            # 强制打印到控制台
+            logging.info(log_msg)
+            # 或者直接 print，防止 logging 被过滤
+            # print(log_msg, flush=True)
 
 
 def train(attn_implementation=None):
@@ -1382,7 +1468,10 @@ def train(attn_implementation=None):
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
     logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
+    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
+    model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
+
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
@@ -1403,18 +1492,18 @@ def train(attn_implementation=None):
     # Connector load from checkpoint!!! = llm_connector + projector
     # latent_queries load from checkpoint!!!
 
-    # Unified_UniLIP_InternVLForCausalLM.from_pretrained()启用了low_mem和accelerator且UniLIP权重中不包含新增的定位模块action_dit，导致action_dit没有正确加载Qwen2Model的权重，这里避开Unified_UniLIP_InternVLForCausalLM的初始化和from_pretrained方法。重新加载action_dit的权重，防止梯度爆炸
+    # Unified_UniLIP_InternVLForCausalLM.from_pretrained()启用了low_mem和accelerator且UniLIP权重中不包含新增的定位模块action_dit，导致action_dit没有正确加载Qwen2Model的权重，这里避开Unified_UniLIP_InternVLForCausalLM的__init__和from_pretrained方法。重新加载action_dit的权重，防止梯度爆炸
     model.get_model().initialize_localization_modules(model_args=model_args)
 
-
-    if not model_args.fix_vit:
-        for p in model.get_model().vision_tower.parameters():
-            p.requires_grad = True
-        for p in model.get_model().multi_modal_projector.parameters():
-            p.requires_grad = True
-    if not model_args.fix_llm:
-        for p in model.get_model().language_model.parameters():
-            p.requires_grad = True
+    ### 已经在两个initialize_modules方法中和lora配置一起实现
+    # if not model_args.fix_vit:
+    #     for p in model.get_model().vision_tower.parameters():
+    #         p.requires_grad = True
+    #     for p in model.get_model().multi_modal_projector.parameters():
+    #         p.requires_grad = True
+    # if not model_args.fix_llm:
+    #     for p in model.get_model().language_model.parameters():
+    #         p.requires_grad = True
 
     data_args.image_processor = AutoProcessor.from_pretrained(model_args.mllm_hf_path).image_processor
 
@@ -1430,19 +1519,58 @@ def train(attn_implementation=None):
 
     model.config.freeze_mm_mlp_adapter = training_args.freeze_mm_mlp_adapter
 
-    # Calculate total parameters and trainable parameters
-    total_params = sum(p.numel() for p in model.get_model().parameters())
-    trainable_params = sum(p.numel() for p in model.get_model().parameters() if p.requires_grad)
+
+    if training_args.gradient_checkpointing:
+        # Component-specific gradient checkpointing
+        base_model = model.get_model()
+        # 1. Vision Tower - Only if not frozen and requires memory optimization
+        if hasattr(base_model, 'vision_tower'):# and not model_args.fix_vit:
+            if hasattr(base_model.vision_tower, 'gradient_checkpointing_enable'):
+                base_model.vision_tower.gradient_checkpointing_enable()
+            logging.info("✅ Enabled gradient checkpointing for vision tower")
+        # 2. Language Model - Only if not frozen
+        if hasattr(base_model, 'language_model'):# and not model_args.fix_llm:
+            if hasattr(base_model.language_model, 'gradient_checkpointing_enable'):
+                base_model.language_model.gradient_checkpointing_enable()
+            logging.info("✅ Enabled gradient checkpointing for language model")
+        # 3. LLM Connector models - llm slices
+        if hasattr(base_model, 'llm_connector'):
+            base_model.llm_connector.gradient_checkpointing_enable()
+            logging.info("✅ Enabled gradient checkpointing for LLM Connector")
+        # 4. DiT models - SANA DiT
+        if hasattr(base_model, 'dit'):
+            base_model.dit.enable_gradient_checkpointing()
+            logging.info("✅ Enabled gradient checkpointing for Gen DiT")
+        # 5. Action DiT - llm slices or Pi0.5 Action DiT
+        if hasattr(base_model, 'action_dit') and hasattr(base_model.action_dit, 'gradient_checkpointing_enable'):
+            base_model.action_dit.gradient_checkpointing_enable()
+            logging.info("✅ Enabled gradient checkpointing for Loc DiT")
+
+
+    if getattr(training_args, 'is_lora', False):
+        model.inject_lora_to_sub_module(model_args, training_args)
+
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        logging.info(f"🚀 After LoRA: Total parameters: {total_params}")
+        logging.info(f"🚀 After LoRA: Trainable parameters: {trainable_params}")
+        logging.info(f"🚀 After LoRA: Trainable percent: {100*trainable_params / total_params:.2f} %")
+
+    else:
+        # Calculate total parameters and trainable parameters
+        total_params = sum(p.numel() for p in model.get_model().parameters())
+        trainable_params = sum(p.numel() for p in model.get_model().parameters() if p.requires_grad)
+        logging.info(f"Total parameters: {total_params}")
+        logging.info(f"Trainable parameters: {trainable_params}")
+        logging.info(f"trainable percent: {100*trainable_params / total_params:2f} %")
+
 
     train_param_names = []
     for name, param in model.named_parameters():
         if param.requires_grad:
             train_param_names.append(name)
-            logging.info(f"     trainable params: {name}")
-    # logging.info("trainable params", train_param_names)
-    logging.info(f"Total parameters: {total_params}")
-    logging.info(f"Trainable parameters: {trainable_params}")
-    logging.info(f"trainable percent: {100*trainable_params / total_params:2f} %")
+            # logging.info(f"     trainable params: {name}")
+    logging.info(f"trainable layers: {len(train_param_names)}")
 
 
     model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
@@ -1452,11 +1580,13 @@ def train(attn_implementation=None):
     model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
     model.config.pad_token_id = tokenizer.pad_token_id
 
+
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
         msg = model.load_state_dict(torch.load(pretrain_path), strict=False)
         logging.info(f"load pretrain: {pretrain_path}")
         logging.info(msg)
+
 
     # def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
 
@@ -1492,6 +1622,8 @@ def train(attn_implementation=None):
                 is_multi_task=csgo_config.get("is_multi_task", False)
             )
 
+
+
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -1500,21 +1632,25 @@ def train(attn_implementation=None):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
+        callbacks=[UniLIPLogCallback()],
     )
-    from tabulate import tabulate
 
 
-    if trainer.is_world_process_zero():
-        stat = []
-        for i, (n, p) in enumerate(trainer.model.named_parameters()):
-            stat.append([i, n, p.shape, p.requires_grad])
-        logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+    # from tabulate import tabulate
+    # if trainer.is_world_process_zero():
+    #     stat = []
+    #     for i, (n, p) in enumerate(trainer.model.named_parameters()):
+    #         stat.append([i, n, p.shape, p.requires_grad])
+    #     logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
         trainer.train(resume_from_checkpoint=True)
     else:
         trainer.train()
+
     trainer.save_state()
+
 
     model.config.use_cache = True
     safe_save_model_for_hf_trainer(
@@ -1523,8 +1659,10 @@ def train(attn_implementation=None):
         vision_tower=model_args.vision_tower,
     )
 
+
     if training_args.local_rank in [-1, 0]:
         wandb.finish()
+
 
 
 if __name__ == "__main__":

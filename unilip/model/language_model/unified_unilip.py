@@ -25,6 +25,9 @@ from ..sana import build_sana
 from ..vae_modules import DCAE_Decoder
 from unilip.constants import DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN, IMAGE_TOKEN_IDX, DEFAULT_IM_START_TOKEN_IDX, DEFAULT_IM_END_TOKEN_IDX, UND_IMAGE_TOKEN_IDX
 
+from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training, PeftModel
+
+
 # [NEW] Helper Functions from Pi0.5 (Ported)
 def get_safe_dtype(target_dtype, device_type):
     if device_type == "cpu":
@@ -145,11 +148,9 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.projector = nn.Linear(llm_hidden_size, self.dit.config.caption_channels)
 
             # --- C. [NEW] Localization Path (Action Connector & Flow Matching Heads) ---
-            # if self.config.is_loc_learnable_query:
-            #     self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, hidden_size))
-            # # from transformers.models.internvl.modeling_internvl import InternVLMultiModalProjector
-            # # self.action_dit_projector = InternVLMultiModalProjector(config)
-            # if self.config.is_action_dit_projector:
+            # if getattr(self.config, "is_loc_learnable_query", False):
+            #     self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, llm_hidden_size))
+            # if getattr(self.config, "is_action_dit_projector", False):
             #     self.action_dit_projector = nn.Sequential(
             #         nn.Linear(llm_hidden_size, llm_hidden_size*4, bias=True),
             #         nn.GELU(),
@@ -157,7 +158,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             #         nn.GELU(),
             #         nn.Linear(llm_hidden_size*2, llm_hidden_size, bias=True),
             #     )
-            # # 输入action_dit前的feature首先进行normalize
+            # 输入action_dit前的feature首先进行normalize
             self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
 
             # 1. Action Dit
@@ -345,6 +346,48 @@ class Unified_UniLIP_InternVL_MetaModel:
             p.requires_grad = connect_require_grad
         self.latent_queries.requires_grad = connect_require_grad
 
+        ### 是否开启LoRA，重新配置可学习参数
+        self.is_lora = getattr(self.config, 'is_lora', False)
+        # 1. Vision Tower & Multi-modal Projector
+        if not model_args.fix_vit:
+            if self.is_lora:
+                # LoRA模式：Vision Tower主体冻结，由PEFT接管；Projector通常全量训练(作为modules_to_save)
+                for p in self.vision_tower.parameters(): p.requires_grad = False
+                for p in self.multi_modal_projector.parameters(): p.requires_grad = True
+            else:
+                # 全量微调模式
+                for p in self.vision_tower.parameters(): p.requires_grad = True
+                for p in self.multi_modal_projector.parameters(): p.requires_grad = True
+
+        # 2. LLM Backbone
+        if not model_args.fix_llm:
+            if self.is_lora:
+                # LoRA模式：LLM主体冻结，由PEFT接管
+                for p in self.model.language_model.parameters(): p.requires_grad = False
+            else:
+                for p in self.model.language_model.parameters(): p.requires_grad = True
+
+        # 3. LLM Connector (Gen Branch)
+        if not self.fix_connect:
+            if self.is_lora:
+                # Connector是InternVL切片，视为Backbone，用LoRA训练
+                for p in self.llm_connector.parameters(): p.requires_grad = False
+                # Projector 是Linear映射层，建议全量训练
+                for p in self.projector.parameters(): p.requires_grad = True
+                self.latent_queries.requires_grad = True
+            else:
+                for p in self.llm_connector.parameters(): p.requires_grad = True
+                for p in self.projector.parameters(): p.requires_grad = True
+                self.latent_queries.requires_grad = True
+
+        # 4. SANA DiT (Gen Branch)
+        if not self.fix_dit:
+            if self.is_lora:
+                # DiT 也是大模型，用 LoRA
+                for p in self.dit.parameters(): p.requires_grad = False
+            else:
+                for p in self.dit.parameters(): p.requires_grad = True
+
 
     def initialize_localization_modules(self, model_args):
         # [Simulating previous code structure for brevity]
@@ -412,37 +455,51 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.time_mlp_out = nn.Linear(llm_hidden_size, llm_hidden_size)#.to(torch.bfloat16)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.config.action_dim)#.to(torch.bfloat16)
 
+        ### 是否开启LoRA，重新配置可学习参数
+        # 1. Action DiT (Pi0.5 GemmaExpertModel)
+        self.is_lora = getattr(self.config, 'is_lora', False)
+        if self.is_lora:
+            # Backbone 冻结，等待 LoRA 注入
+            for p in self.action_dit.parameters(): p.requires_grad = False
+        else:
+            for p in self.action_dit.parameters(): p.requires_grad = True
+
+        # 2. Heads & Projectors
         # Enable Gradients for Action Path
         if getattr(self.config, "is_loc_learnable_query", False):
             for p in self.loc_learnable_query.parameters(): p.requires_grad = True
         if getattr(self.config, "is_action_dit_projector", False):
             for p in self.action_dit_projector.parameters(): p.requires_grad = True
         for p in self.action_dit_norm.parameters(): p.requires_grad = True
-        for p in self.action_dit.parameters(): p.requires_grad = True
         for p in self.action_in_proj.parameters(): p.requires_grad = True
         for p in self.time_mlp_in.parameters(): p.requires_grad = True
         for p in self.time_mlp_out.parameters(): p.requires_grad = True
         for p in self.action_out_proj.parameters(): p.requires_grad = True
 
-        if getattr(self.config, "is_loc_learnable_query", False):
-            self.loc_learnable_query.apply(init_weights)
-        if getattr(self.config, "is_action_dit_projector", False):
-            self.action_dit_projector.apply(init_weights)
-        # self.action_dit_norm.apply(init_weights) # 不需要手动初始化，保持原初始weights即可
-        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
-            self.action_in_proj.apply(small_init_weights)
+        # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
+        if getattr(self.config, "use_pi05_action_dit", False):
+            logging.info(f"Use Pi0.5 Action DiT without Init, LoRA Enabled: {self.is_lora}")
         else:
-            self.action_in_proj.apply(init_weights)
-        self.time_mlp_in.apply(init_weights)
-        self.time_mlp_out.apply(init_weights)
-        if getattr(self.config, "is_aciton_dit_vae_small_init", False):
-            self.action_out_proj.apply(small_init_weights)
-        else:
-            self.action_out_proj.apply(init_weights)
+            # Init Weights
+            if getattr(self.config, "is_loc_learnable_query", False):
+                self.loc_learnable_query.apply(init_weights)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_projector.apply(init_weights)
+            # self.action_dit_norm.apply(init_weights) # NOrm层不需要手动初始化，保持原初始weights即可
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_in_proj.apply(small_init_weights)
+            else:
+                self.action_in_proj.apply(init_weights)
+            self.time_mlp_in.apply(init_weights)
+            self.time_mlp_out.apply(init_weights)
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.action_out_proj.apply(small_init_weights)
+            else:
+                self.action_out_proj.apply(init_weights)
+            logging.info("Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora}")
 
-        if getattr(model_args, "gradient_checkpointing", False):
-            self.action_dit.gradient_checkpointing_enable()
-        logging.info("Action VAE weights initialized successfully!")
+        # if getattr(model_args, "gradient_checkpointing", False):
+        #     self.action_dit.gradient_checkpointing_enable()
 
 
 def split_image_tokens(input_ids, image_token_idx):
@@ -556,11 +613,11 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
                     vision_feature_layer=vision_feature_layer,
                     vision_feature_select_strategy=vision_feature_select_strategy,
                     image_sizes=image_sizes,
-                )
+                )# bs, 256, 896 # 为了对齐unilip预训练的latent_queries=256，gen_image仍使用448。因此有输入端：定位fps=224、map=224；生成map=224。输出端：生成fps=448
                 # (B, HW, C) -> (B, C, H, W), assume H==W
                 prompt_image_embeds = self.model.vae_decoder.clip_down(prompt_image_embeds)
             target_image_embeds = torch.clone(prompt_image_embeds).detach()
-            target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor) #torch.Size([128, 32, 16, 16])
+            target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor) #torch.Size([128, 32, 16, 16]) # bs, 32, 8, 8
 
         # 2. Process Und Images (Input) - used for Understanding/Localization
         und_image_embeds = None
@@ -585,7 +642,7 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
             )#torch.Size([128, 256, 896])
 
         # 4. Text Embeddings & Replacements
-        und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)#und_image_idx=torch.Size([128, 707]) #aux_image_idx=torch.Size([128, 707])
+        und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX) # yiyong生成任务的最后也拼接了256个<IMG_CONTEXT> token #und_image_idx=torch.Size([128, 707]) #aux_image_idx=torch.Size([128, 707])
         gen_image_idx = (input_ids == IMAGE_TOKEN_IDX)
         # combined_image_idx = (input_ids == UND_IMAGE_TOKEN_IDX) # 为了不改变原有模型的token_vocabulary, 直接使用UND_IMAGE_TOKEN_IDX作为und和aux image token的idx。
         text_embeds = self.get_model().language_model.embed_tokens(input_ids)
@@ -608,7 +665,7 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
         is_loc_task = (task_id == 0)
         input_indicator = labels == -100
         und_img_idx = torch.logical_and(input_indicator, und_image_idx)
-        aux_img_idx = torch.logical_and(input_indicator, aux_image_idx)
+        aux_img_idx = torch.logical_and(input_indicator, aux_image_idx) #在生成任务中，利用split_image_tokens得到的aux_image_idx实际是gen_image_idx的位置，但labels!=-100，所以这里取交集aux_img_idx为空
         if und_images is not None and und_img_idx.any():
              text_embeds[und_img_idx] = und_image_embeds.to(text_embeds.device).flatten(0,1)
         if aux_images is not None and aux_img_idx.any():
@@ -828,6 +885,177 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         self.lm_head = nn.Linear(config.text_config.hidden_size, config.text_config.vocab_size, bias=False)
         self.post_init()
 
+    # 通用 LoRA 注入函数
+    def _apply_lora_to_module(self, lora_r, lora_alpha, lora_dropout, target_modules, modules_to_save=None, module_name="submodule"):
+        """
+        Helper to inject LoRA adapters into specific sub-modules.
+        """
+        # 1. 检查模块是否存在
+        if not hasattr(self.model, module_name):
+            logging.warning(f"⚠️ Module {module_name} not found in model, skipping LoRA injection.")
+            return
+        # 2. 获取子模块对象
+        module = getattr(self.model, module_name)
+        logging.info(f"🚀 Injecting LoRA into sub-module: {module_name}...")
+
+
+        # =================================================================
+        # [关键修复] 强制打补丁 (Force Monkey Patch)
+        # =================================================================
+        # 针对 action_dit 和 llm_connector 这种llm slices 删除了 embedding 的模块，
+        # 无论它们是否开启 Gradient Checkpointing，都强制给一个假的 get_input_embeddings。
+        # 这样可以一劳永逸地解决 PEFT 的自动检查报错。
+        if module_name in ["llm_connector", "action_dit"]:
+            import types
+            def _get_input_embeddings_shim(self_obj):
+                if not hasattr(self_obj, "_dummy_embedding"):
+                    self_obj._dummy_embedding = torch.nn.Identity().to(self_obj.device)
+                    self_obj._dummy_embedding.weight = torch.tensor([0.0], requires_grad=True, device=self_obj.device)
+                return self_obj._dummy_embedding
+
+            # 强制替换实例方法 (不要做任何检查，直接覆盖！)
+            logging.info(f"🔧 Patching get_input_embeddings for {module_name} to bypass PEFT check.")
+            module.get_input_embeddings = types.MethodType(_get_input_embeddings_shim, module)
+
+
+        # 3. 配置 LoRA
+        lora_config = LoraConfig(
+            r=lora_r,
+            lora_alpha=lora_alpha,
+            target_modules=target_modules,
+            lora_dropout=lora_dropout,
+            bias="none",
+            task_type=None, # 对于子模块通常不需要指定 TaskType，作为通用 Module 处理
+            modules_to_save=modules_to_save # 投影层我们手动设置 requires_grad
+        )
+        logging.info(f"Applying LoRA to {module_name} with target_modules: {target_modules}, modules_to_save: {modules_to_save}")
+        # 4. 包装并原地替换
+        peft_module = get_peft_model(module, lora_config)
+        setattr(self.model, module_name, peft_module)
+        # 5. 打印可训练参数量以验证
+        logging.info(f"📊 {module_name} Adapter Config:")
+        peft_module.print_trainable_parameters()
+
+        # 6. [Hack] 确保 modules_to_save 中的参数 requires_grad=True
+        # 有时 get_peft_model 对自定义嵌套模块的 modules_to_save 处理不完美
+        if modules_to_save is not None:
+            for name, param in self.model.named_parameters():
+                if any(m in name for m in modules_to_save):
+                    param.requires_grad = True
+
+        return peft_module
+
+    def inject_lora_to_sub_module(self, model_args, training_args):
+        if not getattr(training_args, 'is_lora', False):
+            return
+
+        logging.info("🌟 Starting Modular LoRA Injection for Unified UniLIP...")
+
+        # =========================================================
+        # 1. Vision Tower (InternVisionModel)
+        # =========================================================
+        # 结构: attn.qkv, attn.proj, mlp.fc1, mlp.fc2
+        if not model_args.fix_vit:
+            self._apply_lora_to_module(
+                lora_r=training_args.lora_r // 2,
+                lora_alpha=training_args.lora_alpha,
+                lora_dropout=training_args.lora_dropout,
+                target_modules=["qkv", "proj", "fc1", "fc2",], #["qkv", "proj", "fc1", "fc2"]
+                # modules_to_save=["multi_modal_projector"],
+                module_name="vision_tower"
+            )
+        # =========================================================
+        # 2. LLM Backbone (Qwen2Model)
+        # =========================================================
+        # 结构: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
+        if not model_args.fix_llm:
+            self._apply_lora_to_module(
+                lora_r=training_args.lora_r,
+                lora_alpha=training_args.lora_alpha,
+                lora_dropout=training_args.lora_dropout,
+                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                # modules_to_save=["lm_head", "embed_tokens"],
+                module_name="language_model"
+            )
+        # =========================================================
+        # 3. LLM Connector (Qwen2Model Slice)
+        # =========================================================
+        # 结构同 LLM
+        if not self.get_model().fix_connect:
+            self._apply_lora_to_module(
+                lora_r=training_args.lora_r // 2,
+                lora_alpha=training_args.lora_alpha,
+                lora_dropout=training_args.lora_dropout,
+                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                # modules_to_save=None,
+                module_name="llm_connector"
+            )
+        # =========================================================
+        # 4. Gen DiT (SanaTransformer2DModel)
+        # =========================================================
+        # 结构分析:
+        # attn1/attn2: to_q, to_k, to_v, to_out.0
+        # PatchEmbed/Timestep: linear_1, linear_2
+        # 注意：Sana 的 GLUMBConv 使用的是 Conv2d，LoRA 默认不转 Conv2d 除非指定。
+        # 这里我们主要对 Attention 和 Timestep MLP 做 LoRA。
+        # to_q/k/v 匹配 Attention, linear_1/2 匹配 TimestepEmbedder & CaptionProjection
+        if not self.get_model().fix_dit:
+            self._apply_lora_to_module(
+                lora_r=training_args.lora_r,
+                lora_alpha=training_args.lora_alpha,
+                lora_dropout=training_args.lora_dropout,
+                target_modules=["to_q", "to_k", "to_v", "to_out.0", "linear_1", "linear_2"],
+                # modules_to_save=None,
+                module_name="dit"
+            )
+        # =========================================================
+        # 5. Loc Action DiT (Qwen2Model Slice)
+        # =========================================================
+        # 结构同 LLM
+        # 注意：Action DiT 始终通过 LoRA 训练 (除非完全冻结)
+        self._apply_lora_to_module(
+            lora_r=training_args.lora_r,
+            lora_alpha=training_args.lora_alpha,
+            lora_dropout=training_args.lora_dropout,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            # modules_to_save=None,
+            module_name="action_dit"
+        )
+
+        # =========================================================
+        # 6. [关键] 统一开启非 LoRA 模块 (Heads/Projectors) 的梯度
+        # =========================================================
+        # 默认 modules_to_save=None (因为它是针对子模块内的)，所以需要手动开启外部连接层的梯度。
+
+        logging.info("🔓 Unfreezing Projectors and Heads...")
+
+        # 定义需要全量训练的模块关键词
+        modules_to_train_fully = [
+            # "multi_modal_projector",  # Vision -> LLM
+            # "lm_head",                # LLM Output
+            # "embed_tokens",           # LLM Input Embedding (如果 resize 了)
+            # "projector",              # Connector -> DiT
+            "latent_queries",         # Gen Query
+            "action_dit_projector",   # LLM -> Action DiT
+            "action_dit_norm",        # Action DiT Norm (AdaRMS)
+            "action_in_proj",         # Action Input
+            "action_out_proj",        # Action Output
+            "time_mlp_in",            # Timestep MLP
+            "time_mlp_out",
+            "loc_learnable_query"
+        ]
+
+        count_unfrozen = 0
+        for name, param in self.model.named_parameters():
+            # 检查参数名是否包含上述关键词
+            if any(m in name for m in modules_to_train_fully):
+                if param.requires_grad == False:
+                    logging.info(name)
+                    param.requires_grad = True
+                    count_unfrozen += 1
+
+        logging.info(f"✅ LoRA Injection Complete. Manually unfroze {count_unfrozen} parameters for Heads/Projectors.")
+
     def get_model(self):
         return self.model
 
@@ -879,12 +1107,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         task_id: Optional[torch.FloatTensor] = None, # [NEW] [BS] -> 0: Loc, 1: Gen #torch.Size([128])
         **kwargs #dict_keys(['map_id', 'raw_prompt', 'map_name', 'pose_dict', 'num_items_in_batch']) #'num_items_in_batch': tensor(18631, device='cuda:0')
     ) -> Union[Tuple, CausalLMOutputWithPast]:
-
+        # bs=8显存占用=5896MiB
         output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
         output_hidden_states = (
             output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
         )
         return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
+        gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
 
         # --- A. Input Preparation ---
         # Note: We merge und_image and aux_image logic.
@@ -933,7 +1164,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 attention_mask,
                 past_key_values,
                 labels,
-                gen_image,
+                gen_image[gen_indices],
                 combined_und_images, # Pass und_image (which contains all input visuals)
                 grid_thw,
                 i_s_pos,
@@ -949,6 +1180,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         position_ids = torch.cumsum(attention_mask, dim=1) - 1
         position_ids[position_ids < 0] = 0
+        # bs=8显存占用=6186MiB
+        # inputs_embeds=torch.Size([16, 515, 896])
 
         outputs = self.model.language_model(
             attention_mask=attention_mask, #torch.Size([128, 707])
@@ -962,7 +1195,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
         # This contains contextualized features of both text and images.
         hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
-
+        # bs=8显存占用=6654MiB
         # # 在 --- B. Main LLM Forward --- 之后插入
         # logging.info(f"DEBUG Check:")
         # logging.info(f"  Input IDs Shape: {input_ids. shape}")
@@ -988,9 +1221,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # ==========================================
             # 按索引拆分生成/定位样本
             # ==========================================
-            loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
-            gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
-            logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {len(gen_indices)}")
+            # logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {len(gen_indices)}")
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -1001,7 +1232,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 genbrh_bidr_attention_mask = bidr_attention_mask[gen_indices]
                 genbrh_position_ids = position_ids[gen_indices]
                 genbrh_hidden_states = hidden_states[gen_indices]
-                genbrh_target_image_embeds = target_image_embeds[gen_indices]
+                genbrh_target_image_embeds = target_image_embeds#[gen_indices]
                 genbrh_attention_mask = attention_mask[gen_indices]
                 genbrh_loss_mask = loss_mask[gen_indices]
                 genbrh_aux_loc_input_ids = aux_loc_input_ids[gen_indices]
@@ -1024,7 +1255,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 # 2. Project to DiT Caption Channel
                 img_hidden_states = self.get_model().projector(img_hidden_states) #torch.Size([128, 707, 2304])
-
+                # bs=8显存占用=6884MiB
                 # 3. Calculate DiT Loss
                 if genbrh_target_image_embeds is not None:#target_image_embeds=torch.Size([128, 32, 16, 16])
                     latents = genbrh_target_image_embeds # [BS_Gen, C, H, W]
@@ -1054,7 +1285,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Apply Mask: Only count loss for Gen samples
                     # masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
                     masked_gen_loss = (gen_loss * genbrh_loss_mask[:, 1]).mean()
-
+                    # bs=8显存占用=6884MiB
                     # =========================================================
                     # [NEW] Auxiliary Localization Loss (Consistency Check)
                     # =========================================================
@@ -1085,7 +1316,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             else:
                 masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
                 masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
-
+            # bs=8显存占用=13316MiB
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
@@ -1183,7 +1414,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 if getattr(self.config, "is_action_dit_projector", False):
                     action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
-
+                # bs=8显存占用=13316MiB
                 # Forward Action Connector (InternVL Slice)
                 # Reuse bidr mask logic or standard causal. Since it's InternVL, it expects eager/causal usually.
                 # For simplicity, we assume bidr mask logic handles the sequence extension as default.
@@ -1253,7 +1484,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Gather from the same indices we scattered to
                     gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
                     action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
-
+                # bs=8显存占用=13316MiB
                 # 4. Final Projection (Velocity Prediction)
                 v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
                 # # 在 --- Localiztion Branch --- 内部，v_t_pred 计算出来后插入
@@ -1272,15 +1503,34 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
         total_loss = masked_gen_loss + masked_loc_loss * alpha_loc_loss + masked_loc_aux_loss * alpha_loc_aux_loss
-        logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
-
-        return CausalLMOutputWithPast(
+        # logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
+        # 224 + lora=64
+        # bs=8显存占用=13316MiB
+        # bs=16显存占用=20846MiB
+        # bs=32显存占用=35678MiB
+        #
+        outputs = CausalLMOutputWithPast(
             loss=total_loss,
             logits=None, # Not used
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,
         )
+
+        outputs.extras = {
+            "other_info": {
+                "loc_indices": len(loc_indices),
+                "gen_indices": len(gen_indices),
+                "total_loss": total_loss.detach().cpu().numpy().item(),
+                "loc_loss": masked_loc_loss.detach().cpu().numpy().item(),
+                "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
+                "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
+                "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
+                "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
+            }
+        }
+
+        return outputs
 
     def forward_for_aux_loc_loss(
         self,
@@ -1315,16 +1565,36 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
         # VAE Decode is heavy! Use with caution.
         with torch.no_grad():
-            pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
+            # pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
 
+            # [修改] 使用 Mini-Batch 循环解码，避免 Tensor 过大
+            mini_batch_size = 64  # 安全值，根据显存调整 (1, 2, 4, 8)
+            pred_pixels_list = []
+            # 显式循环解码
+            for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
+                batch_latents = pred_latents_scaled[i : i + mini_batch_size]
+
+                # 使用 no_grad (如果你不需要 VAE 的梯度，通常 VAE 是冻结的)
+                # 注意：如果 pred_latents_scaled 需要梯度回传到 DiT，这里不能用 no_grad！
+                # 根据你的代码逻辑，你需要梯度流向 DiT，所以必须保留梯度计算。
+
+                # 这里的 checkpointing 非常关键！
+                # 如果 VAE 没有开启 GC，这一步会吃掉巨大显存。
+                # 但针对 Int32 Overflow，我们主要是为了减少单次 Conv2d 的输入规模。
+                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+                pred_pixels_list.append(batch_pixels)
+            # 重新拼接
+            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+
+        # bs=8显存占用=13314MiB
         # 3. Process for Vision Encoder (SigLIP)
         # SigLIP expects [0, 1] and specific normalization
         # pred_pixels is [-1, 1], convert to [0, 1]
         pred_pixels_norm = (pred_pixels + 1.0) / 2.0
         # Resize to Vision Encoder size (e.g. 448) if needed
         # VAE output is usually 512 or 1024. SigLIP is 448.
-        if pred_pixels_norm.shape[-1] != 448:
-            pred_pixels_norm = F.interpolate(pred_pixels_norm, size=(448, 448), mode='bilinear', align_corners=False)
+        if pred_pixels_norm.shape[-1] != gen_image.size(0):
+            pred_pixels_norm = F.interpolate(pred_pixels_norm, size=(und_image_map.shape[-2],und_image_map.shape[-1]), mode='bilinear', align_corners=False)
         # SigLIP Normalization (Mean/Std) - Approximate or use processor values
         # mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5] for simplicity/speed in training loop
         # Or use self.image_processor logic
@@ -1373,15 +1643,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # --- B. Main LLM Forward (Understanding) ---
         position_ids = torch.cumsum(attention_mask, dim=1) - 1
         position_ids[position_ids < 0] = 0
-
-        outputs = self.model.language_model(
-            attention_mask=attention_mask, #torch.Size([2, 617])
-            position_ids=position_ids, #torch.Size([2, 617])
-            inputs_embeds=inputs_embeds, #torch.Size([2, 617, 896])
-            output_hidden_states=True,
-            return_dict=return_dict, #True
-            use_cache=False
-        )
+        # bs=8显存占用=13314MiB
+        with torch.no_grad():
+            outputs = self.model.language_model(
+                attention_mask=attention_mask, #torch.Size([2, 617])
+                position_ids=position_ids, #torch.Size([2, 617])
+                inputs_embeds=inputs_embeds, #torch.Size([2, 617, 896])
+                output_hidden_states=True,
+                return_dict=return_dict, #True
+                use_cache=False
+            )
 
         # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
         # This contains contextualized features of both text and images.
@@ -1411,7 +1682,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         self.model.action_out_proj.eval()
         self.model.time_mlp_in.eval()
         self.model.time_mlp_out.eval()
-
+        # bs=8显存占用=13314MiB
         # 5. Original LOCALIZATION Branch (Flow Matching Path)
         with torch.no_grad():
             actions = actions#torch.Size([128, 5])
@@ -1509,7 +1780,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         self.model.action_out_proj.train()
         self.model.time_mlp_in.train()
         self.model.time_mlp_out.train()
-
+        # bs=8显存占用=13316MiB
         return masked_loc_loss
 
     def action_dit_forward_with_adarmscond(

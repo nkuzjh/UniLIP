@@ -286,6 +286,8 @@ class InferenceArgs:
         self.unilip_factor = config_dict.get("unilip_factor", 5.85)
         self.fix_dit = False
         self.fix_connect = False
+        self.fix_vit = True
+        self.fix_llm = True
         self.mllm_path = config_dict.get("mllm_path", "")
         self.mllm_hf_path = config_dict.get("mllm_hf_path", "OpenGVLab/InternVL3-1B-hf")
         self.vae_path = config_dict.get("vae_path", "")

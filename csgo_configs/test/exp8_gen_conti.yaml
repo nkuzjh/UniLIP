@@ -27,5 +27,5 @@ test_maps: ['de_dust2','de_nuke', 'de_ancient']
 ckpt_path: "outputs/csgo_1b/exp8/checkpoint-40000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
-# is_conti_gen: True
+is_conti_gen: True
 
