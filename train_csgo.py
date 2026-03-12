@@ -73,6 +73,25 @@ from packaging import version
 IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= version.parse("0.14")
 
 
+
+import torch
+import transformers.modeling_utils
+
+# =================================================================
+# [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
+# 修复 "Trying to backward through the graph a second time" 错误
+# =================================================================
+def _force_non_reentrant_checkpoint(func, *args, **kwargs):
+    # 强制覆盖参数
+    kwargs['use_reentrant'] = False
+    return torch.utils.checkpoint.checkpoint(func, *args, **kwargs)
+
+# 替换 Transformers 库底层的 checkpoint 调用
+transformers.modeling_utils.checkpoint = _force_non_reentrant_checkpoint
+print("🔧 Monkey Patch Applied: Forced use_reentrant=False for all checkpoints.")
+
+
+
 def set_seed(seed=42):
     # 1. Python 内置 random
     random.seed(seed)
@@ -1337,6 +1356,7 @@ def train(attn_implementation=None):
 
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    training_args.deepspeed="deepspeed_scripts/zero0.json"
     training_args.lr_scheduler_kwargs = {"min_lr": 1e-5}
 
     with open(data_args.csgo_config, 'r') as f:
@@ -1468,10 +1488,11 @@ def train(attn_implementation=None):
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
     logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
-    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("img_size", False)
+    model.config.img_size = model_args.img_size = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
-    model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
 
+    model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
+    model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
@@ -1481,6 +1502,7 @@ def train(attn_implementation=None):
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
+    model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
 
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
@@ -1494,6 +1516,7 @@ def train(attn_implementation=None):
 
     # Unified_UniLIP_InternVLForCausalLM.from_pretrained()启用了low_mem和accelerator且UniLIP权重中不包含新增的定位模块action_dit，导致action_dit没有正确加载Qwen2Model的权重，这里避开Unified_UniLIP_InternVLForCausalLM的__init__和from_pretrained方法。重新加载action_dit的权重，防止梯度爆炸
     model.get_model().initialize_localization_modules(model_args=model_args)
+    model.to(torch.bfloat16)
 
     ### 已经在两个initialize_modules方法中和lora配置一起实现
     # if not model_args.fix_vit:
@@ -1519,16 +1542,17 @@ def train(attn_implementation=None):
 
     model.config.freeze_mm_mlp_adapter = training_args.freeze_mm_mlp_adapter
 
-
+    # #### 实际这里不需要设置gc，因为training_args中的gc开启传入trainer初始化时会自动开启所有module的gc
     if training_args.gradient_checkpointing:
+    # if 1: ### 单独关闭action_dit的gc，其他module开启以避免pi05 gemma300m的两次backward bug
         # Component-specific gradient checkpointing
         base_model = model.get_model()
-        # 1. Vision Tower - Only if not frozen and requires memory optimization
+        # 1. Vision Tower - aux_loc_loss需要梯度经过vlm，所以无论是否需要更新这部分权重，都要开启gc
         if hasattr(base_model, 'vision_tower'):# and not model_args.fix_vit:
             if hasattr(base_model.vision_tower, 'gradient_checkpointing_enable'):
                 base_model.vision_tower.gradient_checkpointing_enable()
             logging.info("✅ Enabled gradient checkpointing for vision tower")
-        # 2. Language Model - Only if not frozen
+        # 2. Language Model
         if hasattr(base_model, 'language_model'):# and not model_args.fix_llm:
             if hasattr(base_model.language_model, 'gradient_checkpointing_enable'):
                 base_model.language_model.gradient_checkpointing_enable()
@@ -1545,7 +1569,6 @@ def train(attn_implementation=None):
         if hasattr(base_model, 'action_dit') and hasattr(base_model.action_dit, 'gradient_checkpointing_enable'):
             base_model.action_dit.gradient_checkpointing_enable()
             logging.info("✅ Enabled gradient checkpointing for Loc DiT")
-
 
     if getattr(training_args, 'is_lora', False):
         model.inject_lora_to_sub_module(model_args, training_args)
@@ -1569,7 +1592,7 @@ def train(attn_implementation=None):
     for name, param in model.named_parameters():
         if param.requires_grad:
             train_param_names.append(name)
-            # logging.info(f"     trainable params: {name}")
+            logging.info(f"     trainable params: {name}")
     logging.info(f"trainable layers: {len(train_param_names)}")
 
 
@@ -1657,6 +1680,7 @@ def train(attn_implementation=None):
         trainer=trainer,
         output_dir=training_args.output_dir,
         vision_tower=model_args.vision_tower,
+        is_lora=getattr(training_args, 'is_lora', False),
     )
 
 

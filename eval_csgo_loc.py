@@ -256,7 +256,7 @@ def visualize_map_results(vis_data_grouped, output_dir, map_path_dict, data_dir_
 ####### 从unified_task_dataset.py引入和训练一致的预处理函数
 ####### 简单的预处理辅助类无法准确拼接UniLIP的 <image> token
 import copy
-from csgo_datasets.unified_task_dataset import get_loc_prompt, preprocess_multimodal, preprocess, img_process
+from csgo_datasets.unified_task_dataset import get_loc_prompt, preprocess_multimodal, preprocess, img_process, img_resize_transform
 # ==========================================
 # 3. 辅助类与 Dataset (精简版)
 # ==========================================
@@ -312,6 +312,14 @@ class InferenceArgs:
         self.model_max_length = 1024
         self.is_action_dit_projector = config_dict.get("is_action_dit_projector", False)
         self.is_loc_learnable_query = config_dict.get("is_loc_learnable_query", False)
+
+        # lora
+        is_lora = config_dict.get("is_lora", False)
+        lora_r = config_dict.get("lora_r", False)
+        lora_alpha = 16
+        lora_dropout = 0.05
+        lora_weight_path  = ""
+        lora_bias = "none"
 
 
 # Dataset
@@ -387,8 +395,12 @@ class CSGOLocInferenceDataset(Dataset):
             self.image_aspect_ratio
         ) # shape: [2, C, H, W]
         # 拆分出 Tensor
-        tensor_fps = process_images[:-1] # [1, C, H, W]
-        tensor_map = process_images[-1:] # [1, C, H, W]
+        if self.config.get("img_size", 448)==224:
+            tensor_fps = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+            tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
+        else:
+            tensor_fps = process_images[:-1] # [1, C, H, W]
+            tensor_map = process_images[-1:] # [1, C, H, W]
 
         # --- 准备 Prompt 数据 ---
         z_min = self.map_z_range[map_name]['min_z']
@@ -419,7 +431,7 @@ class CSGOLocInferenceDataset(Dataset):
             ]
         }
         # Tokenize Loc
-        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]))
+        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.get("img_size", 448))
         pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
 
         return {
@@ -660,13 +672,36 @@ def main():
     print(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     # 3. Init Action Modules
+
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
+
+    model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
+    model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
+
     model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", False)
+
     model.config.is_action_dit_projector = getattr(inference_args, "is_action_dit_projector", False)
     model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", False)
 
     model.get_model().initialize_vision_modules(model_args=inference_args)
     model.get_model().initialize_localization_modules(model_args=inference_args)
+
+    # =====================================================================
+    # [NEW] 3.5 Inject LoRA architecture before loading weights
+    # =====================================================================
+    if csgo_config.get('is_lora', False):
+        print("🔧 Injecting LoRA architecture to match the checkpoint structure...")
+        # 构造一个 mock 的 training_args 来触发你在模型里写的 inject_lora_to_sub_module。
+        # 确保 csgo_config 中包含 'is_lora: True'，以及相应的 r, alpha, dropout
+        training_args = SimpleNamespace(
+            is_lora=csgo_config.get('is_lora', False), # 默认置为True，因为这套逻辑就是为了跑LoRA
+            lora_r=csgo_config.get('lora_r', 16),
+            lora_alpha=csgo_config.get('lora_alpha', 16),
+            lora_dropout=csgo_config.get('lora_dropout', 0.05)
+        )
+
+        model.inject_lora_to_sub_module(inference_args, training_args)
+
 
     # 4. Init 其他配置
     image_processor = AutoProcessor.from_pretrained(inference_args.mllm_hf_path).image_processor
@@ -689,6 +724,8 @@ def main():
     # 7. Set Model Eval
     model.to(device=device, dtype=torch.bfloat16)
     model.eval()
+    for name, param in model.named_parameters():
+        param.requires_grad = False
     model.config.use_cache = True
 
     # 8. Init Localization Inference Dataset
