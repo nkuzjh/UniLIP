@@ -1,0 +1,225 @@
+2026-02-10 01:15:37 - INFO - Loaded WandB API key from .wandb_api_key.txt - (3120211:train_csgo.py:1364)
+2026-02-10 01:15:39 - INFO - model_args: ModelArguments(model_name_or_path='UniLIP-1B', version='internvl', freeze_backbone=True, tune_mm_mlp_adapter=False, vision_tower=None, gen_vision_tower=None, mm_vision_select_layer=-1, pretrain_mm_mlp_adapter=None, pretrain_gen_mlp_adapter=None, vision_tower_pretrained=None, mm_projector_type='linear', gen_projector_type='linear', mm_use_im_start_end=False, mm_use_im_patch_token=False, mm_patch_merge_type='flat', mm_vision_select_feature='patch', n_query=256, n_und_query=0, gen_pooling='all', unilip_path='', unilip_factor=10.6, weighting_scheme='logit_normal', fix_dit=False, fix_connect=False, fix_vit=True, fix_llm=True, connect_layer=6, mllm_path='', mllm_hf_path='OpenGVLab/InternVL3-1B-hf', vae_path='', dit_path='', action_dit_layer=3, is_action_dit_dense_timestep=False) - (3120211:train_csgo.py:1376)
+2026-02-10 01:15:39 - INFO - data_args: DataArguments(csgo_config='csgo_configs/exp10_1.yaml', data_path=None, lazy_preprocess=True, is_multimodal=False, csgo_image_folder='data/preprocessed_data', shortcaption_image_folder=None, data_type='mix', image_aspect_ratio='square') - (3120211:train_csgo.py:1377)
+2026-02-10 01:15:39 - INFO - training_args: TrainingArguments(
+_n_gpu=1,
+accelerator_config={'split_batches': False, 'dispatch_batches': None, 'even_batches': True, 'use_seedable_sampler': True, 'non_blocking': False, 'gradient_accumulation_kwargs': None, 'use_configured_state': False},
+action_dit_projector_lr=0.001,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+average_tokens_across_devices=True,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+bits=16,
+cache_dir=None,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=4,
+dataloader_persistent_workers=False,
+dataloader_pin_memory=True,
+dataloader_prefetch_factor=None,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=deepspeed_scripts/zero0.json,
+disable_tqdm=False,
+do_eval=False,
+do_predict=False,
+do_train=False,
+double_quant=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_on_start=False,
+eval_steps=None,
+eval_strategy=IntervalStrategy.NO,
+eval_use_gather_object=False,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+freeze_mm_mlp_adapter=False,
+fsdp=[],
+fsdp_config={'min_num_params': 0, 'xla': False, 'xla_fsdp_v2': False, 'xla_fsdp_grad_ckpt': False},
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=True,
+gradient_checkpointing_kwargs=None,
+greater_is_better=None,
+group_by_length=False,
+group_by_modality_length=False,
+half_precision_backend=auto,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=None,
+hub_revision=None,
+hub_strategy=HubStrategy.EVERY_SAVE,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_inputs_for_metrics=False,
+include_num_input_tokens_seen=no,
+include_tokens_per_second=False,
+is_action_dit_projector=False,
+is_loc_learnable_query=False,
+is_lora=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=0.0001,
+length_column_name=length,
+liger_kernel_config=None,
+load_best_model_at_end=False,
+loc_learnable_query_lr=0.0005,
+local_rank=0,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=outputs/csgo_1b/exp10_1/runs/Feb10_01-15-36_gpu-05,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=1.0,
+logging_strategy=IntervalStrategy.STEPS,
+lora_alpha=16,
+lora_bias=none,
+lora_dropout=0.05,
+lora_r=16,
+lora_weight_path=,
+lr_scheduler_kwargs={'min_lr': 1e-05},
+lr_scheduler_type=SchedulerType.COSINE_WITH_MIN_LR,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mm_projector_lr=None,
+model_max_length=1024,
+mp_parameters=,
+mpt_attn_impl=triton,
+neftune_noise_alpha=None,
+no_cuda=False,
+num_train_epochs=100.0,
+optim=OptimizerNames.ADAMW_TORCH,
+optim_args=None,
+optim_target_modules=None,
+output_dir=outputs/csgo_1b/exp10_1,
+overwrite_output_dir=False,
+parallelism_config=None,
+past_index=-1,
+per_device_eval_batch_size=128,
+per_device_train_batch_size=128,
+prediction_loss_only=False,
+pretrain_path=none,
+project=huggingface,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+quant_type=nf4,
+ray_scope=last,
+remove_unused_columns=False,
+report_to=['wandb'],
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+run_name=None,
+save_on_each_node=False,
+save_only_model=False,
+save_safetensors=True,
+save_steps=1000,
+save_strategy=SaveStrategy.STEPS,
+save_total_limit=1,
+seed=42,
+skip_memory_metrics=True,
+tf32=True,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_empty_cache_steps=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+trackio_space_id=trackio,
+use_cpu=False,
+use_legacy_prediction_loop=False,
+use_liger_kernel=False,
+use_mps_device=False,
+warmup_ratio=0.003,
+warmup_steps=0,
+weight_decay=0.0,
+) - (3120211:train_csgo.py:1378)
+2026-02-10 01:15:39 - INFO - csgo_config: {'debug': False, 'is_multi_task': True, 'is_action_dit_dense_timestep': True, 'alpha_loc_loss': 2, 'is_loc_aux_loss': True, 'alpha_loc_aux_loss': 0.1, 'is_multi_task_balanced': True, 'use_pi05_action_dit': False, 'is_action_dit_projector': True, 'action_dit_projector_lr': 0.0005, 'is_aciton_dit_vae_small_init': True, 'img_size': [224, 224], 'data_dir': 'data/preprocessed_data', 'train_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'val_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'test_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'is_lora': True} - (3120211:train_csgo.py:1379)
+2026-02-10 01:15:40 - INFO - vision_select_layer: -1 - (3120211:configuration_internvl_chat.py:69)
+2026-02-10 01:15:40 - INFO - ps_version: v2 - (3120211:configuration_internvl_chat.py:70)
+2026-02-10 01:15:40 - INFO - min_dynamic_patch: 1 - (3120211:configuration_internvl_chat.py:71)
+2026-02-10 01:15:40 - INFO - max_dynamic_patch: 12 - (3120211:configuration_internvl_chat.py:72)
+2026-02-10 01:15:40 - INFO - vision_config is None. Initializing the InternVisionConfig with default values. - (3120211:configuration_internvl_chat.py:42)
+2026-02-10 01:15:40 - INFO - llm_config is None. Initializing the LlamaConfig config with default values (`LlamaConfig`). - (3120211:configuration_internvl_chat.py:46)
+2026-02-10 01:15:40 - INFO - vision_select_layer: -1 - (3120211:configuration_internvl_chat.py:69)
+2026-02-10 01:15:40 - INFO - ps_version: v1 - (3120211:configuration_internvl_chat.py:70)
+2026-02-10 01:15:40 - INFO - min_dynamic_patch: 1 - (3120211:configuration_internvl_chat.py:71)
+2026-02-10 01:15:40 - INFO - max_dynamic_patch: 6 - (3120211:configuration_internvl_chat.py:72)
+2026-02-10 01:15:41 - INFO - num_image_token: 256 - (3120211:modeling_internvl_chat.py:59)
+2026-02-10 01:15:41 - INFO - ps_version: v2 - (3120211:modeling_internvl_chat.py:60)
+2026-02-10 01:15:54 - INFO - Using conversation format: internvl - (3120211:train_csgo.py:1461)
+2026-02-10 01:15:54 - INFO - fix connect False - (3120211:unified_unilip.py:215)
+2026-02-10 01:15:54 - INFO - fix dit False - (3120211:unified_unilip.py:216)
+2026-02-10 01:15:54 - INFO - unilip load from checkpoint!!! - (3120211:unified_unilip.py:283)
+2026-02-10 01:15:54 - INFO - DiT load from checkpoint!!! - (3120211:unified_unilip.py:296)
+2026-02-10 01:15:54 - INFO - Connector load from checkpoint!!! - (3120211:unified_unilip.py:317)
+2026-02-10 01:15:54 - INFO - latent_queries load from checkpoint!!! - (3120211:unified_unilip.py:339)
+2026-02-10 01:15:54 - INFO - Initializing Action Connector from OpenGVLab/InternVL3-1B-hf slice... - (3120211:unified_unilip.py:414)
+2026-02-10 01:15:55 - INFO - Action DiT weights initialized successfully! - (3120211:unified_unilip.py:425)
+2026-02-10 01:15:55 - INFO - Replacing action_dit norms with AdaRMS... - (3120211:unified_unilip.py:429)
+2026-02-10 01:15:55 - INFO - Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora} - (3120211:unified_unilip.py:499)
+2026-02-10 01:16:01 - INFO - ✅ Enabled gradient checkpointing for vision tower - (3120211:train_csgo.py:1521)
+2026-02-10 01:16:01 - INFO - ✅ Enabled gradient checkpointing for language model - (3120211:train_csgo.py:1526)
+2026-02-10 01:16:01 - INFO - ✅ Enabled gradient checkpointing for LLM Connector - (3120211:train_csgo.py:1530)
+2026-02-10 01:16:01 - INFO - ✅ Enabled gradient checkpointing for Gen DiT - (3120211:train_csgo.py:1534)
+2026-02-10 01:16:01 - INFO - ✅ Enabled gradient checkpointing for Loc DiT - (3120211:train_csgo.py:1538)
+2026-02-10 01:16:01 - INFO - 🌟 Starting Modular LoRA Injection for Unified UniLIP... - (3120211:unified_unilip.py:952)
+2026-02-10 01:16:01 - INFO - 🚀 Injecting LoRA into sub-module: llm_connector... - (3120211:unified_unilip.py:899)
+2026-02-10 01:16:01 - INFO - 🔧 Patching get_input_embeddings for llm_connector to bypass PEFT check. - (3120211:unified_unilip.py:917)
+2026-02-10 01:16:01 - INFO - Applying LoRA to llm_connector with target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'], modules_to_save: None - (3120211:unified_unilip.py:931)
+2026-02-10 01:16:01 - INFO - 📊 llm_connector Adapter Config: - (3120211:unified_unilip.py:936)
+2026-02-10 01:16:01 - INFO - 🚀 Injecting LoRA into sub-module: dit... - (3120211:unified_unilip.py:899)
+2026-02-10 01:16:01 - INFO - Applying LoRA to dit with target_modules: ['to_q', 'to_k', 'to_v', 'to_out.0', 'linear_1', 'linear_2'], modules_to_save: None - (3120211:unified_unilip.py:931)
+2026-02-10 01:16:02 - INFO - 📊 dit Adapter Config: - (3120211:unified_unilip.py:936)
+2026-02-10 01:16:02 - INFO - 🚀 Injecting LoRA into sub-module: action_dit... - (3120211:unified_unilip.py:899)
+2026-02-10 01:16:02 - INFO - 🔧 Patching get_input_embeddings for action_dit to bypass PEFT check. - (3120211:unified_unilip.py:917)
+2026-02-10 01:16:02 - INFO - Applying LoRA to action_dit with target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'], modules_to_save: None - (3120211:unified_unilip.py:931)
+2026-02-10 01:16:02 - INFO - 📊 action_dit Adapter Config: - (3120211:unified_unilip.py:936)
+2026-02-10 01:16:02 - INFO - 🔓 Unfreezing Projectors and Heads... - (3120211:unified_unilip.py:1030)
+2026-02-10 01:16:02 - INFO - ✅ LoRA Injection Complete. Manually unfroze 0 parameters for Heads/Projectors. - (3120211:unified_unilip.py:1057)
+2026-02-10 01:16:02 - INFO - 🚀 After LoRA: Total parameters: 1870890216 - (3120211:train_csgo.py:1546)
+2026-02-10 01:16:02 - INFO - 🚀 After LoRA: Trainable parameters: 25768581 - (3120211:train_csgo.py:1547)
+2026-02-10 01:16:02 - INFO - 🚀 After LoRA: Trainable percent: 1.38 % - (3120211:train_csgo.py:1548)
+2026-02-10 01:16:02 - INFO - trainable layers: 600 - (3120211:train_csgo.py:1564)
+2026-02-10 01:16:02 - INFO - 🔄 Loading Multi-Task CS2 Dataset... - (3120211:unified_task_dataset.py:954)
+2026-02-10 01:16:02 - INFO - Loading CS2 Data Split data/preprocessed_data/de_dust2/splits_20000_5000/train_split.json... - (3120211:unified_task_dataset.py:962)
+2026-02-10 01:16:02 - INFO - Loading CS2 Data Split data/preprocessed_data/de_nuke/splits_20000_5000/train_split.json... - (3120211:unified_task_dataset.py:962)
+2026-02-10 01:16:02 - INFO - Loading CS2 Data Split data/preprocessed_data/de_ancient/splits_20000_5000/train_split.json... - (3120211:unified_task_dataset.py:962)
+2026-02-10 01:16:02 - INFO - ✅ Total entries: 60000 - (3120211:unified_task_dataset.py:1010)
+2026-02-10 01:18:07 - INFO - [ Step 1 ] Loss: 3.800000 | LR: 0.0000e+00 | Epoch: 0.00 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.799952745437622, 'loc_loss': 1.2764495611190796, 'alpha_loc': 2.0, 'gen_loss': 1.1840360164642334, 'loc_aux_loss': 0.6301765441894531, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:18:16 - INFO - [ Step 2 ] Loss: 3.913900 | LR: 7.0922e-07 | Epoch: 0.00 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.9138646125793457, 'loc_loss': 1.3714340925216675, 'alpha_loc': 2.0, 'gen_loss': 1.112531304359436, 'loc_aux_loss': 0.5846502184867859, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:18:25 - INFO - [ Step 3 ] Loss: 3.959100 | LR: 1.4184e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.9590775966644287, 'loc_loss': 1.3671460151672363, 'alpha_loc': 2.0, 'gen_loss': 1.1660782098770142, 'loc_aux_loss': 0.5870744585990906, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:18:34 - INFO - [ Step 4 ] Loss: 3.498900 | LR: 2.1277e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.4989209175109863, 'loc_loss': 1.1417253017425537, 'alpha_loc': 2.0, 'gen_loss': 1.159635066986084, 'loc_aux_loss': 0.5583528280258179, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:19:36 - INFO - [ Step 5 ] Loss: 3.300200 | LR: 2.8369e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.300194263458252, 'loc_loss': 1.0523896217346191, 'alpha_loc': 2.0, 'gen_loss': 1.138785719871521, 'loc_aux_loss': 0.5662909150123596, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:19:58 - INFO - [ Step 6 ] Loss: 3.030100 | LR: 3.5461e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.0300607681274414, 'loc_loss': 0.9219578504562378, 'alpha_loc': 2.0, 'gen_loss': 1.1381428241729736, 'loc_aux_loss': 0.4800223112106323, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:20:07 - INFO - [ Step 7 ] Loss: 3.163300 | LR: 4.2553e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 3.163337230682373, 'loc_loss': 0.9831242561340332, 'alpha_loc': 2.0, 'gen_loss': 1.1512649059295654, 'loc_aux_loss': 0.4582386910915375, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:20:17 - INFO - [ Step 8 ] Loss: 2.812400 | LR: 4.9645e-06 | Epoch: 0.02 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.8123867511749268, 'loc_loss': 0.8194001913070679, 'alpha_loc': 2.0, 'gen_loss': 1.13312828540802, 'loc_aux_loss': 0.4045785069465637, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:21:14 - INFO - [ Step 9 ] Loss: 2.705600 | LR: 5.6738e-06 | Epoch: 0.02 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.7055509090423584, 'loc_loss': 0.7568930387496948, 'alpha_loc': 2.0, 'gen_loss': 1.1561782360076904, 'loc_aux_loss': 0.35586634278297424, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:21:50 - INFO - [ Step 10 ] Loss: 2.476500 | LR: 6.3830e-06 | Epoch: 0.02 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.4764554500579834, 'loc_loss': 0.6464242935180664, 'alpha_loc': 2.0, 'gen_loss': 1.150343894958496, 'loc_aux_loss': 0.3326302170753479, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:21:59 - INFO - [ Step 11 ] Loss: 2.393400 | LR: 7.0922e-06 | Epoch: 0.02 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.393371105194092, 'loc_loss': 0.59623122215271, 'alpha_loc': 2.0, 'gen_loss': 1.1691348552703857, 'loc_aux_loss': 0.31773900985717773, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:22:08 - INFO - [ Step 12 ] Loss: 2.118400 | LR: 7.8014e-06 | Epoch: 0.03 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.118403673171997, 'loc_loss': 0.4672686457633972, 'alpha_loc': 2.0, 'gen_loss': 1.1577047109603882, 'loc_aux_loss': 0.26161640882492065, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:22:53 - INFO - [ Step 13 ] Loss: 2.182600 | LR: 8.5106e-06 | Epoch: 0.03 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.1826205253601074, 'loc_loss': 0.4999116361141205, 'alpha_loc': 2.0, 'gen_loss': 1.1601314544677734, 'loc_aux_loss': 0.22665780782699585, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:23:41 - INFO - [ Step 14 ] Loss: 2.085300 | LR: 9.2199e-06 | Epoch: 0.03 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 2.085258722305298, 'loc_loss': 0.45830830931663513, 'alpha_loc': 2.0, 'gen_loss': 1.1450954675674438, 'loc_aux_loss': 0.2354663908481598, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:23:50 - INFO - [ Step 15 ] Loss: 1.902400 | LR: 9.9291e-06 | Epoch: 0.03 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 1.9023627042770386, 'loc_loss': 0.35936999320983887, 'alpha_loc': 2.0, 'gen_loss': 1.166338562965393, 'loc_aux_loss': 0.17284196615219116, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:23:59 - INFO - [ Step 16 ] Loss: 1.816400 | LR: 1.0638e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 1.8163708448410034, 'loc_loss': 0.3298838436603546, 'alpha_loc': 2.0, 'gen_loss': 1.1417938470840454, 'loc_aux_loss': 0.1480923295021057, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)
+2026-02-10 01:24:31 - INFO - [ Step 17 ] Loss: 1.750800 | LR: 1.1348e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 128, 'gen_indices': 128, 'total_loss': 1.750759243965149, 'loc_loss': 0.3084104359149933, 'alpha_loc': 2.0, 'gen_loss': 1.1208378076553345, 'loc_aux_loss': 0.13100561499595642, 'alpha_loc_aux': 0.10000000149011612} - (3120211:train_csgo.py:1319)

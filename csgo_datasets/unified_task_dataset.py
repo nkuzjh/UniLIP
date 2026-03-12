@@ -610,7 +610,7 @@ class UniLIPMultiTaskDataset(Dataset):
                     {"from": "gpt", "value": ""} # Assistant 回复位置Token
                 ]
             }
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.img_size)
+            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.get("img_size", 448))
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
             labels = preprocess_dict["labels"][0]
@@ -624,7 +624,7 @@ class UniLIPMultiTaskDataset(Dataset):
                 self.data_args.image_processor,
                 self.data_args.image_aspect_ratio
             ) # shape: [2, C, H, W]
-            if self.config.img_size==224:
+            if self.config.get("img_size", 448)==224:
                 und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
                 aux_image = img_resize_transform(process_images[-1:]) # [1, C, H, W]
             else:
@@ -664,7 +664,7 @@ class UniLIPMultiTaskDataset(Dataset):
                 ]
             }
             # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.img_size)
+            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.get("img_size", 448))
             # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
@@ -678,7 +678,7 @@ class UniLIPMultiTaskDataset(Dataset):
                 self.data_args.image_processor,
                 self.data_args.image_aspect_ratio
             ) # shape: [2, C, H, W]
-            if self.config.img_size==224:
+            if self.config.get("img_size", 448)==224:
                 und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
             else:
                 und_image = process_images[:-1] # [1, C, H, W]
@@ -696,7 +696,7 @@ class UniLIPMultiTaskDataset(Dataset):
                     {"from": "gpt", "value": ""} # Assistant 回复位置Token
                 ]
             }
-            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]), self.config.img_size)
+            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]), self.config.get("img_size", 448))
             aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
             aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
             aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
@@ -1043,7 +1043,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             self.data_args.image_aspect_ratio
         ) # shape: [2, C, H, W]
         # 拆分出 Tensor
-        if self.config.img_size==224:
+        if self.config.get("img_size", 448)==224:
             tensor_fps = img_resize_transform(process_images[:-1])
             tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
         else:
@@ -1089,7 +1089,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             ]
         }
         # Tokenize Loc
-        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.img_size)
+        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.get("img_size", 448))
         pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
 
         # 构造 Loc 样本字典
@@ -1129,7 +1129,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             ]
         }
         # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]), self.config.img_size)
+        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]), self.config.get("img_size", 448))
         # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
         pre_dict_gen = preprocess(sources_gen, self.tokenizer, has_image=True)
 

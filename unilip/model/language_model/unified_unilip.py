@@ -1568,7 +1568,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
 
             # [修改] 使用 Mini-Batch 循环解码，避免 Tensor 过大
-            mini_batch_size = 64  # 安全值，根据显存调整 (1, 2, 4, 8)
+            mini_batch_size = 96#64  # 安全值，根据显存调整 (1, 2, 4, 8)
             pred_pixels_list = []
             # 显式循环解码
             for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
