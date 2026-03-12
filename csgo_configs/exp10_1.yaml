@@ -4,6 +4,12 @@
 debug: False
 
 
+
+### 自定义resume支持单卡多卡resume切换
+# resume_ckpt_path: "outputs/csgo_1b/exp10_1/checkpoint-14000/model.safetensors"
+
+
+
 ### model
 is_multi_task: True
 is_action_dit_dense_timestep: True

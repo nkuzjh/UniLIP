@@ -1647,6 +1647,22 @@ def train(attn_implementation=None):
 
 
 
+    # 自定义resume训练加载ckpt，支持resume的单卡多卡切换
+    resume_ckpt_path = csgo_config.get('resume_ckpt_path', None)
+    if resume_ckpt_path is not None:
+        print(f"📥 Loading Checkpoint: {resume_ckpt_path}")
+        if resume_ckpt_path.endswith(".safetensors"):
+            from safetensors.torch import load_file as safe_load_file
+            state_dict = safe_load_file(resume_ckpt_path, device="cpu")
+        else:
+            state_dict = torch.load(resume_ckpt_path, map_location="cpu")
+        msg = model.load_state_dict(state_dict, strict=False)
+        print(msg)
+
+        training_args.output_dir = f"{training_args.output_dir}_resume_from_{resume_ckpt_path.split('/')[-2]}"
+
+
+
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
