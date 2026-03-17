@@ -252,34 +252,42 @@ def visualize_map_results(vis_data_grouped, output_dir, map_path_dict, data_dir_
         final_vis.save(save_path)
         print(f"   -> Saved: {save_path}")
 
+
+####### 从unified_task_dataset.py引入和训练一致的预处理函数
+####### 简单的预处理辅助类无法准确拼接UniLIP的 <image> token
+import copy
+from csgo_datasets.unified_task_dataset import get_loc_prompt, preprocess_multimodal, preprocess, img_process, img_resize_transform
 # ==========================================
 # 3. 辅助类与 Dataset (精简版)
 # ==========================================
-# ... (Prompt 模板代码同前) ...
-def get_loc_prompt(map_name):
-    # return f"Task: The following visual data of CS2 map '{map_name}' has been fused... Predict the 5D pose...\n<image>\n<image>"
-    LOC_PROMPT_TEMPLATE = (
-        f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
-        "1. First-Person View (FPV) Features.\n"
-        "2. Overhead Radar Map (RADAR) Features.\n"
-        "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
-        "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
-        "<image>\n<image>"
-    )
-    return LOC_PROMPT_TEMPLATE
+# # ... (Prompt 模板代码同前) ...
+# def get_loc_prompt(map_name):
+#     # return f"Task: The following visual data of CS2 map '{map_name}' has been fused... Predict the 5D pose...\n<image>\n<image>"
+#     LOC_PROMPT_TEMPLATE = (
+#         f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
+#         "1. First-Person View (FPV) Features.\n"
+#         "2. Overhead Radar Map (RADAR) Features.\n"
+#         "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
+#         "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
+#         "<image>\n<image>"
+#     )
+#     return LOC_PROMPT_TEMPLATE
 
-def add_template_for_loc(prompt_text):
-    return f"<|im_start|>user\n{prompt_text}<|im_end|>\n<|im_start|>assistant\n"
+# def add_template_for_loc(prompt_text):
+#     return f"<|im_start|>user\n{prompt_text}<|im_end|>\n<|im_start|>assistant\n"
 
 # 模拟 ModelArguments
 class InferenceArgs:
     def __init__(self, config_dict):
         self.__dict__.update(config_dict)
+        ##### model_args
         # 补充 initialize_vision_modules 需要的默认参数 (如果 yaml 里没有)
         self.unilip_path = config_dict.get("unilip_path", "")
         self.unilip_factor = config_dict.get("unilip_factor", 5.85)
         self.fix_dit = False
         self.fix_connect = False
+        self.fix_vit = True
+        self.fix_llm = True
         self.mllm_path = config_dict.get("mllm_path", "")
         self.mllm_hf_path = config_dict.get("mllm_hf_path", "OpenGVLab/InternVL3-1B-hf")
         self.vae_path = config_dict.get("vae_path", "")
@@ -296,15 +304,34 @@ class InferenceArgs:
         self.mm_use_im_start_end = config_dict.get("mm_use_im_start_end", False)
         self.tune_mm_mlp_adapter = False
         self.pretrain_mm_mlp_adapter = None
+        self.version = "internvl"
+
+        ##### data_args
+        self.image_aspect_ratio = "square"
+        ##### training_args
+        self.model_max_length = 1024
+        self.is_action_dit_projector = config_dict.get("is_action_dit_projector", False)
+        self.is_loc_learnable_query = config_dict.get("is_loc_learnable_query", False)
+
+        # lora
+        is_lora = config_dict.get("is_lora", False)
+        lora_r = config_dict.get("lora_r", False)
+        lora_alpha = 16
+        lora_dropout = 0.05
+        lora_weight_path  = ""
+        lora_bias = "none"
 
 
 # Dataset
 class CSGOLocInferenceDataset(Dataset):
-    def __init__(self, config, map_path_dict):
+    def __init__(self, config, tokenizer, map_path_dict, image_processor, image_aspect_ratio):
         self.config = config
+        self.tokenizer = tokenizer
         self.data_dir = config['data_dir']
         self.map_names = config['val_maps']
         self.map_path_dict = map_path_dict
+        self.image_processor = image_processor
+        self.image_aspect_ratio = image_aspect_ratio
         self.data_entries = []
         self.map_z_range = {}
 
@@ -334,6 +361,18 @@ class CSGOLocInferenceDataset(Dataset):
             self.data_entries = random.sample(self.data_entries, sampled_num)
             print([data['file_frame'] for data in self.data_entries])
 
+        # 预加载所有地图图片到内存
+        self.map_images = {}
+        for map_name, filename in map_path_dict.items():
+            path = f"{config['data_dir']}/{map_name}/{filename}"
+            if os.path.exists(path):
+                img = Image.open(path).convert('RGB')
+                # 预先做 Resize 以省内存 (如果 processor 需要 448)
+                # img = img.resize((448, 448))
+                self.map_images[map_name] = img
+            else:
+                print(f"Map image not found: {path}")
+
         # 仅取前N个做测试，避免跑太久 (可选)
         # self.data_entries = self.data_entries[:50]
         print(f"✅ Loaded {len(self.data_entries)} test samples.")
@@ -343,11 +382,25 @@ class CSGOLocInferenceDataset(Dataset):
     def __getitem__(self, i):
         data = self.data_entries[i]
         map_name = data['map']
-        radar_path = f"{self.data_dir}/{map_name}/{self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')}"
-        radar_img = Image.open(radar_path).convert('RGB')
+        # map_img_path = f"{self.data_dir}/{map_name}/{self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')}"
+        # map_img = Image.open(map_img_path).convert('RGB')
+        map_img = self.map_images.get(map_name).copy()
         ext = ".jpg" if "preprocessed" in self.data_dir else ".png"
         fps_path = f"{self.data_dir}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img = Image.open(fps_path).convert('RGB')
+        all_images = [fps_img, map_img]
+        process_images = img_process(
+            all_images,
+            self.image_processor,
+            self.image_aspect_ratio
+        ) # shape: [2, C, H, W]
+        # 拆分出 Tensor
+        if self.config.get("img_size", 448)==224:
+            tensor_fps = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+            tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
+        else:
+            tensor_fps = process_images[:-1] # [1, C, H, W]
+            tensor_map = process_images[-1:] # [1, C, H, W]
 
         # --- 准备 Prompt 数据 ---
         z_min = self.map_z_range[map_name]['min_z']
@@ -368,14 +421,170 @@ class CSGOLocInferenceDataset(Dataset):
             'angle_v': (data['angle_v'] / (2 * np.pi)) * 360.0,
             'angle_h': (data['angle_h'] / (2 * np.pi)) * 360.0
         }
+
+        # Text Prompt
+        user_text_loc = get_loc_prompt(map_name)
+        sources_loc = {
+            "conversations": [
+                {"from": "human", "value": user_text_loc},
+                {"from": "gpt", "value": ""} # Assistant 回复位置Token
+            ]
+        }
+        # Tokenize Loc
+        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.get("img_size", 448))
+        pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
+
         return {
-            "map_name": map_name, "radar_img": radar_img, "fps_img": fps_img,
-            "final_prompt": add_template_for_loc(get_loc_prompt(map_name)),
-            "file_frame": data['file_frame'], "gt_pose": pose_dict, "gt_norm": gt_norm_tensor,
+            "task_id": 0,
+            "map_name": map_name,
+            "ids": data['file_frame'],
+            "und_image": tensor_fps,   # Input: FPS
+            "aux_image": tensor_map,   # Aux: Map
+            "input_ids": pre_dict_loc["input_ids"][0],
+            "labels": pre_dict_loc["labels"][0],
+            "actions": gt_norm_tensor,
+
+            "raw_prompt": user_text_loc,
+            "map_img": map_img,
+            "fps_img": fps_img,
+            "pose_dict": pose_dict,
             "z_range": self.map_z_range[map_name]
         }
 
-def collate_fn(batch): return batch
+# def collate_fn(batch): return batch
+
+from typing import Dict, Sequence, Union, List
+from dataclasses import dataclass
+import transformers
+from unilip.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_IDX
+
+@dataclass
+class DataCollatorForLoc(object):
+    """
+    Collate examples for UniLIP Multi-Task (Localization + Generation).
+    Adapts inputs based on task_id.
+    """
+    tokenizer: transformers.PreTrainedTokenizer
+
+    def __call__(self, instances: Sequence[Union[Dict, List[Dict]]]) -> Dict[str, torch.Tensor]:
+        # 1. 提取基础数据
+        task_id_list = []
+        input_ids_list = []
+        labels_list = []
+        ids_list = []
+        batch_und_images = []
+        batch_aux_images = []
+        batch_actions = []
+        batch_raw_prompt_list = []
+        batch_map_img_list = []
+        batch_fps_img_list = []
+        batch_z_range_list = []
+        batch_map_name_list = []
+        batch_pose_dict_list = []
+
+        # 2. 逐样本处理
+        for instance in instances:
+            task_id = instance.get("task_id", 0) # 默认为0(定位)以防万一
+            _input_id = instance["input_ids"]
+            _label = instance["labels"]
+            _id = instance.get("ids", "unknown")
+
+            # === Token 处理逻辑 ===
+            # 为了防止超过模型最大长度，先做截断 (预留 257 个位置给生成 Token)
+            # UniLIP 原逻辑：input_id[: max_len - 257]
+            safe_len = self.tokenizer.model_max_length - 257
+            _input_id = _input_id[:safe_len]
+            _label = _label[:safe_len]
+
+            task_id_list.append(task_id)
+            input_ids_list.append(_input_id)
+            labels_list.append(_label)
+            ids_list.append(_id)
+
+            # === 收集 Tensor 数据 ===
+            if "und_image" in instance and instance["und_image"] is not None:
+                batch_und_images.append(instance["und_image"])
+            # [NEW] 收集 Aux Image (辅助图/Map)
+            if "aux_image" in instance and instance["aux_image"] is not None:
+                batch_aux_images.append(instance["aux_image"])
+            # [NEW] 收集 Actions
+            if "actions" in instance and instance["actions"] is not None:
+                batch_actions.append(instance["actions"]) # [1, 5]
+            if "raw_prompt" in instance:
+                batch_raw_prompt_list.append(instance["raw_prompt"])
+            if "map_name" in instance:
+                batch_map_name_list.append(instance["map_name"])
+            if "pose_dict" in instance:
+                batch_pose_dict_list.append(instance["pose_dict"])
+            if "map_img" in instance:
+                batch_map_img_list.append(instance["map_img"])
+            if "fps_img" in instance:
+                batch_fps_img_list.append(instance["fps_img"])
+            if "z_range" in instance:
+                batch_z_range_list.append(instance["z_range"])
+
+        # 3. Padding (Pad Input Ids & Labels)
+        # batch_first=True -> [BS, Seq]
+        input_ids = torch.nn.utils.rnn.pad_sequence(
+            input_ids_list, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        labels = torch.nn.utils.rnn.pad_sequence(
+            labels_list, batch_first=True, padding_value=IGNORE_INDEX
+        )
+
+        # 再次检查最大长度 (Padding 后可能会变长)
+        if input_ids.shape[1] > self.tokenizer.model_max_length:
+            print(f"Input length {input_ids.shape[1]} > {self.tokenizer.model_max_length}, truncating.")
+            input_ids = input_ids[:, :self.tokenizer.model_max_length]
+            labels = labels[:, :self.tokenizer.model_max_length]
+
+        # 4. 构建 Batch 字典
+        batch = dict(
+            input_ids=input_ids,
+            labels=labels,
+            attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
+            ids=ids_list,
+        )
+
+        # 5. 堆叠图像 (Stack Images)
+        # 辅助函数：安全堆叠
+        def stack_images(img_list):
+            if len(img_list) == 0:
+                return None
+            # 检查形状一致性
+            if all(x is not None and x.shape == img_list[0].shape for x in img_list):
+                return torch.cat(img_list, dim=0) # [BS, C, H, W] (因为 Dataset 返回的是 [1, C, H, W])
+            else:
+                print("Image shapes inconsistent in batch, returning list instead of tensor.")
+                return img_list
+
+        batch["und_image"] = stack_images(batch_und_images)
+        batch["aux_image"] = stack_images(batch_aux_images)
+
+        # 6. 堆叠其他 Tensor (Actions, Mask)
+        if len(batch_actions) > 0:
+            batch["actions"] = torch.stack(batch_actions, dim=0) # [BS, 1, 5]
+        else:
+            batch["actions"] = None
+
+        if len(task_id_list) > 0:
+            batch["task_id"] = torch.tensor(task_id_list, dtype=torch.long)
+        if len(batch_raw_prompt_list) > 0:
+            batch["raw_prompt"] = batch_raw_prompt_list
+        if len(batch_map_name_list) > 0:
+            batch["map_name"] = batch_map_name_list
+        if len(batch_pose_dict_list) > 0:
+            batch["pose_dict"] = batch_pose_dict_list
+        if len(batch_map_img_list) > 0:
+            batch["map_img"] = batch_map_img_list
+        if len(batch_fps_img_list) > 0:
+            batch["fps_img"] = batch_fps_img_list
+        if len(batch_z_range_list) > 0:
+            batch["z_range"] = batch_z_range_list
+
+        return batch
+
+
 
 def unnormalize_pose(pred_tensor, z_range):
     x_norm, y_norm, z_norm, v_norm, h_norm = pred_tensor.cpu().numpy()
@@ -399,8 +608,13 @@ map_path_dict = {
     'de_mirage': 'de_mirage_radar_psd.png',
     'de_nuke': 'de_nuke_blended_radar_psd.png',
     'de_ancient': 'de_ancient_radar_psd.png',
+    'de_anubis': 'de_anubis_radar_psd.png',
+    'de_golden': 'de_golden_radar_tga.png',
     'de_overpass': 'de_overpass_radar_psd.png',
+    'de_palacio': 'de_palacio_radar_tga.png',
+    'de_train': 'de_train_blended_radar_psd.png',
     'de_vertigo': 'de_vertigo_blended_radar_psd.png',
+    'cs_agency': 'cs_agency_radar_tga.png',
     'cs_italy': 'cs_italy_radar_psd.png',
     'cs_office': 'cs_office_radar_psd.png',
 }
@@ -412,8 +626,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csgo_config", type=str, required=True)
     args = parser.parse_args()
+    with open(args.csgo_config, 'r') as f:
+        csgo_config = yaml.safe_load(f)
 
-    with open(args.csgo_config, 'r') as f: csgo_config = yaml.safe_load(f)
+    disable_torch_init()
+    inference_args = InferenceArgs(csgo_config)
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
     set_seed()
 
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -421,20 +641,14 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # 1. Init Model
-    disable_torch_init()
-    model_args = InferenceArgs(csgo_config)
     model = Unified_UniLIP_InternVLForCausalLM.from_pretrained(
         csgo_config.get('model_name_or_path', 'UniLIP-1B'),
         torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True
     )
 
-    # Initialize Action Modules & Tokenizer
-    model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep
-    model.get_model().initialize_vision_modules(model_args=model_args)
-    model.get_model().initialize_localization_modules(model_args=model_args)
-
-    tokenizer = AutoProcessor.from_pretrained(model_args.mllm_hf_path).tokenizer
-    tokenizer.model_max_length = 1024
+    # 2. Init Tokenizer
+    tokenizer = AutoProcessor.from_pretrained(inference_args.mllm_hf_path).tokenizer
+    tokenizer.model_max_length = inference_args.model_max_length
     if tokenizer.pad_token is None:
         smart_tokenizer_and_embedding_resize(
             special_tokens_dict=dict(
@@ -450,69 +664,132 @@ def main():
             tokenizer=tokenizer,
             model=model,
         )
+    from unilip import conversation as conversation_lib
+    if inference_args.version in conversation_lib.conv_templates:
+        conversation_lib.default_conversation = conversation_lib.conv_templates[inference_args.version]
+    else:
+        conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
+    print(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
-    # Load Weights
+    # 3. Init Action Modules
+
+    model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
+
+    model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
+    model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
+
+    model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", False)
+
+    model.config.is_action_dit_projector = getattr(inference_args, "is_action_dit_projector", False)
+    model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", False)
+
+    model.get_model().initialize_vision_modules(model_args=inference_args)
+    model.get_model().initialize_localization_modules(model_args=inference_args)
+
+    # =====================================================================
+    # [NEW] 3.5 Inject LoRA architecture before loading weights
+    # =====================================================================
+    if csgo_config.get('is_lora', False):
+        print("🔧 Injecting LoRA architecture to match the checkpoint structure...")
+        # 构造一个 mock 的 training_args 来触发你在模型里写的 inject_lora_to_sub_module。
+        # 确保 csgo_config 中包含 'is_lora: True'，以及相应的 r, alpha, dropout
+        training_args = SimpleNamespace(
+            is_lora=csgo_config.get('is_lora', False), # 默认置为True，因为这套逻辑就是为了跑LoRA
+            lora_r=csgo_config.get('lora_r', 16),
+            lora_alpha=csgo_config.get('lora_alpha', 16),
+            lora_dropout=csgo_config.get('lora_dropout', 0.05)
+        )
+
+        model.inject_lora_to_sub_module(inference_args, training_args)
+
+
+    # 4. Init 其他配置
+    image_processor = AutoProcessor.from_pretrained(inference_args.mllm_hf_path).image_processor
+    image_aspect_ratio = inference_args.image_aspect_ratio
+
+    # 5. Init vision tokenizer
+    # 训练时，默认配置使得initialize_vision_tokenizer()中所有配置都不生效，因此省略eval这里的初始化
+    # model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
+
+    # 6. Load Weights
     ckpt_path = csgo_config['ckpt_path']
     print(f"📥 Loading Checkpoint: {ckpt_path}")
-    # 这里简写，直接用 safetensors.torch.load_file 或 torch.load
-    # 实际使用请复用完整的 load_custom_checkpoint 函数
     if ckpt_path.endswith(".safetensors"):
         state_dict = safe_load_file(ckpt_path, device="cpu")
     else:
         state_dict = torch.load(ckpt_path, map_location="cpu")
-    model.load_state_dict(state_dict, strict=False)
+    msg = model.load_state_dict(state_dict, strict=False)
+    print(msg)
 
-    model.to(device='cuda', dtype=torch.bfloat16)
+    # 7. Set Model Eval
+    model.to(device=device, dtype=torch.bfloat16)
     model.eval()
+    for name, param in model.named_parameters():
+        param.requires_grad = False
     model.config.use_cache = True
 
-    image_processor = AutoProcessor.from_pretrained(model_args.mllm_hf_path).image_processor
+    # 8. Init Localization Inference Dataset
+    test_dataset = CSGOLocInferenceDataset(csgo_config, tokenizer, map_path_dict, image_processor, image_aspect_ratio)
+    data_collator = DataCollatorForLoc(tokenizer=tokenizer)
+    dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=data_collator)
 
-    # 2. Inference Loop
-    test_dataset = CSGOLocInferenceDataset(csgo_config, map_path_dict)
-    dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=collate_fn)
-
+    # 9. Inference Loop
     results_json = []
     vis_data_grouped = defaultdict(list) # 按地图分组存储可视化数据
 
     print("🚀 Starting Localization Inference...")
     for batch in tqdm(dataloader):
-        prompts = [s['final_prompt'] for s in batch]
-        fps_imgs = [s['fps_img'] for s in batch]
-        radar_imgs = [s['radar_img'] for s in batch]
+        map_name = batch["map_name"]
+        ids = batch["ids"]
 
-        fps_inputs = image_processor(images=fps_imgs, return_tensors="pt")['pixel_values'].to(model.device, dtype=model.dtype)
-        radar_inputs = image_processor(images=radar_imgs, return_tensors="pt")['pixel_values'].to(model.device, dtype=model.dtype)
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        labels = batch["labels"].to(device)
+        und_image = batch["und_image"].to(device)
+        aux_image = batch["aux_image"].to(device)
+
+        actions = batch["actions"]
+        pose_dict = batch["pose_dict"]
+
+        raw_prompt = batch["raw_prompt"]
+        map_img = batch["map_img"]
+        fps_img = batch["fps_img"]
+        z_range = batch["z_range"]
 
         with torch.no_grad():
-            pred_norm_tensor = model.generate_action2(
-                text=prompts, tokenizer=tokenizer,
-                und_images=fps_inputs, aux_images=radar_inputs,
+            pred_norm_loc_tensor = model.generate_action2(
+                input_ids,
+                attention_mask,
+                labels,
+                und_image,
+                aux_image,
                 num_steps=10
             ).squeeze(1).float().cpu()
 
-        for idx, sample in enumerate(batch):
+        for sample_idx in range(csgo_config["batch_size"]):
             # 1. 归一化数据
-            pred_norm = pred_norm_tensor[idx]
-            gt_norm = sample['gt_norm']
+            pred_norm = pred_norm_loc_tensor[sample_idx]
+            gt_norm = actions[sample_idx]
 
             # 2. 物理数据 (用于可视化)
-            pred_phys = unnormalize_pose(pred_norm, sample['z_range'])
-            gt_phys = sample['gt_pose']
+            pred_phys = unnormalize_pose(pred_norm, z_range[sample_idx])
+            gt_phys = pose_dict[sample_idx]
 
             # 3. 存储
             results_json.append({
-                "file_frame": sample['file_frame'],
-                "map": sample['map_name'],
-                "gt_norm": gt_norm.tolist(),   # Save as list
+                "file_frame": ids[sample_idx],
+                "map": map_name[sample_idx],
                 "pred_norm": pred_norm.tolist(), # Save as list
+                "gt_norm": gt_norm.tolist(),   # Save as list
+                "pred": pred_phys,
                 "gt": gt_phys,
-                "pred": pred_phys
             })
 
-            vis_data_grouped[sample['map_name']].append({
-                "fps": sample['fps_img'], "gt": gt_phys, "pred": pred_phys
-            })
+            current_map = map_name[sample_idx]
+            if len(vis_data_grouped[current_map]) < 20:
+                vis_data_grouped[map_name[sample_idx]].append({
+                    "fps": fps_img[sample_idx], "gt": gt_phys, "pred": pred_phys
+                })
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
     print("📈 Calculating Metrics...")
@@ -531,7 +808,7 @@ def main():
         output_dir,
         map_path_dict,
         csgo_config['data_dir'],
-        vis_num_per_map=5 # 每张地图随机选5个样本可视化
+        vis_num_per_map=10 # 每张地图随机选5个样本可视化
     )
 
     print(f"✅ Finished. Results at: {output_dir}")

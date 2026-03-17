@@ -1,0 +1,30 @@
+###################
+### config.yaml
+###################
+debug: False
+
+
+is_multi_task: True
+is_multi_task_balanced: False
+is_action_dit_dense_timestep: True
+task_mix_ratio: 1.0
+is_action_dit_projector: True
+action_dit_projector_lr: 0.0005
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2','de_nuke', 'de_ancient']
+val_maps: ['de_dust2','de_nuke', 'de_ancient']
+test_maps: ['de_dust2','de_nuke', 'de_ancient']
+# debug_num_train_data: 5000
+# debug_num_val_data: 1000
+
+
+ckpt_path: "outputs/csgo_1b/exp4_5_2/checkpoint-18740/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+# is_conti_gen: True
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dit_layer: 3
+action_dim: 5

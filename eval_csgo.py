@@ -15,6 +15,7 @@ from transformers import AutoProcessor
 import matplotlib.pyplot as plt
 from safetensors.torch import load_file as safe_load_file
 import textwrap
+from types import SimpleNamespace
 
 # 引入 UniLIP 核心模块
 from unilip.utils import disable_torch_init
@@ -297,6 +298,14 @@ def load_custom_checkpoint(model, ckpt_path):
         if not loaded_proj and state_dict is None:
              print(f"⚠️ Warning: Did not find separate {proj_type} file and no base model loaded.")
 
+# 模拟 ModelArguments
+class InferenceArgs:
+    def __init__(self, config_dict):
+        self.__dict__.update(config_dict)
+        self.fix_vit = True
+        self.fix_llm = True
+
+
 # ==========================================
 # 3. 主推理逻辑
 # ==========================================
@@ -323,8 +332,31 @@ def main():
     # )
     disable_torch_init()
     tokenizer, model, context_len = load_pretrained_model_general(
-        'UniLIP_InternVLForCausalLM', 'UniLIP-1B'
+        'Unified_UniLIP_InternVLForCausalLM', #'UniLIP_InternVLForCausalLM',
+        'UniLIP-1B'
     )
+
+
+
+    # =====================================================================
+    # [NEW] 3.5 Inject LoRA architecture before loading weights
+    # =====================================================================
+    if csgo_config.get('is_lora', False):
+        print("🔧 Injecting LoRA architecture to match the checkpoint structure...")
+        # 构造一个 mock 的 training_args 来触发你在模型里写的 inject_lora_to_sub_module。
+        # 确保 csgo_config 中包含 'is_lora: True'，以及相应的 r, alpha, dropout
+        training_args = SimpleNamespace(
+            is_lora=csgo_config.get('is_lora', False), # 默认置为True，因为这套逻辑就是为了跑LoRA
+            lora_r=csgo_config.get('lora_r', 16),
+            lora_alpha=csgo_config.get('lora_alpha', 16),
+            lora_dropout=csgo_config.get('lora_dropout', 0.05)
+        )
+
+        inference_args = InferenceArgs(csgo_config)
+        model.get_model().fix_connect = False
+        model.get_model().fix_dit = False
+        model.inject_lora_to_sub_module(inference_args, training_args)
+
 
     ckpt_path = csgo_config['ckpt_path']
     print(f"🚀 Loading model from {csgo_config['ckpt_path']}...")
@@ -333,7 +365,12 @@ def main():
     image_processor = AutoProcessor.from_pretrained(model.config.mllm_hf_path).image_processor
 
     # 初始化 Pipeline
-    pipe = CustomEditPipeline(multimodal_encoder=model, tokenizer=tokenizer, image_processor=image_processor)
+    pipe = CustomEditPipeline(
+        multimodal_encoder=model,
+        tokenizer=tokenizer,
+        image_processor=image_processor,
+        multimodal_encoder_input_img_size=csgo_config.get("img_size", 448)
+    )
 
     test_dataset = CSGOInferenceDataset(
         csgo_config,

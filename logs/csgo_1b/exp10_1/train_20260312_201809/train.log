@@ -1,0 +1,344 @@
+2026-03-12 20:18:09 - INFO - Loaded WandB API key from .wandb_api_key.txt - (1433599:train_csgo.py:1372)
+2026-03-12 20:18:11 - INFO - model_args: ModelArguments(model_name_or_path='UniLIP-1B', version='internvl', freeze_backbone=True, tune_mm_mlp_adapter=False, vision_tower=None, gen_vision_tower=None, mm_vision_select_layer=-1, pretrain_mm_mlp_adapter=None, pretrain_gen_mlp_adapter=None, vision_tower_pretrained=None, mm_projector_type='linear', gen_projector_type='linear', mm_use_im_start_end=False, mm_use_im_patch_token=False, mm_patch_merge_type='flat', mm_vision_select_feature='patch', n_query=256, n_und_query=0, gen_pooling='all', unilip_path='', unilip_factor=10.6, weighting_scheme='logit_normal', fix_dit=False, fix_connect=False, fix_vit=True, fix_llm=True, connect_layer=6, mllm_path='', mllm_hf_path='OpenGVLab/InternVL3-1B-hf', vae_path='', dit_path='', action_dit_layer=3, is_action_dit_dense_timestep=False) - (1433599:train_csgo.py:1384)
+2026-03-12 20:18:11 - INFO - data_args: DataArguments(csgo_config='csgo_configs/exp10_1.yaml', data_path=None, lazy_preprocess=True, is_multimodal=False, csgo_image_folder='data/preprocessed_data', shortcaption_image_folder=None, data_type='mix', image_aspect_ratio='square') - (1433599:train_csgo.py:1385)
+2026-03-12 20:18:11 - INFO - training_args: TrainingArguments(
+_n_gpu=1,
+accelerator_config={'split_batches': False, 'dispatch_batches': None, 'even_batches': True, 'use_seedable_sampler': True, 'non_blocking': False, 'gradient_accumulation_kwargs': None, 'use_configured_state': False},
+action_dit_projector_lr=0.001,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+average_tokens_across_devices=True,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+bits=16,
+cache_dir=None,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=4,
+dataloader_persistent_workers=False,
+dataloader_pin_memory=True,
+dataloader_prefetch_factor=None,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=deepspeed_scripts/zero0.json,
+disable_tqdm=False,
+do_eval=False,
+do_predict=False,
+do_train=False,
+double_quant=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_on_start=False,
+eval_steps=None,
+eval_strategy=IntervalStrategy.NO,
+eval_use_gather_object=False,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+freeze_mm_mlp_adapter=False,
+fsdp=[],
+fsdp_config={'min_num_params': 0, 'xla': False, 'xla_fsdp_v2': False, 'xla_fsdp_grad_ckpt': False},
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=True,
+gradient_checkpointing_kwargs=None,
+greater_is_better=None,
+group_by_length=False,
+group_by_modality_length=False,
+half_precision_backend=auto,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=None,
+hub_revision=None,
+hub_strategy=HubStrategy.EVERY_SAVE,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_inputs_for_metrics=False,
+include_num_input_tokens_seen=no,
+include_tokens_per_second=False,
+is_action_dit_projector=False,
+is_loc_learnable_query=False,
+is_lora=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=0.0001,
+length_column_name=length,
+liger_kernel_config=None,
+load_best_model_at_end=False,
+loc_learnable_query_lr=0.0005,
+local_rank=0,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=outputs/csgo_1b/exp10_1/runs/Mar12_20-18-08_gpu-05,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=1.0,
+logging_strategy=IntervalStrategy.STEPS,
+lora_alpha=16,
+lora_bias=none,
+lora_dropout=0.05,
+lora_r=16,
+lora_weight_path=,
+lr_scheduler_kwargs={'min_lr': 1e-05},
+lr_scheduler_type=SchedulerType.COSINE_WITH_MIN_LR,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mm_projector_lr=None,
+model_max_length=1024,
+mp_parameters=,
+mpt_attn_impl=triton,
+neftune_noise_alpha=None,
+no_cuda=False,
+num_train_epochs=100.0,
+optim=OptimizerNames.ADAMW_TORCH,
+optim_args=None,
+optim_target_modules=None,
+output_dir=outputs/csgo_1b/exp10_1,
+overwrite_output_dir=False,
+parallelism_config=None,
+past_index=-1,
+per_device_eval_batch_size=128,
+per_device_train_batch_size=128,
+prediction_loss_only=False,
+pretrain_path=none,
+project=huggingface,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+quant_type=nf4,
+ray_scope=last,
+remove_unused_columns=False,
+report_to=['wandb'],
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+run_name=None,
+save_on_each_node=False,
+save_only_model=False,
+save_safetensors=True,
+save_steps=1000,
+save_strategy=SaveStrategy.STEPS,
+save_total_limit=1,
+seed=42,
+skip_memory_metrics=True,
+tf32=True,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_empty_cache_steps=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+trackio_space_id=trackio,
+use_cpu=False,
+use_legacy_prediction_loop=False,
+use_liger_kernel=False,
+use_mps_device=False,
+warmup_ratio=0.003,
+warmup_steps=0,
+weight_decay=0.0,
+) - (1433599:train_csgo.py:1386)
+2026-03-12 20:18:11 - INFO - csgo_config: {'debug': False, 'is_multi_task': True, 'is_action_dit_dense_timestep': True, 'alpha_loc_loss': 2, 'is_loc_aux_loss': True, 'alpha_loc_aux_loss': 0.1, 'is_multi_task_balanced': True, 'use_pi05_action_dit': False, 'is_action_dit_projector': True, 'action_dit_projector_lr': 0.0005, 'is_aciton_dit_vae_small_init': True, 'img_size': 224, 'data_dir': 'data/preprocessed_data', 'train_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'val_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'test_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'is_lora': True} - (1433599:train_csgo.py:1387)
+2026-03-12 20:18:12 - INFO - vision_select_layer: -1 - (1433599:configuration_internvl_chat.py:69)
+2026-03-12 20:18:12 - INFO - ps_version: v2 - (1433599:configuration_internvl_chat.py:70)
+2026-03-12 20:18:12 - INFO - min_dynamic_patch: 1 - (1433599:configuration_internvl_chat.py:71)
+2026-03-12 20:18:12 - INFO - max_dynamic_patch: 12 - (1433599:configuration_internvl_chat.py:72)
+2026-03-12 20:18:12 - INFO - vision_config is None. Initializing the InternVisionConfig with default values. - (1433599:configuration_internvl_chat.py:42)
+2026-03-12 20:18:12 - INFO - llm_config is None. Initializing the LlamaConfig config with default values (`LlamaConfig`). - (1433599:configuration_internvl_chat.py:46)
+2026-03-12 20:18:12 - INFO - vision_select_layer: -1 - (1433599:configuration_internvl_chat.py:69)
+2026-03-12 20:18:12 - INFO - ps_version: v1 - (1433599:configuration_internvl_chat.py:70)
+2026-03-12 20:18:12 - INFO - min_dynamic_patch: 1 - (1433599:configuration_internvl_chat.py:71)
+2026-03-12 20:18:12 - INFO - max_dynamic_patch: 6 - (1433599:configuration_internvl_chat.py:72)
+2026-03-12 20:18:13 - INFO - num_image_token: 256 - (1433599:modeling_internvl_chat.py:59)
+2026-03-12 20:18:13 - INFO - ps_version: v2 - (1433599:modeling_internvl_chat.py:60)
+2026-03-12 20:18:26 - INFO - Using conversation format: internvl - (1433599:train_csgo.py:1469)
+2026-03-12 20:18:26 - INFO - fix connect False - (1433599:unified_unilip.py:215)
+2026-03-12 20:18:26 - INFO - fix dit False - (1433599:unified_unilip.py:216)
+2026-03-12 20:18:26 - INFO - unilip load from checkpoint!!! - (1433599:unified_unilip.py:283)
+2026-03-12 20:18:26 - INFO - DiT load from checkpoint!!! - (1433599:unified_unilip.py:296)
+2026-03-12 20:18:26 - INFO - Connector load from checkpoint!!! - (1433599:unified_unilip.py:317)
+2026-03-12 20:18:26 - INFO - latent_queries load from checkpoint!!! - (1433599:unified_unilip.py:339)
+2026-03-12 20:18:26 - INFO - Initializing Action Connector from OpenGVLab/InternVL3-1B-hf slice... - (1433599:unified_unilip.py:414)
+2026-03-12 20:18:27 - INFO - Action DiT weights initialized successfully! - (1433599:unified_unilip.py:425)
+2026-03-12 20:18:27 - INFO - Replacing action_dit norms with AdaRMS... - (1433599:unified_unilip.py:429)
+2026-03-12 20:18:27 - INFO - Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora} - (1433599:unified_unilip.py:499)
+2026-03-12 20:18:34 - INFO - ✅ Enabled gradient checkpointing for vision tower - (1433599:train_csgo.py:1530)
+2026-03-12 20:18:34 - INFO - ✅ Enabled gradient checkpointing for language model - (1433599:train_csgo.py:1535)
+2026-03-12 20:18:34 - INFO - ✅ Enabled gradient checkpointing for LLM Connector - (1433599:train_csgo.py:1539)
+2026-03-12 20:18:34 - INFO - ✅ Enabled gradient checkpointing for Gen DiT - (1433599:train_csgo.py:1543)
+2026-03-12 20:18:34 - INFO - ✅ Enabled gradient checkpointing for Loc DiT - (1433599:train_csgo.py:1547)
+2026-03-12 20:18:34 - INFO - 🌟 Starting Modular LoRA Injection for Unified UniLIP... - (1433599:unified_unilip.py:952)
+2026-03-12 20:18:34 - INFO - 🚀 Injecting LoRA into sub-module: llm_connector... - (1433599:unified_unilip.py:899)
+2026-03-12 20:18:34 - INFO - 🔧 Patching get_input_embeddings for llm_connector to bypass PEFT check. - (1433599:unified_unilip.py:917)
+2026-03-12 20:18:34 - INFO - Applying LoRA to llm_connector with target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'], modules_to_save: None - (1433599:unified_unilip.py:931)
+2026-03-12 20:18:34 - INFO - 📊 llm_connector Adapter Config: - (1433599:unified_unilip.py:936)
+2026-03-12 20:18:34 - INFO - 🚀 Injecting LoRA into sub-module: dit... - (1433599:unified_unilip.py:899)
+2026-03-12 20:18:34 - INFO - Applying LoRA to dit with target_modules: ['to_q', 'to_k', 'to_v', 'to_out.0', 'linear_1', 'linear_2'], modules_to_save: None - (1433599:unified_unilip.py:931)
+2026-03-12 20:18:35 - INFO - 📊 dit Adapter Config: - (1433599:unified_unilip.py:936)
+2026-03-12 20:18:35 - INFO - 🚀 Injecting LoRA into sub-module: action_dit... - (1433599:unified_unilip.py:899)
+2026-03-12 20:18:35 - INFO - 🔧 Patching get_input_embeddings for action_dit to bypass PEFT check. - (1433599:unified_unilip.py:917)
+2026-03-12 20:18:35 - INFO - Applying LoRA to action_dit with target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj', 'gate_proj', 'up_proj', 'down_proj'], modules_to_save: None - (1433599:unified_unilip.py:931)
+2026-03-12 20:18:35 - INFO - 📊 action_dit Adapter Config: - (1433599:unified_unilip.py:936)
+2026-03-12 20:18:35 - INFO - 🔓 Unfreezing Projectors and Heads... - (1433599:unified_unilip.py:1030)
+2026-03-12 20:18:35 - INFO - ✅ LoRA Injection Complete. Manually unfroze 0 parameters for Heads/Projectors. - (1433599:unified_unilip.py:1057)
+2026-03-12 20:18:35 - INFO - 🚀 After LoRA: Total parameters: 1870890216 - (1433599:train_csgo.py:1555)
+2026-03-12 20:18:35 - INFO - 🚀 After LoRA: Trainable parameters: 25768581 - (1433599:train_csgo.py:1556)
+2026-03-12 20:18:35 - INFO - 🚀 After LoRA: Trainable percent: 1.38 % - (1433599:train_csgo.py:1557)
+2026-03-12 20:18:35 - INFO - trainable layers: 600 - (1433599:train_csgo.py:1573)
+2026-03-12 20:18:35 - INFO - 🔄 Loading Multi-Task CS2 Dataset... - (1433599:unified_task_dataset.py:963)
+2026-03-12 20:18:35 - INFO - Loading CS2 Data Split data/preprocessed_data/de_dust2/splits_20000_5000/train_split.json... - (1433599:unified_task_dataset.py:971)
+2026-03-12 20:18:35 - INFO - Loading CS2 Data Split data/preprocessed_data/de_nuke/splits_20000_5000/train_split.json... - (1433599:unified_task_dataset.py:971)
+2026-03-12 20:18:35 - INFO - Loading CS2 Data Split data/preprocessed_data/de_ancient/splits_20000_5000/train_split.json... - (1433599:unified_task_dataset.py:971)
+2026-03-12 20:18:36 - INFO - ✅ Total entries: 60000 - (1433599:unified_task_dataset.py:1019)
+2026-03-12 20:23:16 - INFO - [ Step 14001 ] Loss: 1.183200 | LR: 4.1489e-05 | Epoch: 59.83 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.183210015296936, 'loc_loss': 0.2369299679994583, 'alpha_loc': 2.0, 'gen_loss': 0.6974978446960449, 'loc_aux_loss': 0.11852297931909561, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:23:34 - INFO - [ Step 14002 ] Loss: 1.156700 | LR: 4.1483e-05 | Epoch: 59.84 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1567156314849854, 'loc_loss': 0.23632146418094635, 'alpha_loc': 2.0, 'gen_loss': 0.6713618040084839, 'loc_aux_loss': 0.12710881233215332, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:23:52 - INFO - [ Step 14003 ] Loss: 1.128400 | LR: 4.1477e-05 | Epoch: 59.84 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1283751726150513, 'loc_loss': 0.2263425588607788, 'alpha_loc': 2.0, 'gen_loss': 0.6641659736633301, 'loc_aux_loss': 0.11524070799350739, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:24:11 - INFO - [ Step 14004 ] Loss: 1.184200 | LR: 4.1472e-05 | Epoch: 59.85 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1842108964920044, 'loc_loss': 0.25720202922821045, 'alpha_loc': 2.0, 'gen_loss': 0.6586613059043884, 'loc_aux_loss': 0.11145499348640442, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:26:51 - INFO - [ Step 14005 ] Loss: 1.208900 | LR: 4.1466e-05 | Epoch: 59.85 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2088769674301147, 'loc_loss': 0.2543528974056244, 'alpha_loc': 2.0, 'gen_loss': 0.689242959022522, 'loc_aux_loss': 0.10928244888782501, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:27:10 - INFO - [ Step 14006 ] Loss: 1.189200 | LR: 4.1460e-05 | Epoch: 59.85 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.189223051071167, 'loc_loss': 0.24252565205097198, 'alpha_loc': 2.0, 'gen_loss': 0.6916260719299316, 'loc_aux_loss': 0.12545715272426605, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:27:28 - INFO - [ Step 14007 ] Loss: 1.133300 | LR: 4.1454e-05 | Epoch: 59.86 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1333166360855103, 'loc_loss': 0.2118576467037201, 'alpha_loc': 2.0, 'gen_loss': 0.6980032920837402, 'loc_aux_loss': 0.11598043143749237, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:27:47 - INFO - [ Step 14008 ] Loss: 1.203300 | LR: 4.1449e-05 | Epoch: 59.86 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2033032178878784, 'loc_loss': 0.2516387104988098, 'alpha_loc': 2.0, 'gen_loss': 0.6879863739013672, 'loc_aux_loss': 0.12039434909820557, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:30:43 - INFO - [ Step 14009 ] Loss: 1.181100 | LR: 4.1443e-05 | Epoch: 59.87 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1810725927352905, 'loc_loss': 0.24017459154129028, 'alpha_loc': 2.0, 'gen_loss': 0.6884050369262695, 'loc_aux_loss': 0.1231839507818222, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:31:01 - INFO - [ Step 14010 ] Loss: 1.169200 | LR: 4.1437e-05 | Epoch: 59.87 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1691838502883911, 'loc_loss': 0.2319384515285492, 'alpha_loc': 2.0, 'gen_loss': 0.6920655369758606, 'loc_aux_loss': 0.13241374492645264, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:31:20 - INFO - [ Step 14011 ] Loss: 1.204600 | LR: 4.1431e-05 | Epoch: 59.88 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2046082019805908, 'loc_loss': 0.25487858057022095, 'alpha_loc': 2.0, 'gen_loss': 0.6835451126098633, 'loc_aux_loss': 0.11305934190750122, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:31:38 - INFO - [ Step 14012 ] Loss: 1.193200 | LR: 4.1425e-05 | Epoch: 59.88 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1931757926940918, 'loc_loss': 0.24573132395744324, 'alpha_loc': 2.0, 'gen_loss': 0.6876765489578247, 'loc_aux_loss': 0.14036604762077332, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:34:51 - INFO - [ Step 14013 ] Loss: 1.173100 | LR: 4.1420e-05 | Epoch: 59.88 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1731497049331665, 'loc_loss': 0.2483198493719101, 'alpha_loc': 2.0, 'gen_loss': 0.6644452810287476, 'loc_aux_loss': 0.12064711004495621, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:35:10 - INFO - [ Step 14014 ] Loss: 1.138600 | LR: 4.1414e-05 | Epoch: 59.89 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1385618448257446, 'loc_loss': 0.223872572183609, 'alpha_loc': 2.0, 'gen_loss': 0.6789132356643677, 'loc_aux_loss': 0.11903437227010727, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:35:28 - INFO - [ Step 14015 ] Loss: 1.226300 | LR: 4.1408e-05 | Epoch: 59.89 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.226292371749878, 'loc_loss': 0.26544368267059326, 'alpha_loc': 2.0, 'gen_loss': 0.6830118894577026, 'loc_aux_loss': 0.12393110245466232, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:35:47 - INFO - [ Step 14016 ] Loss: 1.149400 | LR: 4.1402e-05 | Epoch: 59.90 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1494187116622925, 'loc_loss': 0.2349751889705658, 'alpha_loc': 2.0, 'gen_loss': 0.6691690683364868, 'loc_aux_loss': 0.10299273580312729, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:38:37 - INFO - [ Step 14017 ] Loss: 1.247700 | LR: 4.1397e-05 | Epoch: 59.90 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.247719168663025, 'loc_loss': 0.2773538827896118, 'alpha_loc': 2.0, 'gen_loss': 0.6807208061218262, 'loc_aux_loss': 0.12290553748607635, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:38:56 - INFO - [ Step 14018 ] Loss: 1.156500 | LR: 4.1391e-05 | Epoch: 59.91 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.156458854675293, 'loc_loss': 0.22766909003257751, 'alpha_loc': 2.0, 'gen_loss': 0.6884005665779114, 'loc_aux_loss': 0.12720072269439697, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:39:14 - INFO - [ Step 14019 ] Loss: 1.163000 | LR: 4.1385e-05 | Epoch: 59.91 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1629834175109863, 'loc_loss': 0.2354891300201416, 'alpha_loc': 2.0, 'gen_loss': 0.6801608800888062, 'loc_aux_loss': 0.11844255030155182, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:39:33 - INFO - [ Step 14020 ] Loss: 1.098700 | LR: 4.1379e-05 | Epoch: 59.91 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.0986911058425903, 'loc_loss': 0.20894823968410492, 'alpha_loc': 2.0, 'gen_loss': 0.6692373156547546, 'loc_aux_loss': 0.11557314544916153, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:42:41 - INFO - [ Step 14021 ] Loss: 1.194000 | LR: 4.1373e-05 | Epoch: 59.92 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1939500570297241, 'loc_loss': 0.25450700521469116, 'alpha_loc': 2.0, 'gen_loss': 0.6727989315986633, 'loc_aux_loss': 0.12137068063020706, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:43:00 - INFO - [ Step 14022 ] Loss: 1.199600 | LR: 4.1368e-05 | Epoch: 59.92 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1996078491210938, 'loc_loss': 0.2623180150985718, 'alpha_loc': 2.0, 'gen_loss': 0.6636401414871216, 'loc_aux_loss': 0.11331619322299957, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:43:18 - INFO - [ Step 14023 ] Loss: 1.183300 | LR: 4.1362e-05 | Epoch: 59.93 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1833263635635376, 'loc_loss': 0.24150237441062927, 'alpha_loc': 2.0, 'gen_loss': 0.6885628700256348, 'loc_aux_loss': 0.1175871342420578, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:43:37 - INFO - [ Step 14024 ] Loss: 1.208300 | LR: 4.1356e-05 | Epoch: 59.93 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2082537412643433, 'loc_loss': 0.25774309039115906, 'alpha_loc': 2.0, 'gen_loss': 0.6806937456130981, 'loc_aux_loss': 0.12073914706707001, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:46:14 - INFO - [ Step 14025 ] Loss: 1.256000 | LR: 4.1350e-05 | Epoch: 59.94 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2559973001480103, 'loc_loss': 0.2784455120563507, 'alpha_loc': 2.0, 'gen_loss': 0.6857731342315674, 'loc_aux_loss': 0.1333322525024414, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:46:33 - INFO - [ Step 14026 ] Loss: 1.152800 | LR: 4.1345e-05 | Epoch: 59.94 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.152840495109558, 'loc_loss': 0.2365855872631073, 'alpha_loc': 2.0, 'gen_loss': 0.6674960851669312, 'loc_aux_loss': 0.12173265218734741, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:46:51 - INFO - [ Step 14027 ] Loss: 1.163400 | LR: 4.1339e-05 | Epoch: 59.94 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1634454727172852, 'loc_loss': 0.23462805151939392, 'alpha_loc': 2.0, 'gen_loss': 0.6810910701751709, 'loc_aux_loss': 0.13098205626010895, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:47:10 - INFO - [ Step 14028 ] Loss: 1.236400 | LR: 4.1333e-05 | Epoch: 59.95 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2364425659179688, 'loc_loss': 0.27012529969215393, 'alpha_loc': 2.0, 'gen_loss': 0.6831178665161133, 'loc_aux_loss': 0.1307412087917328, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:49:47 - INFO - [ Step 14029 ] Loss: 1.230200 | LR: 4.1327e-05 | Epoch: 59.95 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.230202317237854, 'loc_loss': 0.2607656717300415, 'alpha_loc': 2.0, 'gen_loss': 0.6948944926261902, 'loc_aux_loss': 0.137764111161232, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:50:06 - INFO - [ Step 14030 ] Loss: 1.202900 | LR: 4.1322e-05 | Epoch: 59.96 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2028751373291016, 'loc_loss': 0.25893181562423706, 'alpha_loc': 2.0, 'gen_loss': 0.6743282675743103, 'loc_aux_loss': 0.10683323442935944, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:50:24 - INFO - [ Step 14031 ] Loss: 1.174700 | LR: 4.1316e-05 | Epoch: 59.96 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.174723505973816, 'loc_loss': 0.23277880251407623, 'alpha_loc': 2.0, 'gen_loss': 0.6968751549720764, 'loc_aux_loss': 0.12290674448013306, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:50:42 - INFO - [ Step 14032 ] Loss: 1.170900 | LR: 4.1310e-05 | Epoch: 59.97 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1708908081054688, 'loc_loss': 0.2380739152431488, 'alpha_loc': 2.0, 'gen_loss': 0.6812055706977844, 'loc_aux_loss': 0.13537386059761047, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:53:20 - INFO - [ Step 14033 ] Loss: 1.232400 | LR: 4.1304e-05 | Epoch: 59.97 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.232442021369934, 'loc_loss': 0.25920572876930237, 'alpha_loc': 2.0, 'gen_loss': 0.7022566199302673, 'loc_aux_loss': 0.11773993819952011, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:53:38 - INFO - [ Step 14034 ] Loss: 1.192400 | LR: 4.1298e-05 | Epoch: 59.97 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.192441701889038, 'loc_loss': 0.25009846687316895, 'alpha_loc': 2.0, 'gen_loss': 0.6803686618804932, 'loc_aux_loss': 0.1187610775232315, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:53:56 - INFO - [ Step 14035 ] Loss: 1.198300 | LR: 4.1293e-05 | Epoch: 59.98 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.198296308517456, 'loc_loss': 0.2483929991722107, 'alpha_loc': 2.0, 'gen_loss': 0.690453052520752, 'loc_aux_loss': 0.11057280749082565, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:54:15 - INFO - [ Step 14036 ] Loss: 1.113600 | LR: 4.1287e-05 | Epoch: 59.98 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.11361563205719, 'loc_loss': 0.20200638473033905, 'alpha_loc': 2.0, 'gen_loss': 0.6993350386619568, 'loc_aux_loss': 0.10267846286296844, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:56:51 - INFO - [ Step 14037 ] Loss: 1.137900 | LR: 4.1281e-05 | Epoch: 59.99 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.137880802154541, 'loc_loss': 0.22834783792495728, 'alpha_loc': 2.0, 'gen_loss': 0.6688936352729797, 'loc_aux_loss': 0.1229143738746643, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:57:09 - INFO - [ Step 14038 ] Loss: 1.131300 | LR: 4.1275e-05 | Epoch: 59.99 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1313332319259644, 'loc_loss': 0.22418585419654846, 'alpha_loc': 2.0, 'gen_loss': 0.6697486639022827, 'loc_aux_loss': 0.13212797045707703, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:57:27 - INFO - [ Step 14039 ] Loss: 1.266800 | LR: 4.1270e-05 | Epoch: 60.00 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2667555809020996, 'loc_loss': 0.28987985849380493, 'alpha_loc': 2.0, 'gen_loss': 0.6747113466262817, 'loc_aux_loss': 0.12284521013498306, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 20:57:46 - INFO - [ Step 14040 ] Loss: 1.118900 | LR: 4.1264e-05 | Epoch: 60.00 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.118894100189209, 'loc_loss': 0.21554693579673767, 'alpha_loc': 2.0, 'gen_loss': 0.676590621471405, 'loc_aux_loss': 0.11209568381309509, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:01:43 - INFO - [ Step 14041 ] Loss: 1.156300 | LR: 4.1258e-05 | Epoch: 60.00 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1562888622283936, 'loc_loss': 0.23671455681324005, 'alpha_loc': 2.0, 'gen_loss': 0.6720365285873413, 'loc_aux_loss': 0.10823304951190948, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:02:01 - INFO - [ Step 14042 ] Loss: 1.183300 | LR: 4.1252e-05 | Epoch: 60.01 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1832935810089111, 'loc_loss': 0.24051529169082642, 'alpha_loc': 2.0, 'gen_loss': 0.6907016038894653, 'loc_aux_loss': 0.11561356484889984, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:02:19 - INFO - [ Step 14043 ] Loss: 1.170400 | LR: 4.1246e-05 | Epoch: 60.01 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.170378565788269, 'loc_loss': 0.24556973576545715, 'alpha_loc': 2.0, 'gen_loss': 0.667569637298584, 'loc_aux_loss': 0.11669529229402542, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:02:38 - INFO - [ Step 14044 ] Loss: 1.168100 | LR: 4.1241e-05 | Epoch: 60.02 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.168087124824524, 'loc_loss': 0.2338753491640091, 'alpha_loc': 2.0, 'gen_loss': 0.6863909959793091, 'loc_aux_loss': 0.13945463299751282, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:05:13 - INFO - [ Step 14045 ] Loss: 1.136600 | LR: 4.1235e-05 | Epoch: 60.02 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1366380453109741, 'loc_loss': 0.22345593571662903, 'alpha_loc': 2.0, 'gen_loss': 0.6794112324714661, 'loc_aux_loss': 0.10314978659152985, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:05:31 - INFO - [ Step 14046 ] Loss: 1.094300 | LR: 4.1229e-05 | Epoch: 60.03 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.09430992603302, 'loc_loss': 0.20317944884300232, 'alpha_loc': 2.0, 'gen_loss': 0.6762717962265015, 'loc_aux_loss': 0.11679251492023468, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:05:50 - INFO - [ Step 14047 ] Loss: 1.176300 | LR: 4.1223e-05 | Epoch: 60.03 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1763110160827637, 'loc_loss': 0.24536079168319702, 'alpha_loc': 2.0, 'gen_loss': 0.6740527749061584, 'loc_aux_loss': 0.11536619812250137, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:06:08 - INFO - [ Step 14048 ] Loss: 1.092900 | LR: 4.1218e-05 | Epoch: 60.03 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.0928581953048706, 'loc_loss': 0.1995297074317932, 'alpha_loc': 2.0, 'gen_loss': 0.6815699338912964, 'loc_aux_loss': 0.12228797376155853, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:08:46 - INFO - [ Step 14049 ] Loss: 1.137500 | LR: 4.1212e-05 | Epoch: 60.04 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1375197172164917, 'loc_loss': 0.21839764714241028, 'alpha_loc': 2.0, 'gen_loss': 0.6874328851699829, 'loc_aux_loss': 0.1329151690006256, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:09:05 - INFO - [ Step 14050 ] Loss: 1.145600 | LR: 4.1206e-05 | Epoch: 60.04 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.145618200302124, 'loc_loss': 0.23867852985858917, 'alpha_loc': 2.0, 'gen_loss': 0.6568010449409485, 'loc_aux_loss': 0.11460056155920029, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:09:23 - INFO - [ Step 14051 ] Loss: 1.170200 | LR: 4.1200e-05 | Epoch: 60.05 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1702131032943726, 'loc_loss': 0.24284076690673828, 'alpha_loc': 2.0, 'gen_loss': 0.672693133354187, 'loc_aux_loss': 0.11838461458683014, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:09:42 - INFO - [ Step 14052 ] Loss: 1.134000 | LR: 4.1195e-05 | Epoch: 60.05 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1340267658233643, 'loc_loss': 0.22342145442962646, 'alpha_loc': 2.0, 'gen_loss': 0.6759275197982788, 'loc_aux_loss': 0.11256316304206848, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:12:15 - INFO - [ Step 14053 ] Loss: 1.188600 | LR: 4.1189e-05 | Epoch: 60.06 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.18855619430542, 'loc_loss': 0.2363380342721939, 'alpha_loc': 2.0, 'gen_loss': 0.7034422159194946, 'loc_aux_loss': 0.12437887489795685, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:12:33 - INFO - [ Step 14054 ] Loss: 1.205800 | LR: 4.1183e-05 | Epoch: 60.06 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.205786943435669, 'loc_loss': 0.25766563415527344, 'alpha_loc': 2.0, 'gen_loss': 0.6775773167610168, 'loc_aux_loss': 0.12878426909446716, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:12:51 - INFO - [ Step 14055 ] Loss: 1.153600 | LR: 4.1177e-05 | Epoch: 60.06 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1536153554916382, 'loc_loss': 0.22710569202899933, 'alpha_loc': 2.0, 'gen_loss': 0.6876598000526428, 'loc_aux_loss': 0.11744148284196854, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:13:10 - INFO - [ Step 14056 ] Loss: 1.224800 | LR: 4.1171e-05 | Epoch: 60.07 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2248148918151855, 'loc_loss': 0.26483964920043945, 'alpha_loc': 2.0, 'gen_loss': 0.6808982491493225, 'loc_aux_loss': 0.1423742175102234, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:15:44 - INFO - [ Step 14057 ] Loss: 1.189100 | LR: 4.1166e-05 | Epoch: 60.07 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1891242265701294, 'loc_loss': 0.24571384489536285, 'alpha_loc': 2.0, 'gen_loss': 0.6841363906860352, 'loc_aux_loss': 0.1356014907360077, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:16:02 - INFO - [ Step 14058 ] Loss: 1.210400 | LR: 4.1160e-05 | Epoch: 60.08 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2103922367095947, 'loc_loss': 0.2493075728416443, 'alpha_loc': 2.0, 'gen_loss': 0.6985889673233032, 'loc_aux_loss': 0.1318807452917099, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:16:21 - INFO - [ Step 14059 ] Loss: 1.135300 | LR: 4.1154e-05 | Epoch: 60.08 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1352653503417969, 'loc_loss': 0.22165419161319733, 'alpha_loc': 2.0, 'gen_loss': 0.6800569295883179, 'loc_aux_loss': 0.11900115758180618, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:16:39 - INFO - [ Step 14060 ] Loss: 1.313100 | LR: 4.1148e-05 | Epoch: 60.09 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.313067078590393, 'loc_loss': 0.3010376989841461, 'alpha_loc': 2.0, 'gen_loss': 0.6983432769775391, 'loc_aux_loss': 0.12648454308509827, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:19:51 - INFO - [ Step 14061 ] Loss: 1.227200 | LR: 4.1143e-05 | Epoch: 60.09 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2271983623504639, 'loc_loss': 0.26268279552459717, 'alpha_loc': 2.0, 'gen_loss': 0.6919643878936768, 'loc_aux_loss': 0.09868419170379639, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:20:09 - INFO - [ Step 14062 ] Loss: 1.223400 | LR: 4.1137e-05 | Epoch: 60.09 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2233831882476807, 'loc_loss': 0.264350026845932, 'alpha_loc': 2.0, 'gen_loss': 0.6828352808952332, 'loc_aux_loss': 0.1184789314866066, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:20:28 - INFO - [ Step 14063 ] Loss: 1.170700 | LR: 4.1131e-05 | Epoch: 60.10 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.170654296875, 'loc_loss': 0.2434462308883667, 'alpha_loc': 2.0, 'gen_loss': 0.6714556217193604, 'loc_aux_loss': 0.12306193262338638, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:20:46 - INFO - [ Step 14064 ] Loss: 1.226100 | LR: 4.1125e-05 | Epoch: 60.10 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2261319160461426, 'loc_loss': 0.25563356280326843, 'alpha_loc': 2.0, 'gen_loss': 0.7005411982536316, 'loc_aux_loss': 0.1432361900806427, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:23:23 - INFO - [ Step 14065 ] Loss: 1.288000 | LR: 4.1120e-05 | Epoch: 60.11 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2880151271820068, 'loc_loss': 0.2928542196750641, 'alpha_loc': 2.0, 'gen_loss': 0.690704345703125, 'loc_aux_loss': 0.11602368950843811, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:23:41 - INFO - [ Step 14066 ] Loss: 1.192100 | LR: 4.1114e-05 | Epoch: 60.11 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1920571327209473, 'loc_loss': 0.24989552795886993, 'alpha_loc': 2.0, 'gen_loss': 0.6805651187896729, 'loc_aux_loss': 0.11700986325740814, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:24:00 - INFO - [ Step 14067 ] Loss: 1.218600 | LR: 4.1108e-05 | Epoch: 60.12 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2186287641525269, 'loc_loss': 0.2534792423248291, 'alpha_loc': 2.0, 'gen_loss': 0.6984367370605469, 'loc_aux_loss': 0.13233575224876404, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:24:18 - INFO - [ Step 14068 ] Loss: 1.133900 | LR: 4.1102e-05 | Epoch: 60.12 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1339486837387085, 'loc_loss': 0.22921442985534668, 'alpha_loc': 2.0, 'gen_loss': 0.6639830470085144, 'loc_aux_loss': 0.11536688357591629, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:26:53 - INFO - [ Step 14069 ] Loss: 1.133900 | LR: 4.1097e-05 | Epoch: 60.12 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1338516473770142, 'loc_loss': 0.21724706888198853, 'alpha_loc': 2.0, 'gen_loss': 0.687747061252594, 'loc_aux_loss': 0.11610396951436996, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:27:11 - INFO - [ Step 14070 ] Loss: 1.171100 | LR: 4.1091e-05 | Epoch: 60.13 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1711417436599731, 'loc_loss': 0.23360201716423035, 'alpha_loc': 2.0, 'gen_loss': 0.6927313208580017, 'loc_aux_loss': 0.11206364631652832, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:27:30 - INFO - [ Step 14071 ] Loss: 1.140200 | LR: 4.1085e-05 | Epoch: 60.13 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.140248417854309, 'loc_loss': 0.2184150218963623, 'alpha_loc': 2.0, 'gen_loss': 0.6921756267547607, 'loc_aux_loss': 0.11242689192295074, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:27:49 - INFO - [ Step 14072 ] Loss: 1.156200 | LR: 4.1079e-05 | Epoch: 60.14 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1561954021453857, 'loc_loss': 0.22379213571548462, 'alpha_loc': 2.0, 'gen_loss': 0.6955693364143372, 'loc_aux_loss': 0.1304178684949875, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:30:26 - INFO - [ Step 14073 ] Loss: 1.165700 | LR: 4.1073e-05 | Epoch: 60.14 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1656986474990845, 'loc_loss': 0.23068341612815857, 'alpha_loc': 2.0, 'gen_loss': 0.6917559504508972, 'loc_aux_loss': 0.12575867772102356, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:30:45 - INFO - [ Step 14074 ] Loss: 1.156100 | LR: 4.1068e-05 | Epoch: 60.15 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1560648679733276, 'loc_loss': 0.22724232077598572, 'alpha_loc': 2.0, 'gen_loss': 0.6913474202156067, 'loc_aux_loss': 0.102328360080719, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:31:03 - INFO - [ Step 14075 ] Loss: 1.215200 | LR: 4.1062e-05 | Epoch: 60.15 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2151618003845215, 'loc_loss': 0.255249947309494, 'alpha_loc': 2.0, 'gen_loss': 0.6935443878173828, 'loc_aux_loss': 0.11117488145828247, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:31:22 - INFO - [ Step 14076 ] Loss: 1.200000 | LR: 4.1056e-05 | Epoch: 60.15 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2000291347503662, 'loc_loss': 0.24629269540309906, 'alpha_loc': 2.0, 'gen_loss': 0.6957701444625854, 'loc_aux_loss': 0.11673608422279358, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:33:59 - INFO - [ Step 14077 ] Loss: 1.167700 | LR: 4.1050e-05 | Epoch: 60.16 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1676759719848633, 'loc_loss': 0.23181945085525513, 'alpha_loc': 2.0, 'gen_loss': 0.692460834980011, 'loc_aux_loss': 0.11576156318187714, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:34:17 - INFO - [ Step 14078 ] Loss: 1.222000 | LR: 4.1045e-05 | Epoch: 60.16 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2220392227172852, 'loc_loss': 0.25950610637664795, 'alpha_loc': 2.0, 'gen_loss': 0.6916658282279968, 'loc_aux_loss': 0.11361141502857208, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:34:36 - INFO - [ Step 14079 ] Loss: 1.189200 | LR: 4.1039e-05 | Epoch: 60.17 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1891683340072632, 'loc_loss': 0.2459680289030075, 'alpha_loc': 2.0, 'gen_loss': 0.6852841377258301, 'loc_aux_loss': 0.11948055773973465, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:34:54 - INFO - [ Step 14080 ] Loss: 1.173800 | LR: 4.1033e-05 | Epoch: 60.17 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1738356351852417, 'loc_loss': 0.2446228265762329, 'alpha_loc': 2.0, 'gen_loss': 0.6719439029693604, 'loc_aux_loss': 0.12646056711673737, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:37:27 - INFO - [ Step 14081 ] Loss: 1.196700 | LR: 4.1027e-05 | Epoch: 60.18 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1966549158096313, 'loc_loss': 0.24688923358917236, 'alpha_loc': 2.0, 'gen_loss': 0.6898632049560547, 'loc_aux_loss': 0.13013239204883575, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:37:46 - INFO - [ Step 14082 ] Loss: 1.131100 | LR: 4.1022e-05 | Epoch: 60.18 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1310784816741943, 'loc_loss': 0.2343718707561493, 'alpha_loc': 2.0, 'gen_loss': 0.651404082775116, 'loc_aux_loss': 0.10930690169334412, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:38:04 - INFO - [ Step 14083 ] Loss: 1.210000 | LR: 4.1016e-05 | Epoch: 60.18 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2100127935409546, 'loc_loss': 0.2452123910188675, 'alpha_loc': 2.0, 'gen_loss': 0.7070190906524658, 'loc_aux_loss': 0.12568895518779755, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:38:23 - INFO - [ Step 14084 ] Loss: 1.223700 | LR: 4.1010e-05 | Epoch: 60.19 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2236590385437012, 'loc_loss': 0.2657512426376343, 'alpha_loc': 2.0, 'gen_loss': 0.681472659111023, 'loc_aux_loss': 0.10683916509151459, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:40:56 - INFO - [ Step 14085 ] Loss: 1.125600 | LR: 4.1004e-05 | Epoch: 60.19 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.125645399093628, 'loc_loss': 0.2155831754207611, 'alpha_loc': 2.0, 'gen_loss': 0.6812199354171753, 'loc_aux_loss': 0.13259196281433105, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:41:14 - INFO - [ Step 14086 ] Loss: 1.133700 | LR: 4.0999e-05 | Epoch: 60.20 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1336839199066162, 'loc_loss': 0.2098555862903595, 'alpha_loc': 2.0, 'gen_loss': 0.7032846808433533, 'loc_aux_loss': 0.10688125342130661, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:41:33 - INFO - [ Step 14087 ] Loss: 1.231600 | LR: 4.0993e-05 | Epoch: 60.20 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.231623649597168, 'loc_loss': 0.277482807636261, 'alpha_loc': 2.0, 'gen_loss': 0.6652860641479492, 'loc_aux_loss': 0.11371941864490509, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:41:51 - INFO - [ Step 14088 ] Loss: 1.182400 | LR: 4.0987e-05 | Epoch: 60.21 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1824167966842651, 'loc_loss': 0.24042890965938568, 'alpha_loc': 2.0, 'gen_loss': 0.6877428889274597, 'loc_aux_loss': 0.13816124200820923, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:44:25 - INFO - [ Step 14089 ] Loss: 1.183500 | LR: 4.0981e-05 | Epoch: 60.21 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.183546543121338, 'loc_loss': 0.2423308789730072, 'alpha_loc': 2.0, 'gen_loss': 0.686862587928772, 'loc_aux_loss': 0.12022203207015991, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:44:44 - INFO - [ Step 14090 ] Loss: 1.119000 | LR: 4.0976e-05 | Epoch: 60.21 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1190249919891357, 'loc_loss': 0.2114020586013794, 'alpha_loc': 2.0, 'gen_loss': 0.6846665143966675, 'loc_aux_loss': 0.11554337292909622, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:45:02 - INFO - [ Step 14091 ] Loss: 1.179600 | LR: 4.0970e-05 | Epoch: 60.22 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1796238422393799, 'loc_loss': 0.23650400340557098, 'alpha_loc': 2.0, 'gen_loss': 0.6946575045585632, 'loc_aux_loss': 0.1195836216211319, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:45:20 - INFO - [ Step 14092 ] Loss: 1.193300 | LR: 4.0964e-05 | Epoch: 60.22 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1932634115219116, 'loc_loss': 0.24540381133556366, 'alpha_loc': 2.0, 'gen_loss': 0.6917613744735718, 'loc_aux_loss': 0.10694412887096405, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:47:53 - INFO - [ Step 14093 ] Loss: 1.243600 | LR: 4.0958e-05 | Epoch: 60.23 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.243620753288269, 'loc_loss': 0.28056490421295166, 'alpha_loc': 2.0, 'gen_loss': 0.6696966886520386, 'loc_aux_loss': 0.12794217467308044, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:48:12 - INFO - [ Step 14094 ] Loss: 1.081600 | LR: 4.0953e-05 | Epoch: 60.23 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.0815738439559937, 'loc_loss': 0.1975191831588745, 'alpha_loc': 2.0, 'gen_loss': 0.6780226230621338, 'loc_aux_loss': 0.08512841165065765, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:48:30 - INFO - [ Step 14095 ] Loss: 1.226400 | LR: 4.0947e-05 | Epoch: 60.24 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2263944149017334, 'loc_loss': 0.2629491686820984, 'alpha_loc': 2.0, 'gen_loss': 0.6898276805877686, 'loc_aux_loss': 0.10668348520994186, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:48:49 - INFO - [ Step 14096 ] Loss: 1.185600 | LR: 4.0941e-05 | Epoch: 60.24 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1856364011764526, 'loc_loss': 0.2503974437713623, 'alpha_loc': 2.0, 'gen_loss': 0.6711724996566772, 'loc_aux_loss': 0.13668957352638245, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:51:23 - INFO - [ Step 14097 ] Loss: 1.139000 | LR: 4.0935e-05 | Epoch: 60.24 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1390339136123657, 'loc_loss': 0.22054728865623474, 'alpha_loc': 2.0, 'gen_loss': 0.6854110956192017, 'loc_aux_loss': 0.12528245151042938, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:51:41 - INFO - [ Step 14098 ] Loss: 1.134500 | LR: 4.0930e-05 | Epoch: 60.25 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1345477104187012, 'loc_loss': 0.22501540184020996, 'alpha_loc': 2.0, 'gen_loss': 0.6722872257232666, 'loc_aux_loss': 0.12229710072278976, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:52:00 - INFO - [ Step 14099 ] Loss: 1.186800 | LR: 4.0924e-05 | Epoch: 60.25 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1868435144424438, 'loc_loss': 0.24534352123737335, 'alpha_loc': 2.0, 'gen_loss': 0.6844213008880615, 'loc_aux_loss': 0.11735256016254425, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:52:18 - INFO - [ Step 14100 ] Loss: 1.195500 | LR: 4.0918e-05 | Epoch: 60.26 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1955102682113647, 'loc_loss': 0.24951307475566864, 'alpha_loc': 2.0, 'gen_loss': 0.6845006942749023, 'loc_aux_loss': 0.11983401328325272, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:54:54 - INFO - [ Step 14101 ] Loss: 1.199500 | LR: 4.0912e-05 | Epoch: 60.26 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1995429992675781, 'loc_loss': 0.24514266848564148, 'alpha_loc': 2.0, 'gen_loss': 0.6974018812179565, 'loc_aux_loss': 0.11855882406234741, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:55:12 - INFO - [ Step 14102 ] Loss: 1.164700 | LR: 4.0906e-05 | Epoch: 60.26 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1647228002548218, 'loc_loss': 0.24074102938175201, 'alpha_loc': 2.0, 'gen_loss': 0.6702331304550171, 'loc_aux_loss': 0.1300763189792633, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:55:31 - INFO - [ Step 14103 ] Loss: 1.179800 | LR: 4.0901e-05 | Epoch: 60.27 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1798440217971802, 'loc_loss': 0.24738968908786774, 'alpha_loc': 2.0, 'gen_loss': 0.6736206412315369, 'loc_aux_loss': 0.11443990468978882, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:55:49 - INFO - [ Step 14104 ] Loss: 1.156300 | LR: 4.0895e-05 | Epoch: 60.27 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1563200950622559, 'loc_loss': 0.2369832694530487, 'alpha_loc': 2.0, 'gen_loss': 0.6696151494979858, 'loc_aux_loss': 0.12738436460494995, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:58:24 - INFO - [ Step 14105 ] Loss: 1.138700 | LR: 4.0889e-05 | Epoch: 60.28 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1387476921081543, 'loc_loss': 0.21549133956432343, 'alpha_loc': 2.0, 'gen_loss': 0.6959539651870728, 'loc_aux_loss': 0.11810973286628723, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:58:42 - INFO - [ Step 14106 ] Loss: 1.093300 | LR: 4.0883e-05 | Epoch: 60.28 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.0933098793029785, 'loc_loss': 0.20598891377449036, 'alpha_loc': 2.0, 'gen_loss': 0.670132577419281, 'loc_aux_loss': 0.11199472844600677, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:59:00 - INFO - [ Step 14107 ] Loss: 1.196700 | LR: 4.0878e-05 | Epoch: 60.29 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1966578960418701, 'loc_loss': 0.2581738233566284, 'alpha_loc': 2.0, 'gen_loss': 0.6671023368835449, 'loc_aux_loss': 0.13207875192165375, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 21:59:19 - INFO - [ Step 14108 ] Loss: 1.153100 | LR: 4.0872e-05 | Epoch: 60.29 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1530603170394897, 'loc_loss': 0.23719117045402527, 'alpha_loc': 2.0, 'gen_loss': 0.6690711975097656, 'loc_aux_loss': 0.0960676297545433, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:01:55 - INFO - [ Step 14109 ] Loss: 1.167300 | LR: 4.0866e-05 | Epoch: 60.29 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1672624349594116, 'loc_loss': 0.23451383411884308, 'alpha_loc': 2.0, 'gen_loss': 0.6840238571166992, 'loc_aux_loss': 0.14210927486419678, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:02:14 - INFO - [ Step 14110 ] Loss: 1.154900 | LR: 4.0860e-05 | Epoch: 60.30 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1549252271652222, 'loc_loss': 0.23759903013706207, 'alpha_loc': 2.0, 'gen_loss': 0.6693722009658813, 'loc_aux_loss': 0.10354998707771301, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:02:32 - INFO - [ Step 14111 ] Loss: 1.185800 | LR: 4.0855e-05 | Epoch: 60.30 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1858069896697998, 'loc_loss': 0.2428395003080368, 'alpha_loc': 2.0, 'gen_loss': 0.6892839670181274, 'loc_aux_loss': 0.10844048857688904, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:02:51 - INFO - [ Step 14112 ] Loss: 1.172500 | LR: 4.0849e-05 | Epoch: 60.31 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1725305318832397, 'loc_loss': 0.23338086903095245, 'alpha_loc': 2.0, 'gen_loss': 0.6949529647827148, 'loc_aux_loss': 0.10815844684839249, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:05:24 - INFO - [ Step 14113 ] Loss: 1.153700 | LR: 4.0843e-05 | Epoch: 60.31 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1537209749221802, 'loc_loss': 0.23940327763557434, 'alpha_loc': 2.0, 'gen_loss': 0.6632366180419922, 'loc_aux_loss': 0.1167789176106453, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:05:43 - INFO - [ Step 14114 ] Loss: 1.222700 | LR: 4.0837e-05 | Epoch: 60.32 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.222706913948059, 'loc_loss': 0.25662878155708313, 'alpha_loc': 2.0, 'gen_loss': 0.6968608498573303, 'loc_aux_loss': 0.1258845031261444, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:06:01 - INFO - [ Step 14115 ] Loss: 1.190900 | LR: 4.0832e-05 | Epoch: 60.32 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1908692121505737, 'loc_loss': 0.24076390266418457, 'alpha_loc': 2.0, 'gen_loss': 0.6984063386917114, 'loc_aux_loss': 0.10935123264789581, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:06:20 - INFO - [ Step 14116 ] Loss: 1.190000 | LR: 4.0826e-05 | Epoch: 60.32 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1900393962860107, 'loc_loss': 0.24571584165096283, 'alpha_loc': 2.0, 'gen_loss': 0.6862521171569824, 'loc_aux_loss': 0.12355543673038483, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:08:53 - INFO - [ Step 14117 ] Loss: 1.169600 | LR: 4.0820e-05 | Epoch: 60.33 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1695551872253418, 'loc_loss': 0.23669570684432983, 'alpha_loc': 2.0, 'gen_loss': 0.6851526498794556, 'loc_aux_loss': 0.11011071503162384, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:09:11 - INFO - [ Step 14118 ] Loss: 1.251500 | LR: 4.0814e-05 | Epoch: 60.33 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.251467227935791, 'loc_loss': 0.27296099066734314, 'alpha_loc': 2.0, 'gen_loss': 0.6935768723487854, 'loc_aux_loss': 0.11968386918306351, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:09:30 - INFO - [ Step 14119 ] Loss: 1.189300 | LR: 4.0809e-05 | Epoch: 60.34 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1892869472503662, 'loc_loss': 0.26220864057540894, 'alpha_loc': 2.0, 'gen_loss': 0.6525636911392212, 'loc_aux_loss': 0.1230592206120491, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:09:48 - INFO - [ Step 14120 ] Loss: 1.222500 | LR: 4.0803e-05 | Epoch: 60.34 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2225470542907715, 'loc_loss': 0.2591961622238159, 'alpha_loc': 2.0, 'gen_loss': 0.6907081604003906, 'loc_aux_loss': 0.13446608185768127, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:12:26 - INFO - [ Step 14121 ] Loss: 1.200600 | LR: 4.0797e-05 | Epoch: 60.35 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2006479501724243, 'loc_loss': 0.24932348728179932, 'alpha_loc': 2.0, 'gen_loss': 0.689879834651947, 'loc_aux_loss': 0.12121126800775528, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:12:45 - INFO - [ Step 14122 ] Loss: 1.180200 | LR: 4.0791e-05 | Epoch: 60.35 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.180206537246704, 'loc_loss': 0.24871154129505157, 'alpha_loc': 2.0, 'gen_loss': 0.6711233854293823, 'loc_aux_loss': 0.11660067737102509, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:13:03 - INFO - [ Step 14123 ] Loss: 1.177900 | LR: 4.0786e-05 | Epoch: 60.35 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1778870820999146, 'loc_loss': 0.23366649448871613, 'alpha_loc': 2.0, 'gen_loss': 0.6991735696792603, 'loc_aux_loss': 0.11380532383918762, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:13:22 - INFO - [ Step 14124 ] Loss: 1.172400 | LR: 4.0780e-05 | Epoch: 60.36 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1723625659942627, 'loc_loss': 0.2262120544910431, 'alpha_loc': 2.0, 'gen_loss': 0.7073850631713867, 'loc_aux_loss': 0.1255340874195099, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:15:56 - INFO - [ Step 14125 ] Loss: 1.176500 | LR: 4.0774e-05 | Epoch: 60.36 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1765289306640625, 'loc_loss': 0.24279677867889404, 'alpha_loc': 2.0, 'gen_loss': 0.6791189312934875, 'loc_aux_loss': 0.11816446483135223, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:16:15 - INFO - [ Step 14126 ] Loss: 1.167600 | LR: 4.0768e-05 | Epoch: 60.37 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1675771474838257, 'loc_loss': 0.24386444687843323, 'alpha_loc': 2.0, 'gen_loss': 0.6679616570472717, 'loc_aux_loss': 0.11886543035507202, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:16:34 - INFO - [ Step 14127 ] Loss: 1.141400 | LR: 4.0763e-05 | Epoch: 60.37 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1414096355438232, 'loc_loss': 0.2300681471824646, 'alpha_loc': 2.0, 'gen_loss': 0.6695999503135681, 'loc_aux_loss': 0.11673400551080704, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:16:52 - INFO - [ Step 14128 ] Loss: 1.136800 | LR: 4.0757e-05 | Epoch: 60.38 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1367881298065186, 'loc_loss': 0.22168570756912231, 'alpha_loc': 2.0, 'gen_loss': 0.6822710037231445, 'loc_aux_loss': 0.11145710200071335, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:19:39 - INFO - [ Step 14129 ] Loss: 1.195700 | LR: 4.0751e-05 | Epoch: 60.38 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1957077980041504, 'loc_loss': 0.24562028050422668, 'alpha_loc': 2.0, 'gen_loss': 0.6933550238609314, 'loc_aux_loss': 0.11112208664417267, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:19:58 - INFO - [ Step 14130 ] Loss: 1.246600 | LR: 4.0745e-05 | Epoch: 60.38 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2466076612472534, 'loc_loss': 0.270091712474823, 'alpha_loc': 2.0, 'gen_loss': 0.6945191621780396, 'loc_aux_loss': 0.11905094981193542, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:20:16 - INFO - [ Step 14131 ] Loss: 1.217300 | LR: 4.0740e-05 | Epoch: 60.39 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.217323660850525, 'loc_loss': 0.25069886445999146, 'alpha_loc': 2.0, 'gen_loss': 0.700945258140564, 'loc_aux_loss': 0.14980705082416534, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:20:35 - INFO - [ Step 14132 ] Loss: 1.203800 | LR: 4.0734e-05 | Epoch: 60.39 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2037711143493652, 'loc_loss': 0.24779778718948364, 'alpha_loc': 2.0, 'gen_loss': 0.6983442902565002, 'loc_aux_loss': 0.0983118936419487, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:23:15 - INFO - [ Step 14133 ] Loss: 1.115300 | LR: 4.0728e-05 | Epoch: 60.40 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1152523756027222, 'loc_loss': 0.2060544192790985, 'alpha_loc': 2.0, 'gen_loss': 0.6908565163612366, 'loc_aux_loss': 0.12287019193172455, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:23:34 - INFO - [ Step 14134 ] Loss: 1.191100 | LR: 4.0722e-05 | Epoch: 60.40 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1910748481750488, 'loc_loss': 0.24471761286258698, 'alpha_loc': 2.0, 'gen_loss': 0.688042402267456, 'loc_aux_loss': 0.13597270846366882, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:23:52 - INFO - [ Step 14135 ] Loss: 1.142200 | LR: 4.0717e-05 | Epoch: 60.41 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.1422029733657837, 'loc_loss': 0.22960838675498962, 'alpha_loc': 2.0, 'gen_loss': 0.6719104051589966, 'loc_aux_loss': 0.11075814813375473, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)
+2026-03-12 22:24:11 - INFO - [ Step 14136 ] Loss: 1.259700 | LR: 4.0711e-05 | Epoch: 60.41 | Other Info: {'loc_indices': 256, 'gen_indices': 256, 'total_loss': 1.2596577405929565, 'loc_loss': 0.28278425335884094, 'alpha_loc': 2.0, 'gen_loss': 0.6823791265487671, 'loc_aux_loss': 0.11710009723901749, 'alpha_loc_aux': 0.10000000149011612} - (1433599:train_csgo.py:1327)

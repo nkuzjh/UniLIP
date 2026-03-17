@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoProcessor
+from csgo_datasets.unified_task_dataset import img_resize_transform
 
 IMG_START_TOKEN = '<img>'
 IMG_END_TOKEN = '</img>'
@@ -15,11 +16,13 @@ class CustomEditPipeline:
         tokenizer: AutoTokenizer,
         multimodal_encoder: AutoModelForCausalLM,
         image_processor: AutoProcessor,
+        multimodal_encoder_input_img_size: int = 448,
     ):
         super().__init__()
         self.multimodal_encoder = multimodal_encoder
         self.tokenizer = tokenizer
         self.image_processor = image_processor
+        self.multimodal_encoder_input_img_size = multimodal_encoder_input_img_size
 
     @torch.no_grad()
     def __call__(
@@ -55,17 +58,29 @@ class CustomEditPipeline:
         guidance_scale: float = 4.5,
     ):
         pos_text_prompt, neg_text_prompt, input_image = inputs
-        pos_text_prompt = pos_text_prompt.replace(
-                    "<image>",
-                    f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
-                )
-        neg_text_prompt = neg_text_prompt.replace(
-                    "<image>",
-                    f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
-                )
+        if self.multimodal_encoder_input_img_size==224:
+            pos_text_prompt = pos_text_prompt.replace(
+                        "<image>",
+                        f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 64}{IMG_END_TOKEN}'
+                    )
+            neg_text_prompt = neg_text_prompt.replace(
+                        "<image>",
+                        f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 64}{IMG_END_TOKEN}'
+                    )
+        else:
+            pos_text_prompt = pos_text_prompt.replace(
+                        "<image>",
+                        f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
+                    )
+            neg_text_prompt = neg_text_prompt.replace(
+                        "<image>",
+                        f'{IMG_START_TOKEN}{IMG_CONTEXT_TOKEN * 256}{IMG_END_TOKEN}'
+                    )
         resized_images = input_image.resize((448, 448))
         image_inputs = self.image_processor(resized_images, return_tensors="pt")
         image_prompt = image_inputs.pixel_values
+        if self.multimodal_encoder_input_img_size==224:
+            image_prompt = img_resize_transform(image_prompt)
 
         prompt = self.multimodal_encoder.generate_image(
             text=[pos_text_prompt, neg_text_prompt],
