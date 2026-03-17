@@ -5,7 +5,7 @@ debug: False
 
 
 is_multi_task: True
-is_multi_task_balanced: True
+is_multi_task_balanced: False
 is_action_dit_dense_timestep: True
 task_mix_ratio: 1.0
 is_action_dit_projector: True
