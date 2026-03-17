@@ -77,6 +77,33 @@ IS_TOKENIZER_GREATER_THAN_0_14 = version.parse(tokenizers.__version__) >= versio
 import torch
 import transformers.modeling_utils
 
+
+
+from transformers import TrainerCallback
+from torch.profiler import profile, record_function, ProfilerActivity, schedule
+
+class ProfilerCallback(TrainerCallback):
+    def __init__(self, profile_dir):
+        self.profiler = profile(
+            activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+            schedule=schedule(wait=10, warmup=2, active=50, repeat=1), # 等2步，热身2步，记录3步
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(profile_dir),
+            record_shapes=True,
+            profile_memory=True, # 顺便看看显存变化
+            with_stack=True
+        )
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        self.profiler.start()
+
+    def on_step_end(self, args, state, control, **kwargs):
+        self.profiler.step()
+
+    def on_train_end(self, args, state, control, **kwargs):
+        self.profiler.stop()
+
+
+
 # =================================================================
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
 # 修复 "Trying to backward through the graph a second time" 错误
@@ -207,6 +234,9 @@ class TrainingArguments(transformers.TrainingArguments):
     is_loc_learnable_query: bool = False
     logging_steps=1,
     logging_strategy="steps",
+
+    profile_dir="./profiler_logs", # PyTorch Profiler精确查看训练时间耗费
+
 
 
 def maybe_zero_3(param, ignore_status=False, name=None):
@@ -1681,6 +1711,10 @@ def train(attn_implementation=None):
     #     for i, (n, p) in enumerate(trainer.model.named_parameters()):
     #         stat.append([i, n, p.shape, p.requires_grad])
     #     logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+
+
+    # 把回调加入 Trainer
+    trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
 
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
