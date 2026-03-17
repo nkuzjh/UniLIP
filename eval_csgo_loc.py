@@ -785,9 +785,11 @@ def main():
                 "gt": gt_phys,
             })
 
-            vis_data_grouped[map_name[sample_idx]].append({
-                "fps": fps_img[sample_idx], "gt": gt_phys, "pred": pred_phys
-            })
+            current_map = map_name[sample_idx]
+            if len(vis_data_grouped[current_map]) < 20:
+                vis_data_grouped[map_name[sample_idx]].append({
+                    "fps": fps_img[sample_idx], "gt": gt_phys, "pred": pred_phys
+                })
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
     print("📈 Calculating Metrics...")
