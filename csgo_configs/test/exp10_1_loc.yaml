@@ -21,8 +21,8 @@ action_dit_projector_lr: 0.0005
 
 is_aciton_dit_vae_small_init: True
 
-use_pi05_action_dit: True
-pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+use_pi05_action_dit: False
+# pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
 
 
 img_size: 224
@@ -44,14 +44,14 @@ is_lora: True
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp11/checkpoint-7000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp10_1/checkpoint-14000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 # is_conti_gen: True
 
 # 模仿训练时的 model_args
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
-# action_dit_layer: 24 # use_pi05_action_dit=True使用pi05的action_dit时该超参无作用
+action_dit_layer: 3
 action_dim: 5
 
 lora_r: 16 #仅在inference时生效，且要和训练时启动命令的参数一致
