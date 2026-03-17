@@ -68,6 +68,26 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ``      python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_nuke --all --batch_size 8      ``
 ``      python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp2_1/test_20260103_220021/gen_imgs/de_ancient --all --batch_size 8       ``
 
+### exp2_2
+- exp2
+
+- bs 128
+- is_aciton_dit_vae_small_init: True
+- logger + wandb => Trainer
+- is_lora
+- img_size=224
+- use_pi05_action_dit=True
+- is_loc_aux_loss: False
+
+- is_multi_task_balanced: False； task_mix_ratio: 0.0； 这两个参数达到只训练gen的目的
+
+```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29503 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp2_2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp2_2 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16      ```
+**eval_csgo.py** 67: 3000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp2_2_gen.yaml      ``
+**continuous gen** 67: 3000
+``    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp2_2_gen_conti.yaml        ``
+
+
 
 
 ## exp3_1
@@ -315,7 +335,7 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 - action_dit_layer 24
 
 - bs 128
-- is_aciton_dit_vae_small_init: False
+- is_aciton_dit_vae_small_init: True
 - logger + wandb => Trainer
 - is_lora
 - img_size=224
@@ -323,6 +343,21 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ```     CUDA_VISIBLE_DEVICES=0 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_11 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 24 --lora_r 16      ```
 **eval_csgo_loc.py** 67:23400
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_11_loc.yaml      ```
+
+### exp4_12
+- exp4_6_3
+<!-- - action_dit_layer 24 -->
+- bs 128
+- is_aciton_dit_vae_small_init: True
+- logger + wandb => Trainer
+- is_lora
+- img_size=224
+
+- use_pi05_action_dit=True
+
+```     CUDA_VISIBLE_DEVICES=1 MASTER_ADDR=127.0.0.1 MASTER_PORT=29504 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_12.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_12 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16      ```
+**eval_csgo_loc.py** 67: step=6000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_12_loc.yaml      ```
 
 
 
@@ -539,11 +574,20 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 ```     CUDA_VISIBLE_DEVICES=1 torchrun --nproc_per_node=1 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp10_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp10_1 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3 --lora_r 16    ```
 多卡，resume时需配合修改yaml实现单卡resume至多卡
 ```     CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29504 train_csgo.py --csgo_config csgo_configs/exp10_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp10_1 --num_train_epochs 100 --per_device_train_batch_size 256 --per_device_eval_batch_size 256 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 1 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --action_dit_layer 3 --lora_r 16    ```
+**eval_csgo_loc.py** step=14000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp10_1_loc.yaml      ```
+**eval_csgo.py** step=14000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp10_1_gen.yaml      ```
+    **benchmark_csgo.py**
+**continuous gen**  step=14000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp10_1_gen_conti.yaml      ```
+    **benchmark_csgo.py**
+    **frames to video**
 
 
 
 ## exp10_2
-- cp from exp8
+- cp from exp10_1
 - action_dit_projector_lr: 0.0005
 - is_aciton_dit_vae_small_init: True
 <!-- - alpha_loc_aux_loss: 0.1 -->
@@ -568,7 +612,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - alpha_loc_loss: 2
 - logger + wandb => Trainer
 - lora=16
-- action_dit_layer 3
+<!-- - action_dit_layer 3 -->
 - img_size=224
 
 - use_pi05_action_dit=True
@@ -586,9 +630,9 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 恢复4.57.3版本，直接在该版本上覆盖replace的代码。
 
 **train_csgo.py**
-```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29505 train_csgo.py --csgo_config csgo_configs/exp11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp11 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16    ```
-**eval_csgo_loc.py** step=3000 4000 5000
-```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp11_loc.yaml      ```
+```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29505 train_csgo.py --csgo_config csgo_configs/exp11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp11 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16    ```
+**eval_csgo_loc.py** 67: step=3000 4000 5000 7000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp11_loc.yaml      ```
 **eval_csgo.py** step=3000 5000
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp11_gen.yaml      ```
     **benchmark_csgo.py**
@@ -601,10 +645,28 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 ## exp13
 - cp from exp11
+- action_dit_projector_lr: 0.0005
+- is_aciton_dit_vae_small_init: True
+- alpha_loc_aux_loss: 0.1
+- alpha_loc_loss: 2
+- logger + wandb => Trainer
+- lora=16
+<!-- - action_dit_layer 3 -->
+- img_size=224
+- use_pi05_action_dit=True
+- bs=128; grad_accum=2
 
 - is_loc_aux_loss: False
 
 **train_csgo.py**
-```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29505 train_csgo.py --csgo_config csgo_configs/exp13.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp13 --num_train_epochs 100 --per_device_train_batch_size 512 --per_device_eval_batch_size 512 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 32 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16    ```
-**eval_csgo_loc.py** 65：step=4000 67：9000
-```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp13_loc.yaml      ```
+```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29505 train_csgo.py --csgo_config csgo_configs/exp13.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp13 --num_train_epochs 100 --per_device_train_batch_size 512 --per_device_eval_batch_size 512 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16    ```
+**eval_csgo_loc.py** 65: step=4000  67：9000
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp13_loc.yaml      ```
+**eval_csgo.py** 67:
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp13_gen.yaml      ```
+    **benchmark_csgo.py**
+**continuous gen**  67:
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp13_gen_conti.yaml      ```
+    **benchmark_csgo.py**
+    **frames to video**
+

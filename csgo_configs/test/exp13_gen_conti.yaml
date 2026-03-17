@@ -9,7 +9,7 @@ is_multi_task: True
 is_action_dit_dense_timestep: True
 alpha_loc_loss: 2
 
-is_loc_aux_loss: True
+is_loc_aux_loss: False
 alpha_loc_aux_loss: 0.1
 
 is_multi_task_balanced: True
@@ -44,10 +44,10 @@ is_lora: True
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp11/checkpoint-7000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp13/checkpoint-4000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
-# is_conti_gen: True
+is_conti_gen: True
 
 # 模仿训练时的 model_args
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
