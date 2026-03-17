@@ -6,7 +6,7 @@ debug: False
 
 ### model
 is_multi_task: True
-is_action_dit_dense_timestep: False
+is_action_dit_dense_timestep: True
 alpha_loc_loss: 2  # 当is_multi_task_balanced==False时失效
 
 is_loc_aux_loss: False  # 当is_multi_task_balanced==False时失效
