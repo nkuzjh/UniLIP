@@ -765,6 +765,66 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
     def get_n_query(self):
         return self.get_model().config.n_query
 
+    def _forward_vit_regression_head(self, und_image: Optional[torch.Tensor], aux_image: Optional[torch.Tensor] = None):
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        vision_tower = self.get_vision_tower()
+        vision_feature_layer = getattr(self.config, "vision_feature_layer", -1)
+
+        def _extract_vit_cls(pixel_values):
+            if pixel_values is None:
+                return None
+
+            vision_outputs = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            if hasattr(vision_outputs, "hidden_states") and vision_outputs.hidden_states is not None:
+                vit_hidden_states = vision_outputs.hidden_states[vision_feature_layer]
+            else:
+                vit_hidden_states = vision_outputs.last_hidden_state
+            return vit_hidden_states[:, 0]
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            target_dim = self.get_model().action_dit_norm.weight.shape[0]
+        else:
+            target_dim = self.get_model().regression_loc_head[0].in_features
+
+        und_vit_cls_feature = _extract_vit_cls(und_image)
+        aux_vit_cls_feature = _extract_vit_cls(aux_image)
+
+        candidate_features = []
+        if und_vit_cls_feature is not None and aux_vit_cls_feature is not None:
+            candidate_features.extend([
+                torch.cat([und_vit_cls_feature, aux_vit_cls_feature], dim=-1),
+                und_vit_cls_feature + aux_vit_cls_feature,
+                0.5 * (und_vit_cls_feature + aux_vit_cls_feature),
+                und_vit_cls_feature,
+                aux_vit_cls_feature,
+            ])
+        elif und_vit_cls_feature is not None:
+            candidate_features.append(und_vit_cls_feature)
+        elif aux_vit_cls_feature is not None:
+            candidate_features.append(aux_vit_cls_feature)
+
+        vit_feature = None
+        for feature in candidate_features:
+            if feature.shape[-1] == target_dim:
+                vit_feature = feature
+                break
+
+        if vit_feature is None:
+            raise ValueError(
+                f"Cannot match ViT CLS feature dim to regression head input dim. "
+                f"Target dim: {target_dim}, candidate dims: {[feature.shape[-1] for feature in candidate_features]}"
+            )
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            vit_feature = self.get_model().action_dit_norm(vit_feature)
+            vit_feature = self.get_model().action_dit_projector(vit_feature)
+
+        return self.get_model().regression_loc_head(vit_feature)
+
     # [NEW] Flow Matching Logic Helper
     def embed_action_suffix(self, noisy_actions, timestep, llm_hidden_size, device, dtype):
         """
@@ -1582,16 +1642,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
                 if getattr(self.config, "use_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
-                    locbrh_und_image_embeds = und_image_embeds[loc_indices]
-                    locbrh_aux_image_embeds = aux_image_embeds[loc_indices]
-
-                    locbrh_und_feature = self.get_model().img_pooler(locbrh_und_image_embeds)
-                    locbrh_aux_feature = self.get_model().img_pooler(locbrh_aux_image_embeds)
-                    locbrh_concat_feature = torch.cat([locbrh_und_feature, locbrh_aux_feature], dim=1)
-                    locbrh_concat_feature = self.get_model().action_dit_norm(locbrh_concat_feature)
-                    if getattr(self.config, "is_action_dit_projector", False):
-                        locbrh_concat_feature = self.get_model().action_dit_projector(locbrh_concat_feature)
-                    locbrh_actions_pred = self.get_model().regression_loc_head(locbrh_concat_feature)
+                    locbrh_und_image = und_image[loc_indices] if und_image is not None else None
+                    locbrh_aux_image = aux_image[loc_indices] if aux_image is not None else None
+                    locbrh_actions_pred = self._forward_vit_regression_head(
+                        locbrh_und_image,
+                        locbrh_aux_image,
+                    )
                     masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
 
                 else:
@@ -1945,13 +2001,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             self.model.regression_loc_head.eval()
 
             with torch.no_grad():
-                und_feature = self.get_model().img_pooler(und_image_embeds)
-                aux_feature = self.get_model().img_pooler(aux_image_embeds)
-                concat_feature = torch.cat([und_feature, aux_feature], dim=1)
-                concat_feature = self.get_model().action_dit_norm(concat_feature)
-                if getattr(self.config, "is_action_dit_projector", False):
-                    concat_feature = self.get_model().action_dit_projector(concat_feature)
-                actions_pred = self.get_model().regression_loc_head(concat_feature)
+                actions_pred = self._forward_vit_regression_head(
+                    pred_pixels_input,
+                    und_image_map,
+                )
                 masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
 
             # 恢复训练 Action Dit
@@ -2571,6 +2624,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         vision_feature_select_strategy = self.config.vision_feature_select_strategy
         vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
 
+        if getattr(self.config, "use_vit_regression_head", False):
+            return self._forward_vit_regression_head(und_image, aux_image)
+
         und_image_embeds = None
         if und_image is not None:
             und_image_embeds = self.model.get_image_features(
@@ -2587,59 +2643,47 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 vision_feature_select_strategy=vision_feature_select_strategy,
             )
 
-        if getattr(self.config, "use_vit_regression_head", False):
-            und_feature = self.get_model().img_pooler(und_image_embeds)
-            aux_feature = self.get_model().img_pooler(aux_image_embeds)
-            concat_feature = torch.cat([und_feature, aux_feature], dim=1)
-            concat_feature = self.get_model().action_dit_norm(concat_feature)
-            if getattr(self.config, "is_action_dit_projector", False):
-                concat_feature = self.get_model().action_dit_projector(concat_feature)
-            actions_pred = self.get_model().regression_loc_head(concat_feature)
+        # 2. Embed Text & Replace Image Tokens
+        text_embeds = self.get_model().language_model.embed_tokens(input_ids)
+        und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
 
-            return actions_pred
+        # 3. Replace Image Features
+        if und_image is not None and und_image_idx.any():
+            # Broadcast embeddings to batch size if needed (e.g. 1 image for all prompts)
+            # Assuming standard [BS, C, H, W] input for simplicity based on collator
+            # If batch sizes match, no repeat needed. If single image for batch, repeat.
+            if und_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                und_image_embeds = und_image_embeds.repeat(text_embeds.shape[0], 1, 1)
+            text_embeds[und_image_idx] = und_image_embeds.flatten(0,1)
 
-        else:
-            # 2. Embed Text & Replace Image Tokens
-            text_embeds = self.get_model().language_model.embed_tokens(input_ids)
-            und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
+        if aux_image is not None and aux_image_idx.any():
+            if aux_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                aux_image_embeds = aux_image_embeds.repeat(text_embeds.shape[0], 1, 1)
+            text_embeds[aux_image_idx] = aux_image_embeds.flatten(0,1)
 
-            # 3. Replace Image Features
-            if und_image is not None and und_image_idx.any():
-                # Broadcast embeddings to batch size if needed (e.g. 1 image for all prompts)
-                # Assuming standard [BS, C, H, W] input for simplicity based on collator
-                # If batch sizes match, no repeat needed. If single image for batch, repeat.
-                if und_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
-                    und_image_embeds = und_image_embeds.repeat(text_embeds.shape[0], 1, 1)
-                text_embeds[und_image_idx] = und_image_embeds.flatten(0,1)
+        # 4. Prepare Context Position IDs
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
 
-            if aux_image is not None and aux_image_idx.any():
-                if aux_image_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
-                    aux_image_embeds = aux_image_embeds.repeat(text_embeds.shape[0], 1, 1)
-                text_embeds[aux_image_idx] = aux_image_embeds.flatten(0,1)
+        # 5. Forward Context (LLM)
+        # We need the last hidden state as the "Context" for the Action Head
+        outputs = self.model.language_model(
+            inputs_embeds=text_embeds,
+            attention_mask=attention_mask.bool(),
+            position_ids=position_ids,
+            output_hidden_states=True,
+            return_dict=True,
+            use_cache=False # Inference usually benefits from cache, but here we just need the last state once
+        )
+        # [BS, Seq, Hidden]
+        hidden_states = outputs.hidden_states[-1]
 
-            # 4. Prepare Context Position IDs
-            position_ids = torch.cumsum(attention_mask, dim=1) - 1
-            position_ids[position_ids < 0] = 0
-
-            # 5. Forward Context (LLM)
-            # We need the last hidden state as the "Context" for the Action Head
-            outputs = self.model.language_model(
-                inputs_embeds=text_embeds,
-                attention_mask=attention_mask.bool(),
-                position_ids=position_ids,
-                output_hidden_states=True,
-                return_dict=True,
-                use_cache=False # Inference usually benefits from cache, but here we just need the last state once
-            )
-            # [BS, Seq, Hidden]
-            hidden_states = outputs.hidden_states[-1]
-
-            # Re-fill image embeddings (Skip Connection logic)
-            # Important: indices must match flattened structure or batch structure
-            if und_image_embeds is not None and und_image_idx.any():
-                hidden_states[und_image_idx] = und_image_embeds.flatten(0,1)
-            if aux_image_embeds is not None and aux_image_idx.any():
-                hidden_states[aux_image_idx] = aux_image_embeds.flatten(0,1)
+        # Re-fill image embeddings (Skip Connection logic)
+        # Important: indices must match flattened structure or batch structure
+        if und_image_embeds is not None and und_image_idx.any():
+            hidden_states[und_image_idx] = und_image_embeds.flatten(0,1)
+        if aux_image_embeds is not None and aux_image_idx.any():
+            hidden_states[aux_image_idx] = aux_image_embeds.flatten(0,1)
 
             if getattr(self.config, "use_pi05_action_dit", False):
                 hidden_states = self.get_model().action_dit_connector(hidden_states)
