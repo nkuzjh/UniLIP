@@ -236,6 +236,9 @@ class TrainingArguments(transformers.TrainingArguments):
     logging_strategy="steps",
 
     profile_dir="./profiler_logs", # PyTorch Profiler精确查看训练时间耗费
+    enable_step_timing: bool = True
+    step_timing_sync_cuda: bool = True
+
 
 
 
@@ -1392,6 +1395,7 @@ def train(attn_implementation=None):
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
 
+
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = f"{training_args.output_dir.replace('outputs', 'logs')}/train_{cur_time_str}"
     os.makedirs(log_dir, exist_ok=True)
@@ -1410,6 +1414,54 @@ def train(attn_implementation=None):
     transformers.utils.logging.enable_explicit_format()
 
     logger = logging.getLogger(__name__)
+
+    class StepTimingCallback(TrainerCallback):
+        def __init__(self, trainer=None):
+            self.trainer = trainer
+
+        def bind_trainer(self, trainer):
+            self.trainer = trainer
+
+        def on_step_end(self, args, state, control, **kwargs):
+            if self.trainer is None or not getattr(args, "enable_step_timing", False):
+                return control
+            timing_metrics = self.trainer.consume_step_timing_metrics()
+            if not timing_metrics:
+                return control
+
+            logs = {
+                "step_total_time": round(timing_metrics["step_total_time"], 6),
+                "batch_load_time": round(timing_metrics["batch_load_time"], 6),
+                "prepare_inputs_time": round(timing_metrics["prepare_inputs_time"], 6),
+                "forward_time": round(timing_metrics["forward_time"], 6),
+                "backward_time": round(timing_metrics["backward_time"], 6),
+                "other_iteration_time": round(timing_metrics["other_iteration_time"], 6),
+            }
+            if state.is_local_process_zero:
+                logging.info(
+                    "[ Step %s Timing ] total=%.4fs | batch=%.4fs | prepare=%.4fs | forward=%.4fs | backward=%.4fs | other=%.4fs",
+                    state.global_step,
+                    timing_metrics["step_total_time"],
+                    timing_metrics["batch_load_time"],
+                    timing_metrics["prepare_inputs_time"],
+                    timing_metrics["forward_time"],
+                    timing_metrics["backward_time"],
+                    timing_metrics["other_iteration_time"],
+                )
+            self.trainer.log(logs)
+            return control
+
+
+    if training_args.dataloader_num_workers == 0:
+        auto_workers = max(4, min(16, (os.cpu_count() or 8) // 2))
+        training_args.dataloader_num_workers = auto_workers
+        logging.info(f"Auto setting dataloader_num_workers to {training_args.dataloader_num_workers} based on CPU count.")
+    if hasattr(training_args, "dataloader_persistent_workers"):
+        training_args.dataloader_persistent_workers = training_args.dataloader_num_workers > 0
+    if hasattr(training_args, "dataloader_prefetch_factor") and training_args.dataloader_num_workers > 0:
+        training_args.dataloader_prefetch_factor = csgo_config.get("dataloader_prefetch_factor", 4)
+    if hasattr(training_args, "dataloader_pin_memory"):
+        training_args.dataloader_pin_memory = csgo_config.get("dataloader_pin_memory", True)
 
     if "wandb" in training_args.report_to and training_args.local_rank in [-1, 0]:
         # 如果 args 里有 run_name 就用，没有就自动生成
@@ -1521,6 +1573,7 @@ def train(attn_implementation=None):
     model.config.img_size = model_args.img_size = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
 
+    model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
@@ -1692,6 +1745,7 @@ def train(attn_implementation=None):
         training_args.output_dir = f"{training_args.output_dir}_resume_from_{resume_ckpt_path.split('/')[-2]}"
 
 
+    step_timing_callback = StepTimingCallback() # StepTimingCallback on step_end, log average step time every 100 steps
 
     trainer = NonMixTrainer(
         model=model,
@@ -1701,7 +1755,8 @@ def train(attn_implementation=None):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
-        callbacks=[UniLIPLogCallback()],
+        # callbacks=[UniLIPLogCallback()],
+        callbacks=[UniLIPLogCallback(), step_timing_callback],
     )
 
 
@@ -1714,7 +1769,7 @@ def train(attn_implementation=None):
 
 
     # 把回调加入 Trainer
-    trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
+    # trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
 
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):

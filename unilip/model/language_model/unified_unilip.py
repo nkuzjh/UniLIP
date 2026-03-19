@@ -107,6 +107,97 @@ def small_init_weights(m):
 
 
 
+class AttentionPooler(nn.Module):
+    """
+    第一步：用于将 (bs, N, dim) 的 FPS 特征压缩为 (bs, 1, dim) 的 Query Token
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.attn_mlp = nn.Sequential(
+            nn.Linear(dim, dim // 2),
+            nn.Tanh(),
+            nn.Linear(dim // 2, 1)
+        )
+
+    def forward(self, x):
+        # x: [bs, seq_len, dim]
+        scores = self.attn_mlp(x)                  # [bs, seq_len, 1]
+        weights = F.softmax(scores, dim=1)         # [bs, seq_len, 1]
+        pooled = torch.sum(x * weights, dim=1)     # [bs, dim]
+        return pooled.unsqueeze(1)                 # [bs, 1, dim]
+
+class CrossViewFusionModule(nn.Module):
+    def __init__(self, dim=1024, num_heads=8, dropout=0.1):
+        """
+        特征融合模块
+        :param dim: 特征维度 (如 InternViT 的 1024)
+        :param num_heads: 多头注意力的头数
+        :param dropout: Dropout 概率
+        """
+        super().__init__()
+
+        # 1. FPS 降维池化层 (负责生成具有全局视野的 Query)
+        self.fps_pooler = AttentionPooler(dim)
+
+        # 2. 跨模态注意力层 (Cross-Attention)
+        # 注意：batch_first=True 允许输入形状为 (batch, seq, feature)
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=dim,
+            num_heads=num_heads,
+            dropout=dropout,
+            batch_first=True
+        )
+
+        # 3. 规范化层 (Pre-LN 架构，训练更稳定)
+        self.norm_q = nn.LayerNorm(dim)
+        self.norm_kv = nn.LayerNorm(dim)
+        self.norm_ffn = nn.LayerNorm(dim)
+
+        # 4. 前馈神经网络 (FFN)
+        self.ffn = nn.Sequential(
+            nn.Linear(dim, dim * 4),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim * 4, dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, fps_feat, map_feat):
+        """
+        :param fps_feat: [bs, patch_num*patch_num, dim] (例如 [bs, 1024, 1024])
+        :param map_feat: [bs, patch_num*patch_num, dim] (例如 [bs, 1024, 1024])
+        :return: [bs, 1, dim] 融合后的位置特征
+        """
+        # --- Step 1: 将 FPS 提纯为单一的 Query ---
+        # query_fps: [bs, 1, dim]
+        query_fps = self.fps_pooler(fps_feat)
+
+        # --- Step 2: 规范化 (Pre-LN) ---
+        query_norm = self.norm_q(query_fps)
+        map_norm = self.norm_kv(map_feat)
+
+        # --- Step 3: Cross Attention 融合 ---
+        # Q 来自 FPS (找什么), K 和 V 来自 Map (在哪里)
+        # attn_out: [bs, 1, dim]
+        # attn_weights: [bs, 1, map_seq_len] (可以用于可视化，看看模型关注了地图哪里)
+        attn_out, attn_weights = self.cross_attn(
+            query=query_norm,
+            key=map_norm,
+            value=map_norm
+        )
+
+        # 残差连接 1
+        x = query_fps + attn_out
+
+        # --- Step 4: FFN (增强非线性表达) ---
+        # x: [bs, 1, dim]
+        out = x + self.ffn(self.norm_ffn(x))
+
+        # (可选) 如果你需要在外部做可视化分析，可以 return out, attn_weights
+        return out
+
+
+
 from collections.abc import Sequence
 import dataclasses
 from typing import Literal, TypeAlias
@@ -439,9 +530,9 @@ class Unified_UniLIP_InternVL_MetaModel:
         if not model_args.fix_llm:
             if self.is_lora:
                 # LoRA模式：LLM主体冻结，由PEFT接管
-                for p in self.model.language_model.parameters(): p.requires_grad = False
+                for p in self.language_model.parameters(): p.requires_grad = False
             else:
-                for p in self.model.language_model.parameters(): p.requires_grad = True
+                for p in self.language_model.parameters(): p.requires_grad = True
 
         # 3. LLM Connector (Gen Branch)
         if not self.fix_connect:
@@ -476,8 +567,11 @@ class Unified_UniLIP_InternVL_MetaModel:
         # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
         if  getattr(self.config, "use_vit_regression_head", False):
             regression_loc_head_input_dim = llm_hidden_size
+            self.cross_view_fusion = CrossViewFusionModule(dim=llm_hidden_size, num_heads=8, dropout=0.1)
+            # self.img_pooler =
             if getattr(self.config, "is_action_dit_projector", False):
-                self.action_dit_norm = Qwen2RMSNorm(1024, eps=1e-6)
+                # print("llm_hidden_size: ",llm_hidden_size)
+                self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
                 self.action_dit_projector = nn.Sequential(
                     nn.Linear(llm_hidden_size, 512),
                     nn.LayerNorm(512),
@@ -497,7 +591,6 @@ class Unified_UniLIP_InternVL_MetaModel:
                 nn.GELU(),
                 nn.Linear(256, self.config.action_dim)
             )
-
 
         elif getattr(self.config, "use_pi05_action_dit", False):
             if getattr(self.config, "is_action_dit_projector", False):
@@ -548,6 +641,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.time_mlp_in = nn.Linear(action_expert_config.width, action_expert_config.width)
             self.time_mlp_out = nn.Linear(action_expert_config.width, action_expert_config.width)
             logging.info(f"Init Pi0.5 Action DiT Complete !")
+
         else:
             if getattr(self.config, "is_loc_learnable_query", False):
                 self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, llm_hidden_size))
@@ -611,6 +705,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             if getattr(self.config, "is_action_dit_projector", False):
                 for p in self.action_dit_projector.parameters(): p.requires_grad = True
             for p in self.regression_loc_head.parameters(): p.requires_grad = True
+            for p in self.cross_view_fusion.parameters(): p.requires_grad = True
 
             if getattr(self.config, "is_action_dit_projector", False):
                 self.action_dit_projector.apply(init_weights)
@@ -619,6 +714,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                 self.regression_loc_head.apply(small_init_weights)
             else:
                 self.regression_loc_head.apply(init_weights)
+            self.cross_view_fusion.apply(init_weights)
 
             logging.info("vit_regression_head weights initialized")
         else:
@@ -1573,8 +1669,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_aux_loss = torch.nn.MSELoss()(genbrh_hidden_states, torch.clone(genbrh_hidden_states.detach())).to(torch.float32)
 
             else:
-                masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
-                masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+                masked_gen_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
@@ -1585,9 +1681,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     locbrh_und_image_embeds = und_image_embeds[loc_indices]
                     locbrh_aux_image_embeds = aux_image_embeds[loc_indices]
 
-                    locbrh_und_feature = self.get_model().img_pooler(locbrh_und_image_embeds)
-                    locbrh_aux_feature = self.get_model().img_pooler(locbrh_aux_image_embeds)
-                    locbrh_concat_feature = torch.cat([locbrh_und_feature, locbrh_aux_feature], dim=1)
+                    # locbrh_und_feature = self.get_model().img_pooler(locbrh_und_image_embeds)
+                    # locbrh_aux_feature = self.get_model().img_pooler(locbrh_aux_image_embeds)
+                    # print(locbrh_und_image_embeds.shape)
+                    # locbrh_und_feature = locbrh_und_image_embeds[:, 0, :]
+                    # locbrh_aux_feature = locbrh_aux_image_embeds[:, 0, :]
+                    # locbrh_concat_feature = torch.cat([locbrh_und_feature, locbrh_aux_feature], dim=-1)
+                    locbrh_concat_feature = self.get_model().cross_view_fusion(locbrh_und_image_embeds, locbrh_aux_image_embeds)
                     locbrh_concat_feature = self.get_model().action_dit_norm(locbrh_concat_feature)
                     if getattr(self.config, "is_action_dit_projector", False):
                         locbrh_concat_feature = self.get_model().action_dit_projector(locbrh_concat_feature)
@@ -1794,9 +1894,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         CausalLMOutputs = CausalLMOutputWithPast(
             loss=total_loss,
             logits=None, # Not used
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            past_key_values=None, #outputs.past_key_values if outputs is not None else None,
+            hidden_states=None, #outputs.hidden_states if outputs is not None else None,
+            attentions=None, #outputs.attentions if outputs is not None else None,
         )
 
         CausalLMOutputs.extras = {
@@ -1945,9 +2045,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             self.model.regression_loc_head.eval()
 
             with torch.no_grad():
-                und_feature = self.get_model().img_pooler(und_image_embeds)
-                aux_feature = self.get_model().img_pooler(aux_image_embeds)
-                concat_feature = torch.cat([und_feature, aux_feature], dim=1)
+                # und_feature = self.get_model().img_pooler(und_image_embeds)
+                # aux_feature = self.get_model().img_pooler(aux_image_embeds)
+                # und_feature = und_image_embeds[:, 0, :]
+                # aux_feature = aux_image_embeds[:, 0, :]
+                # concat_feature = torch.cat([und_feature, aux_feature], dim=-1)
+                concat_feature = self.get_model().cross_view_fusion(und_image_embeds, aux_image_embeds)
                 concat_feature = self.get_model().action_dit_norm(concat_feature)
                 if getattr(self.config, "is_action_dit_projector", False):
                     concat_feature = self.get_model().action_dit_projector(concat_feature)
@@ -2588,9 +2691,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             )
 
         if getattr(self.config, "use_vit_regression_head", False):
-            und_feature = self.get_model().img_pooler(und_image_embeds)
-            aux_feature = self.get_model().img_pooler(aux_image_embeds)
-            concat_feature = torch.cat([und_feature, aux_feature], dim=1)
+            # und_feature = self.get_model().img_pooler(und_image_embeds)
+            # aux_feature = self.get_model().img_pooler(aux_image_embeds)
+            # und_feature = und_image_embeds[:, 0, :]
+            # aux_feature = aux_image_embeds[:, 0, :]
+            # concat_feature = torch.cat([und_feature, aux_feature], dim=-1)
+            concat_feature = self.get_model().cross_view_fusion(und_image_embeds, aux_image_embeds)
             concat_feature = self.get_model().action_dit_norm(concat_feature)
             if getattr(self.config, "is_action_dit_projector", False):
                 concat_feature = self.get_model().action_dit_projector(concat_feature)
