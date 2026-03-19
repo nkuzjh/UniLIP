@@ -1350,12 +1350,37 @@ def unlock_vit(training_args, model_args, vision_tower):
 
 
 class UniLIPLogCallback(TrainerCallback):
+    def __init__(self, trainer=None):
+        self.trainer = trainer
+        self.latest_timing_metrics = {}
+
+    def bind_trainer(self, trainer):
+        self.trainer = trainer
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self.trainer is None or not getattr(args, "enable_step_timing", False):
+            return control
+
+        timing_metrics = self.trainer.consume_step_timing_metrics()
+        if timing_metrics:
+            self.latest_timing_metrics = {
+                "step_total_time": round(timing_metrics["step_total_time"], 6),
+                "batch_load_time": round(timing_metrics["batch_load_time"], 6),
+                "prepare_inputs_time": round(timing_metrics["prepare_inputs_time"], 6),
+                "forward_time": round(timing_metrics["forward_time"], 6),
+                "backward_time": round(timing_metrics["backward_time"], 6),
+                "other_iteration_time": round(timing_metrics["other_iteration_time"], 6),
+            }
+        return control
+
     def on_log(self, args, state, control, logs=None, **kwargs):
         """
         每当达到 logging_steps 时触发。
         logs 字典通常包含: {'loss': ..., 'learning_rate': ..., 'epoch': ...}
         """
         if state.is_local_process_zero and logs is not None:
+            if self.latest_timing_metrics:
+                logs.update(self.latest_timing_metrics)
             # 格式化打印
             log_msg = f"[ Step {state.global_step} ] "
 
@@ -1375,8 +1400,19 @@ class UniLIPLogCallback(TrainerCallback):
             if "other_info" in logs:
                 log_msg += f" | Other Info: {logs['other_info']}"
 
+            if "step_total_time" in logs:
+                log_msg += (
+                    f" | Timing(total={logs['step_total_time']:.4f}s"
+                    f", batch={logs['batch_load_time']:.4f}s"
+                    f", prepare={logs['prepare_inputs_time']:.4f}s"
+                    f", forward={logs['forward_time']:.4f}s"
+                    f", backward={logs['backward_time']:.4f}s"
+                    f", other={logs['other_iteration_time']:.4f}s)"
+                )
+
             # 强制打印到控制台
             logging.info(log_msg)
+            self.latest_timing_metrics = {}
             # 或者直接 print，防止 logging 被过滤
             # print(log_msg, flush=True)
 
@@ -1414,42 +1450,6 @@ def train(attn_implementation=None):
     transformers.utils.logging.enable_explicit_format()
 
     logger = logging.getLogger(__name__)
-
-    class StepTimingCallback(TrainerCallback):
-        def __init__(self, trainer=None):
-            self.trainer = trainer
-
-        def bind_trainer(self, trainer):
-            self.trainer = trainer
-
-        def on_step_end(self, args, state, control, **kwargs):
-            if self.trainer is None or not getattr(args, "enable_step_timing", False):
-                return control
-            timing_metrics = self.trainer.consume_step_timing_metrics()
-            if not timing_metrics:
-                return control
-
-            logs = {
-                "step_total_time": round(timing_metrics["step_total_time"], 6),
-                "batch_load_time": round(timing_metrics["batch_load_time"], 6),
-                "prepare_inputs_time": round(timing_metrics["prepare_inputs_time"], 6),
-                "forward_time": round(timing_metrics["forward_time"], 6),
-                "backward_time": round(timing_metrics["backward_time"], 6),
-                "other_iteration_time": round(timing_metrics["other_iteration_time"], 6),
-            }
-            if state.is_local_process_zero:
-                logging.info(
-                    "[ Step %s Timing ] total=%.4fs | batch=%.4fs | prepare=%.4fs | forward=%.4fs | backward=%.4fs | other=%.4fs",
-                    state.global_step,
-                    timing_metrics["step_total_time"],
-                    timing_metrics["batch_load_time"],
-                    timing_metrics["prepare_inputs_time"],
-                    timing_metrics["forward_time"],
-                    timing_metrics["backward_time"],
-                    timing_metrics["other_iteration_time"],
-                )
-            self.trainer.log(logs)
-            return control
 
 
     if training_args.dataloader_num_workers == 0:
@@ -1745,8 +1745,8 @@ def train(attn_implementation=None):
         training_args.output_dir = f"{training_args.output_dir}_resume_from_{resume_ckpt_path.split('/')[-2]}"
 
 
-    step_timing_callback = StepTimingCallback() # StepTimingCallback on step_end, log average step time every 100 steps
 
+    unilip_log_callback = UniLIPLogCallback()
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -1756,8 +1756,10 @@ def train(attn_implementation=None):
         eval_dataset=eval_dataset,
         data_collator=data_collator,
         # callbacks=[UniLIPLogCallback()],
-        callbacks=[UniLIPLogCallback(), step_timing_callback],
+        callbacks=[UniLIPLogCallback],
     )
+    unilip_log_callback.bind_trainer(trainer)
+
 
 
     # from tabulate import tabulate
