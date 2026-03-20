@@ -566,12 +566,11 @@ class Unified_UniLIP_InternVL_MetaModel:
         # if getattr(self, 'action_dit', None) is None:
         # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
         if  getattr(self.config, "use_vit_cls_regression_head", False):
-            regression_loc_head_input_dim = llm_hidden_size
+            regression_loc_head_input_dim = self.vision_tower.config.hidden_size
             if getattr(self.config, "is_action_dit_projector", False):
-                # print("llm_hidden_size: ",llm_hidden_size)
-                self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size*2, eps=1e-6)
+                self.action_dit_norm = Qwen2RMSNorm(regression_loc_head_input_dim, eps=1e-6)
                 self.action_dit_projector = nn.Sequential(
-                    nn.Linear(llm_hidden_size*2, 512),
+                    nn.Linear(regression_loc_head_input_dim, 512),
                     nn.LayerNorm(512),
                     nn.GELU(),
                     nn.Dropout(0.1),
@@ -580,11 +579,11 @@ class Unified_UniLIP_InternVL_MetaModel:
                     nn.GELU(),
                     nn.Dropout(0.1),
                 )
-                regression_loc_head_input_dim = 128
+                regression_loc_head_input_dim = 256
 
             logging.info(f"Init ViT Regression Loc Head")
             self.regression_loc_head = nn.Sequential(
-                nn.Linear(regression_loc_head_input_dim*2, 256),
+                nn.Linear(regression_loc_head_input_dim, 256),
                 nn.LayerNorm(256),
                 nn.GELU(),
                 nn.Linear(256, self.config.action_dim)
@@ -679,7 +678,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                 )
                 self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
             path = model_args.mllm_hf_path
-            logging.info(f"Initializing Action Connector from {path} slice...")
+            logging.info(f"Initializing Action DiT from {path} slice...")
             internvl_model = AutoModel.from_pretrained(
                 path,
                 torch_dtype=self.vision_tower.dtype,
@@ -737,7 +736,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             else:
                 self.regression_loc_head.apply(init_weights)
             logging.info("vit_cls_regression_head weights initialized")
-        elif  getattr(self.config, "vit_cls_regression_head", False):
+        elif  getattr(self.config, "use_vit_regression_head", False):
             logging.info("Starting vit_regression_head initialize...")
             if getattr(self.config, "is_action_dit_projector", False):
                 for p in self.action_dit_projector.parameters(): p.requires_grad = True
@@ -852,7 +851,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                     self.action_out_proj.apply(small_init_weights)
                 else:
                     self.action_out_proj.apply(init_weights)
-                logging.info("Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora}")
+                logging.info(f"Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora}")
 
             # if getattr(model_args, "gradient_checkpointing", False):
             #     self.action_dit.gradient_checkpointing_enable()
@@ -892,7 +891,7 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
         pass
 
     def get_vision_tower(self):
-        return self.get_model().get_vision_tower()
+        return self.get_model().vision_tower
 
     def get_n_query(self):
         return self.get_model().config.n_query
@@ -1462,6 +1461,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "time_mlp_out",
             "loc_learnable_query",
             "vit_regression_head",
+            "vit_cls_regression_head",
         ]
 
         count_unfrozen = 0

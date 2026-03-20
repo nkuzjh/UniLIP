@@ -16,7 +16,7 @@ is_multi_task_balanced: False
 task_mix_ratio: 1.0 # 当is_multi_task_balanced==True时失效
 
 is_action_dit_projector: True
-action_dit_projector_lr: 0.0005
+action_dit_projector_lr: 0.001
 # action_dit_layer: 24 #这个参数在启动命令中实现
 
 is_aciton_dit_vae_small_init: True

@@ -677,6 +677,7 @@ def main():
 
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
 
+    model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
     model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)

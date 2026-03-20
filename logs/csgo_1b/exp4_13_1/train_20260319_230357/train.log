@@ -1,0 +1,591 @@
+2026-03-19 23:03:57 - INFO - Loaded WandB API key from .wandb_api_key.txt - (2802986:train_csgo.py:1474)
+2026-03-19 23:04:00 - INFO - model_args: ModelArguments(model_name_or_path='UniLIP-1B', version='internvl', freeze_backbone=True, tune_mm_mlp_adapter=False, vision_tower=None, gen_vision_tower=None, mm_vision_select_layer=-1, pretrain_mm_mlp_adapter=None, pretrain_gen_mlp_adapter=None, vision_tower_pretrained=None, mm_projector_type='linear', gen_projector_type='linear', mm_use_im_start_end=False, mm_use_im_patch_token=False, mm_patch_merge_type='flat', mm_vision_select_feature='patch', n_query=256, n_und_query=0, gen_pooling='all', unilip_path='', unilip_factor=10.6, weighting_scheme='logit_normal', fix_dit=True, fix_connect=True, fix_vit=False, fix_llm=True, connect_layer=6, mllm_path='', mllm_hf_path='OpenGVLab/InternVL3-1B-hf', vae_path='', dit_path='', action_dit_layer=3, is_action_dit_dense_timestep=False) - (2802986:train_csgo.py:1486)
+2026-03-19 23:04:00 - INFO - data_args: DataArguments(csgo_config='csgo_configs/exp4_13_1.yaml', data_path=None, lazy_preprocess=True, is_multimodal=False, csgo_image_folder='data/preprocessed_data', shortcaption_image_folder=None, data_type='mix', image_aspect_ratio='square') - (2802986:train_csgo.py:1487)
+2026-03-19 23:04:00 - INFO - training_args: TrainingArguments(
+_n_gpu=1,
+accelerator_config={'split_batches': False, 'dispatch_batches': None, 'even_batches': True, 'use_seedable_sampler': True, 'non_blocking': False, 'gradient_accumulation_kwargs': None, 'use_configured_state': False},
+action_dit_projector_lr=0.001,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+average_tokens_across_devices=True,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+bits=16,
+cache_dir=None,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=4,
+dataloader_persistent_workers=True,
+dataloader_pin_memory=True,
+dataloader_prefetch_factor=4,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=deepspeed_scripts/zero0.json,
+disable_tqdm=False,
+do_eval=False,
+do_predict=False,
+do_train=False,
+double_quant=True,
+enable_step_timing=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_on_start=False,
+eval_steps=None,
+eval_strategy=IntervalStrategy.NO,
+eval_use_gather_object=False,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+freeze_mm_mlp_adapter=False,
+fsdp=[],
+fsdp_config={'min_num_params': 0, 'xla': False, 'xla_fsdp_v2': False, 'xla_fsdp_grad_ckpt': False},
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=2,
+gradient_checkpointing=True,
+gradient_checkpointing_kwargs=None,
+greater_is_better=None,
+group_by_length=False,
+group_by_modality_length=False,
+half_precision_backend=auto,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=None,
+hub_revision=None,
+hub_strategy=HubStrategy.EVERY_SAVE,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_inputs_for_metrics=False,
+include_num_input_tokens_seen=no,
+include_tokens_per_second=False,
+is_action_dit_projector=False,
+is_loc_learnable_query=False,
+is_lora=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=0.0001,
+length_column_name=length,
+liger_kernel_config=None,
+load_best_model_at_end=False,
+loc_learnable_query_lr=0.0005,
+local_rank=0,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=outputs/csgo_1b/exp4_13_1/runs/Mar19_23-03-56_gpusvr07,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=1.0,
+logging_strategy=IntervalStrategy.STEPS,
+lora_alpha=16,
+lora_bias=none,
+lora_dropout=0.05,
+lora_r=16,
+lora_weight_path=,
+lr_scheduler_kwargs={'min_lr': 1e-05},
+lr_scheduler_type=SchedulerType.COSINE_WITH_MIN_LR,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mm_projector_lr=None,
+model_max_length=1024,
+mp_parameters=,
+mpt_attn_impl=triton,
+neftune_noise_alpha=None,
+no_cuda=False,
+num_train_epochs=50.0,
+optim=OptimizerNames.ADAMW_TORCH,
+optim_args=None,
+optim_target_modules=None,
+output_dir=outputs/csgo_1b/exp4_13_1,
+overwrite_output_dir=False,
+parallelism_config=None,
+past_index=-1,
+per_device_eval_batch_size=64,
+per_device_train_batch_size=64,
+prediction_loss_only=False,
+pretrain_path=none,
+project=huggingface,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+quant_type=nf4,
+ray_scope=last,
+remove_unused_columns=False,
+report_to=['wandb'],
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+run_name=None,
+save_on_each_node=False,
+save_only_model=False,
+save_safetensors=True,
+save_steps=1000,
+save_strategy=SaveStrategy.STEPS,
+save_total_limit=3,
+seed=42,
+skip_memory_metrics=True,
+step_timing_sync_cuda=True,
+tf32=True,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_empty_cache_steps=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+trackio_space_id=trackio,
+use_cpu=False,
+use_legacy_prediction_loop=False,
+use_liger_kernel=False,
+use_mps_device=False,
+warmup_ratio=0.003,
+warmup_steps=0,
+weight_decay=0.0,
+) - (2802986:train_csgo.py:1488)
+2026-03-19 23:04:00 - INFO - csgo_config: {'debug': False, 'is_multi_task': True, 'is_action_dit_dense_timestep': True, 'alpha_loc_loss': 2, 'is_loc_aux_loss': False, 'is_multi_task_balanced': False, 'task_mix_ratio': 1.0, 'is_action_dit_projector': True, 'action_dit_projector_lr': 0.001, 'is_aciton_dit_vae_small_init': True, 'use_pi05_action_dit': False, 'use_vit_regression_head': True, 'img_size': 224, 'data_dir': 'data/preprocessed_data', 'train_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'val_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'test_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'is_lora': True} - (2802986:train_csgo.py:1489)
+2026-03-19 23:04:01 - INFO - vision_select_layer: -1 - (2802986:configuration_internvl_chat.py:69)
+2026-03-19 23:04:01 - INFO - ps_version: v2 - (2802986:configuration_internvl_chat.py:70)
+2026-03-19 23:04:01 - INFO - min_dynamic_patch: 1 - (2802986:configuration_internvl_chat.py:71)
+2026-03-19 23:04:01 - INFO - max_dynamic_patch: 12 - (2802986:configuration_internvl_chat.py:72)
+2026-03-19 23:04:01 - INFO - vision_config is None. Initializing the InternVisionConfig with default values. - (2802986:configuration_internvl_chat.py:42)
+2026-03-19 23:04:01 - INFO - llm_config is None. Initializing the LlamaConfig config with default values (`LlamaConfig`). - (2802986:configuration_internvl_chat.py:46)
+2026-03-19 23:04:01 - INFO - vision_select_layer: -1 - (2802986:configuration_internvl_chat.py:69)
+2026-03-19 23:04:01 - INFO - ps_version: v1 - (2802986:configuration_internvl_chat.py:70)
+2026-03-19 23:04:01 - INFO - min_dynamic_patch: 1 - (2802986:configuration_internvl_chat.py:71)
+2026-03-19 23:04:01 - INFO - max_dynamic_patch: 6 - (2802986:configuration_internvl_chat.py:72)
+2026-03-19 23:04:02 - INFO - num_image_token: 256 - (2802986:modeling_internvl_chat.py:59)
+2026-03-19 23:04:02 - INFO - ps_version: v2 - (2802986:modeling_internvl_chat.py:60)
+2026-03-19 23:04:14 - INFO - Using conversation format: internvl - (2802986:train_csgo.py:1571)
+2026-03-19 23:04:14 - INFO - fix connect True - (2802986:unified_unilip.py:382)
+2026-03-19 23:04:14 - INFO - fix dit True - (2802986:unified_unilip.py:383)
+2026-03-19 23:04:14 - INFO - unilip load from checkpoint!!! - (2802986:unified_unilip.py:450)
+2026-03-19 23:04:14 - INFO - DiT load from checkpoint!!! - (2802986:unified_unilip.py:463)
+2026-03-19 23:04:14 - INFO - Connector load from checkpoint!!! - (2802986:unified_unilip.py:484)
+2026-03-19 23:04:14 - INFO - latent_queries load from checkpoint!!! - (2802986:unified_unilip.py:506)
+2026-03-19 23:04:15 - INFO - Init ViT Regression Loc Head - (2802986:unified_unilip.py:610)
+2026-03-19 23:04:15 - INFO - Starting vit_regression_head initialize... - (2802986:unified_unilip.py:740)
+2026-03-19 23:04:15 - INFO - vit_regression_head weights initialized - (2802986:unified_unilip.py:754)
+2026-03-19 23:04:23 - INFO - ✅ Enabled gradient checkpointing for vision tower - (2802986:train_csgo.py:1638)
+2026-03-19 23:04:23 - INFO - ✅ Enabled gradient checkpointing for language model - (2802986:train_csgo.py:1643)
+2026-03-19 23:04:23 - INFO - ✅ Enabled gradient checkpointing for LLM Connector - (2802986:train_csgo.py:1647)
+2026-03-19 23:04:23 - INFO - ✅ Enabled gradient checkpointing for Gen DiT - (2802986:train_csgo.py:1651)
+2026-03-19 23:04:23 - INFO - 🌟 Starting Modular LoRA Injection for Unified UniLIP... - (2802986:unified_unilip.py:1367)
+2026-03-19 23:04:23 - INFO - 🚀 Injecting LoRA into sub-module: vision_tower... - (2802986:unified_unilip.py:1314)
+2026-03-19 23:04:23 - INFO - Applying LoRA to vision_tower with target_modules: ['qkv', 'proj', 'fc1', 'fc2'], modules_to_save: None - (2802986:unified_unilip.py:1346)
+2026-03-19 23:04:24 - INFO - 📊 vision_tower Adapter Config: - (2802986:unified_unilip.py:1351)
+2026-03-19 23:04:24 - INFO - 🔓 Unfreezing Projectors and Heads... - (2802986:unified_unilip.py:1446)
+2026-03-19 23:04:24 - INFO - latent_queries - (2802986:unified_unilip.py:1472)
+2026-03-19 23:04:24 - INFO - ✅ LoRA Injection Complete. Manually unfroze 1 parameters for Heads/Projectors. - (2802986:unified_unilip.py:1476)
+2026-03-19 23:04:24 - INFO - 🚀 After LoRA: Total parameters: 1799657577 - (2802986:train_csgo.py:1662)
+2026-03-19 23:04:24 - INFO - 🚀 After LoRA: Trainable parameters: 18568070 - (2802986:train_csgo.py:1663)
+2026-03-19 23:04:24 - INFO - 🚀 After LoRA: Trainable percent: 1.03 % - (2802986:train_csgo.py:1664)
+2026-03-19 23:04:24 - INFO -      trainable params: model.latent_queries - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.0.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.1.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.2.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.3.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.4.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.5.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.6.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.7.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.8.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.9.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.10.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.11.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.12.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.13.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.14.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.15.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.16.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.17.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.18.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.19.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.20.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.21.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.22.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.attn.qkv.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.attn.qkv.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.attn.proj.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.attn.proj.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.mlp.fc1.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.mlp.fc1.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.mlp.fc2.lora_A.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.vision_tower.base_model.model.encoder.layers.23.mlp.fc2.lora_B.default.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.0.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.0.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.1.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.1.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.3.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.multi_modal_projector.3.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.fps_pooler.attn_mlp.0.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.fps_pooler.attn_mlp.0.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.fps_pooler.attn_mlp.2.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.fps_pooler.attn_mlp.2.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.cross_attn.in_proj_weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.cross_attn.in_proj_bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.cross_attn.out_proj.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.cross_attn.out_proj.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_q.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_q.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_kv.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_kv.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_ffn.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.norm_ffn.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.ffn.0.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.ffn.0.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.ffn.3.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.cross_view_fusion.ffn.3.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_norm.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.0.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.0.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.1.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.1.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.4.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.4.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.5.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.action_dit_projector.5.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.0.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.0.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.1.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.1.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.3.weight - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO -      trainable params: model.regression_loc_head.3.bias - (2802986:train_csgo.py:1679)
+2026-03-19 23:04:24 - INFO - trainable layers: 232 - (2802986:train_csgo.py:1680)
+2026-03-19 23:04:24 - INFO - 🔄 Loading Multi-Task CS2 Dataset... - (2802986:unified_task_dataset.py:603)
+2026-03-19 23:04:24 - INFO - Loading CS2 Data Split data/preprocessed_data/de_dust2/splits_20000_5000/train_split.json... - (2802986:unified_task_dataset.py:611)
+2026-03-19 23:04:24 - INFO - Loading CS2 Data Split data/preprocessed_data/de_nuke/splits_20000_5000/train_split.json... - (2802986:unified_task_dataset.py:611)
+2026-03-19 23:04:24 - INFO - Loading CS2 Data Split data/preprocessed_data/de_ancient/splits_20000_5000/train_split.json... - (2802986:unified_task_dataset.py:611)
+2026-03-19 23:04:25 - WARNING - Map image not found: data/preprocessed_data/cs_office/cs_office_radar_psd.png - (2802986:unified_task_dataset.py:663)
+2026-03-19 23:04:25 - INFO - ✅ Total entries: 60000 - (2802986:unified_task_dataset.py:686)
+2026-03-19 23:04:30 - WARNING - Gradient accumulation steps mismatch: GradientAccumulationPlugin has 1, DeepSpeed config has 2. Using DeepSpeed's value. - (2802986:accelerator.py:2164)
+2026-03-19 23:05:01 - INFO - [ Step 1 ] Loss: 0.972700 | LR: 0.0000e+00 | Epoch: 0.00 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.49609375, 'loc_loss': 0.248046875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=9.6922s, batch=3.9492s, prepare=0.3523s, forward=4.8722s, backward=0.3909s, other=0.1276s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:04 - INFO - [ Step 2 ] Loss: 0.980500 | LR: 1.4085e-06 | Epoch: 0.00 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.46875, 'loc_loss': 0.234375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9712s, batch=0.0138s, prepare=0.2278s, forward=2.5706s, backward=0.0611s, other=0.0979s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:07 - INFO - [ Step 3 ] Loss: 0.927700 | LR: 2.8169e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.423828125, 'loc_loss': 0.2119140625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9517s, batch=0.0125s, prepare=0.2014s, forward=2.5745s, backward=0.0689s, other=0.0943s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:10 - INFO - [ Step 4 ] Loss: 0.869100 | LR: 4.2254e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.458984375, 'loc_loss': 0.2294921875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1033s, batch=0.0145s, prepare=0.2329s, forward=2.7082s, backward=0.0586s, other=0.0891s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:13 - INFO - [ Step 5 ] Loss: 0.793000 | LR: 5.6338e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.40625, 'loc_loss': 0.203125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0592s, batch=0.0102s, prepare=0.2251s, forward=2.6514s, backward=0.0763s, other=0.0962s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:16 - INFO - [ Step 6 ] Loss: 0.796900 | LR: 7.0423e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.400390625, 'loc_loss': 0.2001953125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9100s, batch=0.0148s, prepare=0.2135s, forward=2.5233s, backward=0.0742s, other=0.0842s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:19 - INFO - [ Step 7 ] Loss: 0.752000 | LR: 8.4507e-06 | Epoch: 0.01 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.37890625, 'loc_loss': 0.189453125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0878s, batch=0.0125s, prepare=0.2410s, forward=2.6633s, backward=0.0783s, other=0.0928s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:22 - INFO - [ Step 8 ] Loss: 0.730500 | LR: 9.8592e-06 | Epoch: 0.02 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.359375, 'loc_loss': 0.1796875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9735s, batch=0.0147s, prepare=0.2083s, forward=2.6090s, backward=0.0628s, other=0.0786s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:25 - INFO - [ Step 9 ] Loss: 0.701200 | LR: 1.1268e-05 | Epoch: 0.02 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.3515625, 'loc_loss': 0.17578125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0195s, batch=0.0124s, prepare=0.2612s, forward=2.5856s, backward=0.0630s, other=0.0973s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:28 - INFO - [ Step 10 ] Loss: 0.621100 | LR: 1.2676e-05 | Epoch: 0.02 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.306640625, 'loc_loss': 0.1533203125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0384s, batch=0.0148s, prepare=0.2583s, forward=2.5920s, backward=0.0779s, other=0.0954s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:31 - INFO - [ Step 11 ] Loss: 0.597700 | LR: 1.4085e-05 | Epoch: 0.02 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.31640625, 'loc_loss': 0.158203125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0292s, batch=0.0100s, prepare=0.2158s, forward=2.6317s, backward=0.0802s, other=0.0915s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:35 - INFO - [ Step 12 ] Loss: 0.541000 | LR: 1.5493e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.294921875, 'loc_loss': 0.1474609375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1014s, batch=0.0126s, prepare=0.2166s, forward=2.6883s, backward=0.0849s, other=0.0990s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:38 - INFO - [ Step 13 ] Loss: 0.474600 | LR: 1.6901e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.236328125, 'loc_loss': 0.1181640625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9229s, batch=0.0102s, prepare=0.1860s, forward=2.5644s, backward=0.0758s, other=0.0865s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:40 - INFO - [ Step 14 ] Loss: 0.452100 | LR: 1.8310e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.20703125, 'loc_loss': 0.103515625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.8803s, batch=0.0125s, prepare=0.1978s, forward=2.4984s, backward=0.0761s, other=0.0955s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:44 - INFO - [ Step 15 ] Loss: 0.454100 | LR: 1.9718e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.2216796875, 'loc_loss': 0.11083984375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1042s, batch=0.0146s, prepare=0.2897s, forward=2.6607s, backward=0.0605s, other=0.0789s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:47 - INFO - [ Step 16 ] Loss: 0.347700 | LR: 2.1127e-05 | Epoch: 0.03 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.1748046875, 'loc_loss': 0.08740234375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1338s, batch=0.0107s, prepare=0.2371s, forward=2.7228s, backward=0.0605s, other=0.1026s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:50 - INFO - [ Step 17 ] Loss: 0.323200 | LR: 2.2535e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.16015625, 'loc_loss': 0.080078125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9687s, batch=0.0096s, prepare=0.2155s, forward=2.5767s, backward=0.0688s, other=0.0981s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:53 - INFO - [ Step 18 ] Loss: 0.299800 | LR: 2.3944e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.1513671875, 'loc_loss': 0.07568359375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9861s, batch=0.0104s, prepare=0.2018s, forward=2.6163s, backward=0.0675s, other=0.0902s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:56 - INFO - [ Step 19 ] Loss: 0.241700 | LR: 2.5352e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.126953125, 'loc_loss': 0.0634765625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9735s, batch=0.0124s, prepare=0.2662s, forward=2.5164s, backward=0.0722s, other=0.1062s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:05:59 - INFO - [ Step 20 ] Loss: 0.226100 | LR: 2.6761e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.1123046875, 'loc_loss': 0.05615234375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0513s, batch=0.0102s, prepare=0.2133s, forward=2.6654s, backward=0.0685s, other=0.0939s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:02 - INFO - [ Step 21 ] Loss: 0.201700 | LR: 2.8169e-05 | Epoch: 0.04 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.10107421875, 'loc_loss': 0.050537109375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0636s, batch=0.0102s, prepare=0.2613s, forward=2.6268s, backward=0.0735s, other=0.0918s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:05 - INFO - [ Step 22 ] Loss: 0.185500 | LR: 2.9577e-05 | Epoch: 0.05 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0986328125, 'loc_loss': 0.04931640625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0581s, batch=0.0082s, prepare=0.2483s, forward=2.6468s, backward=0.0651s, other=0.0896s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:08 - INFO - [ Step 23 ] Loss: 0.179200 | LR: 3.0986e-05 | Epoch: 0.05 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0927734375, 'loc_loss': 0.04638671875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0598s, batch=0.0114s, prepare=0.2553s, forward=2.6292s, backward=0.0733s, other=0.0905s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:11 - INFO - [ Step 24 ] Loss: 0.175300 | LR: 3.2394e-05 | Epoch: 0.05 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0888671875, 'loc_loss': 0.04443359375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9007s, batch=0.0104s, prepare=0.1710s, forward=2.5623s, backward=0.0696s, other=0.0873s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:14 - INFO - [ Step 25 ] Loss: 0.169400 | LR: 3.3803e-05 | Epoch: 0.05 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08544921875, 'loc_loss': 0.042724609375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9235s, batch=0.0112s, prepare=0.2149s, forward=2.5440s, backward=0.0679s, other=0.0855s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:17 - INFO - [ Step 26 ] Loss: 0.184100 | LR: 3.5211e-05 | Epoch: 0.06 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09375, 'loc_loss': 0.046875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0637s, batch=0.0068s, prepare=0.2506s, forward=2.6355s, backward=0.0731s, other=0.0976s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:20 - INFO - [ Step 27 ] Loss: 0.172900 | LR: 3.6620e-05 | Epoch: 0.06 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08203125, 'loc_loss': 0.041015625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1974s, batch=0.0082s, prepare=0.2474s, forward=2.7643s, backward=0.0747s, other=0.1029s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:23 - INFO - [ Step 28 ] Loss: 0.182600 | LR: 3.8028e-05 | Epoch: 0.06 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08837890625, 'loc_loss': 0.044189453125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0260s, batch=0.0104s, prepare=0.2301s, forward=2.6149s, backward=0.0733s, other=0.0973s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:26 - INFO - [ Step 29 ] Loss: 0.164600 | LR: 3.9437e-05 | Epoch: 0.06 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08154296875, 'loc_loss': 0.040771484375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9479s, batch=0.0109s, prepare=0.2320s, forward=2.5567s, backward=0.0607s, other=0.0875s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:29 - INFO - [ Step 30 ] Loss: 0.171900 | LR: 4.0845e-05 | Epoch: 0.06 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08935546875, 'loc_loss': 0.044677734375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9935s, batch=0.0089s, prepare=0.2113s, forward=2.6194s, backward=0.0717s, other=0.0822s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:32 - INFO - [ Step 31 ] Loss: 0.178700 | LR: 4.2254e-05 | Epoch: 0.07 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09033203125, 'loc_loss': 0.045166015625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0893s, batch=0.0100s, prepare=0.2810s, forward=2.6567s, backward=0.0548s, other=0.0868s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:36 - INFO - [ Step 32 ] Loss: 0.175800 | LR: 4.3662e-05 | Epoch: 0.07 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09130859375, 'loc_loss': 0.045654296875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0684s, batch=0.0059s, prepare=0.2312s, forward=2.6704s, backward=0.0634s, other=0.0974s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:39 - INFO - [ Step 33 ] Loss: 0.176300 | LR: 4.5070e-05 | Epoch: 0.07 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08837890625, 'loc_loss': 0.044189453125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0281s, batch=0.0107s, prepare=0.2152s, forward=2.6496s, backward=0.0676s, other=0.0851s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:42 - INFO - [ Step 34 ] Loss: 0.176300 | LR: 4.6479e-05 | Epoch: 0.07 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08447265625, 'loc_loss': 0.042236328125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1440s, batch=0.0061s, prepare=0.2377s, forward=2.7393s, backward=0.0665s, other=0.0945s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:45 - INFO - [ Step 35 ] Loss: 0.189900 | LR: 4.7887e-05 | Epoch: 0.07 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09326171875, 'loc_loss': 0.046630859375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9250s, batch=0.0099s, prepare=0.2215s, forward=2.5077s, backward=0.0593s, other=0.1266s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:48 - INFO - [ Step 36 ] Loss: 0.173800 | LR: 4.9296e-05 | Epoch: 0.08 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09033203125, 'loc_loss': 0.045166015625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0554s, batch=0.0105s, prepare=0.2513s, forward=2.6249s, backward=0.0669s, other=0.1018s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:51 - INFO - [ Step 37 ] Loss: 0.169900 | LR: 5.0704e-05 | Epoch: 0.08 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.07861328125, 'loc_loss': 0.039306640625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0069s, batch=0.0104s, prepare=0.2075s, forward=2.6015s, backward=0.0649s, other=0.1225s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:54 - INFO - [ Step 38 ] Loss: 0.190400 | LR: 5.2113e-05 | Epoch: 0.08 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.10009765625, 'loc_loss': 0.050048828125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9995s, batch=0.0119s, prepare=0.2327s, forward=2.6040s, backward=0.0635s, other=0.0874s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:06:57 - INFO - [ Step 39 ] Loss: 0.179200 | LR: 5.3521e-05 | Epoch: 0.08 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08935546875, 'loc_loss': 0.044677734375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1038s, batch=0.0125s, prepare=0.2646s, forward=2.6737s, backward=0.0697s, other=0.0833s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:00 - INFO - [ Step 40 ] Loss: 0.191400 | LR: 5.4930e-05 | Epoch: 0.09 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09521484375, 'loc_loss': 0.047607421875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9873s, batch=0.0126s, prepare=0.1982s, forward=2.5933s, backward=0.0823s, other=0.1009s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:03 - INFO - [ Step 41 ] Loss: 0.164600 | LR: 5.6338e-05 | Epoch: 0.09 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.07666015625, 'loc_loss': 0.038330078125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0114s, batch=0.0105s, prepare=0.2494s, forward=2.6017s, backward=0.0671s, other=0.0827s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:06 - INFO - [ Step 42 ] Loss: 0.169400 | LR: 5.7746e-05 | Epoch: 0.09 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08056640625, 'loc_loss': 0.040283203125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1733s, batch=0.0146s, prepare=0.2627s, forward=2.7164s, backward=0.0767s, other=0.1029s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:09 - INFO - [ Step 43 ] Loss: 0.179700 | LR: 5.9155e-05 | Epoch: 0.09 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08447265625, 'loc_loss': 0.042236328125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0169s, batch=0.0146s, prepare=0.2425s, forward=2.5938s, backward=0.0697s, other=0.0964s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:13 - INFO - [ Step 44 ] Loss: 0.166000 | LR: 6.0563e-05 | Epoch: 0.09 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0888671875, 'loc_loss': 0.04443359375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0415s, batch=0.0145s, prepare=0.2438s, forward=2.5848s, backward=0.1122s, other=0.0861s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:16 - INFO - [ Step 45 ] Loss: 0.184100 | LR: 6.1972e-05 | Epoch: 0.10 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0869140625, 'loc_loss': 0.04345703125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0765s, batch=0.0125s, prepare=0.2496s, forward=2.6639s, backward=0.0651s, other=0.0854s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:19 - INFO - [ Step 46 ] Loss: 0.170400 | LR: 6.3380e-05 | Epoch: 0.10 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0859375, 'loc_loss': 0.04296875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0050s, batch=0.0082s, prepare=0.2095s, forward=2.5972s, backward=0.0582s, other=0.1319s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:22 - INFO - [ Step 47 ] Loss: 0.170900 | LR: 6.4789e-05 | Epoch: 0.10 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.091796875, 'loc_loss': 0.0458984375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0220s, batch=0.0129s, prepare=0.2440s, forward=2.6077s, backward=0.0662s, other=0.0912s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:25 - INFO - [ Step 48 ] Loss: 0.159700 | LR: 6.6197e-05 | Epoch: 0.10 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.076171875, 'loc_loss': 0.0380859375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0108s, batch=0.0125s, prepare=0.2322s, forward=2.5957s, backward=0.0776s, other=0.0928s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:28 - INFO - [ Step 49 ] Loss: 0.184600 | LR: 6.7606e-05 | Epoch: 0.10 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08984375, 'loc_loss': 0.044921875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9778s, batch=0.0148s, prepare=0.2099s, forward=2.5809s, backward=0.0606s, other=0.1117s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:31 - INFO - [ Step 50 ] Loss: 0.186500 | LR: 6.9014e-05 | Epoch: 0.11 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0908203125, 'loc_loss': 0.04541015625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1006s, batch=0.0126s, prepare=0.2598s, forward=2.6417s, backward=0.0867s, other=0.0998s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:34 - INFO - [ Step 51 ] Loss: 0.176300 | LR: 7.0423e-05 | Epoch: 0.11 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.09033203125, 'loc_loss': 0.045166015625, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9601s, batch=0.0126s, prepare=0.2462s, forward=2.5414s, backward=0.0843s, other=0.0755s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:37 - INFO - [ Step 52 ] Loss: 0.177700 | LR: 7.1831e-05 | Epoch: 0.11 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08544921875, 'loc_loss': 0.042724609375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1145s, batch=0.0097s, prepare=0.2331s, forward=2.7082s, backward=0.0713s, other=0.0922s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:40 - INFO - [ Step 53 ] Loss: 0.165000 | LR: 7.3239e-05 | Epoch: 0.11 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08935546875, 'loc_loss': 0.044677734375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0471s, batch=0.0104s, prepare=0.2006s, forward=2.6490s, backward=0.0646s, other=0.1225s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:43 - INFO - [ Step 54 ] Loss: 0.183600 | LR: 7.4648e-05 | Epoch: 0.12 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08935546875, 'loc_loss': 0.044677734375, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.0816s, batch=0.0104s, prepare=0.1913s, forward=2.7162s, backward=0.0721s, other=0.0916s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:46 - INFO - [ Step 55 ] Loss: 0.168900 | LR: 7.6056e-05 | Epoch: 0.12 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08837890625, 'loc_loss': 0.044189453125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9473s, batch=0.0105s, prepare=0.2100s, forward=2.5740s, backward=0.0533s, other=0.0994s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:49 - INFO - [ Step 56 ] Loss: 0.164100 | LR: 7.7465e-05 | Epoch: 0.12 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.0859375, 'loc_loss': 0.04296875, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=3.1154s, batch=0.0125s, prepare=0.2148s, forward=2.6892s, backward=0.1120s, other=0.0868s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:52 - INFO - [ Step 57 ] Loss: 0.157200 | LR: 7.8873e-05 | Epoch: 0.12 | Other Info: {'loc_indices': 64, 'gen_indices': 0, 'total_loss': 0.08056640625, 'loc_loss': 0.040283203125, 'alpha_loc': 2.0, 'gen_loss': 0.0, 'loc_aux_loss': 0.0, 'alpha_loc_aux': 1.0} | Timing(total=2.9866s, batch=0.0124s, prepare=0.2366s, forward=2.5982s, backward=0.0490s, other=0.0903s) - (2802986:train_csgo.py:1414)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)
+2026-03-19 23:07:55 - WARNING - socket.send() raised exception. - (2802986:selector_events.py:1054)

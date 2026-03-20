@@ -894,7 +894,7 @@ class NonMixTrainer(Trainer):
         output = {**logs, **{"step": self.state.global_step}}
         self.state.log_history.append(output)
 
-        # Triggers your UniLIPLogCallback.on_log
+        # Triggers all Callbacks.on_log
         self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
 
 

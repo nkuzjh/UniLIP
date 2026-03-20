@@ -30,7 +30,7 @@ from transformers import AutoProcessor
 from unilip.conversation import Conversation, SeparatorStyle
 from tqdm import tqdm
 from copy import deepcopy
-from transformers import TrainerCallback
+from transformers import TrainerCallback, PrinterCallback, ProgressCallback
 
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
@@ -1514,6 +1514,7 @@ def train(attn_implementation=None):
         )
 
     if csgo_config.get("is_multi_task"):
+        logging.info(f"Start Unified_UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
         model = Unified_UniLIP_InternVLForCausalLM.from_pretrained(
             model_args.model_name_or_path, # UniLIP-1B with new unified_unilip config
             cache_dir=training_args.cache_dir,
@@ -1521,7 +1522,9 @@ def train(attn_implementation=None):
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args,
         )
+        logging.info(f"Finish Unified_UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
     else:
+        logging.info(f"Start UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
         model = UniLIP_InternVLForCausalLM.from_pretrained(
             model_args.model_name_or_path, #UniLIP-1B
             cache_dir=training_args.cache_dir,
@@ -1529,6 +1532,7 @@ def train(attn_implementation=None):
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args,
         )
+        logging.info(f"Finish UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
     model.config.use_cache = False
 
     if model_args.freeze_backbone: # True
@@ -1574,6 +1578,7 @@ def train(attn_implementation=None):
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
 
     model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
+    model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
@@ -1755,10 +1760,12 @@ def train(attn_implementation=None):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
-        # callbacks=[UniLIPLogCallback()],
-        callbacks=[UniLIPLogCallback],
+        callbacks=[unilip_log_callback],
     )
     unilip_log_callback.bind_trainer(trainer)
+    print("callbacks: ", trainer.callback_handler.callback_list)
+    # trainer.remove_callback(PrinterCallback)
+    # trainer.remove_callback(ProgressCallback)
 
 
 
