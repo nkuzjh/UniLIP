@@ -33,21 +33,6 @@ IMG_CONTEXT_TOKEN = '<IMG_CONTEXT>'
 
 
 
-# 任务 A: 定位 (Map + FPS -> Pose)
-# ==========================================
-# A.1 提示词模板 (Prompt Templates)
-# ==========================================
-def get_loc_prompt(map_name):
-    LOC_PROMPT_TEMPLATE = (
-        f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
-        "1. First-Person View (FPV) Features.\n"
-        "2. Overhead Radar Map (RADAR) Features.\n"
-        "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
-        "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
-        "<image>\n<image>"
-    )
-    return LOC_PROMPT_TEMPLATE
-
 
 
 # 任务 B: 生成 (Map + Pose -> FPS)
@@ -97,8 +82,11 @@ def img_process(images, processor, image_aspect_ratio):
     """调用 HuggingFace processor 处理图像列表"""
     if image_aspect_ratio == "pad":
         # 计算填充背景色 (基于 processor 的均值)
-        # background_color = tuple(int(x * 255) for x in processor.image_mean) # GPT优化
-        background_color = tuple(float(x) for x in processor.image_mean)
+        #  # GPT优化
+        if isinstance(images[0], torch.Tensor):
+            background_color = tuple(float(x) for x in processor.image_mean)
+        else:
+            background_color = tuple(int(x * 255) for x in processor.image_mean)
         images = [expand2square(img, background_color) for img in images]
         # 转换为 Tensor
         images = processor.preprocess(images, return_tensors="pt")["pixel_values"]
@@ -510,6 +498,26 @@ map_to_id_dict = {
 
 id_to_map_dict = {k: i for i, k in enumerate(map_to_id_dict.keys())}
 
+
+
+
+# 任务 A: 定位 (Map + FPS -> Pose)
+# ==========================================
+# A.1 提示词模板 (Prompt Templates)
+# ==========================================
+def get_loc_prompt(map_name):
+    LOC_PROMPT_TEMPLATE = (
+        f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
+        "1. First-Person View (FPV) Features.\n"
+        "2. Overhead Radar Map (RADAR) Features.\n"
+        "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
+        "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
+        "<image>\n<image>"
+    )
+    return LOC_PROMPT_TEMPLATE
+
+
+
 # GPT优化
 def _build_loc_prompt_cache(map_names, tokenizer, img_size):
     cache = {}
@@ -540,13 +548,6 @@ def _build_map_tensor_cache(map_images, image_processor, image_aspect_ratio, is_
         if is_resize_224:
             map_tensor_cache_224[map_name] = img_resize_transform(map_tensor_448).contiguous()
     return map_tensor_cache_448, map_tensor_cache_224
-
-# GPT优化
-def _load_fps_image(config, map_name, file_frame):
-    ext = ".jpg" if config['data_dir'] == 'data/preprocessed_data' else ".png"
-    fps_path = f"{config['data_dir']}/{map_name}/imgs/{file_frame}{ext}"
-    with Image.open(fps_path) as img:
-        return img.convert('RGB')
 
 # GPT优化
 INV_1024 = 1.0 / 1024.0
@@ -651,14 +652,15 @@ class UniLIPMultiTaskDataset(Dataset):
         for map_name, filename in map_path_dict.items():
             path = f"{config['data_dir']}/{map_name}/{filename}"
             if os.path.exists(path):
-                # img = Image.open(path).convert('RGB')
-                # # 预先做 Resize 以省内存 (如果 processor 需要 448)
-                # # img = img.resize((448, 448))
-                # self.map_images[map_name] = img # GPT优化
-                self.map_images[map_name] = convert_image_dtype(
-                    read_image(path, mode=ImageReadMode.RGB),
-                    torch.float32,
-                )
+                img = Image.open(path).convert('RGB').resize((448, 448))
+                # 预先做 Resize 以省内存 (如果 processor 需要 448)
+                self.map_images[map_name] = img
+                # self.map_images[map_name] = convert_image_dtype(
+                #     read_image(path, mode=ImageReadMode.RGB),
+                #     torch.float32,
+                # ) # GPT优化
+                # # Transformers.Processor.preporcess()需要输入0-255范围的图像，无论是PIL还是Tensor或者numpy都可以，但必须是0-255范围的uint8或者float32格式，不能是0-1范围的float格式，否则会被错误地当成已经归一化过的图像，导致处理结果异常。如果需要0-1范围的图像，应该在preporcess()传入do_scale=False，而不是在这里直接转换为float32。
+                # 这里GPT Codex的优化有问题
             else:
                 logging.warning(f"Map image not found: {path}")
 
@@ -712,7 +714,10 @@ class UniLIPMultiTaskDataset(Dataset):
         # ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         # fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         # fps_img_pil = Image.open(fps_path).convert('RGB') # GPT优化
-        fps_img_pil = _load_fps_image(self.config, map_name, data['file_frame'])
+        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+        fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        fps_img_pil = Image.open(fps_path).convert('RGB')
+
 
         # 4. 计算归一化坐标 (Common for both tasks)
         # z_info = self.map_z_range[map_name]
@@ -760,7 +765,9 @@ class UniLIPMultiTaskDataset(Dataset):
 
             # FPS Image & MAP Image
             if self.config.get('is_fps_dropout', False):
-                fps_img_pil = self.loc_fps_transform(self.config, fps_img_pil)
+                fps_img_tensor = self._fps_dropout_transform(self.config, fps_img_pil)
+                fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
+
             # all_images = [fps_img_pil, map_img_pil]
             # process_images = img_process(
             #     all_images,
@@ -895,8 +902,6 @@ class UniLIPMultiTaskDataset(Dataset):
 
     #     return fps_img
     # GPT优化
-    def loc_fps_transform(self, config, fps_img_tensor):
-        return self._fps_dropout_transform(fps_img_tensor)
 
 
 
@@ -1165,10 +1170,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         for map_name, filename in map_path_dict.items():
             path = f"{config['data_dir']}/{map_name}/{filename}"
             if os.path.exists(path):
-                self.map_images[map_name] = convert_image_dtype(
-                    read_image(path, mode=ImageReadMode.RGB),
-                    torch.float32,
-                )
+                img = Image.open(path).convert('RGB').resize((448, 448))
+                self.map_images[map_name] = img
             else:
                 logging.warning(f"Map image not found: {path}")
 
@@ -1205,9 +1208,12 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         # 2. 加载图像资源
         map_tensor_448 = self.map_tensor_cache_448[map_name]
         map_tensor = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
-        fps_img_pil = _load_fps_image(self.config, map_name, data['file_frame'])
+        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+        fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        fps_img_pil = Image.open(fps_path).convert('RGB')
         if self.config.get('is_fps_dropout', False):
-            fps_img_pil = self.loc_fps_transform(self.config, fps_img_pil)
+            fps_img_tensor = self._fps_dropout_transform(fps_img_pil)
+            fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
         tensor_fps_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
         tensor_fps = img_resize_transform(tensor_fps_448) if self.is_resize_224 else tensor_fps_448
         tensor_map = map_tensor.clone()
@@ -1219,7 +1225,6 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         loc_coords_norm = data['actions']
 
         # 4. 任务分流处理
-
         # =========================================
         # 4.1 Task: LOCALIZATION (Map + FPS -> Pose)
         # =========================================
@@ -1297,9 +1302,6 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
 
         # 5. 返回列表 [Loc, Gen]
         return [sample_loc, sample_gen]
-
-    def loc_fps_transform(self, config, fps_img_tensor):
-        return self._fps_dropout_transform(fps_img_tensor)
 
 
 

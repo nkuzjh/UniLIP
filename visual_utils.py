@@ -2,6 +2,135 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import os
+import textwrap
+
+
+
+def visualize_dataset_samples_v1(dataset, processor, num_samples=20, save_path="_debug_dataset_samples.jpg", is_multi_task=True):
+    """
+    直接对已加载的 Dataset 进行抽样可视化，验证 Radar(Input) -> FPS(Target) 及 Prompt 对齐情况。
+
+    Args:
+        dataset: 已经初始化好的 CSGOWorldModelDataset/UniLIPMultiTaskDataset 实例
+        processor: 对应的 ImageProcessor (用于获取 mean/std 进行逆归一化)
+        num_samples: 抽样数量
+        save_path: 图片保存路径
+        is_multi_task: 是否为多任务(强制开启4列显示)
+    """
+    print(f"👀 Visualizing first {num_samples} samples from dataset...")
+
+    # 获取反归一化所需的均值和方差
+    img_processor = getattr(processor, "image_processor", processor)
+    mean = np.array(img_processor.image_mean)
+    std = np.array(img_processor.image_std)
+
+    # 改为 4 列对应: und_image, aux_image, gen_image, full_prompt
+    fig, axes = plt.subplots(num_samples, 4, figsize=(20, 4 * num_samples))
+    plt.subplots_adjust(hspace=0.4, wspace=0.1)
+
+    # 兼容 num_samples=1 的情况
+    if num_samples == 1: axes = np.array([axes])
+
+    for i in range(num_samples):
+        # 1. 获取数据 (__getitem__)
+        sample = dataset[i]
+
+        task_id = sample.get('task_id', 1)  # 0=Loc, 1=Gen
+        map_name = sample['map_name']
+        min_z = dataset.map_z_range[map_name]['min_z']
+        max_z = dataset.map_z_range[map_name]['max_z']
+        fps_img_name = sample['ids']
+
+        # 2. 提取图像 Tensor (安全提取，防止 squeeze(0) 误伤 C 维度)
+        def safe_get_img(tensor):
+            if tensor is None: return None
+            if tensor.dim() == 4: return tensor[0] # [1, C, H, W] -> [C, H, W]
+            return tensor # [C, H, W]
+
+        und_tensor = safe_get_img(sample['und_image'])
+        aux_tensor = safe_get_img(sample.get('aux_image'))
+        gen_tensor = safe_get_img(sample['gen_image'])
+
+        # 提取真值坐标
+        loc_coords = sample.get('loc_coords', sample['actions'])
+        if loc_coords.dim() == 2:
+            loc_coords = loc_coords[0] # [1, 5] -> [5]
+
+        x, y, z, v, h = loc_coords[0].item(), loc_coords[1].item(), loc_coords[2].item(), loc_coords[3].item(), loc_coords[4].item()
+        x = x * 1024
+        y = y * 1024
+        z = z * (max_z - min_z) + min_z
+        v = v * 360
+        h = h * 360
+
+        # 3. 逆归一化 (Tensor -> Numpy Image)
+        def denorm(tensor):
+            if tensor is None: return None
+            # 过滤全 0 张量（占位符图），直接返回纯黑，防止加了 mean 变成灰色
+            if torch.max(tensor) == 0 and torch.min(tensor) == 0:
+                return np.zeros((tensor.shape[1], tensor.shape[2], 3))
+
+            img = tensor.permute(1, 2, 0).cpu().numpy() # [H, W, C]
+            img = img * std + mean # 反归一化
+            return np.clip(img, 0, 1)
+
+        img_und = denorm(und_tensor)
+        img_aux = denorm(aux_tensor)
+        img_gen = denorm(gen_tensor)
+
+        # 4. 解码文本 Prompt (过滤 IGNORE_INDEX 防止报错)
+        input_ids = sample['input_ids']
+        if isinstance(input_ids, torch.Tensor):
+            input_ids = input_ids.tolist()
+
+        # 过滤 -100 和特殊占位符
+        from unilip.constants import IGNORE_INDEX
+        clean_input_ids = [idx for idx in input_ids if idx != IGNORE_INDEX and idx > 0]
+        decoded_text = dataset.tokenizer.decode(clean_input_ids, skip_special_tokens=True).strip()
+
+        # 完整提取，不进行长度截断，只需做折行以适应单列宽度
+        full_prompt = textwrap.fill(decoded_text, width=50)
+
+        # 5. 绘图 (根据 Task 动态调整 Title)
+        task_name = "LOCALIZATION" if task_id == 0 else "GENERATION"
+
+        # [列 0]: 独立展示完整 Prompt
+        axes[i, 0].axis('off')
+        axes[i, 0].set_title("Full Text Prompt", fontsize=10, fontweight='bold', color='purple')
+        # 将文本贴在列的左上角 (0.0, 1.0)
+        axes[i, 0].text(0.0, 1.0, full_prompt,
+                        transform=axes[i, 0].transAxes,
+                        fontsize=9, va='top', ha='left',
+                        bbox=dict(facecolor='whitesmoke', alpha=0.9, edgecolor='lightgray', boxstyle='round,pad=0.5'))
+
+        # [列 1]: und_image
+        if img_und is not None:
+            axes[i, 1].imshow(img_und)
+            title_und = "Input: FPS" if task_id == 0 else "Input: Radar"
+            axes[i, 1].set_title(f"[{task_name}]\n{title_und} | {fps_img_name}", fontsize=10, fontweight='bold')
+        axes[i, 1].axis('off')
+
+        # [列 2]: aux_image
+        if img_aux is not None:
+            axes[i, 2].imshow(img_aux)
+            title_aux = "Aux Input: Radar" if task_id == 0 else "Aux Input: Empty"
+            axes[i, 2].set_title(title_aux, fontsize=10, color='green')
+        axes[i, 2].axis('off')
+
+        # [列 3]: gen_image
+        if img_gen is not None:
+            axes[i, 3].imshow(img_gen)
+            title_gen = "Target: Empty" if task_id == 0 else "Target: FPS"
+            axes[i, 3].set_title(f"{title_gen}\nGT: x:{x:.1f}, y:{y:.1f}, z:{z:.1f}\np:{v:.1f}, y:{h:.1f}",
+                                 fontsize=10, color='darkblue')
+        axes[i, 3].axis('off')
+
+    # 保存
+    plt.savefig(save_path, bbox_inches='tight', dpi=150)
+    print(f"✨ Visualization saved to: {os.path.abspath(save_path)}")
+    plt.close(fig)
+
+
 
 def visualize_dataset_samples(dataset, processor, num_samples=20, save_path="_debug_dataset_samples.jpg", is_multi_task=False):
     """
