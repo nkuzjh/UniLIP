@@ -371,7 +371,10 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         "action_out_proj",
         "time_mlp_in",
         "time_mlp_out",
-        "loc_learnable_query"
+        "loc_learnable_query",
+        "regression_loc_head",
+        "cross_view_fusion",
+        "vit_loc_fusion",
     ]
     # 使用 fuzzy match 提取这些模块的权重
     action_weights = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), action_keys)
@@ -1579,12 +1582,17 @@ def train(attn_implementation=None):
 
     model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
     model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
+    model.config.use_codex_vit_regression_head = csgo_config.get("use_codex_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
     model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", 5e-4)
+    model.config.loc_use_circular_loss = csgo_config.get("loc_use_circular_loss", True)
+    model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
+    model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
+    model.config.loc_angle_loss_weight = csgo_config.get("loc_angle_loss_weight", 2.0)
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
