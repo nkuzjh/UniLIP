@@ -36,7 +36,7 @@ from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
 import numpy as np
 import yaml
-from visual_utils import visualize_dataset_samples, visualize_dataset_samples_paired
+from visual_utils import visualize_dataset_samples_v1, visualize_dataset_samples, visualize_dataset_samples_paired
 from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset, UniLIPMultiTaskBalancedDataset
 import datetime
 import wandb
@@ -1723,9 +1723,15 @@ def train(attn_implementation=None):
         data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     if local_rank in [-1, 0]:
         if csgo_config.get("is_multi_task_balanced", False):
-            visualize_dataset_samples_paired
+            visualize_dataset_samples_paired(
+                train_dataset,
+                data_args.image_processor,
+                num_samples=20,
+                save_path="_debug_dataset_samples.jpg",
+                is_multi_task=csgo_config.get("is_multi_task", False)
+            )
         else:
-            visualize_dataset_samples(
+            visualize_dataset_samples_v1(
                 train_dataset,
                 data_args.image_processor,
                 num_samples=20,
