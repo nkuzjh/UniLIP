@@ -597,9 +597,9 @@ class Unified_UniLIP_InternVL_MetaModel:
         # if getattr(self, 'action_dit', None) is None:
         # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
         if getattr(self.config, "use_codex_vit_regression_head", False):# vibe codex
-            fused_dim = llm_hidden_size * 2
+            fused_dim = self.vision_tower.config.hidden_size * 2
             self.vit_loc_fusion = MultiViewCLSFeatureFusion(
-                dim=llm_hidden_size,
+                dim=self.vision_tower.config.hidden_size,
                 fused_dim=fused_dim,
                 dropout=0.1,
             )
