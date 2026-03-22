@@ -65,7 +65,7 @@ def concat_images_horizontal_resize(img1: Image.Image, img2: Image.Image) -> Ima
 # ==========================================
 # 1. 核心逻辑: Metric 计算 (升级版)
 # ==========================================
-def calculate_metrics(results):
+def calculate_metrics(results, ckpt_path):
     """
     计算定位任务的核心指标 (包含 L2 Norm, SmoothL1, MSE)
     results: List[Dict], 包含 'gt', 'pred' (已经是反归一化后的物理坐标)
@@ -168,6 +168,8 @@ def calculate_metrics(results):
         "L2_5D": l2_5d,
         "MSE_Loss_5D": mse_loss_5d.item(),
         "SmoothL1_Loss_5D": smooth_l1_loss_5d.item(),
+
+        "ckpt_path": ckpt_path,
     }
     return metrics
 
@@ -675,6 +677,8 @@ def main():
 
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
 
+    model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
+    model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
 
@@ -736,6 +740,7 @@ def main():
     # 9. Inference Loop
     results_json = []
     vis_data_grouped = defaultdict(list) # 按地图分组存储可视化数据
+    vis_data_flag = True
 
     print("🚀 Starting Localization Inference...")
     for batch in tqdm(dataloader):
@@ -790,10 +795,20 @@ def main():
                 vis_data_grouped[map_name[sample_idx]].append({
                     "fps": fps_img[sample_idx], "gt": gt_phys, "pred": pred_phys
                 })
+            if len(vis_data_grouped[current_map]) == 20 and vis_data_flag:
+                # Visualization (Pi0.5 Style)
+                visualize_map_results(
+                    vis_data_grouped,
+                    output_dir,
+                    map_path_dict,
+                    csgo_config['data_dir'],
+                    vis_num_per_map=10 # 每张地图随机选5个样本可视化
+                )
+                vis_data_flag = False # 只可视化一次，避免重复生成
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
     print("📈 Calculating Metrics...")
-    metrics = calculate_metrics(results_json)
+    metrics = calculate_metrics(results_json, ckpt_path)
     print(json.dumps(metrics, indent=4))
 
     # Save Metrics & Results
@@ -802,14 +817,6 @@ def main():
     with open(os.path.join(output_dir, "loc_results.json"), "w") as f:
         json.dump(results_json, f, indent=4)
 
-    # 4. Visualization (Pi0.5 Style)
-    visualize_map_results(
-        vis_data_grouped,
-        output_dir,
-        map_path_dict,
-        csgo_config['data_dir'],
-        vis_num_per_map=10 # 每张地图随机选5个样本可视化
-    )
 
     print(f"✅ Finished. Results at: {output_dir}")
 

@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import torch.nn as nn
 import numpy as np
@@ -6,16 +7,25 @@ from torch.utils.data import Sampler
 
 from transformers import Trainer
 from transformers.trainer import (
+    OptimizerNames,
+    is_torch_hpu_available,
+    is_torch_mlu_available,
+    is_torch_mps_available,
+    is_torch_musa_available,
+    is_torch_npu_available,
+    is_torch_xpu_available,
     is_sagemaker_mp_enabled,
     get_parameter_names,
     has_length,
     # ALL_LAYERNORM_LAYERS,
     logger,
 )
+
 ALL_LAYERNORM_LAYERS = [nn.LayerNorm]
-from typing import List, Optional
+from typing import Any, List, Optional, Union
 from transformers.utils import is_torch_xla_available, is_peft_available
 from transformers.trainer_utils import speed_metrics
+from accelerate.utils import DistributedType
 from transformers.models.auto.modeling_auto import (
     MODEL_FOR_CAUSAL_LM_MAPPING_NAMES,
 )
@@ -294,6 +304,8 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
         """
         self.epoch = epoch
 
+if is_sagemaker_mp_enabled():
+    from transformers.trainer_pt_utils import smp_forward_backward
 
 class NonMixTrainer(Trainer):
     def __init__(self, *args, **kwargs):
@@ -301,6 +313,54 @@ class NonMixTrainer(Trainer):
         # Initialize a dictionary to store the latest loss values
         # Since the model returns python floats (scalars), we just need to store the latest value
         self.latest_loss_info = {}
+        self._step_timing = self._new_step_timing()
+
+    def _new_step_timing(self):
+        return {
+            "step_start_time": None,
+            "batch_load_time": 0.0,
+            "prepare_inputs_time": 0.0,
+            "forward_time": 0.0,
+            "backward_time": 0.0,
+        }
+
+    def _timing_enabled(self):
+        return getattr(self.args, "enable_step_timing", False)
+
+    def _sync_timing_device(self):
+        if not self._timing_enabled():
+            return
+        if not getattr(self.args, "step_timing_sync_cuda", True):
+            return
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+
+    def _ensure_step_timer_started(self):
+        if self._step_timing["step_start_time"] is None:
+            self._step_timing["step_start_time"] = time.perf_counter()
+
+    def consume_step_timing_metrics(self):
+        if self._step_timing["step_start_time"] is None:
+            return {}
+
+        step_total_time = time.perf_counter() - self._step_timing["step_start_time"]
+        metrics = {
+            "step_total_time": step_total_time,
+            "batch_load_time": self._step_timing["batch_load_time"],
+            "prepare_inputs_time": self._step_timing["prepare_inputs_time"],
+            "forward_time": self._step_timing["forward_time"],
+            "backward_time": self._step_timing["backward_time"],
+        }
+        tracked_time = (
+            metrics["batch_load_time"]
+            + metrics["prepare_inputs_time"]
+            + metrics["forward_time"]
+            + metrics["backward_time"]
+        )
+        metrics["other_iteration_time"] = max(0.0, step_total_time - tracked_time)
+        self._step_timing = self._new_step_timing()
+        return metrics
+
 
     def get_train_dataloader(self):
         """
@@ -324,10 +384,22 @@ class NonMixTrainer(Trainer):
             batch_sampler=batch_sampler,
             collate_fn=self.data_collator,
             num_workers=self.args.dataloader_num_workers,
+            persistent_workers=self.args.dataloader_persistent_workers,
+            prefetch_factor=self.args.dataloader_prefetch_factor if self.args.dataloader_num_workers > 0 else None,
             pin_memory=self.args.dataloader_pin_memory,
             # Dataloader需要 set_epoch 方法，通过将其设置为 True 来自动调用
             # 但是，Hugging Face Trainer 会手动调用，所以这里可以不设置
         )
+
+    def get_batch_samples(self, epoch_iterator, num_batches, device):
+        if not self._timing_enabled():
+            return super().get_batch_samples(epoch_iterator, num_batches, device)
+
+        self._ensure_step_timer_started()
+        start_time = time.perf_counter()
+        result = super().get_batch_samples(epoch_iterator, num_batches, device)
+        self._step_timing["batch_load_time"] += time.perf_counter() - start_time
+        return result
 
     def _get_train_sampler(self) -> Optional[torch.utils.data.Sampler]:
         """
@@ -357,9 +429,22 @@ class NonMixTrainer(Trainer):
             decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
 
-            if self.args.is_action_dit_projector and self.args.is_loc_learnable_query is not None and self.args.mm_projector_lr is not None:
+            def get_action_head_parameter_names():
+                parameter_names = {"action_dit_projector", "action_dit_norm"}
+                if getattr(opt_model.config, "use_vit_cls_regression_head", False):
+                    parameter_names.update({"regression_loc_head"})
+                elif getattr(opt_model.config, "use_vit_regression_head", False):
+                    parameter_names.update({"regression_loc_head", "cross_view_fusion"})
+                elif getattr(opt_model.config, "use_codex_vit_regression_head", False):
+                    parameter_names.update({"regression_loc_head", "vit_loc_fusion"})
+                return [
+                    name for name, _ in opt_model.named_parameters()
+                    if any(key in name for key in parameter_names)
+                ]
+
+            if self.args.is_action_dit_projector and self.args.is_loc_learnable_query and self.args.mm_projector_lr is not None:
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
-                action_dit_projector_parameters = [name for name, _ in opt_model.named_parameters() if "action_dit_projector" in name]
+                action_dit_projector_parameters = get_action_head_parameter_names()
                 loc_learnable_query_parameters = [name for name, _ in opt_model.named_parameters() if "loc_learnable_query" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -401,8 +486,8 @@ class NonMixTrainer(Trainer):
                         "lr": self.args.loc_learnable_query_lr,
                     },
                 ]
-            elif self.args.is_action_dit_projector and self.args.is_loc_learnable_query is not None:
-                action_dit_projector_parameters = [name for name, _ in opt_model.named_parameters() if "action_dit_projector" in name]
+            elif self.args.is_action_dit_projector and self.args.is_loc_learnable_query:
+                action_dit_projector_parameters = get_action_head_parameter_names()
                 loc_learnable_query_parameters = [name for name, _ in opt_model.named_parameters() if "loc_learnable_query" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -468,7 +553,7 @@ class NonMixTrainer(Trainer):
                     },
                 ]
             elif self.args.is_action_dit_projector and self.args.mm_projector_lr is not None:
-                action_dit_projector_parameters = [name for name, _ in opt_model.named_parameters() if "action_dit_projector" in name]
+                action_dit_projector_parameters = get_action_head_parameter_names()
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -523,7 +608,7 @@ class NonMixTrainer(Trainer):
                     },
                 ]
             elif self.args.is_action_dit_projector:
-                action_dit_projector_parameters = [name for name, _ in opt_model.named_parameters() if "action_dit_projector" in name]
+                action_dit_projector_parameters = get_action_head_parameter_names()
                 optimizer_grouped_parameters = [
                     {
                         "params": [p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in action_dit_projector_parameters and p.requires_grad)],
@@ -578,25 +663,26 @@ class NonMixTrainer(Trainer):
                     },
                 ]
 
-            if getattr(opt_model.config, 'use_vit_regression_head', False):
-                reg_head_parameters = [name for name, _ in opt_model.named_parameters() if "regression_loc_head" in name]
-                if self.args.action_dit_projector_lr:
-                    reg_head_lr = self.args.action_dit_projector_lr
-                else:
-                    reg_head_lr = 0.001
-                reg_optimizer_grouped_parameters = [
-                    {
-                        "params": [p for n, p in opt_model.named_parameters() if (n in decay_parameters and n in reg_head_parameters and p.requires_grad)],
-                        "weight_decay": self.args.weight_decay,
-                        "lr": self.args.reg_head_lr,
-                    },
-                    {
-                        "params": [p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n in reg_head_parameters and p.requires_grad)],
-                        "weight_decay": 0.0,
-                        "lr": self.args.reg_head_lr,
-                    },
-                ]
-                optimizer_grouped_parameters.append(reg_optimizer_grouped_parameters)
+            # 会报错：重复加载parameters
+            # if getattr(opt_model.config, 'use_vit_regression_head', False):
+            #     reg_head_parameters = [name for name, _ in opt_model.named_parameters() if "regression_loc_head" in name]
+            #     if self.args.action_dit_projector_lr:
+            #         reg_head_lr = self.args.action_dit_projector_lr
+            #     else:
+            #         reg_head_lr = 0.001
+            #     reg_optimizer_grouped_parameters = [
+            #         {
+            #             "params": [p for n, p in opt_model.named_parameters() if (n in decay_parameters and n in reg_head_parameters and p.requires_grad)],
+            #             "weight_decay": self.args.weight_decay,
+            #             "lr": reg_head_lr,
+            #         },
+            #         {
+            #             "params": [p for n, p in opt_model.named_parameters() if (n not in decay_parameters and n in reg_head_parameters and p.requires_grad)],
+            #             "weight_decay": 0.0,
+            #             "lr": reg_head_lr,
+            #         },
+            #     ]
+            #     optimizer_grouped_parameters.extend(reg_optimizer_grouped_parameters)
 
             optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args)
 
@@ -620,6 +706,94 @@ class NonMixTrainer(Trainer):
                 logger.info(f"skipped: {skipped/2**20}M params")
 
         return self.optimizer
+
+    def training_step(
+        self,
+        model: nn.Module,
+        inputs: dict[str, Union[torch.Tensor, Any]],
+        num_items_in_batch: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if not self._timing_enabled():
+            return super().training_step(model, inputs, num_items_in_batch=num_items_in_batch)
+
+        self._ensure_step_timer_started()
+
+        cp_context, inputs = self._prepare_context_parallel_inputs(model, inputs)
+
+        with cp_context():
+            model.train()
+            if hasattr(self.optimizer, "train") and callable(self.optimizer.train):
+                self.optimizer.train()
+
+            prepare_start = time.perf_counter()
+            inputs = self._prepare_inputs(inputs)
+            self._step_timing["prepare_inputs_time"] += time.perf_counter() - prepare_start
+
+            if is_sagemaker_mp_enabled():
+                self._sync_timing_device()
+                forward_start = time.perf_counter()
+                loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
+                self._sync_timing_device()
+                self._step_timing["forward_time"] += time.perf_counter() - forward_start
+                return loss_mb.reduce_mean().detach().to(self.args.device)
+
+            self._sync_timing_device()
+            forward_start = time.perf_counter()
+            with self.compute_loss_context_manager():
+                loss = self.compute_loss(model, inputs, num_items_in_batch=num_items_in_batch)
+            self._sync_timing_device()
+            self._step_timing["forward_time"] += time.perf_counter() - forward_start
+
+            del inputs
+            if (
+                self.args.torch_empty_cache_steps is not None
+                and self.state.global_step % self.args.torch_empty_cache_steps == 0
+            ):
+                if is_torch_xpu_available():
+                    torch.xpu.empty_cache()
+                elif is_torch_mlu_available():
+                    torch.mlu.empty_cache()
+                elif is_torch_musa_available():
+                    torch.musa.empty_cache()
+                elif is_torch_npu_available():
+                    torch.npu.empty_cache()
+                elif is_torch_mps_available():
+                    torch.mps.empty_cache()
+                elif is_torch_hpu_available():
+                    logger.warning(
+                        "`torch_empty_cache_steps` is set but HPU device/backend does not support empty_cache()."
+                    )
+                else:
+                    torch.cuda.empty_cache()
+
+            kwargs = {}
+            if self.args.optim in [OptimizerNames.LOMO, OptimizerNames.ADALOMO]:
+                kwargs["learning_rate"] = self._get_learning_rate()
+
+            if self.args.n_gpu > 1:
+                loss = loss.mean()
+
+            self._sync_timing_device()
+            backward_start = time.perf_counter()
+            if self.use_apex:
+                from apex import amp
+
+                with amp.scale_loss(loss, self.optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                if (
+                    not self.model_accepts_loss_kwargs or num_items_in_batch is None
+                ) and self.compute_loss_func is None:
+                    loss = loss / self.current_gradient_accumulation_steps
+
+                if self.accelerator.distributed_type == DistributedType.DEEPSPEED:
+                    kwargs["scale_wrt_gas"] = False
+
+                self.accelerator.backward(loss, **kwargs)
+            self._sync_timing_device()
+            self._step_timing["backward_time"] += time.perf_counter() - backward_start
+
+            return loss.detach()
 
     def compute_loss(
         self,
@@ -721,7 +895,7 @@ class NonMixTrainer(Trainer):
         output = {**logs, **{"step": self.state.global_step}}
         self.state.log_history.append(output)
 
-        # Triggers your UniLIPLogCallback.on_log
+        # Triggers all Callbacks.on_log
         self.control = self.callback_handler.on_log(self.args, self.state, self.control, logs)
 
 

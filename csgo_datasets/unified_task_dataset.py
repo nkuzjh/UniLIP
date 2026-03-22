@@ -10,8 +10,11 @@ from dataclasses import dataclass
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset
 from torchvision import transforms
+from torchvision.io import ImageReadMode, read_image
+from torchvision.transforms.functional import convert_image_dtype
 from torchvision.transforms import InterpolationMode
 import transformers
 
@@ -30,21 +33,6 @@ IMG_CONTEXT_TOKEN = '<IMG_CONTEXT>'
 
 
 
-# 任务 A: 定位 (Map + FPS -> Pose)
-# ==========================================
-# A.1 提示词模板 (Prompt Templates)
-# ==========================================
-def get_loc_prompt(map_name):
-    LOC_PROMPT_TEMPLATE = (
-        f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
-        "1. First-Person View (FPV) Features.\n"
-        "2. Overhead Radar Map (RADAR) Features.\n"
-        "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
-        "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
-        "<image>\n<image>"
-    )
-    return LOC_PROMPT_TEMPLATE
-
 
 
 # 任务 B: 生成 (Map + Pose -> FPS)
@@ -53,6 +41,31 @@ def get_loc_prompt(map_name):
 # ==========================================
 def expand2square(pil_img, background_color):
     """将图片填充为正方形，背景色通常为 image_mean"""
+
+    # GPT优化，增加直接在tensor上操作的分支，避免pil和tensor之间的重复转换
+    if isinstance(pil_img, torch.Tensor):
+        width = pil_img.shape[-1]
+        height = pil_img.shape[-2]
+        if width == height:
+            return pil_img
+        if width > height:
+            pad_top = (width - height) // 2
+            pad_bottom = width - height - pad_top
+            pad = (0, 0, pad_top, pad_bottom)
+        else:
+            pad_left = (height - width) // 2
+            pad_right = height - width - pad_left
+            pad = (pad_left, pad_right, 0, 0)
+        fill = torch.as_tensor(background_color, dtype=pil_img.dtype, device=pil_img.device).view(-1, 1, 1)
+        padded = F.pad(pil_img, pad, value=0.0)
+        if width > height:
+            padded[:, :pad_top, :] = fill
+            padded[:, padded.shape[-2] - pad_bottom:, :] = fill
+        else:
+            padded[:, :, :pad_left] = fill
+            padded[:, :, padded.shape[-1] - pad_right:] = fill
+        return padded
+
     width, height = pil_img.size
     if width == height:
         return pil_img
@@ -69,7 +82,11 @@ def img_process(images, processor, image_aspect_ratio):
     """调用 HuggingFace processor 处理图像列表"""
     if image_aspect_ratio == "pad":
         # 计算填充背景色 (基于 processor 的均值)
-        background_color = tuple(int(x * 255) for x in processor.image_mean)
+        #  # GPT优化
+        if isinstance(images[0], torch.Tensor):
+            background_color = tuple(float(x) for x in processor.image_mean)
+        else:
+            background_color = tuple(int(x * 255) for x in processor.image_mean)
         images = [expand2square(img, background_color) for img in images]
         # 转换为 Tensor
         images = processor.preprocess(images, return_tensors="pt")["pixel_values"]
@@ -174,9 +191,11 @@ def _mask_targets(target, tokenized_lens, speakers):
 def preprocess_internvl(sources, tokenizer: transformers.PreTrainedTokenizer, has_image: bool = False, max_len=2048, system_message: str = "你是书生·万象，英文名是InternVL，是由上海人工智能实验室、清华大学及多家合作单位联合开发的多模态大语言模型。") -> Dict:
     roles = {"human": "user", "gpt": "assistant"}
 
-    tokenizer = copy.deepcopy(tokenizer)
+    # tokenizer = copy.deepcopy(tokenizer)
     chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n'}}{% if message['content'] is string %}{{ message['content'] }}{% else %}{% for content in message['content'] %}{% if content['type'] == 'image' %}{{ '<IMG_CONTEXT>\n' }}{% elif content['type'] == 'video' %}{{ '<video>\n' }}{% elif content['type'] == 'text' %}{{ content['text'] }}{% endif %}{% endfor %}{% endif %}{{'<|im_end|>\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\n' }}{% endif %}"
-    tokenizer.chat_template = chat_template
+    # tokenizer.chat_template = chat_template
+    if getattr(tokenizer, "chat_template", None) != chat_template:
+        tokenizer.chat_template = chat_template
 
     # Apply prompt templates
     input_ids, targets = [], []
@@ -229,9 +248,11 @@ def preprocess_internvl(sources, tokenizer: transformers.PreTrainedTokenizer, ha
 def preprocess_qwen(sources, tokenizer: transformers.PreTrainedTokenizer, has_image: bool = False, max_len=2048, system_message: str = "You are a helpful assistant.") -> Dict:
     roles = {"human": "user", "gpt": "assistant"}
 
-    tokenizer = copy.deepcopy(tokenizer)
+    # tokenizer = copy.deepcopy(tokenizer)
     chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n'}}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
-    tokenizer.chat_template = chat_template
+    # tokenizer.chat_template = chat_template
+    if getattr(tokenizer, "chat_template", None) != chat_template:
+        tokenizer.chat_template = chat_template
 
     # Apply prompt templates
     input_ids, targets = [], []
@@ -293,9 +314,10 @@ def preprocess_llama3(
 
     # Add image tokens to tokenizer as a special tokens
     # Use a deepcopy of tokenizer so that we don't modify on the tokenizer
-    tokenizer = copy.deepcopy(tokenizer)
+    # tokenizer = copy.deepcopy(tokenizer)
     # When there is actually an image, we add the image tokens as a special token
-    if has_image:
+    # if has_image:
+    if has_image and "<image>" not in tokenizer.get_vocab():
         tokenizer.add_tokens(["<image>"], special_tokens=True)
     image_token_index = tokenizer.convert_tokens_to_ids("<image>")
     bos_token_id = tokenizer.convert_tokens_to_ids("<|begin_of_text|>")
@@ -478,6 +500,87 @@ id_to_map_dict = {k: i for i, k in enumerate(map_to_id_dict.keys())}
 
 
 
+
+# 任务 A: 定位 (Map + FPS -> Pose)
+# ==========================================
+# A.1 提示词模板 (Prompt Templates)
+# ==========================================
+def get_loc_prompt(map_name):
+    LOC_PROMPT_TEMPLATE = (
+        f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
+        "1. First-Person View (FPV) Features.\n"
+        "2. Overhead Radar Map (RADAR) Features.\n"
+        "Analyze the spatial relationship between the FPV and the RADAR Map to determine the precise camera pose. "
+        "Predict the 5D pose (x, y, z, pitch, yaw) in the required format.\n"
+        "<image>\n<image>"
+    )
+    return LOC_PROMPT_TEMPLATE
+
+
+
+# GPT优化
+def _build_loc_prompt_cache(map_names, tokenizer, img_size):
+    cache = {}
+    for map_name in map_names:
+        user_text_loc = get_loc_prompt(map_name)
+        sources_loc = {
+            "conversations": [
+                {"from": "human", "value": user_text_loc},
+                {"from": "gpt", "value": ""}
+            ]
+        }
+        sources_loc, _ = preprocess_multimodal([copy.deepcopy(sources_loc["conversations"])], img_size)
+        pre_dict_loc = preprocess(sources_loc, tokenizer, has_image=True)
+        cache[map_name] = {
+            "raw_prompt": user_text_loc,
+            "input_ids": pre_dict_loc["input_ids"][0].clone(),
+            "labels": pre_dict_loc["labels"][0].clone(),
+        }
+    return cache
+
+# GPT优化
+def _build_map_tensor_cache(map_images, image_processor, image_aspect_ratio, is_resize_224):
+    map_tensor_cache_448 = {}
+    map_tensor_cache_224 = {}
+    for map_name, map_img in map_images.items():
+        map_tensor_448 = img_process([map_img], image_processor, image_aspect_ratio).contiguous()
+        map_tensor_cache_448[map_name] = map_tensor_448
+        if is_resize_224:
+            map_tensor_cache_224[map_name] = img_resize_transform(map_tensor_448).contiguous()
+    return map_tensor_cache_448, map_tensor_cache_224
+
+# GPT优化
+INV_1024 = 1.0 / 1024.0
+INV_TAU = 1.0 / (2.0 * np.pi)
+
+def _build_csgo_entry(map_name, pos_data, z_min, z_max):
+    z_norm = (pos_data['z'] - z_min) / (z_max - z_min + 1e-6)
+    pitch_deg = pos_data['angle_v'] * INV_TAU * 360.0
+    yaw_deg = pos_data['angle_h'] * INV_TAU * 360.0
+    return {
+        'map': map_name,
+        'file_frame': pos_data['file_frame'],
+        'map_id': map_to_id_dict.get(map_name, 0),
+        'actions': torch.tensor([
+            pos_data['x'] * INV_1024,
+            pos_data['y'] * INV_1024,
+            z_norm,
+            pos_data['angle_v'] * INV_TAU,
+            pos_data['angle_h'] * INV_TAU,
+        ], dtype=torch.bfloat16).unsqueeze(0),
+        'pose_dict': {
+            'x': pos_data['x'],
+            'y': pos_data['y'],
+            'z': pos_data['z'],
+            'angle_v': pitch_deg,
+            'angle_h': yaw_deg,
+        },
+        'z_min': z_min,
+        'z_max': z_max,
+    }
+
+
+
 # ==========================================
 # D 多任务数据集类
 # ==========================================
@@ -490,6 +593,10 @@ class UniLIPMultiTaskDataset(Dataset):
 
         # 任务混合比例: 0.6 表示 60% 概率定位, 40% 概率生成
         self.mix_ratio = config.get('task_mix_ratio', 0.5)
+        # GPT优化
+        self.img_size = config.get("img_size", 448)
+        self.is_resize_224 = self.img_size == 224
+        self.cfg_drop_prob = config.get("cfg_drop_prob", 0.1)
 
         self.data_entries = []
         self.map_z_range = {}
@@ -515,16 +622,17 @@ class UniLIPMultiTaskDataset(Dataset):
 
             # 载入数据
             for pos_data in positions_data:
-                entry = {
-                    'map': map_name,
-                    'file_frame': pos_data['file_frame'],
-                    'x': pos_data['x'],
-                    'y': pos_data['y'],
-                    'z': pos_data['z'],
-                    'angle_v': pos_data['angle_v'], # Radian
-                    'angle_h': pos_data['angle_h'], # Radian
-                }
-                self.data_entries.append(entry)
+                # entry = {
+                #     'map': map_name,
+                #     'file_frame': pos_data['file_frame'],
+                #     'x': pos_data['x'],
+                #     'y': pos_data['y'],
+                #     'z': pos_data['z'],
+                #     'angle_v': pos_data['angle_v'], # Radian
+                #     'angle_h': pos_data['angle_h'], # Radian
+                # }
+                # self.data_entries.append(entry) # GPT优化
+                self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
 
         # Debug 采样
         if config.get('debug', False):
@@ -533,7 +641,7 @@ class UniLIPMultiTaskDataset(Dataset):
             self.data_entries = random.sample(self.data_entries, sampled_num)
             logging.info([(data['map'], data['file_frame']) for data in self.data_entries])
 
-        logging.info(f"✅ Total entries: {len(self.data_entries)}")
+        # unilip trainner 需要的 list_data_dict 格式
         self.list_data_dict = {
             "type": ["CS2_Multi_Task"] * len(self.data_entries),
             "id": [str(entry['map'] + "_" + entry['file_frame']) for entry in self.data_entries]
@@ -544,12 +652,40 @@ class UniLIPMultiTaskDataset(Dataset):
         for map_name, filename in map_path_dict.items():
             path = f"{config['data_dir']}/{map_name}/{filename}"
             if os.path.exists(path):
-                img = Image.open(path).convert('RGB')
+                img = Image.open(path).convert('RGB').resize((448, 448))
                 # 预先做 Resize 以省内存 (如果 processor 需要 448)
-                # img = img.resize((448, 448))
                 self.map_images[map_name] = img
+                # self.map_images[map_name] = convert_image_dtype(
+                #     read_image(path, mode=ImageReadMode.RGB),
+                #     torch.float32,
+                # ) # GPT优化
+                # # Transformers.Processor.preporcess()需要输入0-255范围的图像，无论是PIL还是Tensor或者numpy都可以，但必须是0-255范围的uint8或者float32格式，不能是0-1范围的float格式，否则会被错误地当成已经归一化过的图像，导致处理结果异常。如果需要0-1范围的图像，应该在preporcess()传入do_scale=False，而不是在这里直接转换为float32。
+                # 这里GPT Codex的优化有问题
             else:
                 logging.warning(f"Map image not found: {path}")
+
+        # GPT优化
+        self.map_tensor_cache_448, self.map_tensor_cache_224 = _build_map_tensor_cache(
+            self.map_images,
+            self.data_args.image_processor,
+            self.data_args.image_aspect_ratio,
+            self.is_resize_224,
+        )
+        # GPT优化
+        self.loc_prompt_cache = _build_loc_prompt_cache(
+            self.map_z_range.keys(),
+            self.tokenizer,
+            self.img_size,
+        )
+        # GPT优化
+        self._fps_dropout_transform = transforms.Compose([
+            transforms.ToTensor(),
+            CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
+            GridDropout(grid_size=4, p=0.3),
+            RandomErasing(probability=config.get('erasing_p', 0.3), mean=[0.0, 0.0, 0.0])
+        ])
+
+        logging.info(f"✅ Total entries: {len(self.data_entries)}")
 
 
     def __len__(self):
@@ -570,32 +706,40 @@ class UniLIPMultiTaskDataset(Dataset):
         # map_filename = map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
         # map_path = f"{self.config['data_dir']}/{map_name}/{map_filename}"
         # map_img_pil = Image.open(map_path).convert('RGB')
-        map_img_pil = self.map_images.get(map_name).copy()
+        # map_img_pil = self.map_images.get(map_name).copy()  # GPT优化
+        map_tensor_448 = self.map_tensor_cache_448[map_name]
+        map_tensor = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
 
         # FPS Image
+        # ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+        # fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        # fps_img_pil = Image.open(fps_path).convert('RGB') # GPT优化
         ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
 
-        # 4. 计算归一化坐标 (Common for both tasks)
-        z_info = self.map_z_range[map_name]
-        x_norm = data['x'] / 1024.0
-        y_norm = data['y'] / 1024.0
-        z_norm = (data['z'] - z_info['min_z']) / (z_info['max_z'] - z_info['min_z'] + 1e-6)
-        v_norm = data['angle_v'] / (2 * np.pi) # Pitch 0-1
-        pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
-        h_norm = data['angle_h'] / (2 * np.pi) # Yaw 0-1
-        yaw_deg = (data['angle_h'] / (2 * np.pi)) * 360.0
 
-        # Ground Truth Tensor for Localization Head
-        loc_coords_norm = torch.tensor([x_norm, y_norm, z_norm, v_norm, h_norm], dtype=torch.bfloat16)
-        pose_dict = {
-                    'x': data['x'],
-                    'y': data['y'],
-                    'z': data['z'],
-                    'angle_v': pitch_deg,
-                    'angle_h': yaw_deg,
-                }
+        # 4. 计算归一化坐标 (Common for both tasks)
+        # z_info = self.map_z_range[map_name]
+        # x_norm = data['x'] / 1024.0
+        # y_norm = data['y'] / 1024.0
+        # z_norm = (data['z'] - z_info['min_z']) / (z_info['max_z'] - z_info['min_z'] + 1e-6)
+        # v_norm = data['angle_v'] / (2 * np.pi) # Pitch 0-1
+        # pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
+        # h_norm = data['angle_h'] / (2 * np.pi) # Yaw 0-1
+        # yaw_deg = (data['angle_h'] / (2 * np.pi)) * 360.0
+
+        # # Ground Truth Tensor for Localization Head
+        # loc_coords_norm = torch.tensor([x_norm, y_norm, z_norm, v_norm, h_norm], dtype=torch.bfloat16)
+        # pose_dict = {
+        #             'x': data['x'],
+        #             'y': data['y'],
+        #             'z': data['z'],
+        #             'angle_v': pitch_deg,
+        #             'angle_h': yaw_deg,
+        #         }  # GPT优化
+        pose_dict = data['pose_dict']
+        loc_coords_norm = data['actions']
 
         # 5. 任务分流处理
         if task_id == 0:
@@ -603,44 +747,56 @@ class UniLIPMultiTaskDataset(Dataset):
             # Task: LOCALIZATION (Map + FPS -> Pose)
             # =========================================
             # Text Prompt
-            user_text = get_loc_prompt(map_name)
-            sources = {
-                "conversations": [
-                    {"from": "human", "value": user_text},
-                    {"from": "gpt", "value": ""} # Assistant 回复位置Token
-                ]
-            }
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.get("img_size", 448))
-            preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
-            input_ids = preprocess_dict["input_ids"][0]
-            labels = preprocess_dict["labels"][0]
+            # user_text = get_loc_prompt(map_name)
+            # sources = {
+            #     "conversations": [
+            #         {"from": "human", "value": user_text},
+            #         {"from": "gpt", "value": ""} # Assistant 回复位置Token
+            #     ]
+            # }
+            # sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.get("img_size", 448))
+            # preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
+            # input_ids = preprocess_dict["input_ids"][0]
+            # labels = preprocess_dict["labels"][0] # GPT优化
+            loc_cache = self.loc_prompt_cache[map_name]
+            user_text = loc_cache["raw_prompt"]
+            input_ids = loc_cache["input_ids"]
+            labels = loc_cache["labels"]
 
             # FPS Image & MAP Image
             if self.config.get('is_fps_dropout', False):
-                fps_img_pil = self.loc_fps_transform(self.config, fps_img_pil)
-            all_images = [fps_img_pil, map_img_pil]
-            process_images = img_process(
-                all_images,
-                self.data_args.image_processor,
-                self.data_args.image_aspect_ratio
-            ) # shape: [2, C, H, W]
-            if self.config.get("img_size", 448)==224:
-                und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
-                aux_image = img_resize_transform(process_images[-1:]) # [1, C, H, W]
-            else:
-                und_image = process_images[:-1] # [1, C, H, W]
-                aux_image = process_images[-1:] # [1, C, H, W]
+                fps_img_tensor = self._fps_dropout_transform(self.config, fps_img_pil)
+                fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
+
+            # all_images = [fps_img_pil, map_img_pil]
+            # process_images = img_process(
+            #     all_images,
+            #     self.data_args.image_processor,
+            #     self.data_args.image_aspect_ratio
+            # ) # shape: [2, C, H, W]
+            # if self.config.get("img_size", 448)==224:
+            #     und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+            #     aux_image = img_resize_transform(process_images[-1:]) # [1, C, H, W]
+            # else:
+            #     und_image = process_images[:-1] # [1, C, H, W]
+            #     aux_image = process_images[-1:] # [1, C, H, W] # GPT优化
+            fps_tensor_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
+            und_image = img_resize_transform(fps_tensor_448) if self.is_resize_224 else fps_tensor_448
+            aux_image = map_tensor.clone()
 
             # Target Image for Generator (DiT)
             # 定位任务不需要生成，所以给一个全黑的或者随机的占位符，Loss Mask 会把它忽略
-            gen_image = torch.zeros_like(process_images[:-1])
+            # gen_image = torch.zeros_like(process_images[:-1]) # GPT优化
+            gen_image = torch.zeros_like(fps_tensor_448)
 
             # Head Mask: 开启 Pose Head，关闭 Gen Head
             # [Loc_Loss_Weight, Gen_Loss_Weight]
             loss_mask = torch.tensor([1.0, 0.0], dtype=torch.float32)
 
-            aux_loc_input_ids = copy.deepcopy(input_ids)
-            aux_loc_labels = copy.deepcopy(labels)
+            # aux_loc_input_ids = copy.deepcopy(input_ids)
+            # aux_loc_labels = copy.deepcopy(labels) # GPT优化
+            aux_loc_input_ids = input_ids
+            aux_loc_labels = labels
 
         else:
             # =========================================
@@ -648,9 +804,11 @@ class UniLIPMultiTaskDataset(Dataset):
             # =========================================
             # 模拟 Classifier-Free Guidance (CFG) 训练
             # 10% 概率给空 Prompt ("Generate...")，90% 概率给完整 Prompt
-            if random.random() > 0.1:
+            # if random.random() > 0.1: # GPT优化
+            if random.random() > self.cfg_drop_prob:
                 # Positive Prompt
-                user_text = build_sft_instruction_custom(pose_dict, map_name, z_info['max_z'], z_info['min_z'])
+                # user_text = build_sft_instruction_custom(pose_dict, map_name, z_info['max_z'], z_info['min_z'])
+                user_text = build_sft_instruction_custom(pose_dict, map_name, data['z_max'], data['z_min'])
             else:
                 # CFG Negative/Generic Prompt
                 # 注意：必须包含 <image> 且位置要和 Positive Prompt 里的位置一致(这里都在最后)
@@ -672,34 +830,40 @@ class UniLIPMultiTaskDataset(Dataset):
 
             # 将 Radar 和 FPS 打包一起处理，确保经过相同的 Preprocess
             # 顺序：[Radar(Und), FPS(Gen)]
-            all_images = [map_img_pil, fps_img_pil]
-            process_images = img_process(
-                all_images,
-                self.data_args.image_processor,
-                self.data_args.image_aspect_ratio
-            ) # shape: [2, C, H, W]
-            if self.config.get("img_size", 448)==224:
-                und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
-            else:
-                und_image = process_images[:-1] # [1, C, H, W]
-            gen_image = process_images[-1:] # [1, C, H, W]
+            # all_images = [map_img_pil, fps_img_pil]
+            # process_images = img_process(
+            #     all_images,
+            #     self.data_args.image_processor,
+            #     self.data_args.image_aspect_ratio
+            # ) # shape: [2, C, H, W]
+            # if self.config.get("img_size", 448)==224:
+            #     und_image = img_resize_transform(process_images[:-1]) # [1, C, H, W]
+            # else:
+            #     und_image = process_images[:-1] # [1, C, H, W]
+            # gen_image = process_images[-1:] # [1, C, H, W] # GPT优化
+            fps_tensor_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
+            und_image = map_tensor.clone()
+            gen_image = fps_tensor_448
 
             aux_image = torch.zeros_like(und_image)
 
             loss_mask = torch.tensor([0.0, 1.0], dtype=torch.float32)
 
             # if self.config.get('is_loc_aux_loss', False):
-            aux_loc_user_text = get_loc_prompt(map_name)
-            aux_loc_sources = {
-                "conversations": [
-                    {"from": "human", "value": aux_loc_user_text},
-                    {"from": "gpt", "value": ""} # Assistant 回复位置Token
-                ]
-            }
-            aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]), self.config.get("img_size", 448))
-            aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
-            aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
-            aux_loc_labels = aux_loc_preprocess_dict["labels"][0]
+            # aux_loc_user_text = get_loc_prompt(map_name)
+            # aux_loc_sources = {
+            #     "conversations": [
+            #         {"from": "human", "value": aux_loc_user_text},
+            #         {"from": "gpt", "value": ""} # Assistant 回复位置Token
+            #     ]
+            # }
+            # aux_loc_sources, _ = preprocess_multimodal(copy.deepcopy([aux_loc_sources["conversations"]]), self.config.get("img_size", 448))
+            # aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
+            # aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
+            # aux_loc_labels = aux_loc_preprocess_dict["labels"][0] # GPT优化
+            aux_loc_cache = self.loc_prompt_cache[map_name]
+            aux_loc_input_ids = aux_loc_cache["input_ids"]
+            aux_loc_labels = aux_loc_cache["labels"]
 
 
         # 6. 返回字典
@@ -713,28 +877,31 @@ class UniLIPMultiTaskDataset(Dataset):
             "input_ids": input_ids,
             "labels": labels,
             "raw_prompt": user_text,
-            "actions": loc_coords_norm.unsqueeze(0), # [1, 5] 定位真值 (生成任务时此值存在但loss_mask为0)
+            # "actions": loc_coords_norm.unsqueeze(0), # [1, 5] 定位真值 (生成任务时此值存在但loss_mask为0)# GPT优化
+            "actions": loc_coords_norm,
             "loss_mask": loss_mask,         # [1.0, 0.0] or [0.0, 1.0]
-            "map_id": map_to_id_dict.get(map_name, 0),
+            # "map_id": map_to_id_dict.get(map_name, 0),# GPT优化
+            "map_id": data['map_id'],
             "map_name": map_name,
             "pose_dict": pose_dict,
             "aux_loc_input_ids": aux_loc_input_ids,
             "aux_loc_labels": aux_loc_labels,
         }
 
-    def loc_fps_transform(self, config, fps_img_pil):
-        fps_transform = transforms.Compose([
-            transforms.ToTensor(),
-            CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
-            GridDropout(grid_size=4, p=0.3),
-            RandomErasing(probability=config['erasing_p'], mean=[0.0, 0.0, 0.0])
-        ])
-        fps_img = fps_transform(fps_img_pil)
-        fps_img = np.array(fps_img.permute(1,2,0))
-        fps_img = Image.fromarray((fps_img*255).astype(np.uint8))
+    # def loc_fps_transform(self, config, fps_img_pil):
+    #     # fps_transform = transforms.Compose([
+    #     #     transforms.ToTensor(),
+    #     #     CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
+    #     #     GridDropout(grid_size=4, p=0.3),
+    #     #     RandomErasing(probability=config.get('erasing_p', 0.3), mean=[0.0, 0.0, 0.0])
+    #     # ])
+    #     # fps_img = fps_transform(fps_img_pil)
+    #     fps_img = self._fps_dropout_transform(fps_img_pil)
+    #     fps_img = np.array(fps_img.permute(1,2,0))
+    #     fps_img = Image.fromarray((fps_img*255).astype(np.uint8))
 
-        return fps_img
-
+    #     return fps_img
+    # GPT优化
 
 
 
@@ -956,6 +1123,9 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
 
         # 任务混合比例: 0.6 表示 60% 概率定位, 40% 概率生成
         self.mix_ratio = config.get('task_mix_ratio', 0.5)
+        self.img_size = config.get("img_size", 448)
+        self.is_resize_224 = self.img_size == 224
+        self.cfg_drop_prob = config.get("cfg_drop_prob", 0.1)
 
         self.data_entries = []
         self.map_z_range = {}
@@ -981,16 +1151,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
 
             # 载入数据
             for pos_data in positions_data:
-                entry = {
-                    'map': map_name,
-                    'file_frame': pos_data['file_frame'],
-                    'x': pos_data['x'],
-                    'y': pos_data['y'],
-                    'z': pos_data['z'],
-                    'angle_v': pos_data['angle_v'], # Radian
-                    'angle_h': pos_data['angle_h'], # Radian
-                }
-                self.data_entries.append(entry)
+                self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
 
         # Debug 采样
         if config.get('debug', False):
@@ -1009,12 +1170,30 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         for map_name, filename in map_path_dict.items():
             path = f"{config['data_dir']}/{map_name}/{filename}"
             if os.path.exists(path):
-                img = Image.open(path).convert('RGB')
-                # 预先做 Resize 以省内存 (如果 processor 需要 448)
-                # img = img.resize((448, 448))
+                img = Image.open(path).convert('RGB').resize((448, 448))
                 self.map_images[map_name] = img
             else:
                 logging.warning(f"Map image not found: {path}")
+
+        self.map_tensor_cache_448, self.map_tensor_cache_224 = _build_map_tensor_cache(
+            self.map_images,
+            self.data_args.image_processor,
+            self.data_args.image_aspect_ratio,
+            self.is_resize_224,
+        )
+
+        self.loc_prompt_cache = _build_loc_prompt_cache(
+            self.map_z_range.keys(),
+            self.tokenizer,
+            self.img_size,
+        )
+
+        self._fps_dropout_transform = transforms.Compose([
+            transforms.ToTensor(),
+            CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
+            GridDropout(grid_size=4, p=0.3),
+            RandomErasing(probability=config.get('erasing_p', 0.3), mean=[0.0, 0.0, 0.0])
+        ])
 
         logging.info(f"✅ Total entries: {len(self.data_entries)}")
 
@@ -1027,70 +1206,33 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         map_name = data['map']
 
         # 2. 加载图像资源
-        # Map Image
-        map_img_pil = self.map_images.get(map_name).copy()
-        # FPS Image
+        map_tensor_448 = self.map_tensor_cache_448[map_name]
+        map_tensor = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
         ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
         if self.config.get('is_fps_dropout', False):
-            fps_img_pil = self.loc_fps_transform(self.config, fps_img_pil)
-        # Und Image & Aux Image & Gen Image
-        all_images = [fps_img_pil, map_img_pil]
-        process_images = img_process(
-            all_images,
-            self.data_args.image_processor,
-            self.data_args.image_aspect_ratio
-        ) # shape: [2, C, H, W]
-        # 拆分出 Tensor
-        if self.config.get("img_size", 448)==224:
-            tensor_fps = img_resize_transform(process_images[:-1])
-            tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
-        else:
-            tensor_fps = process_images[:-1]
-            tensor_map = process_images[-1:]
+            fps_img_tensor = self._fps_dropout_transform(fps_img_pil)
+            fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
+        tensor_fps_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
+        tensor_fps = img_resize_transform(tensor_fps_448) if self.is_resize_224 else tensor_fps_448
+        tensor_map = map_tensor.clone()
         tensor_empty = torch.zeros_like(tensor_map)
-
-        tensor_fps_448 = process_images[:-1] # [1, C, H, W]
         tensor_empty_448 = torch.zeros_like(tensor_fps_448)
 
-
         # 3. 计算归一化坐标 (Common for both tasks)
-        z_info = self.map_z_range[map_name]
-        x_norm = data['x'] / 1024.0
-        y_norm = data['y'] / 1024.0
-        z_norm = (data['z'] - z_info['min_z']) / (z_info['max_z'] - z_info['min_z'] + 1e-6)
-        v_norm = data['angle_v'] / (2 * np.pi) # Pitch 0-1
-        pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
-        h_norm = data['angle_h'] / (2 * np.pi) # Yaw 0-1
-        yaw_deg = (data['angle_h'] / (2 * np.pi)) * 360.0
-        # Ground Truth Tensor for Localization Head
-        loc_coords_norm = torch.tensor([x_norm, y_norm, z_norm, v_norm, h_norm], dtype=torch.bfloat16)
-        pose_dict = {
-                    'x': data['x'],
-                    'y': data['y'],
-                    'z': data['z'],
-                    'angle_v': pitch_deg,
-                    'angle_h': yaw_deg,
-                }
+        pose_dict = data['pose_dict']
+        loc_coords_norm = data['actions']
 
         # 4. 任务分流处理
-
         # =========================================
         # 4.1 Task: LOCALIZATION (Map + FPS -> Pose)
         # =========================================
         task_id_loc = 0
-        # Text Prompt
-        user_text_loc = get_loc_prompt(map_name)
-        sources_loc = {
-            "conversations": [
-                {"from": "human", "value": user_text_loc},
-                {"from": "gpt", "value": ""} # Assistant 回复位置Token
-            ]
-        }
         # Tokenize Loc
-        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.get("img_size", 448))
-        pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
+        loc_cache = self.loc_prompt_cache[map_name]
+        # Text Prompt
+        user_text_loc = loc_cache["raw_prompt"]
 
         # 构造 Loc 样本字典
         sample_loc = {
@@ -1099,17 +1241,17 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "und_image": tensor_fps,   # Input: FPS
             "aux_image": tensor_map,   # Aux: Map
             "gen_image": tensor_empty_448, # Target: None (Empty)
-            "input_ids": pre_dict_loc["input_ids"][0],
-            "labels": pre_dict_loc["labels"][0],
+            "input_ids": loc_cache["input_ids"],
+            "labels": loc_cache["labels"],
             "raw_prompt": user_text_loc,
-            "actions": loc_coords_norm.unsqueeze(0),
+            "actions": loc_coords_norm,
             "loss_mask": torch.tensor([1.0, 0.0], dtype=torch.float32), # [Loc_Loss_Weight, Gen_Loss_Weight]
-            "map_id": map_to_id_dict.get(map_name, 0),
+            "map_id": data['map_id'],
             "map_name": map_name,
             "pose_dict": pose_dict,
             # Loc 任务的 Aux Loc Input 就是它自己
-            "aux_loc_input_ids": copy.deepcopy(pre_dict_loc["input_ids"][0]),
-            "aux_loc_labels": copy.deepcopy(pre_dict_loc["labels"][0]),
+            "aux_loc_input_ids": loc_cache["input_ids"],
+            "aux_loc_labels": loc_cache["labels"],
         }
 
         # =========================================
@@ -1118,8 +1260,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         task_id_gen = 1
         # 模拟 Classifier-Free Guidance (CFG) 训练
         # 10% 概率给空 Prompt ("Generate...")，90% 概率给完整 Prompt
-        if random.random() > 0.1:
-            user_text_gen = build_sft_instruction_custom(pose_dict, map_name, z_info['max_z'], z_info['min_z'])
+        if random.random() > self.cfg_drop_prob:
+            user_text_gen = build_sft_instruction_custom(pose_dict, map_name, data['z_max'], data['z_min'])
         else:
             user_text_gen = "Generate the view.\n<image>"
         sources_gen = {
@@ -1148,31 +1290,18 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "input_ids": pre_dict_gen["input_ids"][0],
             "labels": pre_dict_gen["labels"][0],
             "raw_prompt": user_text_gen,
-            "actions": loc_coords_norm.unsqueeze(0),
+            "actions": loc_coords_norm,
             "loss_mask": torch.tensor([0.0, 1.0], dtype=torch.float32), # [Loc_Loss_Weight, Gen_Loss_Weight]
-            "map_id": map_to_id_dict.get(map_name, 0),
+            "map_id": data['map_id'],
             "map_name": map_name,
             "pose_dict": pose_dict,
             # Gen 任务携带 Loc Prompt 用于一致性 Loss
-            "aux_loc_input_ids":  copy.deepcopy(pre_dict_loc["input_ids"][0]),
-            "aux_loc_labels":  copy.deepcopy(pre_dict_loc["labels"][0]),
+            "aux_loc_input_ids":  loc_cache["input_ids"],
+            "aux_loc_labels":  loc_cache["labels"],
         }
 
         # 5. 返回列表 [Loc, Gen]
         return [sample_loc, sample_gen]
-
-    def loc_fps_transform(self, config, fps_img_pil):
-        fps_transform = transforms.Compose([
-            transforms.ToTensor(),
-            CoarseDropout(max_holes=8, max_height=16, max_width=16, p=0.5),
-            GridDropout(grid_size=4, p=0.3),
-            RandomErasing(probability=config['erasing_p'], mean=[0.0, 0.0, 0.0])
-        ])
-        fps_img = fps_transform(fps_img_pil)
-        fps_img = np.array(fps_img.permute(1,2,0))
-        fps_img = Image.fromarray((fps_img*255).astype(np.uint8))
-
-        return fps_img
 
 
 

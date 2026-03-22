@@ -107,6 +107,128 @@ def small_init_weights(m):
 
 
 
+class AttentionPooler(nn.Module):
+    """
+    第一步：用于将 (bs, N, dim) 的 FPS 特征压缩为 (bs, 1, dim) 的 Query Token
+    """
+    def __init__(self, dim):
+        super().__init__()
+        self.attn_mlp = nn.Sequential(
+            nn.Linear(dim, dim // 2),
+            nn.Tanh(),
+            nn.Linear(dim // 2, 1)
+        )
+
+    def forward(self, x):
+        # x: [bs, seq_len, dim]
+        scores = self.attn_mlp(x)                  # [bs, seq_len, 1]
+        weights = F.softmax(scores, dim=1)         # [bs, seq_len, 1]
+        pooled = torch.sum(x * weights, dim=1)     # [bs, dim]
+        return pooled.unsqueeze(1)                 # [bs, 1, dim]
+
+class CrossViewFusionModule(nn.Module):
+    def __init__(self, dim=1024, num_heads=8, dropout=0.1):
+        """
+        特征融合模块
+        :param dim: 特征维度 (如 InternViT 的 1024)
+        :param num_heads: 多头注意力的头数
+        :param dropout: Dropout 概率
+        """
+        super().__init__()
+
+        # 1. FPS 降维池化层 (负责生成具有全局视野的 Query)
+        self.fps_pooler = AttentionPooler(dim)
+
+        # 2. 跨模态注意力层 (Cross-Attention)
+        # 注意：batch_first=True 允许输入形状为 (batch, seq, feature)
+        self.cross_attn = nn.MultiheadAttention(
+            embed_dim=dim,
+            num_heads=num_heads,
+            dropout=dropout,
+            batch_first=True
+        )
+
+        # 3. 规范化层 (Pre-LN 架构，训练更稳定)
+        self.norm_q = nn.LayerNorm(dim)
+        self.norm_kv = nn.LayerNorm(dim)
+        self.norm_ffn = nn.LayerNorm(dim)
+
+        # 4. 前馈神经网络 (FFN)
+        self.ffn = nn.Sequential(
+            nn.Linear(dim, dim * 4),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim * 4, dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, fps_feat, map_feat):
+        """
+        :param fps_feat: [bs, patch_num*patch_num, dim] (例如 [bs, 1024, 1024])
+        :param map_feat: [bs, patch_num*patch_num, dim] (例如 [bs, 1024, 1024])
+        :return: [bs, 1, dim] 融合后的位置特征
+        """
+        # --- Step 1: 将 FPS 提纯为单一的 Query ---
+        # query_fps: [bs, 1, dim]
+        query_fps = self.fps_pooler(fps_feat)
+
+        # --- Step 2: 规范化 (Pre-LN) ---
+        query_norm = self.norm_q(query_fps)
+        map_norm = self.norm_kv(map_feat)
+
+        # --- Step 3: Cross Attention 融合 ---
+        # Q 来自 FPS (找什么), K 和 V 来自 Map (在哪里)
+        # attn_out: [bs, 1, dim]
+        # attn_weights: [bs, 1, map_seq_len] (可以用于可视化，看看模型关注了地图哪里)
+        attn_out, attn_weights = self.cross_attn(
+            query=query_norm,
+            key=map_norm,
+            value=map_norm
+        )
+
+        # 残差连接 1
+        x = query_fps + attn_out
+
+        # --- Step 4: FFN (增强非线性表达) ---
+        # x: [bs, 1, dim]
+        out = x + self.ffn(self.norm_ffn(x))
+
+        # (可选) 如果你需要在外部做可视化分析，可以 return out, attn_weights
+        return out
+
+
+
+# Vibe Codex
+class MultiViewCLSFeatureFusion(nn.Module):
+    def __init__(self, dim, fused_dim, dropout=0.1):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim * 6, dim * 2),
+            nn.LayerNorm(dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim * 2, fused_dim),
+            nn.LayerNorm(fused_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, und_cls, aux_cls, und_avg, aux_avg):
+        fused = torch.cat(
+            [
+                und_cls,
+                aux_cls,
+                und_avg,
+                aux_avg,
+                torch.abs(und_cls - aux_cls),
+                und_avg * aux_avg,
+            ],
+            dim=-1,
+        )
+        return self.net(fused)
+
+
+
 from collections.abc import Sequence
 import dataclasses
 from typing import Literal, TypeAlias
@@ -439,9 +561,9 @@ class Unified_UniLIP_InternVL_MetaModel:
         if not model_args.fix_llm:
             if self.is_lora:
                 # LoRA模式：LLM主体冻结，由PEFT接管
-                for p in self.model.language_model.parameters(): p.requires_grad = False
+                for p in self.language_model.parameters(): p.requires_grad = False
             else:
-                for p in self.model.language_model.parameters(): p.requires_grad = True
+                for p in self.language_model.parameters(): p.requires_grad = True
 
         # 3. LLM Connector (Gen Branch)
         if not self.fix_connect:
@@ -474,10 +596,70 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
-        if  getattr(self.config, "use_vit_regression_head", False):
-            regression_loc_head_input_dim = llm_hidden_size
+        if getattr(self.config, "use_codex_vit_regression_head", False):# vibe codex
+            fused_dim = llm_hidden_size * 2
+            self.vit_loc_fusion = MultiViewCLSFeatureFusion(
+                dim=llm_hidden_size,
+                fused_dim=fused_dim,
+                dropout=0.1,
+            )
             if getattr(self.config, "is_action_dit_projector", False):
-                self.action_dit_norm = Qwen2RMSNorm(1024, eps=1e-6)
+                self.action_dit_norm = Qwen2RMSNorm(fused_dim, eps=1e-6)
+                self.action_dit_projector = nn.Sequential(
+                    nn.Linear(fused_dim, 512),
+                    nn.LayerNorm(512),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                    nn.Linear(512, 256),
+                    nn.LayerNorm(256),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                )
+                fused_dim = 256
+
+            logging.info(f"Init ViT Regression Loc Head")
+            self.regression_loc_head = nn.Sequential(
+                nn.Linear(fused_dim, 256),
+                nn.LayerNorm(256),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(256, 128),
+                nn.LayerNorm(128),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(128, self.config.action_dim),
+                nn.Sigmoid(),
+            )
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
+            regression_loc_head_input_dim = self.vision_tower.config.hidden_size
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_norm = Qwen2RMSNorm(regression_loc_head_input_dim, eps=1e-6)
+                self.action_dit_projector = nn.Sequential(
+                    nn.Linear(regression_loc_head_input_dim, 512),
+                    nn.LayerNorm(512),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                    nn.Linear(512, 256),
+                    nn.LayerNorm(256),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                )
+                regression_loc_head_input_dim = 256
+
+            logging.info(f"Init ViT Regression Loc Head")
+            self.regression_loc_head = nn.Sequential(
+                nn.Linear(regression_loc_head_input_dim, 256),
+                nn.LayerNorm(256),
+                nn.GELU(),
+                nn.Linear(256, self.config.action_dim)
+            )
+        elif  getattr(self.config, "use_vit_regression_head", False):
+            regression_loc_head_input_dim = llm_hidden_size
+            self.cross_view_fusion = CrossViewFusionModule(dim=llm_hidden_size, num_heads=8, dropout=0.1)
+            # self.img_pooler =
+            if getattr(self.config, "is_action_dit_projector", False):
+                # print("llm_hidden_size: ",llm_hidden_size)
+                self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
                 self.action_dit_projector = nn.Sequential(
                     nn.Linear(llm_hidden_size, 512),
                     nn.LayerNorm(512),
@@ -497,7 +679,6 @@ class Unified_UniLIP_InternVL_MetaModel:
                 nn.GELU(),
                 nn.Linear(256, self.config.action_dim)
             )
-
 
         elif getattr(self.config, "use_pi05_action_dit", False):
             if getattr(self.config, "is_action_dit_projector", False):
@@ -548,6 +729,7 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.time_mlp_in = nn.Linear(action_expert_config.width, action_expert_config.width)
             self.time_mlp_out = nn.Linear(action_expert_config.width, action_expert_config.width)
             logging.info(f"Init Pi0.5 Action DiT Complete !")
+
         else:
             if getattr(self.config, "is_loc_learnable_query", False):
                 self.loc_learnable_query = nn.Parameter(torch.randn(1, 1, llm_hidden_size))
@@ -561,7 +743,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                 )
                 self.action_dit_norm = Qwen2RMSNorm(llm_hidden_size, eps=1e-6)
             path = model_args.mllm_hf_path
-            logging.info(f"Initializing Action Connector from {path} slice...")
+            logging.info(f"Initializing Action DiT from {path} slice...")
             internvl_model = AutoModel.from_pretrained(
                 path,
                 torch_dtype=self.vision_tower.dtype,
@@ -605,9 +787,24 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.time_mlp_out = nn.Linear(llm_hidden_size, llm_hidden_size)#.to(torch.bfloat16)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.config.action_dim)#.to(torch.bfloat16)
 
-        if  getattr(self.config, "use_vit_regression_head", False):
-            logging.info("Starting vit_regression_head initialize...")
+        if  getattr(self.config, "use_codex_vit_regression_head", False):# vibe codex
+            logging.info("Starting codex_vit_regression_head initialize...")
+            for p in self.vit_loc_fusion.parameters(): p.requires_grad = True
+            if getattr(self.config, "is_action_dit_projector", False):
+                for p in self.action_dit_projector.parameters(): p.requires_grad = True
+            for p in self.regression_loc_head.parameters(): p.requires_grad = True
 
+            self.vit_loc_fusion.apply(init_weights)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_projector.apply(init_weights)
+            # self.action_dit_norm.apply(init_weights) # Norm层不需要手动初始化，保持原初始weights即可
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.regression_loc_head.apply(small_init_weights)
+            else:
+                self.regression_loc_head.apply(init_weights)
+            logging.info("codex_vit_regression_head weights initialized")
+        elif  getattr(self.config, "use_vit_cls_regression_head", False):
+            logging.info("Starting vit_cls_regression_head initialize...")
             if getattr(self.config, "is_action_dit_projector", False):
                 for p in self.action_dit_projector.parameters(): p.requires_grad = True
             for p in self.regression_loc_head.parameters(): p.requires_grad = True
@@ -619,7 +816,22 @@ class Unified_UniLIP_InternVL_MetaModel:
                 self.regression_loc_head.apply(small_init_weights)
             else:
                 self.regression_loc_head.apply(init_weights)
+            logging.info("vit_cls_regression_head weights initialized")
+        elif  getattr(self.config, "use_vit_regression_head", False):
+            logging.info("Starting vit_regression_head initialize...")
+            if getattr(self.config, "is_action_dit_projector", False):
+                for p in self.action_dit_projector.parameters(): p.requires_grad = True
+            for p in self.regression_loc_head.parameters(): p.requires_grad = True
+            for p in self.cross_view_fusion.parameters(): p.requires_grad = True
 
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_projector.apply(init_weights)
+            # self.action_dit_norm.apply(init_weights) # Norm层不需要手动初始化，保持原初始weights即可
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.regression_loc_head.apply(small_init_weights)
+            else:
+                self.regression_loc_head.apply(init_weights)
+            self.cross_view_fusion.apply(init_weights)
             logging.info("vit_regression_head weights initialized")
         else:
             ### 是否开启LoRA，重新配置可学习参数
@@ -720,7 +932,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                     self.action_out_proj.apply(small_init_weights)
                 else:
                     self.action_out_proj.apply(init_weights)
-                logging.info("Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora}")
+                logging.info(f"Custom Action DiT weights initialized, LoRA Enabled: {self.is_lora}")
 
             # if getattr(model_args, "gradient_checkpointing", False):
             #     self.action_dit.gradient_checkpointing_enable()
@@ -760,10 +972,147 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
         pass
 
     def get_vision_tower(self):
-        return self.get_model().get_vision_tower()
+        return self.get_model().vision_tower
 
     def get_n_query(self):
         return self.get_model().config.n_query
+
+    def _forward_vit_regression_head(self, und_image: Optional[torch.Tensor], aux_image: Optional[torch.Tensor] = None):
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        vision_tower = self.get_vision_tower()
+        vision_feature_layer = getattr(self.config, "vision_feature_layer", -1)
+
+        def _extract_vit_cls(pixel_values):
+            if pixel_values is None:
+                return None
+
+            vision_outputs = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            if hasattr(vision_outputs, "hidden_states") and vision_outputs.hidden_states is not None:
+                vit_hidden_states = vision_outputs.hidden_states[vision_feature_layer]
+            else:
+                vit_hidden_states = vision_outputs.last_hidden_state
+            return vit_hidden_states[:, 0]
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            target_dim = self.get_model().action_dit_norm.weight.shape[0]
+        else:
+            target_dim = self.get_model().regression_loc_head[0].in_features
+
+        und_vit_cls_feature = _extract_vit_cls(und_image)
+        aux_vit_cls_feature = _extract_vit_cls(aux_image)
+
+        candidate_features = []
+        if und_vit_cls_feature is not None and aux_vit_cls_feature is not None:
+            candidate_features.extend([
+                torch.cat([und_vit_cls_feature, aux_vit_cls_feature], dim=-1),
+                und_vit_cls_feature + aux_vit_cls_feature,
+                0.5 * (und_vit_cls_feature + aux_vit_cls_feature),
+                und_vit_cls_feature,
+                aux_vit_cls_feature,
+            ])
+        elif und_vit_cls_feature is not None:
+            candidate_features.append(und_vit_cls_feature)
+        elif aux_vit_cls_feature is not None:
+            candidate_features.append(aux_vit_cls_feature)
+
+        vit_feature = None
+        for feature in candidate_features:
+            if feature.shape[-1] == target_dim:
+                vit_feature = feature
+                break
+
+        if vit_feature is None:
+            raise ValueError(
+                f"Cannot match ViT CLS feature dim to regression head input dim. "
+                f"Target dim: {target_dim}, candidate dims: {[feature.shape[-1] for feature in candidate_features]}"
+            )
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            vit_feature = self.get_model().action_dit_norm(vit_feature)
+            vit_feature = self.get_model().action_dit_projector(vit_feature)
+
+        return self.get_model().regression_loc_head(vit_feature)
+
+    # vibe codex
+    def _forward_codex_vit_regression_head(self, und_image: Optional[torch.Tensor], aux_image: Optional[torch.Tensor] = None):
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        vision_tower = self.get_vision_tower()
+        vision_feature_layer = getattr(self.config, "vision_feature_layer", -1)
+
+        def _extract_codex_vit_features(pixel_values):
+            if pixel_values is None:
+                return None
+
+            vision_outputs = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            if hasattr(vision_outputs, "hidden_states") and vision_outputs.hidden_states is not None:
+                vit_hidden_states = vision_outputs.hidden_states[vision_feature_layer]
+            else:
+                vit_hidden_states = vision_outputs.last_hidden_state
+            cls_feature = vit_hidden_states[:, 0]
+            if vit_hidden_states.shape[1] > 1:
+                pooled_feature = vit_hidden_states[:, 1:].mean(dim=1)
+            else:
+                pooled_feature = cls_feature
+            return cls_feature, pooled_feature
+
+        und_features = _extract_codex_vit_features(und_image)
+        aux_features = _extract_codex_vit_features(aux_image)
+
+        if und_features is None or aux_features is None:
+            raise ValueError("Localization regression head requires both FPV and map images.")
+
+        und_vit_cls_feature, und_vit_avg_feature = und_features
+        aux_vit_cls_feature, aux_vit_avg_feature = aux_features
+
+        if hasattr(self.get_model(), "vit_loc_fusion"):
+            vit_feature = self.get_model().vit_loc_fusion(
+                und_vit_cls_feature,
+                aux_vit_cls_feature,
+                und_vit_avg_feature,
+                aux_vit_avg_feature,
+            )
+        else:
+            vit_feature = torch.cat([und_vit_cls_feature, aux_vit_cls_feature], dim=-1)
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            vit_feature = self.get_model().action_dit_norm(vit_feature)
+            vit_feature = self.get_model().action_dit_projector(vit_feature)
+
+        return self.get_model().regression_loc_head(vit_feature)
+
+    # vibe codex
+    def _compute_codex_loc_regression_loss(self, actions_pred, actions_gt):
+        actions_pred = actions_pred.float()
+        actions_gt = actions_gt.float()
+
+        if actions_gt.ndim == 3 and actions_gt.shape[1] == 1:
+            actions_gt = actions_gt.squeeze(1)
+        if actions_pred.ndim == 3 and actions_pred.shape[1] == 1:
+            actions_pred = actions_pred.squeeze(1)
+
+        xy_loss = F.smooth_l1_loss(actions_pred[..., :2], actions_gt[..., :2], reduction="none").mean(dim=-1)
+        z_loss = F.smooth_l1_loss(actions_pred[..., 2:3], actions_gt[..., 2:3], reduction="none").mean(dim=-1)
+
+        if getattr(self.config, "loc_use_circular_loss", True):
+            angle_delta = torch.remainder(actions_pred[..., 3:5] - actions_gt[..., 3:5] + 0.5, 1.0) - 0.5
+            angle_loss = F.smooth_l1_loss(angle_delta, torch.zeros_like(angle_delta), reduction="none").mean(dim=-1)
+        else:
+            angle_loss = F.smooth_l1_loss(actions_pred[..., 3:5], actions_gt[..., 3:5], reduction="none").mean(dim=-1)
+
+        xy_weight = getattr(self.config, "loc_xy_loss_weight", 1.0)
+        z_weight = getattr(self.config, "loc_z_loss_weight", 1.0)
+        angle_weight = getattr(self.config, "loc_angle_loss_weight", 2.0)
+
+        total = xy_loss * xy_weight + z_loss * z_weight + angle_loss * angle_weight
+        return total.mean()
 
     # [NEW] Flow Matching Logic Helper
     def embed_action_suffix(self, noisy_actions, timestep, llm_hidden_size, device, dtype):
@@ -1270,6 +1619,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "time_mlp_out",
             "loc_learnable_query",
             "vit_regression_head",
+            "vit_cls_regression_head",
         ]
 
         count_unfrozen = 0
@@ -1380,96 +1730,97 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # In Dataset: Generation task has `und_image`(Map) and `aux_image`(Empty).
         # We need to concat them for processing if both exist.
 
-        combined_und_images = und_image
-        if aux_image is not None:# and aux_image.sum() != 0:
-            if combined_und_images is not None:
-                # Assuming simple concat in batch dimension for processing, then splitting?
-                # Or Dataset handles embedding replacement.
-                # Given prepare_inputs logic, we rely on input_ids tokens.
-                # If there are two <image> tokens in Loc Prompt, prepare_inputs handles replacement sequentially.
-                # Just need to ensure `und_images` passed to prepare_inputs contains all pixel values.
-                combined_und_images = torch.cat([und_image, aux_image], dim=0) # Careful with indexing mapping!
-                # Actually, simpler: The dataset currently provides und_image and aux_image separately.
-                # But input_ids has multiple <image> placeholders.
-                # For simplicity in this adaptation, let's assume `und_image` arg passed to `prepare_inputs`
-                # should contain ALL images referenced by input_ids (except gen target).
-                # Your Dataset logic: und_image is [1, C, H, W], aux_image is [1, C, H, W].
-                # If task=Loc, we have 2 images. We should stack them.
+        if (not getattr(self.config, "use_vit_cls_regression_head", False)) or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+            combined_und_images = und_image
+            if aux_image is not None:# and aux_image.sum() != 0:
+                if combined_und_images is not None:
+                    # Assuming simple concat in batch dimension for processing, then splitting?
+                    # Or Dataset handles embedding replacement.
+                    # Given prepare_inputs logic, we rely on input_ids tokens.
+                    # If there are two <image> tokens in Loc Prompt, prepare_inputs handles replacement sequentially.
+                    # Just need to ensure `und_images` passed to prepare_inputs contains all pixel values.
+                    combined_und_images = torch.cat([und_image, aux_image], dim=0) # Careful with indexing mapping!
+                    # Actually, simpler: The dataset currently provides und_image and aux_image separately.
+                    # But input_ids has multiple <image> placeholders.
+                    # For simplicity in this adaptation, let's assume `und_image` arg passed to `prepare_inputs`
+                    # should contain ALL images referenced by input_ids (except gen target).
+                    # Your Dataset logic: und_image is [1, C, H, W], aux_image is [1, C, H, W].
+                    # If task=Loc, we have 2 images. We should stack them.
 
-                # Check Batch Size:
-                # If input_ids is [BS, Seq], und_image is [BS, 1, C, H, W] (from dataset collator likely [BS, 1, C, H, W])
-                pass
+                    # Check Batch Size:
+                    # If input_ids is [BS, Seq], und_image is [BS, 1, C, H, W] (from dataset collator likely [BS, 1, C, H, W])
+                    pass
 
-        # For strict compatibility, let's pass `und_image` (which might be a stack of images if collated correctly).
-        # Assuming the standard collator stacks images into [Total_Images_In_Batch, C, H, W].
+            # For strict compatibility, let's pass `und_image` (which might be a stack of images if collated correctly).
+            # Assuming the standard collator stacks images into [Total_Images_In_Batch, C, H, W].
 
-        if inputs_embeds is None:
-            with torch.no_grad():
-                ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
-                    _,
-                    position_ids,
-                    attention_mask,
-                    past_key_values,
-                    inputs_embeds,
-                    labels,
-                    target_image_embeds, #latents
-                    combined_img_idx,
-                    combined_image_embeds,
-                    bidr_attention_mask
-                ) = self.prepare_inputs_labels_for_multimodal(
-                    input_ids,
-                    position_ids,
-                    attention_mask,
-                    past_key_values,
-                    labels,
-                    gen_image[gen_indices],
-                    combined_und_images, # Pass und_image (which contains all input visuals)
-                    grid_thw,
-                    i_s_pos,
-                    image_sizes,
-                    task_id,
-                )
-                und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
-                aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
-                und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
-                aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
+            if inputs_embeds is None:
+                with torch.no_grad():
+                    ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
+                        _,
+                        position_ids,
+                        attention_mask,
+                        past_key_values,
+                        inputs_embeds,
+                        labels,
+                        target_image_embeds, #latents
+                        combined_img_idx,
+                        combined_image_embeds,
+                        bidr_attention_mask
+                    ) = self.prepare_inputs_labels_for_multimodal(
+                        input_ids,
+                        position_ids,
+                        attention_mask,
+                        past_key_values,
+                        labels,
+                        gen_image[gen_indices],
+                        combined_und_images, # Pass und_image (which contains all input visuals)
+                        grid_thw,
+                        i_s_pos,
+                        image_sizes,
+                        task_id,
+                    )
+                    und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
+                    aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
+                    und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
+                    aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
-        if (not getattr(self.config, "use_vit_regression_head", False)) or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
-        # --- B. Main LLM Forward (Understanding) ---
-            with torch.no_grad():
-                position_ids = torch.cumsum(attention_mask, dim=1) - 1
-                position_ids[position_ids < 0] = 0
-                # bs=8显存占用=6186MiB
-                # inputs_embeds=torch.Size([16, 515, 896])
+            if (not getattr(self.config, "use_vit_regression_head", False)) or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+            # --- B. Main LLM Forward (Understanding) ---
+                with torch.no_grad():
+                    position_ids = torch.cumsum(attention_mask, dim=1) - 1
+                    position_ids[position_ids < 0] = 0
+                    # bs=8显存占用=6186MiB
+                    # inputs_embeds=torch.Size([16, 515, 896])
 
-                outputs = self.model.language_model(
-                    attention_mask=attention_mask, #torch.Size([128, 707])
-                    position_ids=position_ids, #torch.Size([128, 707])
-                    inputs_embeds=inputs_embeds, #torch.Size([128, 707, 896])
-                    output_hidden_states=True,
-                    return_dict=return_dict, #True
-                    use_cache=False
-                )
+                    outputs = self.model.language_model(
+                        attention_mask=attention_mask, #torch.Size([128, 707])
+                        position_ids=position_ids, #torch.Size([128, 707])
+                        inputs_embeds=inputs_embeds, #torch.Size([128, 707, 896])
+                        output_hidden_states=True,
+                        return_dict=return_dict, #True
+                        use_cache=False
+                    )
 
-                # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
-                # This contains contextualized features of both text and images.
-                hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
-                # bs=8显存占用=6654MiB
-                # # 在 --- B. Main LLM Forward --- 之后插入
-                # logging.info(f"DEBUG Check:")
-                # logging.info(f"  Input IDs Shape: {input_ids. shape}")
-                # logging.info(f"  Hidden States Shape: {hidden_states.shape}")
-                # logging.info(f"  Combined Img Idx Shape: {combined_img_idx.shape}") # 关键！看是不是 2*BS
-                # logging.info(f"  Valid Lens Sample (0-5): {attention_mask.sum(dim=1)[:5]}")
-                # logging.info(f"  Loss Mask Sum (Loc/Gen): {loss_mask.sum(dim=0)}")
+                    # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
+                    # This contains contextualized features of both text and images.
+                    hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
+                    # bs=8显存占用=6654MiB
+                    # # 在 --- B. Main LLM Forward --- 之后插入
+                    # logging.info(f"DEBUG Check:")
+                    # logging.info(f"  Input IDs Shape: {input_ids. shape}")
+                    # logging.info(f"  Hidden States Shape: {hidden_states.shape}")
+                    # logging.info(f"  Combined Img Idx Shape: {combined_img_idx.shape}") # 关键！看是不是 2*BS
+                    # logging.info(f"  Valid Lens Sample (0-5): {attention_mask.sum(dim=1)[:5]}")
+                    # logging.info(f"  Loss Mask Sum (Loc/Gen): {loss_mask.sum(dim=0)}")
 
-                # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
-                if und_image_embeds is not None and und_img_idx is not None:
-                    hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+                    # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
+                    if und_image_embeds is not None and und_img_idx is not None:
+                        hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
 
-                is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
-                if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
-                    hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([57, 256, 896])
+                    is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
+                    if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
+                        hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([57, 256, 896])
 
         # --- C. Task Branching based on Loss Mask ---
         # loss_mask: [BS, 2] -> [Loc, Gen]
@@ -1573,26 +1924,58 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_aux_loss = torch.nn.MSELoss()(genbrh_hidden_states, torch.clone(genbrh_hidden_states.detach())).to(torch.float32)
 
             else:
-                masked_gen_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
-                masked_loc_aux_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+                masked_gen_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
-                if getattr(self.config, "use_vit_regression_head", False):
+                if getattr(self.config, "use_codex_vit_regression_head", False):
+                    locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
+                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_aux_image = aux_image[loc_indices]
+                    locbrh_actions_pred = self._forward_vit_regression_head(
+                        locbrh_und_image,
+                        locbrh_aux_image,
+                    )
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                elif getattr(self.config, "use_vit_cls_regression_head", False):
+                    locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
+                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_aux_image = aux_image[loc_indices]
+                    locbrh_actions_pred = self._forward_vit_regression_head(
+                        locbrh_und_image,
+                        locbrh_aux_image,
+                    )
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+
+                elif getattr(self.config, "use_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image_embeds = und_image_embeds[loc_indices]
                     locbrh_aux_image_embeds = aux_image_embeds[loc_indices]
 
-                    locbrh_und_feature = self.get_model().img_pooler(locbrh_und_image_embeds)
-                    locbrh_aux_feature = self.get_model().img_pooler(locbrh_aux_image_embeds)
-                    locbrh_concat_feature = torch.cat([locbrh_und_feature, locbrh_aux_feature], dim=1)
+                    # locbrh_und_feature = self.get_model().img_pooler(locbrh_und_image_embeds)
+                    # locbrh_aux_feature = self.get_model().img_pooler(locbrh_aux_image_embeds)
+                    # print(locbrh_und_image_embeds.shape)
+                    # locbrh_und_feature = locbrh_und_image_embeds[:, 0, :]
+                    # locbrh_aux_feature = locbrh_aux_image_embeds[:, 0, :]
+                    # locbrh_concat_feature = torch.cat([locbrh_und_feature, locbrh_aux_feature], dim=-1)
+                    locbrh_concat_feature = self.get_model().cross_view_fusion(locbrh_und_image_embeds, locbrh_aux_image_embeds)
                     locbrh_concat_feature = self.get_model().action_dit_norm(locbrh_concat_feature)
                     if getattr(self.config, "is_action_dit_projector", False):
                         locbrh_concat_feature = self.get_model().action_dit_projector(locbrh_concat_feature)
                     locbrh_actions_pred = self.get_model().regression_loc_head(locbrh_concat_feature)
-                    masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
 
                 else:
                     # actions: [BS, 1, 5]
@@ -1794,9 +2177,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         CausalLMOutputs = CausalLMOutputWithPast(
             loss=total_loss,
             logits=None, # Not used
-            past_key_values=outputs.past_key_values,
-            hidden_states=outputs.hidden_states,
-            attentions=outputs.attentions,
+            past_key_values=None, #outputs.past_key_values if outputs is not None else None,
+            hidden_states=None, #outputs.hidden_states if outputs is not None else None,
+            attentions=None, #outputs.attentions if outputs is not None else None,
         )
 
         CausalLMOutputs.extras = {
@@ -1902,228 +2285,312 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Aux Image = Original Map (und_image passed in forward, which is actually map for Gen task)
         # Prompt = Loc Prompt (aux_loc_input_ids)
 
-        # 获取 Gen 任务原本的 Map 输入 (在 prepare_inputs 里它是 und_image)
-        combined_und_images = torch.cat([pred_pixels_input, und_image_map], dim=0)
-        with torch.no_grad():
-            ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
-                aux_loc_input_ids,
-                position_ids,
-                attention_mask,
-                past_key_values,
-                inputs_embeds,
-                aux_loc_labels,
-                target_image_embeds, #latents
-                combined_img_idx,
-                combined_image_embeds,
-                bidr_attention_mask
-            ) = self.prepare_inputs_labels_for_multimodal(
-                aux_loc_input_ids,
-                None, #position_ids,
-                attention_mask,
-                None, #past_key_values,
-                aux_loc_labels,
-                gen_image,
-                combined_und_images, # Pass und_image (which contains all input visuals)
-                None, #grid_thw,
-                None, #i_s_pos,
-                None, #image_sizes,
-                task_id,
-            )
-        und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
-        aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
-        und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
-        aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
-        if getattr(self.config, "use_vit_regression_head", False):
+
+
+        if getattr(self.config, "use_codex_vit_regression_head", False):
             # 临时冻结 Action Dit
-            self.model.action_dit_norm.requires_grad_(False)
-            self.model.action_dit_projector.requires_grad_(False)
+            self.model.vit_loc_fusion.requires_grad_(False)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(False)
+                self.model.action_dit_projector.requires_grad_(False)
             self.model.regression_loc_head.requires_grad_(False)
 
-            self.model.action_dit_norm.eval()
-            self.model.action_dit_projector.eval()
+            self.model.vit_loc_fusion.eval()
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.eval()
+                self.model.action_dit_projector.eval()
             self.model.regression_loc_head.eval()
 
             with torch.no_grad():
-                und_feature = self.get_model().img_pooler(und_image_embeds)
-                aux_feature = self.get_model().img_pooler(aux_image_embeds)
-                concat_feature = torch.cat([und_feature, aux_feature], dim=1)
-                concat_feature = self.get_model().action_dit_norm(concat_feature)
-                if getattr(self.config, "is_action_dit_projector", False):
-                    concat_feature = self.get_model().action_dit_projector(concat_feature)
-                actions_pred = self.get_model().regression_loc_head(concat_feature)
-                masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+                actions_pred = self._forward_vit_regression_head(
+                    pred_pixels_input,
+                    und_image_map,
+                )
+                if getattr(self.config, "loc_use_circular_loss", True):
+                    masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                else:
+                    masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
 
-            # 恢复训练 Action Dit
-            self.model.action_dit_norm.requires_grad_(True)
-            self.model.action_dit_projector.requires_grad_(True)
+            self.model.vit_loc_fusion.requires_grad_(True)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(True)
+                self.model.action_dit_projector.requires_grad_(True)
             self.model.regression_loc_head.requires_grad_(True)
 
-            self.model.action_dit_norm.train()
-            self.model.action_dit_projector.train()
+            self.model.vit_loc_fusion.train()
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.train()
+                self.model.action_dit_projector.train()
             self.model.regression_loc_head.train()
-
-        else:
-            # --- B. Main LLM Forward (Understanding) ---
-            position_ids = torch.cumsum(attention_mask, dim=1) - 1
-            position_ids[position_ids < 0] = 0
-            # bs=8显存占用=13314MiB
-            with torch.no_grad():
-                outputs = self.model.language_model(
-                    attention_mask=attention_mask, #torch.Size([2, 617])
-                    position_ids=position_ids, #torch.Size([2, 617])
-                    inputs_embeds=inputs_embeds, #torch.Size([2, 617, 896])
-                    output_hidden_states=True,
-                    return_dict=return_dict, #True
-                    use_cache=False
-                )
-
-            # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
-            # This contains contextualized features of both text and images.
-            hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
-
-            # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
-            if und_image_embeds is not None and und_img_idx is not None:
-                hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
-
-            # 在传入forward_for_aux_loc_loss之前，已经将所有task_id转换为0，即该batch中所有样本都是loc任务
-            is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
-            if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
-                hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([2, 256, 896])
-
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
             # 临时冻结 Action Dit
-            if getattr(self.config, "use_pi05_action_dit", False):
-                self.model.action_dit_connector.requires_grad_(False)
-            self.model.action_dit_norm.requires_grad_(False)
-            self.model.action_dit_projector.requires_grad_(False)
-            self.model.action_dit.requires_grad_(False)
-            self.model.action_in_proj.requires_grad_(False)
-            self.model.action_out_proj.requires_grad_(False)
-            self.model.time_mlp_in.requires_grad_(False)
-            self.model.time_mlp_out.requires_grad_(False)
-            if getattr(self.config, "use_pi05_action_dit", False):
-                self.model.action_dit_connector.eval()
-            self.model.action_dit_norm.eval()
-            self.model.action_dit_projector.eval()
-            self.model.action_dit.eval()
-            self.model.action_in_proj.eval()
-            self.model.action_out_proj.eval()
-            self.model.time_mlp_in.eval()
-            self.model.time_mlp_out.eval()
-            # bs=8显存占用=13314MiB
-            # 5. Original LOCALIZATION Branch (Flow Matching Path)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(False)
+                self.model.action_dit_projector.requires_grad_(False)
+            self.model.regression_loc_head.requires_grad_(False)
+
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.eval()
+                self.model.action_dit_projector.eval()
+            self.model.regression_loc_head.eval()
+
             with torch.no_grad():
-                actions = actions#torch.Size([128, 5])
-                noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
-                time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
-                time_expanded = time[:, None, None].to(actions.dtype)
-                x_t = time_expanded * noise + (1 - time_expanded) * actions
-                u_t = noise - actions
-
-                suffix_emb, adarms_cond = self.embed_action_suffix(
-                        x_t, #torch.Size([128, 1, 5])
-                        time, #torch.Size([128])
-                        llm_hidden_size=1024 if getattr(self.config, "use_pi05_action_dit", False) else self.model.config.text_config.hidden_size,
-                        device=actions.device,
-                        dtype=hidden_states.dtype
-                    )
-                if getattr(self.config, "use_pi05_action_dit", False):
-                    hidden_states = self.get_model().action_dit_connector(hidden_states)
-                hidden_states = self.get_model().action_dit_norm(hidden_states)
-
-
-                bs, seq_len, hidden_dim = hidden_states.shape
-                valid_lens = attention_mask.sum(dim=1).long()
-
-                action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
-                target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)
-                action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
-
-                action_dit_att_mask = torch.cat([attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1)
-                mask_indices = valid_lens.view(-1, 1)
-                action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
-
-                action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
-                action_pos_ids = valid_lens.view(-1, 1)
-                # action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
-                current_seq_len = action_dit_pos_ids.shape[1]
-                range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
-                mask_after_valid = range_ids >= valid_lens.view(-1, 1)
-                action_dit_pos_ids = torch.where(
-                    mask_after_valid,
-                    action_pos_ids,
-                    action_dit_pos_ids
+                actions_pred = self._forward_vit_regression_head(
+                    pred_pixels_input,
+                    und_image_map,
                 )
+                if getattr(self.config, "loc_use_circular_loss", True):
+                    masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                else:
+                    masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(True)
+                self.model.action_dit_projector.requires_grad_(True)
+            self.model.regression_loc_head.requires_grad_(True)
+
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.train()
+                self.model.action_dit_projector.train()
+            self.model.regression_loc_head.train()
+        else:
+            # 获取 Gen 任务原本的 Map 输入 (在 prepare_inputs 里它是 und_image)
+            combined_und_images = torch.cat([pred_pixels_input, und_image_map], dim=0)
+            with torch.no_grad():
+                ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
+                    aux_loc_input_ids,
+                    position_ids,
+                    attention_mask,
+                    past_key_values,
+                    inputs_embeds,
+                    aux_loc_labels,
+                    target_image_embeds, #latents
+                    combined_img_idx,
+                    combined_image_embeds,
+                    bidr_attention_mask
+                ) = self.prepare_inputs_labels_for_multimodal(
+                    aux_loc_input_ids,
+                    None, #position_ids,
+                    attention_mask,
+                    None, #past_key_values,
+                    aux_loc_labels,
+                    gen_image,
+                    combined_und_images, # Pass und_image (which contains all input visuals)
+                    None, #grid_thw,
+                    None, #i_s_pos,
+                    None, #image_sizes,
+                    task_id,
+                )
+            und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
+            aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
+            und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
+            aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
+
+            if getattr(self.config, "use_vit_regression_head", False):
+                # 临时冻结 Action Dit
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.requires_grad_(False)
+                    self.model.action_dit_projector.requires_grad_(False)
+                self.model.regression_loc_head.requires_grad_(False)
 
                 if getattr(self.config, "is_action_dit_projector", False):
-                    action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
+                    self.model.action_dit_norm.eval()
+                    self.model.action_dit_projector.eval()
+                self.model.regression_loc_head.eval()
 
-                if getattr(self.config, "use_pi05_action_dit", False):
-                    suffix_output = self.get_model().action_dit(
-                        inputs_embeds=action_dit_inputs,
-                        attention_mask=self._prepare_attention_masks_4d_from_attn_masks_1d(action_dit_att_mask),
-                        position_ids=action_dit_pos_ids,
-                        use_cache=False,
-                        adarms_cond=adarms_cond,
+                with torch.no_grad():
+                    # und_feature = self.get_model().img_pooler(und_image_embeds)
+                    # aux_feature = self.get_model().img_pooler(aux_image_embeds)
+                    # und_feature = und_image_embeds[:, 0, :]
+                    # aux_feature = aux_image_embeds[:, 0, :]
+                    # concat_feature = torch.cat([und_feature, aux_feature], dim=-1)
+                    concat_feature = self.get_model().cross_view_fusion(und_image_embeds, aux_image_embeds)
+                    concat_feature = self.get_model().action_dit_norm(concat_feature)
+                    if getattr(self.config, "is_action_dit_projector", False):
+                        concat_feature = self.get_model().action_dit_projector(concat_feature)
+                    actions_pred = self.get_model().regression_loc_head(concat_feature)
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+
+                # 恢复训练 Action Dit
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.requires_grad_(True)
+                    self.model.action_dit_projector.requires_grad_(True)
+                self.model.regression_loc_head.requires_grad_(True)
+
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.train()
+                    self.model.action_dit_projector.train()
+                self.model.regression_loc_head.train()
+
+            else:
+                # --- B. Main LLM Forward (Understanding) ---
+                position_ids = torch.cumsum(attention_mask, dim=1) - 1
+                position_ids[position_ids < 0] = 0
+                # bs=8显存占用=13314MiB
+                with torch.no_grad():
+                    outputs = self.model.language_model(
+                        attention_mask=attention_mask, #torch.Size([2, 617])
+                        position_ids=position_ids, #torch.Size([2, 617])
+                        inputs_embeds=inputs_embeds, #torch.Size([2, 617, 896])
+                        output_hidden_states=True,
+                        return_dict=return_dict, #True
+                        use_cache=False
                     )
-                    action_hidden = suffix_output.last_hidden_state
-                else:
-                    if getattr(self.config, 'is_action_dit_dense_timestep', False):
-                        action_outputs = self.action_dit_forward_with_adarmscond(
-                            hidden_states=action_dit_inputs,
-                            attention_mask=action_dit_att_mask,
+
+                # Last Hidden State from LLM: [BS, Seq_Len, Hidden_Size]
+                # This contains contextualized features of both text and images.
+                hidden_states = outputs.hidden_states[-1] #torch.Size([128, 707, 896])
+
+                # Re-fill und_image embeddings (Skip Connection logic from UniLIP)
+                if und_image_embeds is not None and und_img_idx is not None:
+                    hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0,1)
+
+                # 在传入forward_for_aux_loc_loss之前，已经将所有task_id转换为0，即该batch中所有样本都是loc任务
+                is_loc_task = (task_id == 0)#is_loc_task.shape=torch.Size([128])#is_loc_task.sum()=tensor(57, device='cuda:0')
+                if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
+                    hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([2, 256, 896])
+
+                # 临时冻结 Action Dit
+                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_connector.requires_grad_(False)
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.requires_grad_(False)
+                    self.model.action_dit_projector.requires_grad_(False)
+                self.model.action_dit.requires_grad_(False)
+                self.model.action_in_proj.requires_grad_(False)
+                self.model.action_out_proj.requires_grad_(False)
+                self.model.time_mlp_in.requires_grad_(False)
+                self.model.time_mlp_out.requires_grad_(False)
+                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_connector.eval()
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.eval()
+                    self.model.action_dit_projector.eval()
+                self.model.action_dit.eval()
+                self.model.action_in_proj.eval()
+                self.model.action_out_proj.eval()
+                self.model.time_mlp_in.eval()
+                self.model.time_mlp_out.eval()
+                # bs=8显存占用=13314MiB
+                # 5. Original LOCALIZATION Branch (Flow Matching Path)
+                with torch.no_grad():
+                    actions = actions#torch.Size([128, 5])
+                    noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
+                    time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
+                    time_expanded = time[:, None, None].to(actions.dtype)
+                    x_t = time_expanded * noise + (1 - time_expanded) * actions
+                    u_t = noise - actions
+
+                    suffix_emb, adarms_cond = self.embed_action_suffix(
+                            x_t, #torch.Size([128, 1, 5])
+                            time, #torch.Size([128])
+                            llm_hidden_size=1024 if getattr(self.config, "use_pi05_action_dit", False) else self.model.config.text_config.hidden_size,
+                            device=actions.device,
+                            dtype=hidden_states.dtype
+                        )
+                    if getattr(self.config, "use_pi05_action_dit", False):
+                        hidden_states = self.get_model().action_dit_connector(hidden_states)
+                    hidden_states = self.get_model().action_dit_norm(hidden_states)
+
+
+                    bs, seq_len, hidden_dim = hidden_states.shape
+                    valid_lens = attention_mask.sum(dim=1).long()
+
+                    action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
+                    target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)
+                    action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
+
+                    action_dit_att_mask = torch.cat([attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1)
+                    mask_indices = valid_lens.view(-1, 1)
+                    action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
+
+                    action_dit_pos_ids = torch.cat([position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1)
+                    action_pos_ids = valid_lens.view(-1, 1)
+                    # action_dit_pos_ids = action_dit_pos_ids.scatter(1, mask_indices, action_pos_ids)
+                    current_seq_len = action_dit_pos_ids.shape[1]
+                    range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0) # [1, Seq+1]
+                    mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+                    action_dit_pos_ids = torch.where(
+                        mask_after_valid,
+                        action_pos_ids,
+                        action_dit_pos_ids
+                    )
+
+                    if getattr(self.config, "is_action_dit_projector", False):
+                        action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
+
+                    if getattr(self.config, "use_pi05_action_dit", False):
+                        suffix_output = self.get_model().action_dit(
+                            inputs_embeds=action_dit_inputs,
+                            attention_mask=self._prepare_attention_masks_4d_from_attn_masks_1d(action_dit_att_mask),
                             position_ids=action_dit_pos_ids,
+                            use_cache=False,
                             adarms_cond=adarms_cond,
                         )
-                        action_hidden = action_outputs
+                        action_hidden = suffix_output.last_hidden_state
                     else:
-                        action_outputs = self.model.action_dit(
-                            inputs_embeds=action_dit_inputs,
-                            attention_mask=action_dit_att_mask,
-                            position_ids=action_dit_pos_ids,
-                            output_hidden_states=True,
-                            return_dict=return_dict,
-                            use_cache=False
-                        )
-                        # Get output corresponding to the Action Token (Last token)
-                        # output: [BS, Seq+1, Hidden]
-                        action_hidden = action_outputs.hidden_states[-1]# [BS, seq+1, Hidden] #[:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
+                        if getattr(self.config, 'is_action_dit_dense_timestep', False):
+                            action_outputs = self.action_dit_forward_with_adarmscond(
+                                hidden_states=action_dit_inputs,
+                                attention_mask=action_dit_att_mask,
+                                position_ids=action_dit_pos_ids,
+                                adarms_cond=adarms_cond,
+                            )
+                            action_hidden = action_outputs
+                        else:
+                            action_outputs = self.model.action_dit(
+                                inputs_embeds=action_dit_inputs,
+                                attention_mask=action_dit_att_mask,
+                                position_ids=action_dit_pos_ids,
+                                output_hidden_states=True,
+                                return_dict=return_dict,
+                                use_cache=False
+                            )
+                            # Get output corresponding to the Action Token (Last token)
+                            # output: [BS, Seq+1, Hidden]
+                            action_hidden = action_outputs.hidden_states[-1]# [BS, seq+1, Hidden] #[:, -1:, :] # [BS, 1, Hidden] #torch.Size([128, 1, 896])
 
-                # Gather from the same indices we scattered to
-                gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
-                action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
+                    # Gather from the same indices we scattered to
+                    gather_indices = valid_lens.view(-1,1,1).expand(-1, -1, hidden_dim)
+                    action_hidden = action_hidden.gather(1, gather_indices) # [BS, 1, Hidden]
 
-                v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
-                loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
-                loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
+                    v_t_pred = self.get_model().action_out_proj(action_hidden) # [BS, 1, 5] #torch.Size([128, 1, 5])
+                    loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
+                    loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
-                # 加权：只在 t 小的时候 (生成接近完成) 计算 Loss
-                # sigmas 越大噪声越大。我们希望 sigma 小的时候权重高。
-                weight = (1.0 - sigmas).clamp(min=0)
-                loc_loss = (loc_loss * weight.squeeze())
+                    # 加权：只在 t 小的时候 (生成接近完成) 计算 Loss
+                    # sigmas 越大噪声越大。我们希望 sigma 小的时候权重高。
+                    weight = (1.0 - sigmas).clamp(min=0)
+                    loc_loss = (loc_loss * weight.squeeze())
 
-                # Apply Mask: Only count aux loc loss for Gen samples
-                masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
+                    # Apply Mask: Only count aux loc loss for Gen samples
+                    masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
 
-            # 恢复训练 Action Dit
-            if getattr(self.config, "use_pi05_action_dit", False):
-                self.model.action_dit_connector.requires_grad_(True)
-            self.model.action_dit_norm.requires_grad_(True)
-            self.model.action_dit_projector.requires_grad_(True)
-            self.model.action_dit.requires_grad_(True)
-            self.model.action_in_proj.requires_grad_(True)
-            self.model.action_out_proj.requires_grad_(True)
-            self.model.time_mlp_in.requires_grad_(True)
-            self.model.time_mlp_out.requires_grad_(True)
-            if getattr(self.config, "use_pi05_action_dit", False):
-                self.model.action_dit_connector.train()
-            self.model.action_dit_norm.train()
-            self.model.action_dit_projector.train()
-            self.model.action_dit.train()
-            self.model.action_in_proj.train()
-            self.model.action_out_proj.train()
-            self.model.time_mlp_in.train()
-            self.model.time_mlp_out.train()
+                # 恢复训练 Action Dit
+                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_connector.requires_grad_(True)
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.requires_grad_(True)
+                    self.model.action_dit_projector.requires_grad_(True)
+                self.model.action_dit.requires_grad_(True)
+                self.model.action_in_proj.requires_grad_(True)
+                self.model.action_out_proj.requires_grad_(True)
+                self.model.time_mlp_in.requires_grad_(True)
+                self.model.time_mlp_out.requires_grad_(True)
+                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_connector.train()
+                if getattr(self.config, "is_action_dit_projector", False):
+                    self.model.action_dit_norm.train()
+                    self.model.action_dit_projector.train()
+                self.model.action_dit.train()
+                self.model.action_in_proj.train()
+                self.model.action_out_proj.train()
+                self.model.time_mlp_in.train()
+                self.model.time_mlp_out.train()
 
         # # =================================================================
         # # [修复结束] 无论如何，恢复 Gradient Checkpointing 的原始状态
@@ -2566,6 +3033,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
         """
 
+        if getattr(self.config, "use_vit_cls_regression_head", False):
+            return self._forward_vit_regression_head(und_image, aux_image)
+
         # 1. Get Vision Features
         vision_feature_layer = self.config.vision_feature_layer
         vision_feature_select_strategy = self.config.vision_feature_select_strategy
@@ -2588,9 +3058,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             )
 
         if getattr(self.config, "use_vit_regression_head", False):
-            und_feature = self.get_model().img_pooler(und_image_embeds)
-            aux_feature = self.get_model().img_pooler(aux_image_embeds)
-            concat_feature = torch.cat([und_feature, aux_feature], dim=1)
+            # und_feature = self.get_model().img_pooler(und_image_embeds)
+            # aux_feature = self.get_model().img_pooler(aux_image_embeds)
+            # und_feature = und_image_embeds[:, 0, :]
+            # aux_feature = aux_image_embeds[:, 0, :]
+            # concat_feature = torch.cat([und_feature, aux_feature], dim=-1)
+            concat_feature = self.get_model().cross_view_fusion(und_image_embeds, aux_image_embeds)
             concat_feature = self.get_model().action_dit_norm(concat_feature)
             if getattr(self.config, "is_action_dit_projector", False):
                 concat_feature = self.get_model().action_dit_projector(concat_feature)

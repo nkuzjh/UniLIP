@@ -30,13 +30,13 @@ from transformers import AutoProcessor
 from unilip.conversation import Conversation, SeparatorStyle
 from tqdm import tqdm
 from copy import deepcopy
-from transformers import TrainerCallback
+from transformers import TrainerCallback, PrinterCallback, ProgressCallback
 
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
 import numpy as np
 import yaml
-from visual_utils import visualize_dataset_samples, visualize_dataset_samples_paired
+from visual_utils import visualize_dataset_samples_v1, visualize_dataset_samples, visualize_dataset_samples_paired
 from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset, UniLIPMultiTaskBalancedDataset
 import datetime
 import wandb
@@ -236,6 +236,9 @@ class TrainingArguments(transformers.TrainingArguments):
     logging_strategy="steps",
 
     profile_dir="./profiler_logs", # PyTorch Profiler精确查看训练时间耗费
+    enable_step_timing: bool = True
+    step_timing_sync_cuda: bool = True
+
 
 
 
@@ -368,7 +371,10 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         "action_out_proj",
         "time_mlp_in",
         "time_mlp_out",
-        "loc_learnable_query"
+        "loc_learnable_query",
+        "regression_loc_head",
+        "cross_view_fusion",
+        "vit_loc_fusion",
     ]
     # 使用 fuzzy match 提取这些模块的权重
     action_weights = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), action_keys)
@@ -1347,12 +1353,37 @@ def unlock_vit(training_args, model_args, vision_tower):
 
 
 class UniLIPLogCallback(TrainerCallback):
+    def __init__(self, trainer=None):
+        self.trainer = trainer
+        self.latest_timing_metrics = {}
+
+    def bind_trainer(self, trainer):
+        self.trainer = trainer
+
+    def on_step_end(self, args, state, control, **kwargs):
+        if self.trainer is None or not getattr(args, "enable_step_timing", False):
+            return control
+
+        timing_metrics = self.trainer.consume_step_timing_metrics()
+        if timing_metrics:
+            self.latest_timing_metrics = {
+                "step_total_time": round(timing_metrics["step_total_time"], 6),
+                "batch_load_time": round(timing_metrics["batch_load_time"], 6),
+                "prepare_inputs_time": round(timing_metrics["prepare_inputs_time"], 6),
+                "forward_time": round(timing_metrics["forward_time"], 6),
+                "backward_time": round(timing_metrics["backward_time"], 6),
+                "other_iteration_time": round(timing_metrics["other_iteration_time"], 6),
+            }
+        return control
+
     def on_log(self, args, state, control, logs=None, **kwargs):
         """
         每当达到 logging_steps 时触发。
         logs 字典通常包含: {'loss': ..., 'learning_rate': ..., 'epoch': ...}
         """
         if state.is_local_process_zero and logs is not None:
+            if self.latest_timing_metrics:
+                logs.update(self.latest_timing_metrics)
             # 格式化打印
             log_msg = f"[ Step {state.global_step} ] "
 
@@ -1372,8 +1403,19 @@ class UniLIPLogCallback(TrainerCallback):
             if "other_info" in logs:
                 log_msg += f" | Other Info: {logs['other_info']}"
 
+            if "step_total_time" in logs:
+                log_msg += (
+                    f" | Timing(total={logs['step_total_time']:.4f}s"
+                    f", batch={logs['batch_load_time']:.4f}s"
+                    f", prepare={logs['prepare_inputs_time']:.4f}s"
+                    f", forward={logs['forward_time']:.4f}s"
+                    f", backward={logs['backward_time']:.4f}s"
+                    f", other={logs['other_iteration_time']:.4f}s)"
+                )
+
             # 强制打印到控制台
             logging.info(log_msg)
+            self.latest_timing_metrics = {}
             # 或者直接 print，防止 logging 被过滤
             # print(log_msg, flush=True)
 
@@ -1391,6 +1433,7 @@ def train(attn_implementation=None):
 
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
+
 
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = f"{training_args.output_dir.replace('outputs', 'logs')}/train_{cur_time_str}"
@@ -1410,6 +1453,18 @@ def train(attn_implementation=None):
     transformers.utils.logging.enable_explicit_format()
 
     logger = logging.getLogger(__name__)
+
+
+    if training_args.dataloader_num_workers == 0:
+        auto_workers = max(4, min(16, (os.cpu_count() or 8) // 2))
+        training_args.dataloader_num_workers = auto_workers
+        logging.info(f"Auto setting dataloader_num_workers to {training_args.dataloader_num_workers} based on CPU count.")
+    if hasattr(training_args, "dataloader_persistent_workers"):
+        training_args.dataloader_persistent_workers = training_args.dataloader_num_workers > 0
+    if hasattr(training_args, "dataloader_prefetch_factor") and training_args.dataloader_num_workers > 0:
+        training_args.dataloader_prefetch_factor = csgo_config.get("dataloader_prefetch_factor", 4)
+    if hasattr(training_args, "dataloader_pin_memory"):
+        training_args.dataloader_pin_memory = csgo_config.get("dataloader_pin_memory", True)
 
     if "wandb" in training_args.report_to and training_args.local_rank in [-1, 0]:
         # 如果 args 里有 run_name 就用，没有就自动生成
@@ -1462,6 +1517,7 @@ def train(attn_implementation=None):
         )
 
     if csgo_config.get("is_multi_task"):
+        logging.info(f"Start Unified_UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
         model = Unified_UniLIP_InternVLForCausalLM.from_pretrained(
             model_args.model_name_or_path, # UniLIP-1B with new unified_unilip config
             cache_dir=training_args.cache_dir,
@@ -1469,7 +1525,9 @@ def train(attn_implementation=None):
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args,
         )
+        logging.info(f"Finish Unified_UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
     else:
+        logging.info(f"Start UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
         model = UniLIP_InternVLForCausalLM.from_pretrained(
             model_args.model_name_or_path, #UniLIP-1B
             cache_dir=training_args.cache_dir,
@@ -1477,6 +1535,7 @@ def train(attn_implementation=None):
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args,
         )
+        logging.info(f"Finish UniLIP_InternVLForCausalLM.from_pretrained: {model_args.model_name_or_path}")
     model.config.use_cache = False
 
     if model_args.freeze_backbone: # True
@@ -1521,12 +1580,19 @@ def train(attn_implementation=None):
     model.config.img_size = model_args.img_size = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
 
+    model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
+    model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
+    model.config.use_codex_vit_regression_head = csgo_config.get("use_codex_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
     model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", 5e-4)
+    model.config.loc_use_circular_loss = csgo_config.get("loc_use_circular_loss", True)
+    model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
+    model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
+    model.config.loc_angle_loss_weight = csgo_config.get("loc_angle_loss_weight", 2.0)
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
@@ -1665,9 +1731,15 @@ def train(attn_implementation=None):
         data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     if local_rank in [-1, 0]:
         if csgo_config.get("is_multi_task_balanced", False):
-            visualize_dataset_samples_paired
+            visualize_dataset_samples_paired(
+                train_dataset,
+                data_args.image_processor,
+                num_samples=20,
+                save_path="_debug_dataset_samples.jpg",
+                is_multi_task=csgo_config.get("is_multi_task", False)
+            )
         else:
-            visualize_dataset_samples(
+            visualize_dataset_samples_v1(
                 train_dataset,
                 data_args.image_processor,
                 num_samples=20,
@@ -1693,6 +1765,7 @@ def train(attn_implementation=None):
 
 
 
+    unilip_log_callback = UniLIPLogCallback()
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -1701,8 +1774,13 @@ def train(attn_implementation=None):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
-        callbacks=[UniLIPLogCallback()],
+        callbacks=[unilip_log_callback],
     )
+    unilip_log_callback.bind_trainer(trainer)
+    print("callbacks: ", trainer.callback_handler.callback_list)
+    # trainer.remove_callback(PrinterCallback)
+    # trainer.remove_callback(ProgressCallback)
+
 
 
     # from tabulate import tabulate
@@ -1714,7 +1792,7 @@ def train(attn_implementation=None):
 
 
     # 把回调加入 Trainer
-    trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
+    # trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
 
 
     if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
