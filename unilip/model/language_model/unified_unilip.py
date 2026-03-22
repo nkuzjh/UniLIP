@@ -1730,7 +1730,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # In Dataset: Generation task has `und_image`(Map) and `aux_image`(Empty).
         # We need to concat them for processing if both exist.
 
-        if (not getattr(self.config, "use_vit_cls_regression_head", False)) or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+        if ( (not getattr(self.config, "use_vit_cls_regression_head", False)) and (not getattr(self.config, "use_codex_vit_regression_head", False)) ) \
+            or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0) \
+            or (getattr(self.config, "use_codex_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
             combined_und_images = und_image
             if aux_image is not None:# and aux_image.sum() != 0:
                 if combined_und_images is not None:
@@ -1785,7 +1787,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
                     aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
-            if (not getattr(self.config, "use_vit_regression_head", False)) or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+            if (not getattr(self.config, "use_vit_regression_head", False)) \
+                or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
             # --- B. Main LLM Forward (Understanding) ---
                 with torch.no_grad():
                     position_ids = torch.cumsum(attention_mask, dim=1) - 1
@@ -1935,7 +1938,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image = und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
-                    locbrh_actions_pred = self._forward_vit_regression_head(
+                    locbrh_actions_pred = self._forward_codex_vit_regression_head(
                         locbrh_und_image,
                         locbrh_aux_image,
                     )
@@ -2303,7 +2306,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             self.model.regression_loc_head.eval()
 
             with torch.no_grad():
-                actions_pred = self._forward_vit_regression_head(
+                actions_pred = self._forward_codex_vit_regression_head(
                     pred_pixels_input,
                     und_image_map,
                 )
@@ -3032,8 +3035,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         Run inference for Localization task using Flow Matching Euler Solver.
         Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
         """
-
-        if getattr(self.config, "use_vit_cls_regression_head", False):
+        if getattr(self.config, "use_codex_vit_regression_head", False):
+            actions_pred = self._forward_codex_vit_regression_head(und_image, aux_image,)
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
             return self._forward_vit_regression_head(und_image, aux_image)
 
         # 1. Get Vision Features
