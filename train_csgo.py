@@ -1736,7 +1736,6 @@ def train(attn_implementation=None):
                 data_args.image_processor,
                 num_samples=20,
                 save_path="_debug_dataset_samples.jpg",
-                is_multi_task=csgo_config.get("is_multi_task", False)
             )
         else:
             visualize_dataset_samples_v1(
