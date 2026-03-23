@@ -198,6 +198,37 @@ class CrossViewFusionModule(nn.Module):
 
 
 
+# Vibe Codex
+class MultiViewCLSFeatureFusion(nn.Module):
+    def __init__(self, dim, fused_dim, dropout=0.1):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim * 6, dim * 2),
+            nn.LayerNorm(dim * 2),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(dim * 2, fused_dim),
+            nn.LayerNorm(fused_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, und_cls, aux_cls, und_avg, aux_avg):
+        fused = torch.cat(
+            [
+                und_cls,
+                aux_cls,
+                und_avg,
+                aux_avg,
+                torch.abs(und_cls - aux_cls),
+                und_avg * aux_avg,
+            ],
+            dim=-1,
+        )
+        return self.net(fused)
+
+
+
 from collections.abc import Sequence
 import dataclasses
 from typing import Literal, TypeAlias
@@ -565,7 +596,41 @@ class Unified_UniLIP_InternVL_MetaModel:
         # [NEW] Initialize Action Connector & Heads
         # if getattr(self, 'action_dit', None) is None:
         # 直接移植pi05的action_dit模型和权重作为定位head,无需初始化权重
-        if  getattr(self.config, "use_vit_cls_regression_head", False):
+        if getattr(self.config, "use_codex_vit_regression_head", False):# vibe codex
+            fused_dim = self.vision_tower.config.hidden_size * 2
+            self.vit_loc_fusion = MultiViewCLSFeatureFusion(
+                dim=self.vision_tower.config.hidden_size,
+                fused_dim=fused_dim,
+                dropout=0.1,
+            )
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_norm = Qwen2RMSNorm(fused_dim, eps=1e-6)
+                self.action_dit_projector = nn.Sequential(
+                    nn.Linear(fused_dim, 512),
+                    nn.LayerNorm(512),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                    nn.Linear(512, 256),
+                    nn.LayerNorm(256),
+                    nn.GELU(),
+                    nn.Dropout(0.1),
+                )
+                fused_dim = 256
+
+            logging.info(f"Init ViT Regression Loc Head")
+            self.regression_loc_head = nn.Sequential(
+                nn.Linear(fused_dim, 256),
+                nn.LayerNorm(256),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(256, 128),
+                nn.LayerNorm(128),
+                nn.GELU(),
+                nn.Dropout(0.1),
+                nn.Linear(128, self.config.action_dim),
+                nn.Sigmoid(),
+            )
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
             regression_loc_head_input_dim = self.vision_tower.config.hidden_size
             if getattr(self.config, "is_action_dit_projector", False):
                 self.action_dit_norm = Qwen2RMSNorm(regression_loc_head_input_dim, eps=1e-6)
@@ -722,7 +787,23 @@ class Unified_UniLIP_InternVL_MetaModel:
             self.time_mlp_out = nn.Linear(llm_hidden_size, llm_hidden_size)#.to(torch.bfloat16)
             self.action_out_proj = nn.Linear(llm_hidden_size, self.config.action_dim)#.to(torch.bfloat16)
 
-        if  getattr(self.config, "use_vit_cls_regression_head", False):
+        if  getattr(self.config, "use_codex_vit_regression_head", False):# vibe codex
+            logging.info("Starting codex_vit_regression_head initialize...")
+            for p in self.vit_loc_fusion.parameters(): p.requires_grad = True
+            if getattr(self.config, "is_action_dit_projector", False):
+                for p in self.action_dit_projector.parameters(): p.requires_grad = True
+            for p in self.regression_loc_head.parameters(): p.requires_grad = True
+
+            self.vit_loc_fusion.apply(init_weights)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.action_dit_projector.apply(init_weights)
+            # self.action_dit_norm.apply(init_weights) # Norm层不需要手动初始化，保持原初始weights即可
+            if getattr(self.config, "is_aciton_dit_vae_small_init", False):
+                self.regression_loc_head.apply(small_init_weights)
+            else:
+                self.regression_loc_head.apply(init_weights)
+            logging.info("codex_vit_regression_head weights initialized")
+        elif  getattr(self.config, "use_vit_cls_regression_head", False):
             logging.info("Starting vit_cls_regression_head initialize...")
             if getattr(self.config, "is_action_dit_projector", False):
                 for p in self.action_dit_projector.parameters(): p.requires_grad = True
@@ -955,6 +1036,83 @@ class Unified_UniLIP_InternVL_MetaForCausalLM(ABC):
             vit_feature = self.get_model().action_dit_projector(vit_feature)
 
         return self.get_model().regression_loc_head(vit_feature)
+
+    # vibe codex
+    def _forward_codex_vit_regression_head(self, und_image: Optional[torch.Tensor], aux_image: Optional[torch.Tensor] = None):
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        vision_tower = self.get_vision_tower()
+        vision_feature_layer = getattr(self.config, "vision_feature_layer", -1)
+
+        def _extract_codex_vit_features(pixel_values):
+            if pixel_values is None:
+                return None
+
+            vision_outputs = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=True,
+                return_dict=True,
+            )
+            if hasattr(vision_outputs, "hidden_states") and vision_outputs.hidden_states is not None:
+                vit_hidden_states = vision_outputs.hidden_states[vision_feature_layer]
+            else:
+                vit_hidden_states = vision_outputs.last_hidden_state
+            cls_feature = vit_hidden_states[:, 0]
+            if vit_hidden_states.shape[1] > 1:
+                pooled_feature = vit_hidden_states[:, 1:].mean(dim=1)
+            else:
+                pooled_feature = cls_feature
+            return cls_feature, pooled_feature
+
+        und_features = _extract_codex_vit_features(und_image)
+        aux_features = _extract_codex_vit_features(aux_image)
+
+        if und_features is None or aux_features is None:
+            raise ValueError("Localization regression head requires both FPV and map images.")
+
+        und_vit_cls_feature, und_vit_avg_feature = und_features
+        aux_vit_cls_feature, aux_vit_avg_feature = aux_features
+
+        if hasattr(self.get_model(), "vit_loc_fusion"):
+            vit_feature = self.get_model().vit_loc_fusion(
+                und_vit_cls_feature,
+                aux_vit_cls_feature,
+                und_vit_avg_feature,
+                aux_vit_avg_feature,
+            )
+        else:
+            vit_feature = torch.cat([und_vit_cls_feature, aux_vit_cls_feature], dim=-1)
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            vit_feature = self.get_model().action_dit_norm(vit_feature)
+            vit_feature = self.get_model().action_dit_projector(vit_feature)
+
+        return self.get_model().regression_loc_head(vit_feature)
+
+    # vibe codex
+    def _compute_codex_loc_regression_loss(self, actions_pred, actions_gt):
+        actions_pred = actions_pred.float()
+        actions_gt = actions_gt.float()
+
+        if actions_gt.ndim == 3 and actions_gt.shape[1] == 1:
+            actions_gt = actions_gt.squeeze(1)
+        if actions_pred.ndim == 3 and actions_pred.shape[1] == 1:
+            actions_pred = actions_pred.squeeze(1)
+
+        xy_loss = F.smooth_l1_loss(actions_pred[..., :2], actions_gt[..., :2], reduction="none").mean(dim=-1)
+        z_loss = F.smooth_l1_loss(actions_pred[..., 2:3], actions_gt[..., 2:3], reduction="none").mean(dim=-1)
+
+        if getattr(self.config, "loc_use_circular_loss", True):
+            angle_delta = torch.remainder(actions_pred[..., 3:5] - actions_gt[..., 3:5] + 0.5, 1.0) - 0.5
+            angle_loss = F.smooth_l1_loss(angle_delta, torch.zeros_like(angle_delta), reduction="none").mean(dim=-1)
+        else:
+            angle_loss = F.smooth_l1_loss(actions_pred[..., 3:5], actions_gt[..., 3:5], reduction="none").mean(dim=-1)
+
+        xy_weight = getattr(self.config, "loc_xy_loss_weight", 1.0)
+        z_weight = getattr(self.config, "loc_z_loss_weight", 1.0)
+        angle_weight = getattr(self.config, "loc_angle_loss_weight", 2.0)
+
+        total = xy_loss * xy_weight + z_loss * z_weight + angle_loss * angle_weight
+        return total.mean()
 
     # [NEW] Flow Matching Logic Helper
     def embed_action_suffix(self, noisy_actions, timestep, llm_hidden_size, device, dtype):
@@ -1572,7 +1730,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # In Dataset: Generation task has `und_image`(Map) and `aux_image`(Empty).
         # We need to concat them for processing if both exist.
 
-        if (not getattr(self.config, "use_vit_cls_regression_head", False)) or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+        if ( (not getattr(self.config, "use_vit_cls_regression_head", False)) and (not getattr(self.config, "use_codex_vit_regression_head", False)) ) \
+            or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0) \
+            or (getattr(self.config, "use_codex_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
             combined_und_images = und_image
             if aux_image is not None:# and aux_image.sum() != 0:
                 if combined_und_images is not None:
@@ -1627,7 +1787,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
                     aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
-            if (not getattr(self.config, "use_vit_regression_head", False)) or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
+            if (not getattr(self.config, "use_vit_regression_head", False)) \
+                or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
             # --- B. Main LLM Forward (Understanding) ---
                 with torch.no_grad():
                     position_ids = torch.cumsum(attention_mask, dim=1) - 1
@@ -1773,7 +1934,19 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
-                if getattr(self.config, "use_vit_cls_regression_head", False):
+                if getattr(self.config, "use_codex_vit_regression_head", False):
+                    locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
+                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_aux_image = aux_image[loc_indices]
+                    locbrh_actions_pred = self._forward_codex_vit_regression_head(
+                        locbrh_und_image,
+                        locbrh_aux_image,
+                    )
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                elif getattr(self.config, "use_vit_cls_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image = und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
@@ -1781,7 +1954,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         locbrh_und_image,
                         locbrh_aux_image,
                     )
-                    masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
 
                 elif getattr(self.config, "use_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
@@ -1799,7 +1975,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     if getattr(self.config, "is_action_dit_projector", False):
                         locbrh_concat_feature = self.get_model().action_dit_projector(locbrh_concat_feature)
                     locbrh_actions_pred = self.get_model().regression_loc_head(locbrh_concat_feature)
-                    masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
 
                 else:
                     # actions: [BS, 1, 5]
@@ -2109,7 +2288,45 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Aux Image = Original Map (und_image passed in forward, which is actually map for Gen task)
         # Prompt = Loc Prompt (aux_loc_input_ids)
 
-        if getattr(self.config, "use_vit_cls_regression_head", False):
+
+
+
+        if getattr(self.config, "use_codex_vit_regression_head", False):
+            # 临时冻结 Action Dit
+            self.model.vit_loc_fusion.requires_grad_(False)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(False)
+                self.model.action_dit_projector.requires_grad_(False)
+            self.model.regression_loc_head.requires_grad_(False)
+
+            self.model.vit_loc_fusion.eval()
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.eval()
+                self.model.action_dit_projector.eval()
+            self.model.regression_loc_head.eval()
+
+            with torch.no_grad():
+                actions_pred = self._forward_codex_vit_regression_head(
+                    pred_pixels_input,
+                    und_image_map,
+                )
+                if getattr(self.config, "loc_use_circular_loss", True):
+                    masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                else:
+                    masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+
+            self.model.vit_loc_fusion.requires_grad_(True)
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.requires_grad_(True)
+                self.model.action_dit_projector.requires_grad_(True)
+            self.model.regression_loc_head.requires_grad_(True)
+
+            self.model.vit_loc_fusion.train()
+            if getattr(self.config, "is_action_dit_projector", False):
+                self.model.action_dit_norm.train()
+                self.model.action_dit_projector.train()
+            self.model.regression_loc_head.train()
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
             # 临时冻结 Action Dit
             if getattr(self.config, "is_action_dit_projector", False):
                 self.model.action_dit_norm.requires_grad_(False)
@@ -2126,7 +2343,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     pred_pixels_input,
                     und_image_map,
                 )
-                masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+                if getattr(self.config, "loc_use_circular_loss", True):
+                    masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                else:
+                    masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
 
             if getattr(self.config, "is_action_dit_projector", False):
                 self.model.action_dit_norm.requires_grad_(True)
@@ -2193,7 +2413,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     if getattr(self.config, "is_action_dit_projector", False):
                         concat_feature = self.get_model().action_dit_projector(concat_feature)
                     actions_pred = self.get_model().regression_loc_head(concat_feature)
-                    masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+                    if getattr(self.config, "loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
 
                 # 恢复训练 Action Dit
                 if getattr(self.config, "is_action_dit_projector", False):
@@ -2812,8 +3035,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         Run inference for Localization task using Flow Matching Euler Solver.
         Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
         """
-
-        if getattr(self.config, "use_vit_cls_regression_head", False):
+        if getattr(self.config, "use_codex_vit_regression_head", False):
+            actions_pred = self._forward_codex_vit_regression_head(und_image, aux_image,)
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
             return self._forward_vit_regression_head(und_image, aux_image)
 
         # 1. Get Vision Features
