@@ -3036,7 +3036,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         Adapts the logic from `forward` (Right-Shift & Fill) to ensure consistency.
         """
         if getattr(self.config, "use_codex_vit_regression_head", False):
-            actions_pred = self._forward_codex_vit_regression_head(und_image, aux_image,)
+            return  self._forward_codex_vit_regression_head(und_image, aux_image,)
         elif getattr(self.config, "use_vit_cls_regression_head", False):
             return self._forward_vit_regression_head(und_image, aux_image)
 

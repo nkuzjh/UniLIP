@@ -679,8 +679,13 @@ def main():
 
     model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
     model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
+    model.config.use_codex_vit_regression_head = csgo_config.get("use_codex_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
+    model.config.loc_use_circular_loss = csgo_config.get("loc_use_circular_loss", True)
+    model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
+    model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
+    model.config.loc_angle_loss_weight = csgo_config.get("loc_angle_loss_weight", 2.0)
 
     model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", False)
 
