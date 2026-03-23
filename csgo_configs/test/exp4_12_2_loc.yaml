@@ -10,7 +10,7 @@ is_action_dit_dense_timestep: True
 alpha_loc_loss: 2  # 当is_multi_task_balanced==False时失效
 
 is_loc_aux_loss: False  # 当is_multi_task_balanced==False时失效
-# alpha_loc_aux_loss: 0.1  # 当is_multi_task_balanced==False或is_loc_aux_loss==False时失效
+# alpha_loc_aux_loss: 0.1  # 当is_multi_task_balanced==False时失效
 
 is_multi_task_balanced: False
 task_mix_ratio: 1.0 # 当is_multi_task_balanced==True时失效
@@ -25,7 +25,7 @@ use_pi05_action_dit: True
 pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
 
 
-img_size: 224
+img_size: 448
 
 
 ### data
@@ -43,6 +43,14 @@ is_lora: False
 
 
 ### infer
-# ckpt_path: "outputs/csgo_1b/exp2/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
-# guidance_scale: 4.5
-# batch_size: 1
+ckpt_path: "outputs/csgo_1b/exp4_12_2/checkpoint-23450/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+# is_conti_gen: True
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+# action_dit_layer: 24
+action_dim: 5
+
+# lora_r: 16 #仅在inference时生效，且要和训练时启动命令的参数一致
