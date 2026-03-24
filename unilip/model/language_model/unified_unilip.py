@@ -617,7 +617,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                 )
                 fused_dim = 256
 
-            logging.info(f"Init ViT Regression Loc Head")
+            logging.info(f"Init ViT Codex Regression Loc Head")
             self.regression_loc_head = nn.Sequential(
                 nn.Linear(fused_dim, 256),
                 nn.LayerNorm(256),
@@ -646,7 +646,7 @@ class Unified_UniLIP_InternVL_MetaModel:
                 )
                 regression_loc_head_input_dim = 256
 
-            logging.info(f"Init ViT Regression Loc Head")
+            logging.info(f"Init ViT CLS Regression Loc Head")
             self.regression_loc_head = nn.Sequential(
                 nn.Linear(regression_loc_head_input_dim, 256),
                 nn.LayerNorm(256),

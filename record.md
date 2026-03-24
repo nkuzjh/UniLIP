@@ -650,6 +650,28 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 **eval_csgo_loc.py** 65: 8000 67: 23450
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_13_4_loc.yaml      ```
 
+#### exp4_13_4_1
+- exp4_6_3
+<!-- - action_dit_layer 24 -->
+- bs 128
+- is_aciton_dit_vae_small_init: True
+- logger + wandb => Trainer
+
+
+- use_pi05_action_dit=False
+- use_vit_regression_head: False
+- use_vit_cls_regression_head: False
+- use_codex_vit_regression_head: True
+- loc_use_circular_loss: True (loc_xy_loss_weight: 1.0 loc_z_loss_weight: 1.0 loc_angle_loss_weight: 2.0)
+- img_size=224
+- fix_vit: False
+- is_lora: True
+
+- action_dit_projector_lr: 1e-3
+- lr=5e-4
+
+```     CUDA_VISIBLE_DEVICES=0 MASTER_ADDR=127.0.0.1 MASTER_PORT=29506 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_13_4_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_13_4_1 --num_train_epochs 50 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 8000 --save_total_limit 3 --learning_rate 5e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --fix_vit False --lora_r 16      ```
+**eval_csgo_loc.py**
 
 ### exp4_13_5
 - exp4_6_3
@@ -671,6 +693,28 @@ MASTER_ADDR=127.0.0.1 MASTER_PORT=29505 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1
 ```     CUDA_VISIBLE_DEVICES=5 MASTER_ADDR=127.0.0.1 MASTER_PORT=29508 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_13_5.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_13_5 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 8000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --fix_vit False      ```
 **eval_csgo_loc.py** fst h800 23400
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp4_13_5_loc.yaml      ```
+
+#### exp4_13_5_1
+- exp4_6_3
+<!-- - action_dit_layer 24 -->
+- bs 128
+- is_aciton_dit_vae_small_init: True
+- logger + wandb => Trainer
+
+- use_pi05_action_dit=False
+- use_vit_regression_head: False
+- use_vit_cls_regression_head: False
+- use_codex_vit_regression_head: True
+- loc_use_circular_loss: True (loc_xy_loss_weight: 1.0 loc_z_loss_weight: 1.0 loc_angle_loss_weight: 2.0)
+- img_size=224
+- fix_vit: False
+- is_lora: False
+
+- action_dit_projector_lr: 1e-3
+- lr=5e-4
+
+```     CUDA_VISIBLE_DEVICES=5 MASTER_ADDR=127.0.0.1 MASTER_PORT=29508 RANK=0 LOCAL_RANK=0 WORLD_SIZE=1 python train_csgo.py --csgo_config csgo_configs/exp4_13_5_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp4_13_5_1 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 8000 --save_total_limit 3 --learning_rate 5e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --fix_vit False      ```
+**eval_csgo_loc.py**
 
 ### exp4_13_6
 - exp4_6_3

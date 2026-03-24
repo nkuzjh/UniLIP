@@ -65,7 +65,7 @@ def concat_images_horizontal_resize(img1: Image.Image, img2: Image.Image) -> Ima
 # ==========================================
 # 1. 核心逻辑: Metric 计算 (升级版)
 # ==========================================
-def calculate_metrics(results, ckpt_path):
+def calculate_metrics(results, ckpt_path, csgo_config=None):
     """
     计算定位任务的核心指标 (包含 L2 Norm, SmoothL1, MSE)
     results: List[Dict], 包含 'gt', 'pred' (已经是反归一化后的物理坐标)
@@ -146,6 +146,29 @@ def calculate_metrics(results, ckpt_path):
     mse_loss_5d = F.mse_loss(abs_diff, torch.zeros_like(abs_diff))
     smooth_l1_loss_5d = F.smooth_l1_loss(abs_diff, torch.zeros_like(abs_diff), beta=1.0)
 
+    train_aligned_loc_loss = None
+    train_aligned_total_loss = None
+    if csgo_config is not None:
+        norm_diff = pred_norm - gt_norm
+        use_circular = csgo_config.get("loc_use_circular_loss", True)
+        xy_w = float(csgo_config.get("loc_xy_loss_weight", 1.0))
+        z_w = float(csgo_config.get("loc_z_loss_weight", 1.0))
+        angle_w = float(csgo_config.get("loc_angle_loss_weight", 2.0))
+        alpha_loc = float(csgo_config.get("alpha_loc_loss", 1.0))
+
+        xy_loss = F.smooth_l1_loss(pred_norm[:, :2], gt_norm[:, :2], reduction="none", beta=1.0).mean(dim=-1)
+        z_loss = F.smooth_l1_loss(pred_norm[:, 2:3], gt_norm[:, 2:3], reduction="none", beta=1.0).mean(dim=-1)
+        if use_circular:
+            angle_delta = torch.remainder(norm_diff[:, 3:5] + 0.5, 1.0) - 0.5
+            angle_loss = F.smooth_l1_loss(
+                angle_delta, torch.zeros_like(angle_delta), reduction="none", beta=1.0
+            ).mean(dim=-1)
+        else:
+            angle_loss = F.smooth_l1_loss(pred_norm[:, 3:5], gt_norm[:, 3:5], reduction="none", beta=1.0).mean(dim=-1)
+
+        train_aligned_loc_loss = (xy_loss * xy_w + z_loss * z_w + angle_loss * angle_w).mean().item()
+        train_aligned_total_loss = train_aligned_loc_loss * alpha_loc
+
     metrics = {
         "Norm_L2_XY": norm_l2_xy,
         "Norm_L2_5D": norm_l2_5d,
@@ -157,12 +180,11 @@ def calculate_metrics(results, ckpt_path):
         "Pitch_Dist": pitch_dist,
         "Yaw_Dist": yaw_dist,
 
-        # 顺便保留单项的平均绝对误差 (L1)
-        "Norm_L1_X": abs_diff[:, 0].mean().item(),
-        "Norm_L1_Y": abs_diff[:, 1].mean().item(),
-        "Norm_L1_Z": abs_diff[:, 2].mean().item(),
-        "Norm_L1_Pitch": abs_diff[:, 3].mean().item(),
-        "Norm_L1_Yaw": abs_diff[:, 4].mean().item(),
+        "L1_X": abs_diff[:, 0].mean().item(),
+        "L1_Y": abs_diff[:, 1].mean().item(),
+        "L1_Z": abs_diff[:, 2].mean().item(),
+        "L1_Pitch": abs_diff[:, 3].mean().item(),
+        "L1_Yaw": abs_diff[:, 4].mean().item(),
 
         "L2_XY": l2_xy,       # 实际上等于 XY_Dist
         "L2_5D": l2_5d,
@@ -171,6 +193,13 @@ def calculate_metrics(results, ckpt_path):
 
         "ckpt_path": ckpt_path,
     }
+
+    if train_aligned_loc_loss is not None:
+        metrics["TrainAligned_LocLoss"] = train_aligned_loc_loss
+        metrics["TrainAligned_TotalLoss"] = train_aligned_total_loss
+
+
+
     return metrics
 
 # ==========================================
@@ -348,13 +377,23 @@ class CSGOLocInferenceDataset(Dataset):
             with open(split_path, "r", encoding="utf-8") as f:
                 positions_data = json.load(f)
 
+            train_split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/train_split.json"
+            if os.path.exists(train_split_path):
+                with open(train_split_path, "r", encoding="utf-8") as f:
+                    z_ref_data = json.load(f)
+                z_ref_source = "train_split"
+            else:
+                z_ref_data = positions_data
+                z_ref_source = "test_split(fallback)"
+
             max_z, min_z = -float("inf"), float("inf")
-            for pos_data in positions_data:
+            for pos_data in z_ref_data:
                 if pos_data["z"] > max_z:
                     max_z = pos_data["z"]
                 if pos_data["z"] < min_z:
                     min_z = pos_data["z"]
             self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+            print(f"Using z range from {z_ref_source} for map {map_name}: [{min_z:.4f}, {max_z:.4f}]")
 
             for pos_data in positions_data:
                 self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
@@ -440,6 +479,32 @@ class CSGOLocInferenceDataset(Dataset):
 
         }
 
+def validate_critical_checkpoint_keys(load_msg, csgo_config):
+    missing_keys = getattr(load_msg, "missing_keys", [])
+    required_prefixes = []
+    if csgo_config.get("use_codex_vit_regression_head", False):
+        required_prefixes.extend(["model.regression_loc_head.", "model.vit_loc_fusion."])
+    elif csgo_config.get("use_vit_cls_regression_head", False):
+        required_prefixes.extend(["model.regression_loc_head."])
+    elif csgo_config.get("use_vit_regression_head", False):
+        required_prefixes.extend(["model.regression_loc_head.", "model.cross_view_fusion."])
+    else:
+        required_prefixes.extend(["model.action_out_proj.", "model.action_in_proj.", "model.action_dit."])
+
+    if csgo_config.get("is_action_dit_projector", False):
+        required_prefixes.extend(["model.action_dit_norm.", "model.action_dit_projector."])
+
+    critical_missing = []
+    for prefix in required_prefixes:
+        if any(k.startswith(prefix) for k in missing_keys):
+            critical_missing.append(prefix)
+
+    print(f"Checkpoint load summary: missing={len(missing_keys)}, unexpected={len(getattr(load_msg, 'unexpected_keys', []))}")
+    if critical_missing:
+        raise RuntimeError(
+            "Critical checkpoint keys are missing after load_state_dict(strict=False): "
+            + ", ".join(critical_missing)
+        )
 
 # def collate_fn(batch): return batch
 
@@ -722,6 +787,8 @@ def main():
     msg = model.load_state_dict(state_dict, strict=False)
     print(msg)
 
+    validate_critical_checkpoint_keys(msg, csgo_config)
+
     # 7. Set Model Eval
     model.to(device=device, dtype=torch.bfloat16)
     model.eval()
@@ -806,7 +873,7 @@ def main():
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
     print("📈 Calculating Metrics...")
-    metrics = calculate_metrics(results_json, ckpt_path)
+    metrics = calculate_metrics(results_json, ckpt_path, csgo_config=csgo_config)
     print(json.dumps(metrics, indent=4))
 
     # Save Metrics & Results
