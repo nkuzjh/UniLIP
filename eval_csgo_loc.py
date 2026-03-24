@@ -323,6 +323,7 @@ class InferenceArgs:
         lora_weight_path  = ""
         lora_bias = "none"
 
+from csgo_datasets.unified_task_dataset import _build_loc_prompt_cache, _build_map_tensor_cache, _build_csgo_entry
 
 # Dataset
 class CSGOLocInferenceDataset(Dataset):
@@ -330,25 +331,33 @@ class CSGOLocInferenceDataset(Dataset):
         self.config = config
         self.tokenizer = tokenizer
         self.data_dir = config['data_dir']
-        self.map_names = config['val_maps']
+        self.map_names = config.get('test_maps', config.get('val_maps', []))
         self.map_path_dict = map_path_dict
         self.image_processor = image_processor
         self.image_aspect_ratio = image_aspect_ratio
         self.data_entries = []
         self.map_z_range = {}
+        self.img_size = config.get("img_size", 448)
+        self.is_resize_224 = self.img_size == 224
 
         for map_name in self.map_names:
             split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/test_split.json"
-            if not os.path.exists(split_path): continue
-            with open(split_path, "r", encoding="utf-8") as f: positions_data = json.load(f)
-            zs = [d['z'] for d in positions_data]
-            self.map_z_range[map_name] = {'max_z': max(zs), 'min_z': min(zs)}
+            if not os.path.exists(split_path):
+                continue
+            print(f"Loading CS2 Data Split {split_path}...")
+            with open(split_path, "r", encoding="utf-8") as f:
+                positions_data = json.load(f)
+
+            max_z, min_z = -float("inf"), float("inf")
             for pos_data in positions_data:
-                self.data_entries.append({
-                    'map': map_name, 'file_frame': pos_data['file_frame'],
-                    'x': pos_data['x'], 'y': pos_data['y'], 'z': pos_data['z'],
-                    'angle_v': pos_data['angle_v'], 'angle_h': pos_data['angle_h']
-                })
+                if pos_data["z"] > max_z:
+                    max_z = pos_data["z"]
+                if pos_data["z"] < min_z:
+                    min_z = pos_data["z"]
+            self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+
+            for pos_data in positions_data:
+                self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
 
         if config['debug'] and config.get('debug_num_val_data', False):
             sampled_num = config.get('debug_num_val_data', len(self.data_entries))
@@ -368,12 +377,22 @@ class CSGOLocInferenceDataset(Dataset):
         for map_name, filename in map_path_dict.items():
             path = f"{config['data_dir']}/{map_name}/{filename}"
             if os.path.exists(path):
-                img = Image.open(path).convert('RGB')
-                # 预先做 Resize 以省内存 (如果 processor 需要 448)
-                # img = img.resize((448, 448))
+                img = Image.open(path).convert('RGB').resize((448, 448))
                 self.map_images[map_name] = img
             else:
                 print(f"Map image not found: {path}")
+
+        self.map_tensor_cache_448, self.map_tensor_cache_224 = _build_map_tensor_cache(
+            self.map_images,
+            self.image_processor,
+            self.image_aspect_ratio,
+            self.is_resize_224,
+        )
+        self.loc_prompt_cache = _build_loc_prompt_cache(
+            self.map_z_range.keys(),
+            self.tokenizer,
+            self.img_size,
+        )
 
         # 仅取前N个做测试，避免跑太久 (可选)
         # self.data_entries = self.data_entries[:50]
@@ -387,54 +406,20 @@ class CSGOLocInferenceDataset(Dataset):
         # map_img_path = f"{self.data_dir}/{map_name}/{self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')}"
         # map_img = Image.open(map_img_path).convert('RGB')
         map_img = self.map_images.get(map_name).copy()
-        ext = ".jpg" if "preprocessed" in self.data_dir else ".png"
+        map_tensor_448 = self.map_tensor_cache_448[map_name]
+        tensor_map = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
+
+        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         fps_path = f"{self.data_dir}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img = Image.open(fps_path).convert('RGB')
-        all_images = [fps_img, map_img]
-        process_images = img_process(
-            all_images,
-            self.image_processor,
-            self.image_aspect_ratio
-        ) # shape: [2, C, H, W]
-        # 拆分出 Tensor
-        if self.config.get("img_size", 448)==224:
-            tensor_fps = img_resize_transform(process_images[:-1]) # [1, C, H, W]
-            tensor_map = img_resize_transform(process_images[-1:]) # [1, C, H, W]
-        else:
-            tensor_fps = process_images[:-1] # [1, C, H, W]
-            tensor_map = process_images[-1:] # [1, C, H, W]
+        fps_tensor_448 = img_process([fps_img], self.image_processor, self.image_aspect_ratio)
+        tensor_fps = img_resize_transform(fps_tensor_448) if self.is_resize_224 else fps_tensor_448
 
-        # --- 准备 Prompt 数据 ---
-        z_min = self.map_z_range[map_name]['min_z']
-        z_max = self.map_z_range[map_name]['max_z']
-        z_norm = (data['z'] - z_min) / (z_max - z_min + 1e-6)
+        pose_dict = data['pose_dict']
+        gt_norm_tensor = data['actions']
+        loc_cache = self.loc_prompt_cache[map_name]
 
-        # 角度归一化 (0 ~ 1)
-        angle_h_norm = data['angle_h'] / (2 * np.pi) # Yaw
-        angle_v_norm = data['angle_v'] / (2 * np.pi) # Pitch
 
-        # 构造 normalized GT Tensor [x, y, z, pitch, yaw]
-        # x, y 原本是 0-1024，归一化除以 1024
-        loc_list = [data['x'] / 1024.0, data['y'] / 1024.0, z_norm, angle_v_norm, angle_h_norm]
-        gt_norm_tensor = torch.tensor(loc_list, dtype=torch.float32)
-
-        pose_dict = {
-            'x': data['x'], 'y': data['y'], 'z': data['z'],
-            'angle_v': (data['angle_v'] / (2 * np.pi)) * 360.0,
-            'angle_h': (data['angle_h'] / (2 * np.pi)) * 360.0
-        }
-
-        # Text Prompt
-        user_text_loc = get_loc_prompt(map_name)
-        sources_loc = {
-            "conversations": [
-                {"from": "human", "value": user_text_loc},
-                {"from": "gpt", "value": ""} # Assistant 回复位置Token
-            ]
-        }
-        # Tokenize Loc
-        sources_loc, _ = preprocess_multimodal(copy.deepcopy([sources_loc["conversations"]]), self.config.get("img_size", 448))
-        pre_dict_loc = preprocess(sources_loc, self.tokenizer, has_image=True)
 
         return {
             "task_id": 0,
@@ -442,16 +427,19 @@ class CSGOLocInferenceDataset(Dataset):
             "ids": data['file_frame'],
             "und_image": tensor_fps,   # Input: FPS
             "aux_image": tensor_map,   # Aux: Map
-            "input_ids": pre_dict_loc["input_ids"][0],
-            "labels": pre_dict_loc["labels"][0],
+            "input_ids": loc_cache["input_ids"],
+            "labels": loc_cache["labels"],
             "actions": gt_norm_tensor,
 
-            "raw_prompt": user_text_loc,
+            "raw_prompt": loc_cache["raw_prompt"],
             "map_img": map_img,
             "fps_img": fps_img,
             "pose_dict": pose_dict,
-            "z_range": self.map_z_range[map_name]
+            "z_range": {'min_z': data['z_min'], 'max_z': data['z_max']}
+
+
         }
+
 
 # def collate_fn(batch): return batch
 
@@ -674,7 +662,7 @@ def main():
     print(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     # 3. Init Action Modules
-
+    model.config.img_size = getattr(inference_args, "img_size", csgo_config.get("img_size", False))
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
 
     model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
@@ -682,6 +670,10 @@ def main():
     model.config.use_codex_vit_regression_head = csgo_config.get("use_codex_vit_regression_head", False)
     model.config.use_pi05_action_dit = csgo_config.get("use_pi05_action_dit", False)
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
+    model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
+    model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
+    model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", False)
     model.config.loc_use_circular_loss = csgo_config.get("loc_use_circular_loss", True)
     model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
     model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
@@ -776,10 +768,11 @@ def main():
                 num_steps=10
             ).squeeze(1).float().cpu()
 
-        for sample_idx in range(csgo_config["batch_size"]):
+        current_bs = pred_norm_loc_tensor.size(0)
+        for sample_idx in range(current_bs):
             # 1. 归一化数据
             pred_norm = pred_norm_loc_tensor[sample_idx]
-            gt_norm = actions[sample_idx]
+            gt_norm = actions[sample_idx].squeeze(0).float().cpu()
 
             # 2. 物理数据 (用于可视化)
             pred_phys = unnormalize_pose(pred_norm, z_range[sample_idx])
