@@ -44,7 +44,7 @@ is_lora: True
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp2_2/checkpoint-3000/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
+ckpt_path: "outputs/csgo_1b/exp2_2/checkpoint-23400/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
 guidance_scale: 4.5
 batch_size: 1
 # is_conti_gen: True

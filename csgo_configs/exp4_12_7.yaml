@@ -41,6 +41,7 @@ test_maps: ['de_dust2','de_nuke', 'de_ancient']
 is_lora: False
 
 
+
 ### infer
 # ckpt_path: "outputs/csgo_1b/exp2/model.safetensors" #"outputs_csgo_1b" #"UniLIP-1B"
 # guidance_scale: 4.5

@@ -1736,7 +1736,6 @@ def train(attn_implementation=None):
                 data_args.image_processor,
                 num_samples=20,
                 save_path="_debug_dataset_samples.jpg",
-                is_multi_task=csgo_config.get("is_multi_task", False)
             )
         else:
             visualize_dataset_samples_v1(
@@ -1777,7 +1776,7 @@ def train(attn_implementation=None):
         callbacks=[unilip_log_callback],
     )
     unilip_log_callback.bind_trainer(trainer)
-    print("callbacks: ", trainer.callback_handler.callback_list)
+    # print("callbacks: ", trainer.callback_handler.callback_list)
     # trainer.remove_callback(PrinterCallback)
     # trainer.remove_callback(ProgressCallback)
 
@@ -1789,6 +1788,32 @@ def train(attn_implementation=None):
     #     for i, (n, p) in enumerate(trainer.model.named_parameters()):
     #         stat.append([i, n, p.shape, p.requires_grad])
     #     logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+    from tabulate import tabulate
+
+    if trainer.is_world_process_zero():
+        trainer.create_optimizer() # 步数随便填个大概就行，提供给 optimizer 初始化用，后续 trainer.train() 会根据实际步数重新创建 scheduler 和 optimizer 的 state，不受这里的 num_training_steps 影响
+        # 1. 建立 [参数内存地址 -> 学习率] 的映射字典
+        param_id_to_lr = {}
+
+        # 注意：确保此时 trainer.optimizer 已经被初始化！
+        if trainer.optimizer is not None:
+            for group in trainer.optimizer.param_groups:
+                group_lr = group.get('initial_lr', group.get('lr', 'Unknown'))
+                for p in group['params']:
+                    param_id_to_lr[id(p)] = group_lr
+        else:
+            logging.warning("Trainer optimizer is not initialized yet. LR will show as 'N/A'.")
+
+        # 2. 收集统计信息
+        stat = []
+        for i, (n, p) in enumerate(trainer.model.named_parameters()):
+            # 通过 id(p) 查找对应的学习率，如果找不到（比如被冻结没放进优化器），设为 N/A 或 0.0
+            lr = param_id_to_lr.get(id(p), "N/A" if not p.requires_grad else "Missing")
+            stat.append([i, n, p.shape, p.requires_grad, lr])
+
+        # 3. 打印表格
+        logging.info("\n" + tabulate(stat, headers=["idx", "name", "shape", "trainable", "lr"]))
+
 
 
     # 把回调加入 Trainer

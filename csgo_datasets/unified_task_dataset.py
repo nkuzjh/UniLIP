@@ -822,7 +822,7 @@ class UniLIPMultiTaskDataset(Dataset):
                 ]
             }
             # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-            sources, _ = preprocess_multimodal(copy.deepcopy([sources["conversations"]]), self.config.get("img_size", 448))
+            sources, _ = preprocess_multimodal([sources["conversations"]], self.config.get("img_size", 448))
             # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
             preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             input_ids = preprocess_dict["input_ids"][0]
@@ -1271,7 +1271,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             ]
         }
         # 处理 <image> token, 替换为 <img><IMG_CONTEXT>*256<img>
-        sources_gen, _ = preprocess_multimodal(copy.deepcopy([sources_gen["conversations"]]), self.config.get("img_size", 448))
+        sources_gen, _ = preprocess_multimodal([sources_gen["conversations"]], self.config.get("img_size", 448))
         # Tokenize 文本得到 input_ids 和 labels(已替换IGNORE_INDEX); has_image=True 防止多模态输入时, tokenizer 报错
         pre_dict_gen = preprocess(sources_gen, self.tokenizer, has_image=True)
 
