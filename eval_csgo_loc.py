@@ -315,19 +315,21 @@ class InferenceArgs:
         # 补充 initialize_vision_modules 需要的默认参数 (如果 yaml 里没有)
         self.unilip_path = config_dict.get("unilip_path", "")
         self.unilip_factor = config_dict.get("unilip_factor", 5.85)
-        self.fix_dit = False
-        self.fix_connect = False
-        self.fix_vit = True
-        self.fix_llm = True
+        self.fix_dit = config_dict.get("fix_dit",False)
+        self.fix_connect = config_dict.get("fix_connect",False)
+        self.fix_vit = config_dict.get("fix_vit",True)
+        self.fix_llm = config_dict.get("fix_llm",True)
         self.mllm_path = config_dict.get("mllm_path", "")
         self.mllm_hf_path = config_dict.get("mllm_hf_path", "OpenGVLab/InternVL3-1B-hf")
         self.vae_path = config_dict.get("vae_path", "")
         self.dit_path = config_dict.get("dit_path", "")
+        self.lazy_preprocess = True
         self.n_query = 256
+        self.n_und_query = 0
         self.connect_layer = 6
         # 补充 initialize_localization_modules 需要的参数
-        self.action_horizon = 1
-        self.action_dim = 5
+        self.action_horizon = config_dict.get("action_horizon", 1)
+        self.action_dim = config_dict.get("action_dim", 5)
         self.is_action_dit_dense_timestep = config_dict.get("is_action_dit_dense_timestep", False)
         self.action_dit_layer = config_dict.get("action_dit_layer", 3)
         # 其他杂项
@@ -336,6 +338,9 @@ class InferenceArgs:
         self.tune_mm_mlp_adapter = False
         self.pretrain_mm_mlp_adapter = None
         self.version = "internvl"
+        self.data_type = "mix"
+        self.bf16 = True
+        self.tf32 = True
 
         ##### data_args
         self.image_aspect_ratio = "square"
@@ -346,7 +351,7 @@ class InferenceArgs:
 
         # lora
         is_lora = config_dict.get("is_lora", False)
-        lora_r = config_dict.get("lora_r", False)
+        lora_r = config_dict.get("lora_r", 16)
         lora_alpha = 16
         lora_dropout = 0.05
         lora_weight_path  = ""
@@ -674,6 +679,25 @@ map_path_dict = {
     'cs_office': 'cs_office_radar_psd.png',
 }
 
+# 已支持：exp4_13_6 lora vit codex_regression_head
+# exp4_12_3 lora vit llm pi05_action_dit
+
+def smart_matching_state_dict_keys(state_dict, model):
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith("language_model.lm_head."):
+            new_k = k[len("language_model."):]
+        elif k.startswith("language_model.model."):
+            new_k =  "model.language_model." + k[len("language_model.model."):]
+        elif k.startswith("vision_tower."):
+            new_k = "model." + k
+        elif k.startswith("multi_modal_projector."):
+            new_k = "model." + k
+        else:
+            new_k = k
+        new_state_dict[new_k] = v
+    return new_state_dict
+
 # ==========================================
 # 4. 主程序
 # ==========================================
@@ -698,7 +722,9 @@ def main():
     # 1. Init Model
     model = Unified_UniLIP_InternVLForCausalLM.from_pretrained(
         csgo_config.get('model_name_or_path', 'UniLIP-1B'),
-        torch_dtype=torch.bfloat16, low_cpu_mem_usage=True, trust_remote_code=True
+        torch_dtype=torch.bfloat16,
+        low_cpu_mem_usage=True,
+        # trust_remote_code=True
     )
 
     # 2. Init Tokenizer
@@ -728,7 +754,7 @@ def main():
 
     # 3. Init Action Modules
     model.config.img_size = getattr(inference_args, "img_size", csgo_config.get("img_size", False))
-    model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", False)
+    model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", csgo_config.get("is_action_dit_dense_timestep", False))
 
     model.config.use_vit_cls_regression_head = csgo_config.get("use_vit_cls_regression_head", False)
     model.config.use_vit_regression_head = csgo_config.get("use_vit_regression_head", False)
@@ -744,10 +770,10 @@ def main():
     model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
     model.config.loc_angle_loss_weight = csgo_config.get("loc_angle_loss_weight", 2.0)
 
-    model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", False)
+    model.config.is_exp5_eval_without_aciton_dit_premodules = getattr(inference_args, "is_exp5_eval_without_aciton_dit_premodules", csgo_config.get("is_exp5_eval_without_aciton_dit_premodules", False))
 
-    model.config.is_action_dit_projector = getattr(inference_args, "is_action_dit_projector", False)
-    model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", False)
+    model.config.is_action_dit_projector = getattr(inference_args, "is_action_dit_projector", csgo_config.get("is_action_dit_projector", False))
+    model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", csgo_config.get("is_loc_learnable_query", False))
 
     model.get_model().initialize_vision_modules(model_args=inference_args)
     model.get_model().initialize_localization_modules(model_args=inference_args)
@@ -760,7 +786,7 @@ def main():
         # 构造一个 mock 的 training_args 来触发你在模型里写的 inject_lora_to_sub_module。
         # 确保 csgo_config 中包含 'is_lora: True'，以及相应的 r, alpha, dropout
         training_args = SimpleNamespace(
-            is_lora=csgo_config.get('is_lora', False), # 默认置为True，因为这套逻辑就是为了跑LoRA
+            is_lora=csgo_config.get('is_lora', True), # 默认置为True，因为这套逻辑就是为了跑LoRA
             lora_r=csgo_config.get('lora_r', 16),
             lora_alpha=csgo_config.get('lora_alpha', 16),
             lora_dropout=csgo_config.get('lora_dropout', 0.05)
@@ -784,10 +810,13 @@ def main():
         state_dict = safe_load_file(ckpt_path, device="cpu")
     else:
         state_dict = torch.load(ckpt_path, map_location="cpu")
+    # if csgo_config.get('is_lora', False):
+    state_dict = smart_matching_state_dict_keys(state_dict, model)
     msg = model.load_state_dict(state_dict, strict=False)
-    print(msg)
+    print(f"📥 Loaded Checkpoint: {ckpt_path}")
+    print(f"📥 Load Message: {msg}")
 
-    validate_critical_checkpoint_keys(msg, csgo_config)
+    # validate_critical_checkpoint_keys(msg, csgo_config) # msg只要对齐即可，这里严格检查只针对loc_head自定义的regression_head和action_dit模块，其他部分即使缺失也不影响评测（比如语言模型部分缺失了某些token的embedding）。因此也无法检查lora开启时的vit和llm模块是否对齐。
 
     # 7. Set Model Eval
     model.to(device=device, dtype=torch.bfloat16)

@@ -43,7 +43,7 @@ is_lora: True
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp4_12_5/checkpoint-16000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp4_12_5/checkpoint-23400/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 # is_conti_gen: True
@@ -54,3 +54,7 @@ mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
 action_dim: 5
 
 lora_r: 16 #仅在inference时生效，且要和训练时启动命令的参数一致
+fix_vit: True  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_llm: True  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_dit: True  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_connect: True  # 仅在inference时生效，且要和训练时启动命令的参数一致
