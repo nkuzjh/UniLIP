@@ -1,0 +1,578 @@
+2026-03-22 13:12:14 - INFO - model_args: ModelArguments(model_name_or_path='UniLIP-1B', version='internvl', freeze_backbone=True, tune_mm_mlp_adapter=False, vision_tower=None, gen_vision_tower=None, mm_vision_select_layer=-1, pretrain_mm_mlp_adapter=None, pretrain_gen_mlp_adapter=None, vision_tower_pretrained=None, mm_projector_type='linear', gen_projector_type='linear', mm_use_im_start_end=False, mm_use_im_patch_token=False, mm_patch_merge_type='flat', mm_vision_select_feature='patch', n_query=256, n_und_query=0, gen_pooling='all', unilip_path='', unilip_factor=10.6, weighting_scheme='logit_normal', fix_dit=True, fix_connect=True, fix_vit=False, fix_llm=True, connect_layer=6, mllm_path='', mllm_hf_path='OpenGVLab/InternVL3-1B-hf', vae_path='', dit_path='', action_dit_layer=3, is_action_dit_dense_timestep=False) - (2231543:train_csgo.py:1489)
+2026-03-22 13:12:14 - INFO - data_args: DataArguments(csgo_config='csgo_configs/exp4_13_5.yaml', data_path=None, lazy_preprocess=True, is_multimodal=False, csgo_image_folder='data/preprocessed_data', shortcaption_image_folder=None, data_type='mix', image_aspect_ratio='square') - (2231543:train_csgo.py:1490)
+2026-03-22 13:12:14 - INFO - training_args: TrainingArguments(
+_n_gpu=1,
+accelerator_config={'split_batches': False, 'dispatch_batches': None, 'even_batches': True, 'use_seedable_sampler': True, 'non_blocking': False, 'gradient_accumulation_kwargs': None, 'use_configured_state': False},
+action_dit_projector_lr=0.001,
+adafactor=False,
+adam_beta1=0.9,
+adam_beta2=0.999,
+adam_epsilon=1e-08,
+auto_find_batch_size=False,
+average_tokens_across_devices=True,
+batch_eval_metrics=False,
+bf16=True,
+bf16_full_eval=False,
+bits=16,
+cache_dir=None,
+data_seed=None,
+dataloader_drop_last=False,
+dataloader_num_workers=4,
+dataloader_persistent_workers=True,
+dataloader_pin_memory=True,
+dataloader_prefetch_factor=4,
+ddp_backend=None,
+ddp_broadcast_buffers=None,
+ddp_bucket_cap_mb=None,
+ddp_find_unused_parameters=None,
+ddp_timeout=1800,
+debug=[],
+deepspeed=deepspeed_scripts/zero0.json,
+disable_tqdm=False,
+do_eval=False,
+do_predict=False,
+do_train=False,
+double_quant=True,
+enable_step_timing=True,
+eval_accumulation_steps=None,
+eval_delay=0,
+eval_do_concat_batches=True,
+eval_on_start=False,
+eval_steps=None,
+eval_strategy=IntervalStrategy.NO,
+eval_use_gather_object=False,
+fp16=False,
+fp16_backend=auto,
+fp16_full_eval=False,
+fp16_opt_level=O1,
+freeze_mm_mlp_adapter=False,
+fsdp=[],
+fsdp_config={'min_num_params': 0, 'xla': False, 'xla_fsdp_v2': False, 'xla_fsdp_grad_ckpt': False},
+fsdp_min_num_params=0,
+fsdp_transformer_layer_cls_to_wrap=None,
+full_determinism=False,
+gradient_accumulation_steps=1,
+gradient_checkpointing=True,
+gradient_checkpointing_kwargs=None,
+greater_is_better=None,
+group_by_length=False,
+group_by_modality_length=False,
+half_precision_backend=auto,
+hub_always_push=False,
+hub_model_id=None,
+hub_private_repo=None,
+hub_revision=None,
+hub_strategy=HubStrategy.EVERY_SAVE,
+hub_token=<HUB_TOKEN>,
+ignore_data_skip=False,
+include_for_metrics=[],
+include_inputs_for_metrics=False,
+include_num_input_tokens_seen=no,
+include_tokens_per_second=False,
+is_action_dit_projector=False,
+is_loc_learnable_query=False,
+is_lora=False,
+jit_mode_eval=False,
+label_names=None,
+label_smoothing_factor=0.0,
+learning_rate=0.0001,
+length_column_name=length,
+liger_kernel_config=None,
+load_best_model_at_end=False,
+loc_learnable_query_lr=0.0005,
+local_rank=0,
+log_level=passive,
+log_level_replica=warning,
+log_on_each_node=True,
+logging_dir=outputs/csgo_1b/exp4_13_5/runs/Mar22_13-12-10_fstsvr11.cis.um.edu.mo,
+logging_first_step=False,
+logging_nan_inf_filter=True,
+logging_steps=1.0,
+logging_strategy=IntervalStrategy.STEPS,
+lora_alpha=16,
+lora_bias=none,
+lora_dropout=0.05,
+lora_r=64,
+lora_weight_path=,
+lr_scheduler_kwargs={'min_lr': 1e-05},
+lr_scheduler_type=SchedulerType.COSINE_WITH_MIN_LR,
+max_grad_norm=1.0,
+max_steps=-1,
+metric_for_best_model=None,
+mm_projector_lr=None,
+model_max_length=1024,
+mp_parameters=,
+mpt_attn_impl=triton,
+neftune_noise_alpha=None,
+no_cuda=False,
+num_train_epochs=50.0,
+optim=OptimizerNames.ADAMW_TORCH,
+optim_args=None,
+optim_target_modules=None,
+output_dir=outputs/csgo_1b/exp4_13_5,
+overwrite_output_dir=False,
+parallelism_config=None,
+past_index=-1,
+per_device_eval_batch_size=128,
+per_device_train_batch_size=128,
+prediction_loss_only=False,
+pretrain_path=none,
+project=huggingface,
+push_to_hub=False,
+push_to_hub_model_id=None,
+push_to_hub_organization=None,
+push_to_hub_token=<PUSH_TO_HUB_TOKEN>,
+quant_type=nf4,
+ray_scope=last,
+remove_unused_columns=False,
+report_to=['wandb'],
+restore_callback_states_from_checkpoint=False,
+resume_from_checkpoint=None,
+run_name=None,
+save_on_each_node=False,
+save_only_model=False,
+save_safetensors=True,
+save_steps=8000,
+save_strategy=SaveStrategy.STEPS,
+save_total_limit=3,
+seed=42,
+skip_memory_metrics=True,
+step_timing_sync_cuda=True,
+tf32=True,
+torch_compile=False,
+torch_compile_backend=None,
+torch_compile_mode=None,
+torch_empty_cache_steps=None,
+torchdynamo=None,
+tpu_metrics_debug=False,
+tpu_num_cores=None,
+trackio_space_id=trackio,
+use_cpu=False,
+use_legacy_prediction_loop=False,
+use_liger_kernel=False,
+use_mps_device=False,
+warmup_ratio=0.003,
+warmup_steps=0,
+weight_decay=0.0,
+) - (2231543:train_csgo.py:1491)
+2026-03-22 13:12:14 - INFO - csgo_config: {'debug': False, 'is_multi_task': True, 'is_action_dit_dense_timestep': True, 'alpha_loc_loss': 2, 'is_loc_aux_loss': False, 'is_multi_task_balanced': False, 'task_mix_ratio': 1.0, 'is_action_dit_projector': True, 'action_dit_projector_lr': 0.0005, 'is_aciton_dit_vae_small_init': True, 'use_pi05_action_dit': False, 'use_vit_regression_head': False, 'use_vit_cls_regression_head': False, 'use_codex_vit_regression_head': True, 'loc_use_circular_loss': True, 'loc_xy_loss_weight': 1.0, 'loc_z_loss_weight': 1.0, 'loc_angle_loss_weight': 2.0, 'img_size': 224, 'data_dir': 'data/preprocessed_data', 'train_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'val_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'test_maps': ['de_dust2', 'de_nuke', 'de_ancient'], 'is_lora': False} - (2231543:train_csgo.py:1492)
+2026-03-22 13:12:14 - INFO - Start Unified_UniLIP_InternVLForCausalLM.from_pretrained: UniLIP-1B - (2231543:train_csgo.py:1520)
+2026-03-22 13:12:14 - INFO - vision_select_layer: -1 - (2231543:configuration_internvl_chat.py:69)
+2026-03-22 13:12:14 - INFO - ps_version: v2 - (2231543:configuration_internvl_chat.py:70)
+2026-03-22 13:12:14 - INFO - min_dynamic_patch: 1 - (2231543:configuration_internvl_chat.py:71)
+2026-03-22 13:12:14 - INFO - max_dynamic_patch: 12 - (2231543:configuration_internvl_chat.py:72)
+2026-03-22 13:12:14 - INFO - vision_config is None. Initializing the InternVisionConfig with default values. - (2231543:configuration_internvl_chat.py:42)
+2026-03-22 13:12:14 - INFO - llm_config is None. Initializing the LlamaConfig config with default values (`LlamaConfig`). - (2231543:configuration_internvl_chat.py:46)
+2026-03-22 13:12:14 - INFO - vision_select_layer: -1 - (2231543:configuration_internvl_chat.py:69)
+2026-03-22 13:12:14 - INFO - ps_version: v1 - (2231543:configuration_internvl_chat.py:70)
+2026-03-22 13:12:14 - INFO - min_dynamic_patch: 1 - (2231543:configuration_internvl_chat.py:71)
+2026-03-22 13:12:14 - INFO - max_dynamic_patch: 6 - (2231543:configuration_internvl_chat.py:72)
+2026-03-22 13:12:15 - INFO - num_image_token: 256 - (2231543:modeling_internvl_chat.py:59)
+2026-03-22 13:12:15 - INFO - ps_version: v2 - (2231543:modeling_internvl_chat.py:60)
+2026-03-22 13:12:21 - INFO - Finish Unified_UniLIP_InternVLForCausalLM.from_pretrained: UniLIP-1B - (2231543:train_csgo.py:1528)
+2026-03-22 13:12:28 - INFO - Using conversation format: internvl - (2231543:train_csgo.py:1578)
+2026-03-22 13:12:28 - INFO - fix connect True - (2231543:unified_unilip.py:413)
+2026-03-22 13:12:28 - INFO - fix dit True - (2231543:unified_unilip.py:414)
+2026-03-22 13:12:28 - INFO - unilip load from checkpoint!!! - (2231543:unified_unilip.py:481)
+2026-03-22 13:12:28 - INFO - DiT load from checkpoint!!! - (2231543:unified_unilip.py:494)
+2026-03-22 13:12:28 - INFO - Connector load from checkpoint!!! - (2231543:unified_unilip.py:515)
+2026-03-22 13:12:28 - INFO - latent_queries load from checkpoint!!! - (2231543:unified_unilip.py:537)
+2026-03-22 13:12:28 - INFO - Init ViT Regression Loc Head - (2231543:unified_unilip.py:620)
+2026-03-22 13:12:28 - INFO - Starting codex_vit_regression_head initialize... - (2231543:unified_unilip.py:791)
+2026-03-22 13:12:29 - INFO - codex_vit_regression_head weights initialized - (2231543:unified_unilip.py:805)
+2026-03-22 13:12:35 - INFO - ✅ Enabled gradient checkpointing for vision tower - (2231543:train_csgo.py:1650)
+2026-03-22 13:12:35 - INFO - ✅ Enabled gradient checkpointing for language model - (2231543:train_csgo.py:1655)
+2026-03-22 13:12:35 - INFO - ✅ Enabled gradient checkpointing for LLM Connector - (2231543:train_csgo.py:1659)
+2026-03-22 13:12:35 - INFO - ✅ Enabled gradient checkpointing for Gen DiT - (2231543:train_csgo.py:1663)
+2026-03-22 13:12:35 - INFO - Total parameters: 1663906792 - (2231543:train_csgo.py:1682)
+2026-03-22 13:12:35 - INFO - Trainable parameters: 322503685 - (2231543:train_csgo.py:1683)
+2026-03-22 13:12:35 - INFO - trainable percent: 19.382317 % - (2231543:train_csgo.py:1684)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.embeddings.class_embedding - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.embeddings.position_embedding - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.embeddings.patch_embedding.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.embeddings.patch_embedding.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:35 - INFO -      trainable params: model.vision_tower.encoder.layers.0.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.0.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.0.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.1.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.2.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.3.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.4.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.5.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.6.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.7.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.8.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.9.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.10.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.11.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.12.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.13.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.14.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.15.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.16.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.17.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.18.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.19.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.20.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.21.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.22.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.ls1 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.ls2 - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.attn.qkv.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.attn.qkv.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.attn.proj.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.attn.proj.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.mlp.fc1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.mlp.fc1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.mlp.fc2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.mlp.fc2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.norm1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.norm1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.norm2.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vision_tower.encoder.layers.23.norm2.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.0.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.0.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.3.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.multi_modal_projector.3.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.0.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.0.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.4.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.4.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.5.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.vit_loc_fusion.net.5.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_norm.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.0.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.0.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.4.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.4.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.5.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.action_dit_projector.5.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.0.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.0.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.1.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.1.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.4.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.4.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.5.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.5.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.8.weight - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO -      trainable params: model.regression_loc_head.8.bias - (2231543:train_csgo.py:1691)
+2026-03-22 13:12:36 - INFO - trainable layers: 373 - (2231543:train_csgo.py:1692)
+2026-03-22 13:12:36 - INFO - 🔄 Loading Multi-Task CS2 Dataset... - (2231543:unified_task_dataset.py:604)
+2026-03-22 13:12:36 - INFO - Loading CS2 Data Split data/preprocessed_data/de_dust2/splits_20000_5000/train_split.json... - (2231543:unified_task_dataset.py:612)
+2026-03-22 13:12:36 - INFO - Loading CS2 Data Split data/preprocessed_data/de_nuke/splits_20000_5000/train_split.json... - (2231543:unified_task_dataset.py:612)
+2026-03-22 13:12:37 - INFO - Loading CS2 Data Split data/preprocessed_data/de_ancient/splits_20000_5000/train_split.json... - (2231543:unified_task_dataset.py:612)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_inferno/de_inferno_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_mirage/de_mirage_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_golden/de_golden_radar_tga.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_overpass/de_overpass_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_palacio/de_palacio_radar_tga.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_train/de_train_blended_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/de_vertigo/de_vertigo_blended_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/cs_agency/cs_agency_radar_tga.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/cs_italy/cs_italy_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - WARNING - Map image not found: data/preprocessed_data/cs_office/cs_office_radar_psd.png - (2231543:unified_task_dataset.py:665)
+2026-03-22 13:12:37 - INFO - ✅ Total entries: 60000 - (2231543:unified_task_dataset.py:688)
