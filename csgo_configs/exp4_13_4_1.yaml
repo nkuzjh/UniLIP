@@ -7,7 +7,7 @@ debug: False
 ### model
 is_multi_task: True
 is_action_dit_dense_timestep: True
-alpha_loc_loss: 2  # 当is_multi_task_balanced==False时失效
+alpha_loc_loss: 1  # 当is_multi_task_balanced==False时失效
 
 is_loc_aux_loss: False  # 当is_multi_task_balanced==False时失效
 # alpha_loc_aux_loss: 0.1  # 当is_multi_task_balanced==False或is_loc_aux_loss==False时失效
@@ -16,10 +16,10 @@ is_multi_task_balanced: False
 task_mix_ratio: 1.0 # 当is_multi_task_balanced==True时失效
 
 is_action_dit_projector: True
-action_dit_projector_lr: 0.001
+action_dit_projector_lr: 0.0001
 # action_dit_layer: 24 #这个参数在启动命令中实现
 
-is_aciton_dit_vae_small_init: True
+is_aciton_dit_vae_small_init: False
 
 use_pi05_action_dit: False
 # pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
