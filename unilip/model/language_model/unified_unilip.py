@@ -36,12 +36,12 @@ import transformers.modeling_utils
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
 # 修复 "Trying to backward through the graph a second time" 错误
 # =================================================================
-def _force_non_reentrant_checkpoint(func, *args, **kwargs):
-    # 强制覆盖参数
-    kwargs['use_reentrant'] = False
-    return torch.utils.checkpoint.checkpoint(func, *args, **kwargs)
+def _force_non_reentrant_checkpoint(function, *args, **kwargs):
+    kwargs.setdefault("use_reentrant", False)
+    return torch.utils.checkpoint.checkpoint(function, *args, **kwargs)
 
-# 替换 Transformers 库底层的 checkpoint 调用
+# 同时替换 torch 原生入口和 transformers 兼容入口，避免仍有模块绕过 modeling_utils.checkpoint
+torch.utils.checkpoint.checkpoint = _force_non_reentrant_checkpoint
 transformers.modeling_utils.checkpoint = _force_non_reentrant_checkpoint
 print("🔧 Monkey Patch Applied: Forced use_reentrant=False for all checkpoints.")
 
@@ -1661,6 +1661,37 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     def get_model(self):
         return self.model
 
+    def set_external_localization_model(self, external_model: nn.Module) -> None:
+        # Keep it out of nn.Module registration to avoid saving/updating in UniLIP checkpoints.
+        self.__dict__["_external_localization_model"] = external_model
+
+    def get_external_localization_model(self):
+        return self.__dict__.get("_external_localization_model", None)
+
+    def _normalize_for_external_loc_model(self, image_01: torch.Tensor) -> torch.Tensor:
+        target_size = int(getattr(self.config, "external_loc_input_size", 224))
+        if image_01.shape[-1] != target_size or image_01.shape[-2] != target_size:
+            image_01 = F.interpolate(
+                image_01,
+                size=(target_size, target_size),
+                mode="bilinear",
+                align_corners=False,
+            )
+        mean = torch.tensor([0.485, 0.456, 0.406], device=image_01.device, dtype=image_01.dtype).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=image_01.device, dtype=image_01.dtype).view(1, 3, 1, 1)
+        return (image_01 - mean) / std
+
+    def _forward_external_loc_model(self, fps_image: torch.Tensor, map_image: torch.Tensor) -> torch.Tensor:
+        external_model = self.get_external_localization_model()
+        if external_model is None:
+            raise RuntimeError("use_external_loc_model=True but external localization model is not attached.")
+        external_model.eval()
+        model_device = next(external_model.parameters()).device
+        model_dtype = next(external_model.parameters()).dtype
+        fps_image = fps_image.to(device=model_device, dtype=model_dtype)
+        map_image = map_image.to(device=model_device, dtype=model_dtype)
+        return external_model(fps_image, map_image)
+
     def sample_noise(self, shape, device):
         return torch.normal(
             mean=0.0,
@@ -1696,6 +1727,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         gen_image: Optional[torch.FloatTensor] = None, #torch.Size([128, 3, 448, 448])
         und_image: Optional[torch.FloatTensor] = None, #torch.Size([128, 3, 448, 448])
         aux_image: Optional[torch.FloatTensor] = None, # [NEW] Support Aux Image (Wrist/Map) #torch.Size([128, 3, 448, 448])
+        loc_fps_image: Optional[torch.FloatTensor] = None, # [NEW] External loc model fps input [BS,3,224,224]
+        loc_map_image: Optional[torch.FloatTensor] = None, # [NEW] External loc model map input [BS,3,224,224]
         actions: Optional[torch.FloatTensor] = None,   # [NEW] GT 5D Pose [BS, 1, 5]  # torch.Size([128, 5])
         loss_mask: Optional[torch.FloatTensor] = None, # [NEW] [BS, 2] -> [Loc_Weight, Gen_Weight]  # torch.Size([128, 2])
         aux_loc_input_ids: torch.LongTensor = None,
@@ -1853,6 +1886,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 genbrh_aux_loc_attention_mask = aux_loc_attention_mask[gen_indices]
                 genbrh_und_image = und_image[gen_indices]
                 genbrh_gen_image = gen_image[gen_indices]
+                genbrh_loc_map_image = loc_map_image[gen_indices] if loc_map_image is not None else None
                 genbrh_task_id = task_id[gen_indices]
                 genbrh_actions = actions[gen_indices]
 
@@ -1915,6 +1949,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                             genbrh_aux_loc_attention_mask, #torch.Size([128, 707])
                             genbrh_und_image, #torch.Size([16, 3, 448, 448])
                             genbrh_gen_image, #torch.Size([16, 3, 448, 448])
+                            genbrh_loc_map_image,
                             grid_thw, #None
                             i_s_pos, #None
                             image_sizes, #None
@@ -1934,7 +1969,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
-                if getattr(self.config, "use_codex_vit_regression_head", False):
+                if getattr(self.config, "use_external_loc_model", False):
+                    locbrh_actions = actions[loc_indices]
+                    locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else und_image[loc_indices]
+                    locbrh_map_image = loc_map_image[loc_indices] if loc_map_image is not None else aux_image[loc_indices]
+                    locbrh_actions_pred = self._forward_external_loc_model(locbrh_fps_image, locbrh_map_image)
+                    if getattr(self.config, "external_loc_use_circular_loss", True):
+                        masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    else:
+                        masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                elif getattr(self.config, "use_codex_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image = und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
@@ -2210,6 +2254,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         attention_mask,
         und_image_map,
         gen_image,
+        loc_map_image,
         grid_thw,
         i_s_pos,
         image_sizes,
@@ -2243,7 +2288,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # scale back: UniLIP Factor
         pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
         # VAE Decode is heavy! Use with caution.
-        with torch.no_grad():
+        # with torch.no_grad():
+        with torch.enable_grad():
             # pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
 
             # [修改] 使用 Mini-Batch 循环解码，避免 Tensor 过大
@@ -2291,7 +2337,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
 
 
-        if getattr(self.config, "use_codex_vit_regression_head", False):
+        if getattr(self.config, "use_external_loc_model", False):
+            if loc_map_image is None:
+                raise RuntimeError("External loc aux loss requires loc_map_image in batch.")
+            pred_pixels_external = self._normalize_for_external_loc_model(pred_pixels_norm.clamp(0.0, 1.0))
+            actions_pred = self._forward_external_loc_model(pred_pixels_external, loc_map_image)
+            if getattr(self.config, "external_loc_use_circular_loss", True):
+                masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
+            else:
+                masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
+        elif getattr(self.config, "use_codex_vit_regression_head", False):
             # 临时冻结 Action Dit
             self.model.vit_loc_fusion.requires_grad_(False)
             if getattr(self.config, "is_action_dit_projector", False):
