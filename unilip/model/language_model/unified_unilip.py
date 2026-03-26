@@ -36,9 +36,11 @@ import transformers.modeling_utils
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
 # 修复 "Trying to backward through the graph a second time" 错误
 # =================================================================
-def _force_non_reentrant_checkpoint(function, *args, **kwargs):
-    kwargs.setdefault("use_reentrant", False)
-    return torch.utils.checkpoint.checkpoint(function, *args, **kwargs)
+_ORIG_CHECKPOINT = torch.utils.checkpoint.checkpoint
+def _force_non_reentrant_checkpoint(func, *args, **kwargs):
+    # 强制覆盖参数
+    kwargs['use_reentrant'] = False
+    return _ORIG_CHECKPOINT(func, *args, **kwargs)
 
 # 同时替换 torch 原生入口和 transformers 兼容入口，避免仍有模块绕过 modeling_utils.checkpoint
 torch.utils.checkpoint.checkpoint = _force_non_reentrant_checkpoint
@@ -2333,9 +2335,6 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # Und Image = Generated Fps Image (pred_pixels_input)
         # Aux Image = Original Map (und_image passed in forward, which is actually map for Gen task)
         # Prompt = Loc Prompt (aux_loc_input_ids)
-
-
-
 
         if getattr(self.config, "use_external_loc_model", False):
             if loc_map_image is None:

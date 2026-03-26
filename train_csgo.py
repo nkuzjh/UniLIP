@@ -110,9 +110,11 @@ class ProfilerCallback(TrainerCallback):
 # 修复 "Trying to backward through the graph a second time" 错误，
 # 同时避免 LoRA + 冻结骨干下 reentrant checkpoint 因输入不带 grad 直接切断梯度图。
 # =================================================================
-def _force_non_reentrant_checkpoint(function, *args, **kwargs):
-    kwargs.setdefault("use_reentrant", False)
-    return torch.utils.checkpoint.checkpoint(function, *args, **kwargs)
+_ORIG_CHECKPOINT = torch.utils.checkpoint.checkpoint
+def _force_non_reentrant_checkpoint(func, *args, **kwargs):
+    # 强制覆盖参数
+    kwargs['use_reentrant'] = False
+    return _ORIG_CHECKPOINT(func, *args, **kwargs)
 
 # 同时替换 torch 原生入口和 transformers 兼容入口，避免仍有模块绕过 modeling_utils.checkpoint
 torch.utils.checkpoint.checkpoint = _force_non_reentrant_checkpoint
@@ -1879,30 +1881,3 @@ if __name__ == "__main__":
 
 
 
-# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp0.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs_csgo_1b --num_train_epochs 5 --per_device_train_batch_size 32 --per_device_eval_batch_size 4 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True
-
-
-# --report_to none --run_name unilip_intern_vl_1b
-
-# --pretrain_path UniLIP-1B/model.safetensors
-
-
-
-#  --lr_scheduler_kwargs {\"min_lr\":1e-5}
-
-# --unilip_path ../tokenizer_ckpt/1b_unilip.pth \
-
-# --mllm_path OpenGVLab/InternVL3-1B \
-#
-# --vae_path mit-han-lab/dc-ae-f32c32-sana-1.1-diffusers \
-# --dit_path Efficient-Large-Model/Sana_600M_512px_diffusers \
-
-# --gen_image_folder ${GEN_IMG_FOLDER} \
-# --edit_image_folder ${EDIT_IMG_FOLDER} \
-# --gen_repeat 1 \
-# --edit_repeat 3 \
-
-
-
-
-# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp1 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 5000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True
