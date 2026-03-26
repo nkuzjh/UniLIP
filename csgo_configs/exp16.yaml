@@ -10,7 +10,7 @@ alpha_loc_loss: 0.0
 
 # Train generation only + external localization auxiliary loss
 is_loc_aux_loss: True
-alpha_loc_aux_loss: 5000 #0.1
+alpha_loc_aux_loss: 1000 #0.1
 
 # Keep UniLIP internal localization modules fully disabled in this experiment
 skip_internal_loc_modules: True
