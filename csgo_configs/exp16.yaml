@@ -27,7 +27,7 @@ external_loc_checkpoint_path: "checkpoints_reg_newdata/exp5_2/20251227_091745/cu
 resume_ckpt_path: "outputs/csgo_1b/exp2/checkpoint-46800/model.safetensors"
 
 
-img_size: 224
+img_size: 448
 
 
 ### data
