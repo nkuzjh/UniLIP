@@ -99,6 +99,20 @@ img_resize_transform = transforms.Compose([
     transforms.Resize((224, 224), interpolation=InterpolationMode.BICUBIC),
 ])
 
+external_loc_model_image_transform = transforms.Compose([
+    transforms.Resize((224, 224), interpolation=InterpolationMode.BICUBIC),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225],
+    ),
+])
+
+
+def to_external_loc_tensor(pil_img: Image.Image) -> torch.Tensor:
+    return external_loc_model_image_transform(pil_img).unsqueeze(0).contiguous()
+
+
 # ==========================================
 # B.2 Prompt 构建函数
 # ==========================================
@@ -549,6 +563,12 @@ def _build_map_tensor_cache(map_images, image_processor, image_aspect_ratio, is_
             map_tensor_cache_224[map_name] = img_resize_transform(map_tensor_448).contiguous()
     return map_tensor_cache_448, map_tensor_cache_224
 
+def _build_external_loc_map_tensor_cache(map_images):
+    map_tensor_cache = {}
+    for map_name, map_img in map_images.items():
+        map_tensor_cache[map_name] = to_external_loc_tensor(map_img)
+    return map_tensor_cache
+
 # GPT优化
 INV_1024 = 1.0 / 1024.0
 INV_TAU = 1.0 / (2.0 * np.pi)
@@ -671,6 +691,7 @@ class UniLIPMultiTaskDataset(Dataset):
             self.data_args.image_aspect_ratio,
             self.is_resize_224,
         )
+        self.external_loc_map_tensor_cache = _build_external_loc_map_tensor_cache(self.map_images)
         # GPT优化
         self.loc_prompt_cache = _build_loc_prompt_cache(
             self.map_z_range.keys(),
@@ -717,6 +738,9 @@ class UniLIPMultiTaskDataset(Dataset):
         ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
+        fps_img_pil_for_external = fps_img_pil.copy()
+        external_loc_map_image = self.external_loc_map_tensor_cache[map_name].clone()
+        external_loc_fps_image = to_external_loc_tensor(fps_img_pil_for_external)
 
 
         # 4. 计算归一化坐标 (Common for both tasks)
@@ -765,7 +789,7 @@ class UniLIPMultiTaskDataset(Dataset):
 
             # FPS Image & MAP Image
             if self.config.get('is_fps_dropout', False):
-                fps_img_tensor = self._fps_dropout_transform(self.config, fps_img_pil)
+                fps_img_tensor = self._fps_dropout_transform(fps_img_pil)
                 fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
 
             # all_images = [fps_img_pil, map_img_pil]
@@ -874,6 +898,8 @@ class UniLIPMultiTaskDataset(Dataset):
             "und_image": und_image,         # 理解流输入 - 定位=fps 生成=map
             "aux_image": aux_image,         # 辅助输入   - 定位=map 生成=Empty
             "gen_image": gen_image,         # 生成流输出 - 定位=Empty 生成=fps
+            "loc_fps_image": external_loc_fps_image,  # External loc model fps input
+            "loc_map_image": external_loc_map_image,  # External loc model map input
             "input_ids": input_ids,
             "labels": labels,
             "raw_prompt": user_text,
@@ -944,6 +970,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
         batch_gen_images = []
         batch_und_images = []
         batch_aux_images = []
+        batch_loc_fps_images = []
+        batch_loc_map_images = []
         batch_actions = []
         batch_loss_masks = []
         batch_map_ids = []
@@ -1011,6 +1039,12 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
             # [NEW] 收集 Aux Image (辅助图/Map)
             if "aux_image" in instance and instance["aux_image"] is not None:
                 batch_aux_images.append(instance["aux_image"])
+
+            if "loc_fps_image" in instance and instance["loc_fps_image"] is not None:
+                batch_loc_fps_images.append(instance["loc_fps_image"])
+
+            if "loc_map_image" in instance and instance["loc_map_image"] is not None:
+                batch_loc_map_images.append(instance["loc_map_image"])
 
             # [NEW] 收集 Actions
             if "actions" in instance and instance["actions"] is not None:
@@ -1083,6 +1117,8 @@ class DataCollatorForUniLIPMultiTaskDataset(object):
         batch["gen_image"] = stack_images(batch_gen_images)
         batch["und_image"] = stack_images(batch_und_images)
         batch["aux_image"] = stack_images(batch_aux_images)
+        batch["loc_fps_image"] = stack_images(batch_loc_fps_images)
+        batch["loc_map_image"] = stack_images(batch_loc_map_images)
 
         # 6. 堆叠其他 Tensor (Actions, Mask)
         if len(batch_actions) > 0:
@@ -1181,6 +1217,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             self.data_args.image_aspect_ratio,
             self.is_resize_224,
         )
+        self.external_loc_map_tensor_cache = _build_external_loc_map_tensor_cache(self.map_images)
 
         self.loc_prompt_cache = _build_loc_prompt_cache(
             self.map_z_range.keys(),
@@ -1208,14 +1245,19 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         # 2. 加载图像资源
         map_tensor_448 = self.map_tensor_cache_448[map_name]
         map_tensor = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
+        external_loc_map_image = self.external_loc_map_tensor_cache[map_name].clone()
+
         ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
+        fps_img_pil_for_external = fps_img_pil.copy()
+        external_loc_fps_image = to_external_loc_tensor(fps_img_pil_for_external)
         if self.config.get('is_fps_dropout', False):
             fps_img_tensor = self._fps_dropout_transform(fps_img_pil)
             fps_img_pil = Image.fromarray((fps_img_tensor.permute(1,2,0).numpy()*255).astype(np.uint8))
         tensor_fps_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
         tensor_fps = img_resize_transform(tensor_fps_448) if self.is_resize_224 else tensor_fps_448
+
         tensor_map = map_tensor.clone()
         tensor_empty = torch.zeros_like(tensor_map)
         tensor_empty_448 = torch.zeros_like(tensor_fps_448)
@@ -1241,6 +1283,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "und_image": tensor_fps,   # Input: FPS
             "aux_image": tensor_map,   # Aux: Map
             "gen_image": tensor_empty_448, # Target: None (Empty)
+            "loc_fps_image": external_loc_fps_image,
+            "loc_map_image": external_loc_map_image,
             "input_ids": loc_cache["input_ids"],
             "labels": loc_cache["labels"],
             "raw_prompt": user_text_loc,
@@ -1287,6 +1331,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             "und_image": tensor_map,   # Input: Map
             "aux_image": tensor_empty, # Aux: None
             "gen_image": tensor_fps_448,   # Target: FPS
+            "loc_fps_image": external_loc_fps_image,
+            "loc_map_image": external_loc_map_image,
             "input_ids": pre_dict_gen["input_ids"][0],
             "labels": pre_dict_gen["labels"][0],
             "raw_prompt": user_text_gen,

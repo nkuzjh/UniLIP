@@ -18,6 +18,7 @@ from torch.utils.data import Dataset
 from unilip.train.nonmix_trainer import NonMixTrainer
 from unilip import conversation as conversation_lib
 from unilip.model import *
+from unilip.model.external_loc_model_loader import build_frozen_external_loc_model
 from unilip.mm_utils import tokenizer_image_token
 from PIL import Image, ImageFile
 from datasets import load_dataset, concatenate_datasets
@@ -106,14 +107,17 @@ class ProfilerCallback(TrainerCallback):
 
 # =================================================================
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
-# 修复 "Trying to backward through the graph a second time" 错误
+# 修复 "Trying to backward through the graph a second time" 错误，
+# 同时避免 LoRA + 冻结骨干下 reentrant checkpoint 因输入不带 grad 直接切断梯度图。
 # =================================================================
+_ORIG_CHECKPOINT = torch.utils.checkpoint.checkpoint
 def _force_non_reentrant_checkpoint(func, *args, **kwargs):
     # 强制覆盖参数
     kwargs['use_reentrant'] = False
-    return torch.utils.checkpoint.checkpoint(func, *args, **kwargs)
+    return _ORIG_CHECKPOINT(func, *args, **kwargs)
 
-# 替换 Transformers 库底层的 checkpoint 调用
+# 同时替换 torch 原生入口和 transformers 兼容入口，避免仍有模块绕过 modeling_utils.checkpoint
+torch.utils.checkpoint.checkpoint = _force_non_reentrant_checkpoint
 transformers.modeling_utils.checkpoint = _force_non_reentrant_checkpoint
 print("🔧 Monkey Patch Applied: Forced use_reentrant=False for all checkpoints.")
 
@@ -1593,6 +1597,9 @@ def train(attn_implementation=None):
     model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
     model.config.loc_z_loss_weight = csgo_config.get("loc_z_loss_weight", 1.0)
     model.config.loc_angle_loss_weight = csgo_config.get("loc_angle_loss_weight", 2.0)
+    model.config.use_external_loc_model = csgo_config.get("use_external_loc_model", False)
+    model.config.external_loc_input_size = csgo_config.get("external_loc_input_size", 224)
+    model.config.external_loc_use_circular_loss = csgo_config.get("external_loc_use_circular_loss", True)
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
@@ -1611,18 +1618,42 @@ def train(attn_implementation=None):
     # latent_queries load from checkpoint!!!
 
     # Unified_UniLIP_InternVLForCausalLM.from_pretrained()启用了low_mem和accelerator且UniLIP权重中不包含新增的定位模块action_dit，导致action_dit没有正确加载Qwen2Model的权重，这里避开Unified_UniLIP_InternVLForCausalLM的__init__和from_pretrained方法。重新加载action_dit的权重，防止梯度爆炸
-    model.get_model().initialize_localization_modules(model_args=model_args)
+    # model.get_model().initialize_localization_modules(model_args=model_args)
+    skip_internal_loc_modules = csgo_config.get(
+        "skip_internal_loc_modules",
+        bool(model.config.use_external_loc_model),
+    )
+    if not skip_internal_loc_modules:
+        model.get_model().initialize_localization_modules(model_args=model_args)
+    else:
+        logging.info("Skip UniLIP internal localization module initialization.")
     model.to(torch.bfloat16)
 
-    ### 已经在两个initialize_modules方法中和lora配置一起实现
-    # if not model_args.fix_vit:
-    #     for p in model.get_model().vision_tower.parameters():
-    #         p.requires_grad = True
-    #     for p in model.get_model().multi_modal_projector.parameters():
-    #         p.requires_grad = True
-    # if not model_args.fix_llm:
-    #     for p in model.get_model().language_model.parameters():
-    #         p.requires_grad = True
+    if model.config.use_external_loc_model:
+        csgosquare_root = csgo_config.get("external_loc_repo_root", "csgosquare")
+        external_loc_cfg = csgo_config.get(
+            "external_loc_config_path",
+            "configs_reg_newdata/exp5_2.yaml",
+        )
+        external_loc_ckpt = csgo_config.get(
+            "external_loc_checkpoint_path",
+            "checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth",
+        )
+        external_loc_model = build_frozen_external_loc_model(
+            csgosquare_root=csgosquare_root,
+            config_path=external_loc_cfg,
+            checkpoint_path=external_loc_ckpt,
+            device=torch.device(training_args.device),
+        )
+        if not hasattr(model, "set_external_localization_model"):
+            raise RuntimeError("Current model does not support external localization model attachment.")
+        model.set_external_localization_model(external_loc_model)
+        logging.info(
+            "External localization model attached (frozen eval): root=%s, cfg=%s, ckpt=%s",
+            csgosquare_root,
+            external_loc_cfg,
+            external_loc_ckpt,
+        )
 
     data_args.image_processor = AutoProcessor.from_pretrained(model_args.mllm_hf_path).image_processor
 
@@ -1688,7 +1719,7 @@ def train(attn_implementation=None):
     for name, param in model.named_parameters():
         if param.requires_grad:
             train_param_names.append(name)
-            logging.info(f"     trainable params: {name}")
+            # logging.info(f"     trainable params: {name}")
     logging.info(f"trainable layers: {len(train_param_names)}")
 
 
@@ -1850,30 +1881,3 @@ if __name__ == "__main__":
 
 
 
-# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp0.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs_csgo_1b --num_train_epochs 5 --per_device_train_batch_size 32 --per_device_eval_batch_size 4 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True
-
-
-# --report_to none --run_name unilip_intern_vl_1b
-
-# --pretrain_path UniLIP-1B/model.safetensors
-
-
-
-#  --lr_scheduler_kwargs {\"min_lr\":1e-5}
-
-# --unilip_path ../tokenizer_ckpt/1b_unilip.pth \
-
-# --mllm_path OpenGVLab/InternVL3-1B \
-#
-# --vae_path mit-han-lab/dc-ae-f32c32-sana-1.1-diffusers \
-# --dit_path Efficient-Large-Model/Sana_600M_512px_diffusers \
-
-# --gen_image_folder ${GEN_IMG_FOLDER} \
-# --edit_image_folder ${EDIT_IMG_FOLDER} \
-# --gen_repeat 1 \
-# --edit_repeat 3 \
-
-
-
-
-# CUDA_VISIBLE_DEVICES=1 python train_csgo.py --csgo_config csgo_configs/exp1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp1 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 5000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 16 --lazy_preprocess True --n_query 256 --n_und_query 0 --fix_dit False --fix_connect False --fix_llm True
