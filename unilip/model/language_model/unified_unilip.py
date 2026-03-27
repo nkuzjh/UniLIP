@@ -32,6 +32,9 @@ from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_tr
 import torch
 import transformers.modeling_utils
 
+
+from unilip.model.language_model.autograd_check import inspect_loss_routes_with_autograd_grad, print_loss_route_summary
+
 # =================================================================
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
 # 修复 "Trying to backward through the graph a second time" 错误
@@ -2243,6 +2246,23 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
             }
         }
+
+
+        if 1:
+            route_results = inspect_loss_routes_with_autograd_grad(
+                model=self,
+                loss_dict={
+                    "total_loss": total_loss,
+                    "loc_loss": masked_loc_loss,
+                    "gen_loss": masked_gen_loss,
+                    "loc_aux_loss": masked_loc_aux_loss,
+                },
+            )
+            print_loss_route_summary(route_results)
+
+            """--csgo_config csgo_configs/exp13.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp13_debug --num_train_epochs 100 --per_device_train_batch_size 1 --per_device_eval_batch_size 1 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16"""
+
+            """--csgo_config csgo_configs/exp11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp11_debug --num_train_epochs 100 --per_device_train_batch_size 1 --per_device_eval_batch_size 1 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16"""
 
         return CausalLMOutputs
 
