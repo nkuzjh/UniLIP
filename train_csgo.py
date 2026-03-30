@@ -1733,7 +1733,12 @@ def train(attn_implementation=None):
 
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
-        msg = model.load_state_dict(torch.load(pretrain_path), strict=False)
+        if pretrain_path.endswith(".safetensors"):
+            from safetensors.torch import load_file as safe_load_file
+            state_dict = safe_load_file(pretrain_path, device="cpu")
+        else:
+            state_dict = torch.load(pretrain_path, map_location="cpu")
+        msg = model.load_state_dict(state_dict, strict=False)
         logging.info(f"load pretrain: {pretrain_path}")
         logging.info(msg)
 

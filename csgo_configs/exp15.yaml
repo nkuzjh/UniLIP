@@ -1,0 +1,43 @@
+###################
+### config.yaml
+###################
+debug: False
+
+
+### model
+is_multi_task: True
+is_multi_task_balanced: False
+task_mix_ratio: 0.0
+alpha_loc_loss: 0.0
+
+# Exp15: continue training generation from exp2, and use frozen internal loc head
+# loaded from exp4_12_2 to provide auxiliary localization loss.
+is_loc_aux_loss: True
+alpha_loc_aux_loss: 100
+
+is_action_dit_dense_timestep: True
+is_action_dit_projector: True
+action_dit_projector_lr: 0.0005
+is_aciton_dit_vae_small_init: True
+
+use_pi05_action_dit: True
+pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+
+use_external_loc_model: False
+
+# Load exp2 after --pretrain_path(exp4_12_2) so shared/gen weights come from exp2,
+# while internal localization head weights loaded first can be preserved.
+resume_ckpt_path: "outputs/csgo_1b/exp2/checkpoint-46800/model.safetensors"
+
+img_size: 448
+
+
+### data
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2', 'de_nuke', 'de_ancient']
+val_maps: ['de_dust2', 'de_nuke', 'de_ancient']
+test_maps: ['de_dust2', 'de_nuke', 'de_ancient']
+
+
+### lora
+is_lora: False
