@@ -32,6 +32,13 @@ from peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_tr
 import torch
 import transformers.modeling_utils
 
+
+from unilip.model.language_model.autograd_check import (
+    inspect_loss_routes_with_autograd_grad,
+    print_loss_route_summary,
+    print_optimizer_managed_param_summary,
+)
+
 # =================================================================
 # [Monkey Patch] 强制所有 Gradient Checkpointing 使用 use_reentrant=False
 # 修复 "Trying to backward through the graph a second time" 错误
@@ -1792,7 +1799,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Assuming the standard collator stacks images into [Total_Images_In_Batch, C, H, W].
 
             if inputs_embeds is None:
-                with torch.no_grad():
+                # with torch.no_grad():
+                if 1:
                     ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
                         _,
                         position_ids,
@@ -1825,7 +1833,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             if (not getattr(self.config, "use_vit_regression_head", False)) \
                 or (getattr(self.config, "use_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
             # --- B. Main LLM Forward (Understanding) ---
-                with torch.no_grad():
+                # with torch.no_grad():
+                if 1:
                     position_ids = torch.cumsum(attention_mask, dim=1) - 1
                     position_ids[position_ids < 0] = 0
                     # bs=8显存占用=6186MiB
@@ -2244,6 +2253,24 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             }
         }
 
+
+        if 0:
+            route_results = inspect_loss_routes_with_autograd_grad(
+                model=self,
+                loss_dict={
+                    "total_loss": total_loss,
+                    "loc_loss": masked_loc_loss,
+                    "gen_loss": masked_gen_loss,
+                    "loc_aux_loss": masked_loc_aux_loss,
+                },
+            )
+            print_loss_route_summary(route_results)
+            print_optimizer_managed_param_summary(self)
+
+            """--csgo_config csgo_configs/exp13.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp13_debug --num_train_epochs 100 --per_device_train_batch_size 1 --per_device_eval_batch_size 1 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 1 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16"""
+
+            """--csgo_config csgo_configs/exp11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp11_debug --num_train_epochs 100 --per_device_train_batch_size 1 --per_device_eval_batch_size 1 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16"""
+
         return CausalLMOutputs
 
     def forward_for_aux_loc_loss(
@@ -2359,7 +2386,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 self.model.action_dit_projector.eval()
             self.model.regression_loc_head.eval()
 
-            with torch.no_grad():
+            # with torch.no_grad():
+            if 1:
                 actions_pred = self._forward_codex_vit_regression_head(
                     pred_pixels_input,
                     und_image_map,
@@ -2392,7 +2420,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 self.model.action_dit_projector.eval()
             self.model.regression_loc_head.eval()
 
-            with torch.no_grad():
+            # with torch.no_grad():
+            if 1:
                 actions_pred = self._forward_vit_regression_head(
                     pred_pixels_input,
                     und_image_map,
@@ -2414,7 +2443,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         else:
             # 获取 Gen 任务原本的 Map 输入 (在 prepare_inputs 里它是 und_image)
             combined_und_images = torch.cat([pred_pixels_input, und_image_map], dim=0)
-            with torch.no_grad():
+            # with torch.no_grad():
+            if 1:
                 ( # return None, position_ids, attention_mask, past_key_values, text_embeds, labels, target_image_embeds, combined_img_idx, combined_image_embeds, bidr_attention_mask
                     aux_loc_input_ids,
                     position_ids,
@@ -2456,7 +2486,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     self.model.action_dit_projector.eval()
                 self.model.regression_loc_head.eval()
 
-                with torch.no_grad():
+                # with torch.no_grad():
+                if 1:
                     # und_feature = self.get_model().img_pooler(und_image_embeds)
                     # aux_feature = self.get_model().img_pooler(aux_image_embeds)
                     # und_feature = und_image_embeds[:, 0, :]
@@ -2488,7 +2519,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 position_ids = torch.cumsum(attention_mask, dim=1) - 1
                 position_ids[position_ids < 0] = 0
                 # bs=8显存占用=13314MiB
-                with torch.no_grad():
+                # with torch.no_grad():
+                if 1:
                     outputs = self.model.language_model(
                         attention_mask=attention_mask, #torch.Size([2, 617])
                         position_ids=position_ids, #torch.Size([2, 617])
@@ -2534,7 +2566,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 self.model.time_mlp_out.eval()
                 # bs=8显存占用=13314MiB
                 # 5. Original LOCALIZATION Branch (Flow Matching Path)
-                with torch.no_grad():
+                # with torch.no_grad():
+                if 1:
                     actions = actions#torch.Size([128, 5])
                     noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
                     time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])

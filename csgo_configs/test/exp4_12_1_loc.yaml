@@ -54,3 +54,7 @@ mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
 action_dim: 5
 
 lora_r: 16 #仅在inference时生效，且要和训练时启动命令的参数一致
+fix_vit: False  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_llm: False  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_dit: True  # 仅在inference时生效，且要和训练时启动命令的参数一致
+fix_connect: True  # 仅在inference时生效，且要和训练时启动命令的参数一致

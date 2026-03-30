@@ -1258,7 +1258,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         tensor_fps_448 = img_process([fps_img_pil], self.data_args.image_processor, self.data_args.image_aspect_ratio)
         tensor_fps = img_resize_transform(tensor_fps_448) if self.is_resize_224 else tensor_fps_448
 
-        tensor_empty = torch.zeros_like(map_tensor.clone())
+        tensor_map = map_tensor.clone()
+        tensor_empty = torch.zeros_like(tensor_map)
         tensor_empty_448 = torch.zeros_like(tensor_fps_448)
 
         # 3. 计算归一化坐标 (Common for both tasks)

@@ -413,6 +413,41 @@ class NonMixTrainer(Trainer):
         # 返回 None，因为我们使用的是 batch_sampler
         return None
 
+    def _attach_optimizer_managed_param_snapshot(self, model: nn.Module, optimizer: torch.optim.Optimizer) -> None:
+        named_params = list(model.named_parameters())
+        param_id_to_name = {id(param): name for name, param in named_params}
+
+        optimizer_param_names = []
+        optimizer_param_missing = []
+        seen = set()
+
+        for group_idx, group in enumerate(optimizer.param_groups):
+            for param_idx, param in enumerate(group["params"]):
+                name = param_id_to_name.get(id(param))
+                if name is None:
+                    optimizer_param_missing.append(
+                        f"<group={group_idx} param={param_idx} shape={tuple(param.shape)}>"
+                    )
+                    continue
+                if name in seen:
+                    continue
+                seen.add(name)
+                optimizer_param_names.append(name)
+
+        candidate_targets = []
+        for candidate in (
+            model,
+            getattr(model, "model", None),
+            getattr(model, "base_model", None),
+            getattr(getattr(model, "base_model", None), "model", None),
+        ):
+            if isinstance(candidate, nn.Module) and candidate not in candidate_targets:
+                candidate_targets.append(candidate)
+
+        for candidate in candidate_targets:
+            setattr(candidate, "_optimizer_managed_param_names", optimizer_param_names)
+            setattr(candidate, "_optimizer_managed_param_missing", optimizer_param_missing)
+
     def create_optimizer(self):
         """
         Setup the optimizer.
@@ -691,6 +726,7 @@ class NonMixTrainer(Trainer):
                 if len(group["params"]) > 0
             ]
             self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+            self._attach_optimizer_managed_param_snapshot(opt_model, self.optimizer)
             if optimizer_cls.__name__ == "Adam8bit":
                 import bitsandbytes
 
