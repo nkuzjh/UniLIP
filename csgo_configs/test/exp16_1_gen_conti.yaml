@@ -45,7 +45,7 @@ is_lora: False
 ckpt_path: "outputs/csgo_1b/exp16_1_resume_from_checkpoint-46800/checkpoint-4690/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
-# is_conti_gen: True
+is_conti_gen: True
 
 # 模仿训练时的 model_args
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
