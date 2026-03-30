@@ -240,6 +240,34 @@ def print_loss_route_summary(results: Dict[str, List[Tuple[str, str, Optional[fl
                 print(f"  {name:<50s} -> {status}")
 
 
+def print_optimizer_managed_param_summary(model: nn.Module) -> None:
+    """Pretty-print the parameters that are actually managed by the optimizer."""
+    optimizer_param_names = getattr(model, "_optimizer_managed_param_names", None)
+    optimizer_param_missing = getattr(model, "_optimizer_managed_param_missing", None)
+
+    if optimizer_param_names is None and hasattr(model, "get_model"):
+        inner_model = model.get_model()
+        optimizer_param_names = getattr(inner_model, "_optimizer_managed_param_names", None)
+        optimizer_param_missing = getattr(inner_model, "_optimizer_managed_param_missing", None)
+
+    print("\n" + "=" * 80)
+    print("OPTIMIZER MANAGED PARAMS")
+    print("=" * 80)
+
+    if optimizer_param_names is None:
+        print("  <optimizer param snapshot is unavailable on this model>")
+        return
+
+    print(f"  count={len(optimizer_param_names)}")
+    for name in optimizer_param_names:
+        print(f"  {name}")
+
+    if optimizer_param_missing:
+        print("  [missing optimizer params]")
+        for item in optimizer_param_missing:
+            print(f"  {item}")
+
+
 def run_single_backward_and_print_param_grads(
     model: nn.Module,
     total_loss: torch.Tensor,
