@@ -1140,14 +1140,20 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 **train_csgo.py**
 ```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29505 train_csgo.py --csgo_config csgo_configs/exp11.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp11 --num_train_epochs 100 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 4 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 2 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --lora_r 16    ```
-**eval_csgo_loc.py** 67: step=3000 4000 5000 误删ckpt重新训练: 5000
-```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp11_loc.yaml      ```
-**eval_csgo.py** 67: step=3000 5000
-```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp11_gen.yaml      ```
+**eval_csgo_loc.py** 67: step=3000 4000 5000 误删ckpt重新训练65: 5000 11700
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp11_loc.yaml      ```
+**eval_csgo.py** 67: step=3000 5000 误删ckpt重新训练65: 11700
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp11_gen.yaml      ```
     **benchmark_csgo.py**
-**continuous gen**  67: step=3000 5000
-```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp11_gen_conti.yaml      ```
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp11_gen/test_20260331_163844/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp11_gen/test_20260331_163844/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp11_gen/test_20260331_163844/gen_imgs/de_ancient --all --batch_size 8       ``
+**continuous gen**  67: step=3000 5000 误删ckpt重新训练65: 11700
+```    CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp11_gen_conti.yaml      ```
     **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp11_gen_conti/test_20260331_163847/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp11_gen_conti/test_20260331_163847/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=1 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp11_gen_conti/test_20260331_163847/gen_imgs/de_ancient --all --batch_size 8       ``
     **frames to video**
 
 
