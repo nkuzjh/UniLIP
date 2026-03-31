@@ -8,7 +8,7 @@ debug: False
 is_multi_task: True
 is_multi_task_balanced: True
 alpha_loc_loss: 2
-alpha_loc_schedule_steps: [0, 1000, 4000, 8000]
+alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
 
 # Exp17_2: exp17_1 + dynamic alpha_loc schedule + new loc lr grouping
