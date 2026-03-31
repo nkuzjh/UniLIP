@@ -465,13 +465,26 @@ class NonMixTrainer(Trainer):
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
 
             def get_action_head_parameter_names():
-                parameter_names = {"action_dit_projector", "action_dit_norm"}
+                parameter_names = {"action_dit_connector", "action_dit_projector", "action_dit_norm"}
                 if getattr(opt_model.config, "use_vit_cls_regression_head", False):
                     parameter_names.update({"regression_loc_head"})
                 elif getattr(opt_model.config, "use_vit_regression_head", False):
                     parameter_names.update({"regression_loc_head", "cross_view_fusion"})
                 elif getattr(opt_model.config, "use_codex_vit_regression_head", False):
                     parameter_names.update({"regression_loc_head", "vit_loc_fusion"})
+                return [
+                    name for name, _ in opt_model.named_parameters()
+                    if any(key in name for key in parameter_names)
+                ]
+
+            def get_action_dit_core_parameter_names():
+                parameter_names = {
+                    "action_dit",
+                    "action_in_proj",
+                    "action_out_proj",
+                    "time_mlp_in",
+                    "time_mlp_out",
+                }
                 return [
                     name for name, _ in opt_model.named_parameters()
                     if any(key in name for key in parameter_names)
@@ -697,6 +710,39 @@ class NonMixTrainer(Trainer):
                         "weight_decay": 0.0,
                     },
                 ]
+
+            action_dit_core_parameters = get_action_dit_core_parameter_names()
+            if len(action_dit_core_parameters) > 0:
+                action_dit_core_param_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in action_dit_core_parameters and p.requires_grad
+                }
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in action_dit_core_param_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in action_dit_core_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": self.args.action_dit_lr,
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in action_dit_core_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": self.args.action_dit_lr,
+                    },
+                ])
 
             # 会报错：重复加载parameters
             # if getattr(opt_model.config, 'use_vit_regression_head', False):
