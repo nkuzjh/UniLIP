@@ -18,7 +18,7 @@ is_action_dit_projector: True
 action_dit_projector_lr: 0.0005
 action_dit_lr: 0.0001
 
-is_aciton_dit_vae_small_init: True
+is_aciton_dit_vae_small_init: False
 
 use_pi05_action_dit: True
 pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
