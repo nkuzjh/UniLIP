@@ -1424,6 +1424,61 @@ class UniLIPLogCallback(TrainerCallback):
             # print(log_msg, flush=True)
 
 
+def _piecewise_linear_value(step, steps, values):
+    if len(steps) != len(values) or len(steps) == 0:
+        raise ValueError("alpha_loc_aux schedule steps/values must have the same non-zero length")
+
+    if step <= steps[0]:
+        return float(values[0])
+
+    for idx in range(1, len(steps)):
+        if step <= steps[idx]:
+            s0, s1 = steps[idx - 1], steps[idx]
+            v0, v1 = values[idx - 1], values[idx]
+            if s1 == s0:
+                return float(v1)
+            ratio = (step - s0) / float(s1 - s0)
+            return float(v0 + ratio * (v1 - v0))
+
+    return float(values[-1])
+
+
+class AlphaLocAuxScheduleCallback(TrainerCallback):
+    def __init__(self, steps, values):
+        self.steps = [int(x) for x in steps]
+        self.values = [float(x) for x in values]
+
+        if len(self.steps) != len(self.values) or len(self.steps) == 0:
+            raise ValueError("alpha_loc_aux schedule steps/values must have the same non-zero length")
+        if any(self.steps[idx] < self.steps[idx - 1] for idx in range(1, len(self.steps))):
+            raise ValueError("alpha_loc_aux schedule steps must be non-decreasing")
+
+    def _set_alpha(self, model, step):
+        alpha = _piecewise_linear_value(step, self.steps, self.values)
+
+        candidates = [model]
+        if hasattr(model, "module"):
+            candidates.append(model.module)
+        if hasattr(model, "model"):
+            candidates.append(model.model)
+        if hasattr(model, "module") and hasattr(model.module, "model"):
+            candidates.append(model.module.model)
+
+        for candidate in candidates:
+            if hasattr(candidate, "config"):
+                candidate.config.alpha_loc_aux_loss = alpha
+
+    def on_train_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, 0)
+        return control
+
+    def on_step_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, state.global_step)
+        return control
+
+
 def train(attn_implementation=None):
 
     global local_rank
@@ -1592,6 +1647,8 @@ def train(attn_implementation=None):
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
+    model.config.alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
+    model.config.alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
     model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", 5e-4)
     model.config.loc_use_circular_loss = csgo_config.get("loc_use_circular_loss", True)
     model.config.loc_xy_loss_weight = csgo_config.get("loc_xy_loss_weight", 1.0)
@@ -1733,7 +1790,12 @@ def train(attn_implementation=None):
 
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
-        msg = model.load_state_dict(torch.load(pretrain_path), strict=False)
+        if pretrain_path.endswith(".safetensors"):
+            from safetensors.torch import load_file as safe_load_file
+            state_dict = safe_load_file(pretrain_path, device="cpu")
+        else:
+            state_dict = torch.load(pretrain_path, map_location="cpu")
+        msg = model.load_state_dict(state_dict, strict=False)
         logging.info(f"load pretrain: {pretrain_path}")
         logging.info(msg)
 
@@ -1796,6 +1858,20 @@ def train(attn_implementation=None):
 
 
     unilip_log_callback = UniLIPLogCallback()
+    callbacks = [unilip_log_callback]
+
+    alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
+    alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
+    if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None:
+        if alpha_loc_aux_schedule_steps is None or alpha_loc_aux_schedule_values is None:
+            raise ValueError("alpha_loc_aux schedule requires both alpha_loc_aux_schedule_steps and alpha_loc_aux_schedule_values")
+        callbacks.append(
+            AlphaLocAuxScheduleCallback(
+                steps=alpha_loc_aux_schedule_steps,
+                values=alpha_loc_aux_schedule_values,
+            )
+        )
+
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -1804,10 +1880,10 @@ def train(attn_implementation=None):
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
         data_collator=data_collator,
-        callbacks=[unilip_log_callback],
+        callbacks=callbacks,
     )
     unilip_log_callback.bind_trainer(trainer)
-    # print("callbacks: ", trainer.callback_handler.callback_list)
+    logging.info("NonMixTrainer.Callbacks: %s", trainer.callback_handler.callback_list)
     # trainer.remove_callback(PrinterCallback)
     # trainer.remove_callback(ProgressCallback)
 

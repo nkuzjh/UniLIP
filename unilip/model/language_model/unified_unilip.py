@@ -2250,6 +2250,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_aux_loss_over_gen_loss": (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item() if masked_gen_loss.item() > 0 else None,
             }
         }
 
