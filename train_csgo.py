@@ -233,6 +233,7 @@ class TrainingArguments(transformers.TrainingArguments):
     pretrain_path : str = "none"
 
     action_dit_projector_lr: float = 1e-3
+    action_dit_lr: float = 1e-4
     is_action_dit_projector: bool = False
     loc_learnable_query_lr: float = 5e-4
     is_loc_learnable_query: bool = False
@@ -1479,6 +1480,42 @@ class AlphaLocAuxScheduleCallback(TrainerCallback):
         return control
 
 
+class AlphaLocScheduleCallback(TrainerCallback):
+    def __init__(self, steps, values):
+        self.steps = [int(x) for x in steps]
+        self.values = [float(x) for x in values]
+
+        if len(self.steps) != len(self.values) or len(self.steps) == 0:
+            raise ValueError("alpha_loc schedule steps/values must have the same non-zero length")
+        if any(self.steps[idx] < self.steps[idx - 1] for idx in range(1, len(self.steps))):
+            raise ValueError("alpha_loc schedule steps must be non-decreasing")
+
+    def _set_alpha(self, model, step):
+        alpha = _piecewise_linear_value(step, self.steps, self.values)
+
+        candidates = [model]
+        if hasattr(model, "module"):
+            candidates.append(model.module)
+        if hasattr(model, "model"):
+            candidates.append(model.model)
+        if hasattr(model, "module") and hasattr(model.module, "model"):
+            candidates.append(model.module.model)
+
+        for candidate in candidates:
+            if hasattr(candidate, "config"):
+                candidate.config.alpha_loc_loss = alpha
+
+    def on_train_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, 0)
+        return control
+
+    def on_step_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, state.global_step)
+        return control
+
+
 def train(attn_implementation=None):
 
     global local_rank
@@ -1647,6 +1684,8 @@ def train(attn_implementation=None):
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
+    model.config.alpha_loc_schedule_steps = csgo_config.get("alpha_loc_schedule_steps", None)
+    model.config.alpha_loc_schedule_values = csgo_config.get("alpha_loc_schedule_values", None)
     model.config.alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
     model.config.alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
     model.config.is_aciton_dit_vae_small_init = csgo_config.get("is_aciton_dit_vae_small_init", 5e-4)
@@ -1660,6 +1699,7 @@ def train(attn_implementation=None):
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
+    model.config.action_dit_lr = training_args.action_dit_lr = csgo_config.get("action_dit_lr", training_args.learning_rate)
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
     model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
@@ -1859,6 +1899,18 @@ def train(attn_implementation=None):
 
     unilip_log_callback = UniLIPLogCallback()
     callbacks = [unilip_log_callback]
+
+    alpha_loc_schedule_steps = csgo_config.get("alpha_loc_schedule_steps", None)
+    alpha_loc_schedule_values = csgo_config.get("alpha_loc_schedule_values", None)
+    if alpha_loc_schedule_steps is not None or alpha_loc_schedule_values is not None:
+        if alpha_loc_schedule_steps is None or alpha_loc_schedule_values is None:
+            raise ValueError("alpha_loc schedule requires both alpha_loc_schedule_steps and alpha_loc_schedule_values")
+        callbacks.append(
+            AlphaLocScheduleCallback(
+                steps=alpha_loc_schedule_steps,
+                values=alpha_loc_schedule_values,
+            )
+        )
 
     alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
     alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
