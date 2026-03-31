@@ -1591,19 +1591,17 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 module_name="dit"
             )
         # =========================================================
-        # 5. Loc Action DiT (Qwen2Model Slice)
+        # 5. Loc Action DiT (Qwen2Model Slice) or (Pi05 Action DiT)
         # =========================================================
         # 结构同 LLM
-        # 注意：Action DiT 始终通过 LoRA 训练 (除非完全冻结)
-        if getattr(self.config, 'use_pi05_action_dit', False):
-            self._apply_lora_to_module(
-                lora_r=training_args.lora_r,
-                lora_alpha=training_args.lora_alpha,
-                lora_dropout=training_args.lora_dropout,
-                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-                # modules_to_save=None,
-                module_name="action_dit"
-            )
+        self._apply_lora_to_module(
+            lora_r=training_args.lora_r,
+            lora_alpha=training_args.lora_alpha,
+            lora_dropout=training_args.lora_dropout,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+            # modules_to_save=None,
+            module_name="action_dit"
+        )
 
         # =========================================================
         # 6. [关键] 统一开启非 LoRA 模块 (Heads/Projectors) 的梯度
@@ -1989,6 +1987,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
                     else:
                         masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
+
                 elif getattr(self.config, "use_codex_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image = und_image[loc_indices]
@@ -2001,6 +2001,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
                     else:
                         masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
+
                 elif getattr(self.config, "use_vit_cls_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
                     locbrh_und_image = und_image[loc_indices]
@@ -2013,6 +2015,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
                     else:
                         masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
                 elif getattr(self.config, "use_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
@@ -2034,6 +2037,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_loss = self._compute_codex_loc_regression_loss(locbrh_actions_pred, locbrh_actions).to(torch.float32)
                     else:
                         masked_loc_loss = torch.nn.MSELoss()(locbrh_actions_pred, locbrh_actions).to(torch.float32)
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
                 else:
                     # actions: [BS, 1, 5]
@@ -2215,13 +2219,22 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # logging.info(f"  Action GT Mean: {u_t.mean().item():.4f}, Std: {u_t.std().item():.4f}")
 
                     # 5. Calculate Loss (MSE)
-                    loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
-                    loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
+                    loc_loss_full = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
+                    loc_loss = loc_loss_full.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
                     # Apply Mask: Only count loss for Loc samples
                     masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
+
+                    # monitor only: valid 5-dim velocity mse, no change to training objective
+                    if getattr(self.config, "use_pi05_action_dit", False):
+                        loc_loss_valid5 = loc_loss_full[..., :self.model.config.action_dim].mean(dim=[1, 2])  # [BS]
+                        masked_loc_loss_valid5 = (loc_loss_valid5 * locbrh_loss_mask[:, 0]).mean().to(torch.float32)
+                    else:
+                        # keep same scale for non-pi05 path so logging code can stay uniform
+                        masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
             else:
                 masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
+                masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
@@ -2245,13 +2258,27 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "loc_indices": len(loc_indices),
                 "gen_indices": len(gen_indices),
                 "total_loss": total_loss.detach().cpu().numpy().item(),
+                "loc_loss_valid5": masked_loc_loss_valid5.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss_valid5": (masked_loc_loss_valid5 * alpha_loc_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss_valid5_over_gen_loss": (
+                    (masked_loc_loss_valid5 * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
                 "loc_loss": masked_loc_loss.detach().cpu().numpy().item(),
                 "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss": (masked_loc_loss * alpha_loc_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss_over_gen_loss": (
+                    (masked_loc_loss * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_loc_aux_loss_over_gen_loss": (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item() if masked_gen_loss.item() > 0 else None,
+                "alpha_weighted_loc_aux_loss_over_gen_loss": (
+                    (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
             }
         }
 

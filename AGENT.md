@@ -1,4 +1,4 @@
-# AGENTS.md
+# AGENT.md
 
 ## 0. Mission
 
