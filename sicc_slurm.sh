@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=unilip_exp15
+#SBATCH --job-name=unilip
 #SBATCH --nodes=1
 #SBATCH --tasks-per-node=1
 #SBATCH --mem=50G
-#SBATCH --partition=gbunchQ
+#SBATCH --partition=h800_batch
 #SBATCH --gres=gpu:1
 #SBATCH --time=48:00:00
 #SBATCH --cpus-per-task=8
