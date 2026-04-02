@@ -41,3 +41,15 @@ test_maps: ['de_dust2', 'de_nuke', 'de_ancient']
 
 ### lora
 is_lora: False
+
+
+### infer
+ckpt_path: "outputs/csgo_1b/exp15_resume_from_checkpoint-46800/checkpoint-xxx/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+# is_conti_gen: True
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+# action_dit_layer: 24 # use_pi05_action_dit=True使用pi05的action_dit时该超参无作用
+action_dim: 5

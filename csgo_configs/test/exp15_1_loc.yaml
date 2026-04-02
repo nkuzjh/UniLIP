@@ -6,12 +6,11 @@ debug: False
 
 ### model
 is_multi_task: True
-is_multi_task_balanced: False
-task_mix_ratio: 0.0
-alpha_loc_loss: 0.0
+is_multi_task_balanced: True
+alpha_loc_loss: 2
 
-# Exp15: continue training generation from exp2, and use frozen internal loc head
-# loaded from exp4_12_2 to provide auxiliary localization loss.
+# Exp17: exp11-style joint loc/gen training, plus auxiliary localization loss on
+# generated samples. Internal localization head is initialized from exp4_12_2.
 is_loc_aux_loss: True
 alpha_loc_aux_loss: 1
 
@@ -41,3 +40,14 @@ test_maps: ['de_dust2', 'de_nuke', 'de_ancient']
 
 ### lora
 is_lora: False
+
+
+### infer
+ckpt_path: "outputs/csgo_1b/exp15_1_resume_from_checkpoint-46800/checkpoint-xxx/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+# action_dit_layer: 24 # use_pi05_action_dit=True使用pi05的action_dit时该超参无作用
+action_dim: 5
