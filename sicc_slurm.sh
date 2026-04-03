@@ -4,8 +4,8 @@
 #SBATCH --tasks-per-node=1
 #SBATCH --mem=50G
 #SBATCH --partition=h800_batch
-#SBATCH --gres=gpu:1
-#SBATCH --time=48:00:00
+#SBATCH --gres=gpu:2
+#SBATCH --time=72:00:00
 #SBATCH --cpus-per-task=8
 #SBATCH --output=sicc_logs/%j.out  # 将日志统一收纳到 logs 文件夹
 #SBATCH --error=sicc_logs/%j.err
@@ -31,44 +31,4 @@ MASTER_PORT=$((10000 + $RANDOM % 20000))
 
 # 4. 启动训练
 # 移除了 CUDA_VISIBLE_DEVICES=0，SLURM 会自动分配并隔离 GPU，强行指定 0 可能导致找不到卡
-torchrun \
-    --nproc_per_node=1 \
-    --master_port=$MASTER_PORT \
-    train_csgo.py \
-    --csgo_config csgo_configs/exp15_3.yaml \
-    --deepspeed deepspeed_scripts/zero0.json \
-    --model_name_or_path UniLIP-1B \
-    --unilip_factor 10.6 \
-    --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
-    --version internvl \
-    --data_type "mix" \
-    --csgo_image_folder data/preprocessed_data \
-    --mm_use_im_start_end False \
-    --mm_use_im_patch_token False \
-    --bf16 True \
-    --output_dir outputs/csgo_1b/exp15_3 \
-    --num_train_epochs 10 \
-    --per_device_train_batch_size 8 \
-    --per_device_eval_batch_size 8 \
-    --gradient_accumulation_steps 16 \
-    --eval_strategy "no" \
-    --save_strategy "steps" \
-    --save_steps 2000 \
-    --save_total_limit 3 \
-    --learning_rate 1e-4 \
-    --weight_decay 0. \
-    --warmup_ratio 0.003 \
-    --lr_scheduler_type "cosine_with_min_lr" \
-    --model_max_length 1024 \
-    --logging_steps 1 \
-    --tf32 True \
-    --gradient_checkpointing True \
-    --dataloader_num_workers 4 \
-    --lazy_preprocess True \
-    --n_query 256 \
-    --n_und_query 0 \
-    --report_to wandb \
-    --fix_dit False \
-    --fix_connect False \
-    --fix_llm True \
-    --pretrain_path outputs/csgo_1b/exp4_12_2/checkpoint-23400/model.safetensors
+torchrun --nproc_per_node=2 --master_port=29517 train_csgo.py --csgo_config csgo_configs/exp17_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp17_1 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
