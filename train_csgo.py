@@ -172,6 +172,7 @@ class ModelArguments:
     fix_connect: bool = field(default=False)
     fix_vit: bool = field(default=True)
     fix_llm: bool = field(default=True)
+    train_mm_projector_only: bool = field(default=False)
     connect_layer: int=field(default=6)
     mllm_path: Optional[str] = field(default="")
     mllm_hf_path: Optional[str] = field(default="")
@@ -311,7 +312,7 @@ def get_vision_tower_state_maybe_zero_3(named_params, keys_to_match=[""]):
 def find_all_linear_names(model):
     cls = torch.nn.Linear
     lora_module_names = set()
-    multimodal_keywords = ["mm_projector", "vision_tower", "vision_resampler"]
+    multimodal_keywords = ["mm_projector", "multi_modal_projector", "vision_tower", "vision_resampler"]
     for name, module in model.named_modules():
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
@@ -345,7 +346,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
 
     # Only save Adapter
     ## mm_projector
-    keys_to_match = ["mm_projector"]
+    keys_to_match = ["mm_projector", "multi_modal_projector"]
     if getattr(trainer.args, "use_im_start_end", False):
         keys_to_match.extend(["embed_tokens", "embed_in"])
 
@@ -1602,7 +1603,7 @@ def train(attn_implementation=None):
                 quantization_config=BitsAndBytesConfig(
                     load_in_4bit=training_args.bits == 4,
                     load_in_8bit=training_args.bits == 8,
-                    llm_int8_skip_modules=["mm_projector"],
+                    llm_int8_skip_modules=["mm_projector", "multi_modal_projector"],
                     llm_int8_threshold=6.0,
                     llm_int8_has_fp16_weight=False,
                     bnb_4bit_compute_dtype=compute_dtype,
@@ -1696,10 +1697,19 @@ def train(attn_implementation=None):
     model.config.use_external_loc_model = csgo_config.get("use_external_loc_model", False)
     model.config.external_loc_input_size = csgo_config.get("external_loc_input_size", 224)
     model.config.external_loc_use_circular_loss = csgo_config.get("external_loc_use_circular_loss", True)
+    model_args.train_mm_projector_only = csgo_config.get(
+        "train_mm_projector_only",
+        getattr(model_args, "train_mm_projector_only", False),
+    )
+    model.config.train_mm_projector_only = model_args.train_mm_projector_only
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.action_dit_lr = training_args.action_dit_lr = csgo_config.get("action_dit_lr", training_args.learning_rate)
+    model.config.mm_projector_lr = training_args.mm_projector_lr = csgo_config.get(
+        "mm_projector_lr",
+        training_args.mm_projector_lr,
+    )
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
     model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
