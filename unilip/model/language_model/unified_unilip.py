@@ -556,7 +556,11 @@ class Unified_UniLIP_InternVL_MetaModel:
         ### 是否开启LoRA，重新配置可学习参数
         self.is_lora = getattr(self.config, 'is_lora', False)
         # 1. Vision Tower & Multi-modal Projector
-        if not model_args.fix_vit:
+        if getattr(model_args, "train_mm_projector_only", False):
+            for p in self.vision_tower.parameters(): p.requires_grad = False
+            for p in self.multi_modal_projector.parameters(): p.requires_grad = True
+            logging.info("train_mm_projector_only=True: freeze vision_tower and train multi_modal_projector only")
+        elif not model_args.fix_vit:
             if self.is_lora:
                 # LoRA模式：Vision Tower主体冻结，由PEFT接管；Projector通常全量训练(作为modules_to_save)
                 for p in self.vision_tower.parameters(): p.requires_grad = False
@@ -1537,7 +1541,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 1. Vision Tower (InternVisionModel)
         # =========================================================
         # 结构: attn.qkv, attn.proj, mlp.fc1, mlp.fc2
-        if not model_args.fix_vit:
+        if not model_args.fix_vit and not getattr(model_args, "train_mm_projector_only", False):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r // 2,
                 lora_alpha=training_args.lora_alpha,
@@ -1612,7 +1616,6 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         # 定义需要全量训练的模块关键词
         modules_to_train_fully = [
-            # "multi_modal_projector",  # Vision -> LLM
             # "lm_head",                # LLM Output
             # "embed_tokens",           # LLM Input Embedding (如果 resize 了)
             # "projector",              # Connector -> DiT
@@ -1628,6 +1631,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "vit_regression_head",
             "vit_cls_regression_head",
         ]
+        if getattr(model_args, "train_mm_projector_only", False):
+            modules_to_train_fully.append("multi_modal_projector")
 
         count_unfrozen = 0
         for name, param in self.model.named_parameters():

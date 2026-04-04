@@ -490,8 +490,11 @@ class NonMixTrainer(Trainer):
                     if any(key in name for key in parameter_names)
                 ]
 
+            def is_mm_projector_parameter(name):
+                return "mm_projector" in name or "multi_modal_projector" in name
+
             if self.args.is_action_dit_projector and self.args.is_loc_learnable_query and self.args.mm_projector_lr is not None:
-                projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+                projector_parameters = [name for name, _ in opt_model.named_parameters() if is_mm_projector_parameter(name)]
                 action_dit_projector_parameters = get_action_head_parameter_names()
                 loc_learnable_query_parameters = [name for name, _ in opt_model.named_parameters() if "loc_learnable_query" in name]
                 optimizer_grouped_parameters = [
@@ -568,7 +571,7 @@ class NonMixTrainer(Trainer):
                     },
                 ]
             elif self.args.is_loc_learnable_query and self.args.mm_projector_lr is not None:
-                projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+                projector_parameters = [name for name, _ in opt_model.named_parameters() if is_mm_projector_parameter(name)]
                 loc_learnable_query_parameters = [name for name, _ in opt_model.named_parameters() if "loc_learnable_query" in name]
                 optimizer_grouped_parameters = [
                     {
@@ -602,7 +605,7 @@ class NonMixTrainer(Trainer):
                 ]
             elif self.args.is_action_dit_projector and self.args.mm_projector_lr is not None:
                 action_dit_projector_parameters = get_action_head_parameter_names()
-                projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+                projector_parameters = [name for name, _ in opt_model.named_parameters() if is_mm_projector_parameter(name)]
                 optimizer_grouped_parameters = [
                     {
                         "params": [p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and n not in action_dit_projector_parameters and p.requires_grad)],
@@ -678,7 +681,7 @@ class NonMixTrainer(Trainer):
                     },
                 ]
             elif self.args.mm_projector_lr is not None:
-                projector_parameters = [name for name, _ in opt_model.named_parameters() if "mm_projector" in name]
+                projector_parameters = [name for name, _ in opt_model.named_parameters() if is_mm_projector_parameter(name)]
                 optimizer_grouped_parameters = [
                     {
                         "params": [p for n, p in opt_model.named_parameters() if (n in decay_parameters and n not in projector_parameters and p.requires_grad)],
