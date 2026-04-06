@@ -427,6 +427,166 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
+def load_checkpoint_state_dict(ckpt_path: str):
+    if not os.path.exists(ckpt_path):
+        raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
+    if ckpt_path.endswith(".safetensors"):
+        from safetensors.torch import load_file as safe_load_file
+        state_dict = safe_load_file(ckpt_path, device="cpu")
+    else:
+        state_dict = torch.load(ckpt_path, map_location="cpu")
+
+    if isinstance(state_dict, dict) and "state_dict" in state_dict and isinstance(state_dict["state_dict"], dict):
+        state_dict = state_dict["state_dict"]
+
+    normalized_state_dict = {}
+    for key, value in state_dict.items():
+        new_key = key
+        if new_key.startswith("module."):
+            new_key = new_key[len("module."):]
+        if new_key.startswith("_orig_mod."):
+            new_key = new_key[len("_orig_mod."):]
+        normalized_state_dict[new_key] = value
+    return normalized_state_dict
+
+
+def extract_checkpoint_tag(ckpt_path: str) -> str:
+    ckpt_path = Path(ckpt_path)
+    ckpt_dir = ckpt_path.parent.name if ckpt_path.parent.name else ckpt_path.stem
+    exp_dir = ckpt_path.parent.parent.name if ckpt_path.parent.parent.name else "unknown_exp"
+    return f"{exp_dir}_{ckpt_dir}"
+
+
+def append_init_tags_to_output_dir(output_dir: str, base_init_ckpt_path=None, gen_init_ckpt_path=None, loc_init_ckpt_path=None) -> str:
+    suffixes = []
+    if base_init_ckpt_path:
+        suffixes.append(f"initbase_{extract_checkpoint_tag(base_init_ckpt_path)}")
+    if gen_init_ckpt_path:
+        suffixes.append(f"initgen_{extract_checkpoint_tag(gen_init_ckpt_path)}")
+    if loc_init_ckpt_path:
+        suffixes.append(f"initloc_{extract_checkpoint_tag(loc_init_ckpt_path)}")
+    if not suffixes:
+        return output_dir
+    return f"{output_dir}_{'_'.join(suffixes)}"
+
+
+def key_matches_prefix(key: str, prefix: str) -> bool:
+    return key == prefix or key.startswith(prefix + ".")
+
+
+def build_generation_init_prefixes(model_config) -> List[str]:
+    return [
+        "model.latent_queries",
+        "model.llm_connector",
+        "model.projector",
+        "model.dit",
+        "model.vae_decoder",
+    ]
+
+
+def build_localization_init_prefixes(model_config) -> List[str]:
+    if getattr(model_config, "use_external_loc_model", False):
+        return []
+
+    prefixes = []
+
+    if getattr(model_config, "use_codex_vit_regression_head", False):
+        prefixes.extend([
+            "model.vit_loc_fusion",
+            "model.regression_loc_head",
+            "model.action_dit_norm",
+        ])
+        if getattr(model_config, "is_action_dit_projector", False):
+            prefixes.append("model.action_dit_projector")
+        return prefixes
+
+    if getattr(model_config, "use_vit_cls_regression_head", False):
+        prefixes.extend([
+            "model.regression_loc_head",
+            "model.action_dit_norm",
+        ])
+        if getattr(model_config, "is_action_dit_projector", False):
+            prefixes.append("model.action_dit_projector")
+        return prefixes
+
+    if getattr(model_config, "use_vit_regression_head", False):
+        prefixes.extend([
+            "model.cross_view_fusion",
+            "model.regression_loc_head",
+            "model.action_dit_norm",
+        ])
+        if getattr(model_config, "is_action_dit_projector", False):
+            prefixes.append("model.action_dit_projector")
+        return prefixes
+
+    if getattr(model_config, "use_pi05_action_dit", False):
+        prefixes.append("model.action_dit_connector")
+
+    prefixes.extend([
+        "model.action_dit_norm",
+        "model.action_dit",
+        "model.action_in_proj",
+        "model.action_out_proj",
+        "model.time_mlp_in",
+        "model.time_mlp_out",
+    ])
+
+    if getattr(model_config, "is_action_dit_projector", False):
+        prefixes.append("model.action_dit_projector")
+    if getattr(model_config, "is_loc_learnable_query", False):
+        prefixes.append("model.loc_learnable_query")
+
+    return prefixes
+
+
+def load_partial_checkpoint(model, ckpt_path: str, prefixes: List[str], tag: str):
+    if not prefixes:
+        raise RuntimeError(f"No prefixes configured for partial checkpoint load: {tag}")
+
+    src_state_dict = load_checkpoint_state_dict(ckpt_path)
+    target_state_dict = model.state_dict()
+
+    filtered_state_dict = {}
+    matched_keys = []
+    missing_target_keys = []
+    shape_mismatch_keys = []
+
+    for key, value in src_state_dict.items():
+        if not any(key_matches_prefix(key, prefix) for prefix in prefixes):
+            continue
+        matched_keys.append(key)
+        if key not in target_state_dict:
+            missing_target_keys.append(key)
+            continue
+        if tuple(target_state_dict[key].shape) != tuple(value.shape):
+            shape_mismatch_keys.append((key, tuple(value.shape), tuple(target_state_dict[key].shape)))
+            continue
+        filtered_state_dict[key] = value
+
+    if len(filtered_state_dict) == 0:
+        raise RuntimeError(
+            f"Partial checkpoint load for {tag} produced 0 loadable keys from {ckpt_path}. "
+            f"Matched={len(matched_keys)}, missing_target={len(missing_target_keys)}, shape_mismatch={len(shape_mismatch_keys)}"
+        )
+
+    msg = model.load_state_dict(filtered_state_dict, strict=False)
+    logging.info(
+        "Loaded partial checkpoint for %s from %s: prefixes=%s, matched=%d, loaded=%d, missing_target=%d, shape_mismatch=%d",
+        tag,
+        ckpt_path,
+        prefixes,
+        len(matched_keys),
+        len(filtered_state_dict),
+        len(missing_target_keys),
+        len(shape_mismatch_keys),
+    )
+    if missing_target_keys:
+        logging.info("Partial checkpoint missing target keys for %s (showing up to 10): %s", tag, missing_target_keys[:10])
+    if shape_mismatch_keys:
+        logging.info("Partial checkpoint shape mismatches for %s (showing up to 10): %s", tag, shape_mismatch_keys[:10])
+    logging.info(msg)
+
+
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
@@ -1697,6 +1857,9 @@ def train(attn_implementation=None):
     model.config.use_external_loc_model = csgo_config.get("use_external_loc_model", False)
     model.config.external_loc_input_size = csgo_config.get("external_loc_input_size", 224)
     model.config.external_loc_use_circular_loss = csgo_config.get("external_loc_use_circular_loss", True)
+    model.config.base_init_ckpt_path = csgo_config.get("base_init_ckpt_path", None)
+    model.config.gen_init_ckpt_path = csgo_config.get("gen_init_ckpt_path", None)
+    model.config.loc_init_ckpt_path = csgo_config.get("loc_init_ckpt_path", None)
     model_args.train_mm_projector_only = csgo_config.get(
         "train_mm_projector_only",
         getattr(model_args, "train_mm_projector_only", False),
@@ -1837,17 +2000,50 @@ def train(attn_implementation=None):
     model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
     model.config.pad_token_id = tokenizer.pad_token_id
 
+    base_init_ckpt_path = csgo_config.get("base_init_ckpt_path", None)
+    gen_init_ckpt_path = csgo_config.get("gen_init_ckpt_path", None)
+    loc_init_ckpt_path = csgo_config.get("loc_init_ckpt_path", None)
+    resume_ckpt_path = csgo_config.get("resume_ckpt_path", None)
+    has_selective_init = any([base_init_ckpt_path, gen_init_ckpt_path, loc_init_ckpt_path])
+
+    if training_args.pretrain_path != 'none' and has_selective_init:
+        raise ValueError("pretrain_path is mutually exclusive with base/gen/loc init_ckpt_path.")
+    if resume_ckpt_path is not None and has_selective_init:
+        raise ValueError("resume_ckpt_path is mutually exclusive with base/gen/loc init_ckpt_path.")
 
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
-        if pretrain_path.endswith(".safetensors"):
-            from safetensors.torch import load_file as safe_load_file
-            state_dict = safe_load_file(pretrain_path, device="cpu")
-        else:
-            state_dict = torch.load(pretrain_path, map_location="cpu")
+        state_dict = load_checkpoint_state_dict(pretrain_path)
         msg = model.load_state_dict(state_dict, strict=False)
         logging.info(f"load pretrain: {pretrain_path}")
         logging.info(msg)
+
+    if has_selective_init:
+        if base_init_ckpt_path is not None:
+            base_state_dict = load_checkpoint_state_dict(base_init_ckpt_path)
+            msg = model.load_state_dict(base_state_dict, strict=False)
+            logging.info(f"Loaded base init checkpoint: {base_init_ckpt_path}")
+            logging.info(msg)
+
+        if gen_init_ckpt_path is not None:
+            gen_prefixes = build_generation_init_prefixes(model.config)
+            load_partial_checkpoint(model, gen_init_ckpt_path, gen_prefixes, "generation ckpt init")
+
+        if loc_init_ckpt_path is not None:
+            if getattr(model.config, "use_external_loc_model", False):
+                raise ValueError("loc_init_ckpt_path is not supported when use_external_loc_model=True.")
+            if skip_internal_loc_modules:
+                raise ValueError("loc_init_ckpt_path requires skip_internal_loc_modules=False so internal localization modules exist.")
+            loc_prefixes = build_localization_init_prefixes(model.config)
+            load_partial_checkpoint(model, loc_init_ckpt_path, loc_prefixes, "localization ckpt init")
+
+        training_args.output_dir = append_init_tags_to_output_dir(
+            training_args.output_dir,
+            base_init_ckpt_path=base_init_ckpt_path,
+            gen_init_ckpt_path=gen_init_ckpt_path,
+            loc_init_ckpt_path=loc_init_ckpt_path,
+        )
+        logging.info("Updated output_dir for selective init experiment: %s", training_args.output_dir)
 
 
     # def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
@@ -1892,14 +2088,9 @@ def train(attn_implementation=None):
 
 
     # 自定义resume训练加载ckpt，支持resume的单卡多卡切换
-    resume_ckpt_path = csgo_config.get('resume_ckpt_path', None)
     if resume_ckpt_path is not None:
         print(f"📥 Loading Checkpoint: {resume_ckpt_path}")
-        if resume_ckpt_path.endswith(".safetensors"):
-            from safetensors.torch import load_file as safe_load_file
-            state_dict = safe_load_file(resume_ckpt_path, device="cpu")
-        else:
-            state_dict = torch.load(resume_ckpt_path, map_location="cpu")
+        state_dict = load_checkpoint_state_dict(resume_ckpt_path)
         msg = model.load_state_dict(state_dict, strict=False)
         print(msg)
 
