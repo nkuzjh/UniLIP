@@ -427,7 +427,6 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
         del state_dict
         trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
-
 def load_checkpoint_state_dict(ckpt_path: str):
     if not os.path.exists(ckpt_path):
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_path}")
@@ -545,6 +544,7 @@ def load_partial_checkpoint(model, ckpt_path: str, prefixes: List[str], tag: str
         raise RuntimeError(f"No prefixes configured for partial checkpoint load: {tag}")
 
     src_state_dict = load_checkpoint_state_dict(ckpt_path)
+    src_state_dict = smart_matching_state_dict_keys(src_state_dict, model)
     target_state_dict = model.state_dict()
 
     filtered_state_dict = {}
@@ -1677,6 +1677,26 @@ class AlphaLocScheduleCallback(TrainerCallback):
             self._set_alpha(model, state.global_step)
         return control
 
+def smart_matching_state_dict_keys(state_dict, model):
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith("language_model.lm_head."):
+            new_k = k[len("language_model."):]
+        elif k.startswith("language_model.model."):
+            new_k =  "model.language_model." + k[len("language_model.model."):]
+        elif k.startswith("vision_tower."):
+            new_k = "model." + k
+        elif k.startswith("multi_modal_projector."):
+            new_k = "model." + k
+        else:
+            new_k = k
+        new_state_dict[new_k] = v
+
+    logging.info(f"replace language_model.lm_head. to language_model.")
+    logging.info(f"replace language_model.model. to model.language_model.")
+    logging.info(f"replace vision_tower. to model.vision_tower.")
+    logging.info(f"replace multi_modal_projector. to model.multi_modal_projector.")
+    return new_state_dict
 
 def train(attn_implementation=None):
 
@@ -2019,6 +2039,7 @@ def train(attn_implementation=None):
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
         state_dict = load_checkpoint_state_dict(pretrain_path)
+        state_dict = smart_matching_state_dict_keys(state_dict, model)
         msg = model.load_state_dict(state_dict, strict=False)
         logging.info(f"load pretrain: {pretrain_path}")
         logging.info(msg)
@@ -2026,6 +2047,7 @@ def train(attn_implementation=None):
     if has_selective_init:
         if base_init_ckpt_path is not None:
             base_state_dict = load_checkpoint_state_dict(base_init_ckpt_path)
+            base_state_dict = smart_matching_state_dict_keys(base_state_dict, model)
             msg = model.load_state_dict(base_state_dict, strict=False)
             logging.info(f"Loaded base init checkpoint: {base_init_ckpt_path}")
             logging.info(msg)
@@ -2096,6 +2118,7 @@ def train(attn_implementation=None):
     if resume_ckpt_path is not None:
         print(f"📥 Loading Checkpoint: {resume_ckpt_path}")
         state_dict = load_checkpoint_state_dict(resume_ckpt_path)
+        state_dict = smart_matching_state_dict_keys(state_dict, model)
         msg = model.load_state_dict(state_dict, strict=False)
         print(msg)
 
@@ -2147,15 +2170,13 @@ def train(attn_implementation=None):
 
 
 
-    # from tabulate import tabulate
-    # if trainer.is_world_process_zero():
-    #     stat = []
-    #     for i, (n, p) in enumerate(trainer.model.named_parameters()):
-    #         stat.append([i, n, p.shape, p.requires_grad])
-    #     logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
     from tabulate import tabulate
-
     if trainer.is_world_process_zero():
+        # stat = []
+        # for i, (n, p) in enumerate(trainer.model.named_parameters()):
+        #     stat.append([i, n, p.shape, p.requires_grad])
+        # logging.info(tabulate(stat, headers=["idx", "name", "shape", "trainable"]))
+
         trainer.create_optimizer() # 步数随便填个大概就行，提供给 optimizer 初始化用，后续 trainer.train() 会根据实际步数重新创建 scheduler 和 optimizer 的 state，不受这里的 num_training_steps 影响
         # 1. 建立 [参数内存地址 -> 学习率] 的映射字典
         param_id_to_lr = {}

@@ -479,11 +479,11 @@ class NonMixTrainer(Trainer):
 
             def get_action_dit_core_parameter_names():
                 parameter_names = {
-                    "action_dit",
-                    "action_in_proj",
-                    "action_out_proj",
-                    "time_mlp_in",
-                    "time_mlp_out",
+                    "action_dit.",
+                    "action_in_proj.",
+                    "action_out_proj.",
+                    "time_mlp_in.",
+                    "time_mlp_out.",
                 }
                 return [
                     name for name, _ in opt_model.named_parameters()

@@ -20933,6 +20933,7677 @@ model.time_mlp_out.bias
 
 
 
+# print_loss_route_summary(route_results)
+
+LOSS ROUTE SUMMARY
+
+## [total_loss]
+  model.latent_queries                               -> NONZERO  abs_sum=6.406250
+  model.vision_tower.embeddings.class_embedding      -> FROZEN
+  model.vision_tower.embeddings.position_embedding   -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.weight -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.0.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.1.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.2.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.3.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.4.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.5.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.6.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.7.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.8.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.9.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.10.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.10.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.11.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.12.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.13.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.14.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.15.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.16.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.17.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.18.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.19.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.20.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.21.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.22.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.23.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.bias    -> FROZEN
+  model.multi_modal_projector.0.weight               -> FROZEN
+  model.multi_modal_projector.0.bias                 -> FROZEN
+  model.multi_modal_projector.1.weight               -> FROZEN
+  model.multi_modal_projector.1.bias                 -> FROZEN
+  model.multi_modal_projector.3.weight               -> FROZEN
+  model.multi_modal_projector.3.bias                 -> FROZEN
+  model.language_model.embed_tokens.weight           -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.0.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.0.input_layernorm.weight -> FROZEN
+  model.language_model.layers.0.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.1.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.1.input_layernorm.weight -> FROZEN
+  model.language_model.layers.1.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.2.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.2.input_layernorm.weight -> FROZEN
+  model.language_model.layers.2.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.3.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.3.input_layernorm.weight -> FROZEN
+  model.language_model.layers.3.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.4.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.4.input_layernorm.weight -> FROZEN
+  model.language_model.layers.4.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.5.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.5.input_layernorm.weight -> FROZEN
+  model.language_model.layers.5.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.6.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.6.input_layernorm.weight -> FROZEN
+  model.language_model.layers.6.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.7.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.7.input_layernorm.weight -> FROZEN
+  model.language_model.layers.7.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.8.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.8.input_layernorm.weight -> FROZEN
+  model.language_model.layers.8.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.9.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.9.input_layernorm.weight -> FROZEN
+  model.language_model.layers.9.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.10.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.10.input_layernorm.weight -> FROZEN
+  model.language_model.layers.10.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.11.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.11.input_layernorm.weight -> FROZEN
+  model.language_model.layers.11.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.12.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.12.input_layernorm.weight -> FROZEN
+  model.language_model.layers.12.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.13.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.13.input_layernorm.weight -> FROZEN
+  model.language_model.layers.13.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.14.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.14.input_layernorm.weight -> FROZEN
+  model.language_model.layers.14.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.15.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.15.input_layernorm.weight -> FROZEN
+  model.language_model.layers.15.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.16.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.16.input_layernorm.weight -> FROZEN
+  model.language_model.layers.16.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.17.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.17.input_layernorm.weight -> FROZEN
+  model.language_model.layers.17.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.18.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.18.input_layernorm.weight -> FROZEN
+  model.language_model.layers.18.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.19.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.19.input_layernorm.weight -> FROZEN
+  model.language_model.layers.19.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.20.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.20.input_layernorm.weight -> FROZEN
+  model.language_model.layers.20.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.21.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.21.input_layernorm.weight -> FROZEN
+  model.language_model.layers.21.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.22.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.22.input_layernorm.weight -> FROZEN
+  model.language_model.layers.22.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.23.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.23.input_layernorm.weight -> FROZEN
+  model.language_model.layers.23.post_attention_layernorm.weight -> FROZEN
+  model.language_model.norm.weight                   -> FROZEN
+  model.dit.scale_shift_table                        -> NONZERO  abs_sum=0.601562
+  model.dit.patch_embed.proj.weight                  -> NONZERO  abs_sum=1.898438
+  model.dit.patch_embed.proj.bias                    -> NONZERO  abs_sum=0.089355
+  model.dit.time_embed.emb.timestep_embedder.linear_1.weight -> NONZERO  abs_sum=6.625000
+  model.dit.time_embed.emb.timestep_embedder.linear_1.bias -> NONZERO  abs_sum=0.039062
+  model.dit.time_embed.emb.timestep_embedder.linear_2.weight -> NONZERO  abs_sum=9.000000
+  model.dit.time_embed.emb.timestep_embedder.linear_2.bias -> NONZERO  abs_sum=0.613281
+  model.dit.time_embed.linear.weight                 -> NONZERO  abs_sum=19.375000
+  model.dit.time_embed.linear.bias                   -> NONZERO  abs_sum=3.671875
+  model.dit.caption_projection.linear_1.weight       -> NONZERO  abs_sum=5.718750
+  model.dit.caption_projection.linear_1.bias         -> NONZERO  abs_sum=0.000254
+  model.dit.caption_projection.linear_2.weight       -> NONZERO  abs_sum=10.062500
+  model.dit.caption_projection.linear_2.bias         -> NONZERO  abs_sum=0.000160
+  model.dit.caption_norm.weight                      -> NONZERO  abs_sum=2.078125
+  model.dit.transformer_blocks.0.scale_shift_table   -> NONZERO  abs_sum=0.443359
+  model.dit.transformer_blocks.0.attn1.to_q.weight   -> NONZERO  abs_sum=0.059570
+  model.dit.transformer_blocks.0.attn1.to_k.weight   -> NONZERO  abs_sum=0.064941
+  model.dit.transformer_blocks.0.attn1.to_v.weight   -> NONZERO  abs_sum=0.871094
+  model.dit.transformer_blocks.0.attn1.to_out.0.weight -> NONZERO  abs_sum=1.101562
+  model.dit.transformer_blocks.0.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001854
+  model.dit.transformer_blocks.0.attn2.to_q.weight   -> NONZERO  abs_sum=0.108887
+  model.dit.transformer_blocks.0.attn2.to_q.bias     -> NONZERO  abs_sum=0.000141
+  model.dit.transformer_blocks.0.attn2.to_k.weight   -> NONZERO  abs_sum=0.267578
+  model.dit.transformer_blocks.0.attn2.to_k.bias     -> NONZERO  abs_sum=0.000096
+  model.dit.transformer_blocks.0.attn2.to_v.weight   -> NONZERO  abs_sum=0.398438
+  model.dit.transformer_blocks.0.attn2.to_v.bias     -> NONZERO  abs_sum=0.238281
+  model.dit.transformer_blocks.0.attn2.to_out.0.weight -> NONZERO  abs_sum=1.070312
+  model.dit.transformer_blocks.0.attn2.to_out.0.bias -> NONZERO  abs_sum=0.083008
+  model.dit.transformer_blocks.0.ff.conv_inverted.weight -> NONZERO  abs_sum=1.671875
+  model.dit.transformer_blocks.0.ff.conv_inverted.bias -> NONZERO  abs_sum=0.033936
+  model.dit.transformer_blocks.0.ff.conv_depth.weight -> NONZERO  abs_sum=0.400391
+  model.dit.transformer_blocks.0.ff.conv_depth.bias  -> NONZERO  abs_sum=0.157227
+  model.dit.transformer_blocks.0.ff.conv_point.weight -> NONZERO  abs_sum=2.734375
+  model.dit.transformer_blocks.1.scale_shift_table   -> NONZERO  abs_sum=0.431641
+  model.dit.transformer_blocks.1.attn1.to_q.weight   -> NONZERO  abs_sum=0.161133
+  model.dit.transformer_blocks.1.attn1.to_k.weight   -> NONZERO  abs_sum=0.113770
+  model.dit.transformer_blocks.1.attn1.to_v.weight   -> NONZERO  abs_sum=0.738281
+  model.dit.transformer_blocks.1.attn1.to_out.0.weight -> NONZERO  abs_sum=0.781250
+  model.dit.transformer_blocks.1.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003815
+  model.dit.transformer_blocks.1.attn2.to_q.weight   -> NONZERO  abs_sum=0.100586
+  model.dit.transformer_blocks.1.attn2.to_q.bias     -> NONZERO  abs_sum=0.000117
+  model.dit.transformer_blocks.1.attn2.to_k.weight   -> NONZERO  abs_sum=0.154297
+  model.dit.transformer_blocks.1.attn2.to_k.bias     -> NONZERO  abs_sum=0.000060
+  model.dit.transformer_blocks.1.attn2.to_v.weight   -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.1.attn2.to_v.bias     -> NONZERO  abs_sum=0.250000
+  model.dit.transformer_blocks.1.attn2.to_out.0.weight -> NONZERO  abs_sum=0.601562
+  model.dit.transformer_blocks.1.attn2.to_out.0.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.1.ff.conv_inverted.weight -> NONZERO  abs_sum=2.750000
+  model.dit.transformer_blocks.1.ff.conv_inverted.bias -> NONZERO  abs_sum=0.047119
+  model.dit.transformer_blocks.1.ff.conv_depth.weight -> NONZERO  abs_sum=0.453125
+  model.dit.transformer_blocks.1.ff.conv_depth.bias  -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.1.ff.conv_point.weight -> NONZERO  abs_sum=3.187500
+  model.dit.transformer_blocks.2.scale_shift_table   -> NONZERO  abs_sum=0.496094
+  model.dit.transformer_blocks.2.attn1.to_q.weight   -> NONZERO  abs_sum=0.394531
+  model.dit.transformer_blocks.2.attn1.to_k.weight   -> NONZERO  abs_sum=0.231445
+  model.dit.transformer_blocks.2.attn1.to_v.weight   -> NONZERO  abs_sum=0.878906
+  model.dit.transformer_blocks.2.attn1.to_out.0.weight -> NONZERO  abs_sum=0.863281
+  model.dit.transformer_blocks.2.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004425
+  model.dit.transformer_blocks.2.attn2.to_q.weight   -> NONZERO  abs_sum=0.176758
+  model.dit.transformer_blocks.2.attn2.to_q.bias     -> NONZERO  abs_sum=0.000234
+  model.dit.transformer_blocks.2.attn2.to_k.weight   -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.2.attn2.to_k.bias     -> NONZERO  abs_sum=0.000072
+  model.dit.transformer_blocks.2.attn2.to_v.weight   -> NONZERO  abs_sum=0.427734
+  model.dit.transformer_blocks.2.attn2.to_v.bias     -> NONZERO  abs_sum=0.279297
+  model.dit.transformer_blocks.2.attn2.to_out.0.weight -> NONZERO  abs_sum=0.710938
+  model.dit.transformer_blocks.2.attn2.to_out.0.bias -> NONZERO  abs_sum=0.081055
+  model.dit.transformer_blocks.2.ff.conv_inverted.weight -> NONZERO  abs_sum=3.953125
+  model.dit.transformer_blocks.2.ff.conv_inverted.bias -> NONZERO  abs_sum=0.062256
+  model.dit.transformer_blocks.2.ff.conv_depth.weight -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.2.ff.conv_depth.bias  -> NONZERO  abs_sum=0.208984
+  model.dit.transformer_blocks.2.ff.conv_point.weight -> NONZERO  abs_sum=3.593750
+  model.dit.transformer_blocks.3.scale_shift_table   -> NONZERO  abs_sum=0.490234
+  model.dit.transformer_blocks.3.attn1.to_q.weight   -> NONZERO  abs_sum=0.589844
+  model.dit.transformer_blocks.3.attn1.to_k.weight   -> NONZERO  abs_sum=0.312500
+  model.dit.transformer_blocks.3.attn1.to_v.weight   -> NONZERO  abs_sum=0.984375
+  model.dit.transformer_blocks.3.attn1.to_out.0.weight -> NONZERO  abs_sum=1.007812
+  model.dit.transformer_blocks.3.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004730
+  model.dit.transformer_blocks.3.attn2.to_q.weight   -> NONZERO  abs_sum=0.167969
+  model.dit.transformer_blocks.3.attn2.to_q.bias     -> NONZERO  abs_sum=0.000179
+  model.dit.transformer_blocks.3.attn2.to_k.weight   -> NONZERO  abs_sum=0.159180
+  model.dit.transformer_blocks.3.attn2.to_k.bias     -> NONZERO  abs_sum=0.000062
+  model.dit.transformer_blocks.3.attn2.to_v.weight   -> NONZERO  abs_sum=0.326172
+  model.dit.transformer_blocks.3.attn2.to_v.bias     -> NONZERO  abs_sum=0.289062
+  model.dit.transformer_blocks.3.attn2.to_out.0.weight -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.3.attn2.to_out.0.bias -> NONZERO  abs_sum=0.081543
+  model.dit.transformer_blocks.3.ff.conv_inverted.weight -> NONZERO  abs_sum=4.875000
+  model.dit.transformer_blocks.3.ff.conv_inverted.bias -> NONZERO  abs_sum=0.068848
+  model.dit.transformer_blocks.3.ff.conv_depth.weight -> NONZERO  abs_sum=0.593750
+  model.dit.transformer_blocks.3.ff.conv_depth.bias  -> NONZERO  abs_sum=0.225586
+  model.dit.transformer_blocks.3.ff.conv_point.weight -> NONZERO  abs_sum=4.031250
+  model.dit.transformer_blocks.4.scale_shift_table   -> NONZERO  abs_sum=0.511719
+  model.dit.transformer_blocks.4.attn1.to_q.weight   -> NONZERO  abs_sum=0.617188
+  model.dit.transformer_blocks.4.attn1.to_k.weight   -> NONZERO  abs_sum=0.361328
+  model.dit.transformer_blocks.4.attn1.to_v.weight   -> NONZERO  abs_sum=1.164062
+  model.dit.transformer_blocks.4.attn1.to_out.0.weight -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.4.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004761
+  model.dit.transformer_blocks.4.attn2.to_q.weight   -> NONZERO  abs_sum=0.275391
+  model.dit.transformer_blocks.4.attn2.to_q.bias     -> NONZERO  abs_sum=0.000280
+  model.dit.transformer_blocks.4.attn2.to_k.weight   -> NONZERO  abs_sum=0.219727
+  model.dit.transformer_blocks.4.attn2.to_k.bias     -> NONZERO  abs_sum=0.000068
+  model.dit.transformer_blocks.4.attn2.to_v.weight   -> NONZERO  abs_sum=0.480469
+  model.dit.transformer_blocks.4.attn2.to_v.bias     -> NONZERO  abs_sum=0.332031
+  model.dit.transformer_blocks.4.attn2.to_out.0.weight -> NONZERO  abs_sum=0.785156
+  model.dit.transformer_blocks.4.attn2.to_out.0.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.4.ff.conv_inverted.weight -> NONZERO  abs_sum=5.937500
+  model.dit.transformer_blocks.4.ff.conv_inverted.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.4.ff.conv_depth.weight -> NONZERO  abs_sum=0.699219
+  model.dit.transformer_blocks.4.ff.conv_depth.bias  -> NONZERO  abs_sum=0.257812
+  model.dit.transformer_blocks.4.ff.conv_point.weight -> NONZERO  abs_sum=4.500000
+  model.dit.transformer_blocks.5.scale_shift_table   -> NONZERO  abs_sum=0.566406
+  model.dit.transformer_blocks.5.attn1.to_q.weight   -> NONZERO  abs_sum=0.667969
+  model.dit.transformer_blocks.5.attn1.to_k.weight   -> NONZERO  abs_sum=0.429688
+  model.dit.transformer_blocks.5.attn1.to_v.weight   -> NONZERO  abs_sum=1.210938
+  model.dit.transformer_blocks.5.attn1.to_out.0.weight -> NONZERO  abs_sum=1.218750
+  model.dit.transformer_blocks.5.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004883
+  model.dit.transformer_blocks.5.attn2.to_q.weight   -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.5.attn2.to_q.bias     -> NONZERO  abs_sum=0.000549
+  model.dit.transformer_blocks.5.attn2.to_k.weight   -> NONZERO  abs_sum=0.419922
+  model.dit.transformer_blocks.5.attn2.to_k.bias     -> NONZERO  abs_sum=0.000096
+  model.dit.transformer_blocks.5.attn2.to_v.weight   -> NONZERO  abs_sum=0.812500
+  model.dit.transformer_blocks.5.attn2.to_v.bias     -> NONZERO  abs_sum=0.339844
+  model.dit.transformer_blocks.5.attn2.to_out.0.weight -> NONZERO  abs_sum=1.437500
+  model.dit.transformer_blocks.5.attn2.to_out.0.bias -> NONZERO  abs_sum=0.079590
+  model.dit.transformer_blocks.5.ff.conv_inverted.weight -> NONZERO  abs_sum=6.937500
+  model.dit.transformer_blocks.5.ff.conv_inverted.bias -> NONZERO  abs_sum=0.090820
+  model.dit.transformer_blocks.5.ff.conv_depth.weight -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.5.ff.conv_depth.bias  -> NONZERO  abs_sum=0.281250
+  model.dit.transformer_blocks.5.ff.conv_point.weight -> NONZERO  abs_sum=5.062500
+  model.dit.transformer_blocks.6.scale_shift_table   -> NONZERO  abs_sum=0.640625
+  model.dit.transformer_blocks.6.attn1.to_q.weight   -> NONZERO  abs_sum=0.746094
+  model.dit.transformer_blocks.6.attn1.to_k.weight   -> NONZERO  abs_sum=0.550781
+  model.dit.transformer_blocks.6.attn1.to_v.weight   -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.6.attn1.to_out.0.weight -> NONZERO  abs_sum=1.804688
+  model.dit.transformer_blocks.6.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005981
+  model.dit.transformer_blocks.6.attn2.to_q.weight   -> NONZERO  abs_sum=0.808594
+  model.dit.transformer_blocks.6.attn2.to_q.bias     -> NONZERO  abs_sum=0.000729
+  model.dit.transformer_blocks.6.attn2.to_k.weight   -> NONZERO  abs_sum=0.550781
+  model.dit.transformer_blocks.6.attn2.to_k.bias     -> NONZERO  abs_sum=0.000154
+  model.dit.transformer_blocks.6.attn2.to_v.weight   -> NONZERO  abs_sum=1.218750
+  model.dit.transformer_blocks.6.attn2.to_v.bias     -> NONZERO  abs_sum=0.349609
+  model.dit.transformer_blocks.6.attn2.to_out.0.weight -> NONZERO  abs_sum=2.218750
+  model.dit.transformer_blocks.6.attn2.to_out.0.bias -> NONZERO  abs_sum=0.076172
+  model.dit.transformer_blocks.6.ff.conv_inverted.weight -> NONZERO  abs_sum=8.500000
+  model.dit.transformer_blocks.6.ff.conv_inverted.bias -> NONZERO  abs_sum=0.097168
+  model.dit.transformer_blocks.6.ff.conv_depth.weight -> NONZERO  abs_sum=0.941406
+  model.dit.transformer_blocks.6.ff.conv_depth.bias  -> NONZERO  abs_sum=0.287109
+  model.dit.transformer_blocks.6.ff.conv_point.weight -> NONZERO  abs_sum=6.312500
+  model.dit.transformer_blocks.7.scale_shift_table   -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.7.attn1.to_q.weight   -> NONZERO  abs_sum=1.093750
+  model.dit.transformer_blocks.7.attn1.to_k.weight   -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.7.attn1.to_v.weight   -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.7.attn1.to_out.0.weight -> NONZERO  abs_sum=2.546875
+  model.dit.transformer_blocks.7.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006744
+  model.dit.transformer_blocks.7.attn2.to_q.weight   -> NONZERO  abs_sum=0.804688
+  model.dit.transformer_blocks.7.attn2.to_q.bias     -> NONZERO  abs_sum=0.000618
+  model.dit.transformer_blocks.7.attn2.to_k.weight   -> NONZERO  abs_sum=0.589844
+  model.dit.transformer_blocks.7.attn2.to_k.bias     -> NONZERO  abs_sum=0.000166
+  model.dit.transformer_blocks.7.attn2.to_v.weight   -> NONZERO  abs_sum=0.984375
+  model.dit.transformer_blocks.7.attn2.to_v.bias     -> NONZERO  abs_sum=0.349609
+  model.dit.transformer_blocks.7.attn2.to_out.0.weight -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.7.attn2.to_out.0.bias -> NONZERO  abs_sum=0.074219
+  model.dit.transformer_blocks.7.ff.conv_inverted.weight -> NONZERO  abs_sum=10.625000
+  model.dit.transformer_blocks.7.ff.conv_inverted.bias -> NONZERO  abs_sum=0.117188
+  model.dit.transformer_blocks.7.ff.conv_depth.weight -> NONZERO  abs_sum=1.226562
+  model.dit.transformer_blocks.7.ff.conv_depth.bias  -> NONZERO  abs_sum=0.351562
+  model.dit.transformer_blocks.7.ff.conv_point.weight -> NONZERO  abs_sum=7.500000
+  model.dit.transformer_blocks.8.scale_shift_table   -> NONZERO  abs_sum=0.847656
+  model.dit.transformer_blocks.8.attn1.to_q.weight   -> NONZERO  abs_sum=1.296875
+  model.dit.transformer_blocks.8.attn1.to_k.weight   -> NONZERO  abs_sum=1.078125
+  model.dit.transformer_blocks.8.attn1.to_v.weight   -> NONZERO  abs_sum=3.250000
+  model.dit.transformer_blocks.8.attn1.to_out.0.weight -> NONZERO  abs_sum=3.078125
+  model.dit.transformer_blocks.8.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007324
+  model.dit.transformer_blocks.8.attn2.to_q.weight   -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.8.attn2.to_q.bias     -> NONZERO  abs_sum=0.000519
+  model.dit.transformer_blocks.8.attn2.to_k.weight   -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.8.attn2.to_k.bias     -> NONZERO  abs_sum=0.000149
+  model.dit.transformer_blocks.8.attn2.to_v.weight   -> NONZERO  abs_sum=0.828125
+  model.dit.transformer_blocks.8.attn2.to_v.bias     -> NONZERO  abs_sum=0.384766
+  model.dit.transformer_blocks.8.attn2.to_out.0.weight -> NONZERO  abs_sum=1.539062
+  model.dit.transformer_blocks.8.attn2.to_out.0.bias -> NONZERO  abs_sum=0.072754
+  model.dit.transformer_blocks.8.ff.conv_inverted.weight -> NONZERO  abs_sum=13.125000
+  model.dit.transformer_blocks.8.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.8.ff.conv_depth.weight -> NONZERO  abs_sum=1.390625
+  model.dit.transformer_blocks.8.ff.conv_depth.bias  -> NONZERO  abs_sum=0.363281
+  model.dit.transformer_blocks.8.ff.conv_point.weight -> NONZERO  abs_sum=9.062500
+  model.dit.transformer_blocks.9.scale_shift_table   -> NONZERO  abs_sum=0.945312
+  model.dit.transformer_blocks.9.attn1.to_q.weight   -> NONZERO  abs_sum=1.648438
+  model.dit.transformer_blocks.9.attn1.to_k.weight   -> NONZERO  abs_sum=1.359375
+  model.dit.transformer_blocks.9.attn1.to_v.weight   -> NONZERO  abs_sum=4.062500
+  model.dit.transformer_blocks.9.attn1.to_out.0.weight -> NONZERO  abs_sum=3.750000
+  model.dit.transformer_blocks.9.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007812
+  model.dit.transformer_blocks.9.attn2.to_q.weight   -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.9.attn2.to_q.bias     -> NONZERO  abs_sum=0.000786
+  model.dit.transformer_blocks.9.attn2.to_k.weight   -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.9.attn2.to_k.bias     -> NONZERO  abs_sum=0.000305
+  model.dit.transformer_blocks.9.attn2.to_v.weight   -> NONZERO  abs_sum=1.179688
+  model.dit.transformer_blocks.9.attn2.to_v.bias     -> NONZERO  abs_sum=0.375000
+  model.dit.transformer_blocks.9.attn2.to_out.0.weight -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.9.attn2.to_out.0.bias -> NONZERO  abs_sum=0.069336
+  model.dit.transformer_blocks.9.ff.conv_inverted.weight -> NONZERO  abs_sum=16.125000
+  model.dit.transformer_blocks.9.ff.conv_inverted.bias -> NONZERO  abs_sum=0.141602
+  model.dit.transformer_blocks.9.ff.conv_depth.weight -> NONZERO  abs_sum=1.750000
+  model.dit.transformer_blocks.9.ff.conv_depth.bias  -> NONZERO  abs_sum=0.390625
+  model.dit.transformer_blocks.9.ff.conv_point.weight -> NONZERO  abs_sum=10.937500
+  model.dit.transformer_blocks.10.scale_shift_table  -> NONZERO  abs_sum=1.015625
+  model.dit.transformer_blocks.10.attn1.to_q.weight  -> NONZERO  abs_sum=2.031250
+  model.dit.transformer_blocks.10.attn1.to_k.weight  -> NONZERO  abs_sum=1.648438
+  model.dit.transformer_blocks.10.attn1.to_v.weight  -> NONZERO  abs_sum=4.687500
+  model.dit.transformer_blocks.10.attn1.to_out.0.weight -> NONZERO  abs_sum=4.562500
+  model.dit.transformer_blocks.10.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007660
+  model.dit.transformer_blocks.10.attn2.to_q.weight  -> NONZERO  abs_sum=1.289062
+  model.dit.transformer_blocks.10.attn2.to_q.bias    -> NONZERO  abs_sum=0.000584
+  model.dit.transformer_blocks.10.attn2.to_k.weight  -> NONZERO  abs_sum=1.242188
+  model.dit.transformer_blocks.10.attn2.to_k.bias    -> NONZERO  abs_sum=0.000402
+  model.dit.transformer_blocks.10.attn2.to_v.weight  -> NONZERO  abs_sum=1.117188
+  model.dit.transformer_blocks.10.attn2.to_v.bias    -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.10.attn2.to_out.0.weight -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.10.attn2.to_out.0.bias -> NONZERO  abs_sum=0.061523
+  model.dit.transformer_blocks.10.ff.conv_inverted.weight -> NONZERO  abs_sum=20.250000
+  model.dit.transformer_blocks.10.ff.conv_inverted.bias -> NONZERO  abs_sum=0.153320
+  model.dit.transformer_blocks.10.ff.conv_depth.weight -> NONZERO  abs_sum=2.078125
+  model.dit.transformer_blocks.10.ff.conv_depth.bias -> NONZERO  abs_sum=0.419922
+  model.dit.transformer_blocks.10.ff.conv_point.weight -> NONZERO  abs_sum=13.375000
+  model.dit.transformer_blocks.11.scale_shift_table  -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.11.attn1.to_q.weight  -> NONZERO  abs_sum=2.500000
+  model.dit.transformer_blocks.11.attn1.to_k.weight  -> NONZERO  abs_sum=1.898438
+  model.dit.transformer_blocks.11.attn1.to_v.weight  -> NONZERO  abs_sum=5.437500
+  model.dit.transformer_blocks.11.attn1.to_out.0.weight -> NONZERO  abs_sum=4.875000
+  model.dit.transformer_blocks.11.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007446
+  model.dit.transformer_blocks.11.attn2.to_q.weight  -> NONZERO  abs_sum=1.289062
+  model.dit.transformer_blocks.11.attn2.to_q.bias    -> NONZERO  abs_sum=0.000530
+  model.dit.transformer_blocks.11.attn2.to_k.weight  -> NONZERO  abs_sum=1.398438
+  model.dit.transformer_blocks.11.attn2.to_k.bias    -> NONZERO  abs_sum=0.000370
+  model.dit.transformer_blocks.11.attn2.to_v.weight  -> NONZERO  abs_sum=0.812500
+  model.dit.transformer_blocks.11.attn2.to_v.bias    -> NONZERO  abs_sum=0.339844
+  model.dit.transformer_blocks.11.attn2.to_out.0.weight -> NONZERO  abs_sum=1.570312
+  model.dit.transformer_blocks.11.attn2.to_out.0.bias -> NONZERO  abs_sum=0.057373
+  model.dit.transformer_blocks.11.ff.conv_inverted.weight -> NONZERO  abs_sum=23.875000
+  model.dit.transformer_blocks.11.ff.conv_inverted.bias -> NONZERO  abs_sum=0.174805
+  model.dit.transformer_blocks.11.ff.conv_depth.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.11.ff.conv_depth.bias -> NONZERO  abs_sum=0.451172
+  model.dit.transformer_blocks.11.ff.conv_point.weight -> NONZERO  abs_sum=15.500000
+  model.dit.transformer_blocks.12.scale_shift_table  -> NONZERO  abs_sum=1.070312
+  model.dit.transformer_blocks.12.attn1.to_q.weight  -> NONZERO  abs_sum=3.031250
+  model.dit.transformer_blocks.12.attn1.to_k.weight  -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.12.attn1.to_v.weight  -> NONZERO  abs_sum=5.843750
+  model.dit.transformer_blocks.12.attn1.to_out.0.weight -> NONZERO  abs_sum=5.625000
+  model.dit.transformer_blocks.12.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007416
+  model.dit.transformer_blocks.12.attn2.to_q.weight  -> NONZERO  abs_sum=1.593750
+  model.dit.transformer_blocks.12.attn2.to_q.bias    -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.12.attn2.to_k.weight  -> NONZERO  abs_sum=1.828125
+  model.dit.transformer_blocks.12.attn2.to_k.bias    -> NONZERO  abs_sum=0.000675
+  model.dit.transformer_blocks.12.attn2.to_v.weight  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.12.attn2.to_v.bias    -> NONZERO  abs_sum=0.308594
+  model.dit.transformer_blocks.12.attn2.to_out.0.weight -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.12.attn2.to_out.0.bias -> NONZERO  abs_sum=0.051270
+  model.dit.transformer_blocks.12.ff.conv_inverted.weight -> NONZERO  abs_sum=27.625000
+  model.dit.transformer_blocks.12.ff.conv_inverted.bias -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.12.ff.conv_depth.weight -> NONZERO  abs_sum=2.843750
+  model.dit.transformer_blocks.12.ff.conv_depth.bias -> NONZERO  abs_sum=0.460938
+  model.dit.transformer_blocks.12.ff.conv_point.weight -> NONZERO  abs_sum=17.125000
+  model.dit.transformer_blocks.13.scale_shift_table  -> NONZERO  abs_sum=1.007812
+  model.dit.transformer_blocks.13.attn1.to_q.weight  -> NONZERO  abs_sum=3.203125
+  model.dit.transformer_blocks.13.attn1.to_k.weight  -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.13.attn1.to_v.weight  -> NONZERO  abs_sum=5.843750
+  model.dit.transformer_blocks.13.attn1.to_out.0.weight -> NONZERO  abs_sum=5.000000
+  model.dit.transformer_blocks.13.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006653
+  model.dit.transformer_blocks.13.attn2.to_q.weight  -> NONZERO  abs_sum=2.250000
+  model.dit.transformer_blocks.13.attn2.to_q.bias    -> NONZERO  abs_sum=0.000633
+  model.dit.transformer_blocks.13.attn2.to_k.weight  -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.13.attn2.to_k.bias    -> NONZERO  abs_sum=0.000732
+  model.dit.transformer_blocks.13.attn2.to_v.weight  -> NONZERO  abs_sum=1.203125
+  model.dit.transformer_blocks.13.attn2.to_v.bias    -> NONZERO  abs_sum=0.283203
+  model.dit.transformer_blocks.13.attn2.to_out.0.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.13.attn2.to_out.0.bias -> NONZERO  abs_sum=0.045654
+  model.dit.transformer_blocks.13.ff.conv_inverted.weight -> NONZERO  abs_sum=29.500000
+  model.dit.transformer_blocks.13.ff.conv_inverted.bias -> NONZERO  abs_sum=0.177734
+  model.dit.transformer_blocks.13.ff.conv_depth.weight -> NONZERO  abs_sum=2.921875
+  model.dit.transformer_blocks.13.ff.conv_depth.bias -> NONZERO  abs_sum=0.437500
+  model.dit.transformer_blocks.13.ff.conv_point.weight -> NONZERO  abs_sum=18.000000
+  model.dit.transformer_blocks.14.scale_shift_table  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.14.attn1.to_q.weight  -> NONZERO  abs_sum=3.734375
+  model.dit.transformer_blocks.14.attn1.to_k.weight  -> NONZERO  abs_sum=1.703125
+  model.dit.transformer_blocks.14.attn1.to_v.weight  -> NONZERO  abs_sum=4.593750
+  model.dit.transformer_blocks.14.attn1.to_out.0.weight -> NONZERO  abs_sum=4.500000
+  model.dit.transformer_blocks.14.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005737
+  model.dit.transformer_blocks.14.attn2.to_q.weight  -> NONZERO  abs_sum=1.968750
+  model.dit.transformer_blocks.14.attn2.to_q.bias    -> NONZERO  abs_sum=0.000462
+  model.dit.transformer_blocks.14.attn2.to_k.weight  -> NONZERO  abs_sum=2.171875
+  model.dit.transformer_blocks.14.attn2.to_k.bias    -> NONZERO  abs_sum=0.000786
+  model.dit.transformer_blocks.14.attn2.to_v.weight  -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.14.attn2.to_v.bias    -> NONZERO  abs_sum=0.237305
+  model.dit.transformer_blocks.14.attn2.to_out.0.weight -> NONZERO  abs_sum=1.968750
+  model.dit.transformer_blocks.14.attn2.to_out.0.bias -> NONZERO  abs_sum=0.041260
+  model.dit.transformer_blocks.14.ff.conv_inverted.weight -> NONZERO  abs_sum=30.000000
+  model.dit.transformer_blocks.14.ff.conv_inverted.bias -> NONZERO  abs_sum=0.179688
+  model.dit.transformer_blocks.14.ff.conv_depth.weight -> NONZERO  abs_sum=2.968750
+  model.dit.transformer_blocks.14.ff.conv_depth.bias -> NONZERO  abs_sum=0.435547
+  model.dit.transformer_blocks.14.ff.conv_point.weight -> NONZERO  abs_sum=17.750000
+  model.dit.transformer_blocks.15.scale_shift_table  -> NONZERO  abs_sum=0.906250
+  model.dit.transformer_blocks.15.attn1.to_q.weight  -> NONZERO  abs_sum=3.718750
+  model.dit.transformer_blocks.15.attn1.to_k.weight  -> NONZERO  abs_sum=1.679688
+  model.dit.transformer_blocks.15.attn1.to_v.weight  -> NONZERO  abs_sum=4.531250
+  model.dit.transformer_blocks.15.attn1.to_out.0.weight -> NONZERO  abs_sum=4.031250
+  model.dit.transformer_blocks.15.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006348
+  model.dit.transformer_blocks.15.attn2.to_q.weight  -> NONZERO  abs_sum=2.046875
+  model.dit.transformer_blocks.15.attn2.to_q.bias    -> NONZERO  abs_sum=0.000500
+  model.dit.transformer_blocks.15.attn2.to_k.weight  -> NONZERO  abs_sum=2.437500
+  model.dit.transformer_blocks.15.attn2.to_k.bias    -> NONZERO  abs_sum=0.000874
+  model.dit.transformer_blocks.15.attn2.to_v.weight  -> NONZERO  abs_sum=0.968750
+  model.dit.transformer_blocks.15.attn2.to_v.bias    -> NONZERO  abs_sum=0.201172
+  model.dit.transformer_blocks.15.attn2.to_out.0.weight -> NONZERO  abs_sum=1.742188
+  model.dit.transformer_blocks.15.attn2.to_out.0.bias -> NONZERO  abs_sum=0.037842
+  model.dit.transformer_blocks.15.ff.conv_inverted.weight -> NONZERO  abs_sum=28.625000
+  model.dit.transformer_blocks.15.ff.conv_inverted.bias -> NONZERO  abs_sum=0.166016
+  model.dit.transformer_blocks.15.ff.conv_depth.weight -> NONZERO  abs_sum=2.953125
+  model.dit.transformer_blocks.15.ff.conv_depth.bias -> NONZERO  abs_sum=0.410156
+  model.dit.transformer_blocks.15.ff.conv_point.weight -> NONZERO  abs_sum=16.625000
+  model.dit.transformer_blocks.16.scale_shift_table  -> NONZERO  abs_sum=0.855469
+  model.dit.transformer_blocks.16.attn1.to_q.weight  -> NONZERO  abs_sum=3.437500
+  model.dit.transformer_blocks.16.attn1.to_k.weight  -> NONZERO  abs_sum=1.242188
+  model.dit.transformer_blocks.16.attn1.to_v.weight  -> NONZERO  abs_sum=3.781250
+  model.dit.transformer_blocks.16.attn1.to_out.0.weight -> NONZERO  abs_sum=3.343750
+  model.dit.transformer_blocks.16.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005310
+  model.dit.transformer_blocks.16.attn2.to_q.weight  -> NONZERO  abs_sum=1.492188
+  model.dit.transformer_blocks.16.attn2.to_q.bias    -> NONZERO  abs_sum=0.000284
+  model.dit.transformer_blocks.16.attn2.to_k.weight  -> NONZERO  abs_sum=1.835938
+  model.dit.transformer_blocks.16.attn2.to_k.bias    -> NONZERO  abs_sum=0.000702
+  model.dit.transformer_blocks.16.attn2.to_v.weight  -> NONZERO  abs_sum=0.750000
+  model.dit.transformer_blocks.16.attn2.to_v.bias    -> NONZERO  abs_sum=0.203125
+  model.dit.transformer_blocks.16.attn2.to_out.0.weight -> NONZERO  abs_sum=1.296875
+  model.dit.transformer_blocks.16.attn2.to_out.0.bias -> NONZERO  abs_sum=0.033936
+  model.dit.transformer_blocks.16.ff.conv_inverted.weight -> NONZERO  abs_sum=26.250000
+  model.dit.transformer_blocks.16.ff.conv_inverted.bias -> NONZERO  abs_sum=0.150391
+  model.dit.transformer_blocks.16.ff.conv_depth.weight -> NONZERO  abs_sum=2.703125
+  model.dit.transformer_blocks.16.ff.conv_depth.bias -> NONZERO  abs_sum=0.367188
+  model.dit.transformer_blocks.16.ff.conv_point.weight -> NONZERO  abs_sum=15.312500
+  model.dit.transformer_blocks.17.scale_shift_table  -> NONZERO  abs_sum=0.792969
+  model.dit.transformer_blocks.17.attn1.to_q.weight  -> NONZERO  abs_sum=3.281250
+  model.dit.transformer_blocks.17.attn1.to_k.weight  -> NONZERO  abs_sum=1.132812
+  model.dit.transformer_blocks.17.attn1.to_v.weight  -> NONZERO  abs_sum=3.015625
+  model.dit.transformer_blocks.17.attn1.to_out.0.weight -> NONZERO  abs_sum=2.906250
+  model.dit.transformer_blocks.17.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004913
+  model.dit.transformer_blocks.17.attn2.to_q.weight  -> NONZERO  abs_sum=1.304688
+  model.dit.transformer_blocks.17.attn2.to_q.bias    -> NONZERO  abs_sum=0.000234
+  model.dit.transformer_blocks.17.attn2.to_k.weight  -> NONZERO  abs_sum=1.492188
+  model.dit.transformer_blocks.17.attn2.to_k.bias    -> NONZERO  abs_sum=0.000595
+  model.dit.transformer_blocks.17.attn2.to_v.weight  -> NONZERO  abs_sum=0.671875
+  model.dit.transformer_blocks.17.attn2.to_v.bias    -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.17.attn2.to_out.0.weight -> NONZERO  abs_sum=1.273438
+  model.dit.transformer_blocks.17.attn2.to_out.0.bias -> NONZERO  abs_sum=0.032471
+  model.dit.transformer_blocks.17.ff.conv_inverted.weight -> NONZERO  abs_sum=24.375000
+  model.dit.transformer_blocks.17.ff.conv_inverted.bias -> NONZERO  abs_sum=0.146484
+  model.dit.transformer_blocks.17.ff.conv_depth.weight -> NONZERO  abs_sum=2.687500
+  model.dit.transformer_blocks.17.ff.conv_depth.bias -> NONZERO  abs_sum=0.357422
+  model.dit.transformer_blocks.17.ff.conv_point.weight -> NONZERO  abs_sum=14.187500
+  model.dit.transformer_blocks.18.scale_shift_table  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.18.attn1.to_q.weight  -> NONZERO  abs_sum=3.093750
+  model.dit.transformer_blocks.18.attn1.to_k.weight  -> NONZERO  abs_sum=0.878906
+  model.dit.transformer_blocks.18.attn1.to_v.weight  -> NONZERO  abs_sum=2.703125
+  model.dit.transformer_blocks.18.attn1.to_out.0.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.18.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004913
+  model.dit.transformer_blocks.18.attn2.to_q.weight  -> NONZERO  abs_sum=1.585938
+  model.dit.transformer_blocks.18.attn2.to_q.bias    -> NONZERO  abs_sum=0.000288
+  model.dit.transformer_blocks.18.attn2.to_k.weight  -> NONZERO  abs_sum=1.703125
+  model.dit.transformer_blocks.18.attn2.to_k.bias    -> NONZERO  abs_sum=0.000603
+  model.dit.transformer_blocks.18.attn2.to_v.weight  -> NONZERO  abs_sum=0.699219
+  model.dit.transformer_blocks.18.attn2.to_v.bias    -> NONZERO  abs_sum=0.163086
+  model.dit.transformer_blocks.18.attn2.to_out.0.weight -> NONZERO  abs_sum=1.171875
+  model.dit.transformer_blocks.18.attn2.to_out.0.bias -> NONZERO  abs_sum=0.028931
+  model.dit.transformer_blocks.18.ff.conv_inverted.weight -> NONZERO  abs_sum=22.375000
+  model.dit.transformer_blocks.18.ff.conv_inverted.bias -> NONZERO  abs_sum=0.130859
+  model.dit.transformer_blocks.18.ff.conv_depth.weight -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.18.ff.conv_depth.bias -> NONZERO  abs_sum=0.316406
+  model.dit.transformer_blocks.18.ff.conv_point.weight -> NONZERO  abs_sum=12.562500
+  model.dit.transformer_blocks.19.scale_shift_table  -> NONZERO  abs_sum=0.660156
+  model.dit.transformer_blocks.19.attn1.to_q.weight  -> NONZERO  abs_sum=2.812500
+  model.dit.transformer_blocks.19.attn1.to_k.weight  -> NONZERO  abs_sum=0.945312
+  model.dit.transformer_blocks.19.attn1.to_v.weight  -> NONZERO  abs_sum=2.890625
+  model.dit.transformer_blocks.19.attn1.to_out.0.weight -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.19.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004364
+  model.dit.transformer_blocks.19.attn2.to_q.weight  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.19.attn2.to_q.bias    -> NONZERO  abs_sum=0.000135
+  model.dit.transformer_blocks.19.attn2.to_k.weight  -> NONZERO  abs_sum=1.117188
+  model.dit.transformer_blocks.19.attn2.to_k.bias    -> NONZERO  abs_sum=0.000626
+  model.dit.transformer_blocks.19.attn2.to_v.weight  -> NONZERO  abs_sum=0.425781
+  model.dit.transformer_blocks.19.attn2.to_v.bias    -> NONZERO  abs_sum=0.115723
+  model.dit.transformer_blocks.19.attn2.to_out.0.weight -> NONZERO  abs_sum=0.800781
+  model.dit.transformer_blocks.19.attn2.to_out.0.bias -> NONZERO  abs_sum=0.025879
+  model.dit.transformer_blocks.19.ff.conv_inverted.weight -> NONZERO  abs_sum=21.250000
+  model.dit.transformer_blocks.19.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.19.ff.conv_depth.weight -> NONZERO  abs_sum=2.375000
+  model.dit.transformer_blocks.19.ff.conv_depth.bias -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.19.ff.conv_point.weight -> NONZERO  abs_sum=11.812500
+  model.dit.transformer_blocks.20.scale_shift_table  -> NONZERO  abs_sum=0.609375
+  model.dit.transformer_blocks.20.attn1.to_q.weight  -> NONZERO  abs_sum=2.875000
+  model.dit.transformer_blocks.20.attn1.to_k.weight  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.20.attn1.to_v.weight  -> NONZERO  abs_sum=2.515625
+  model.dit.transformer_blocks.20.attn1.to_out.0.weight -> NONZERO  abs_sum=1.945312
+  model.dit.transformer_blocks.20.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003998
+  model.dit.transformer_blocks.20.attn2.to_q.weight  -> NONZERO  abs_sum=0.726562
+  model.dit.transformer_blocks.20.attn2.to_q.bias    -> NONZERO  abs_sum=0.000099
+  model.dit.transformer_blocks.20.attn2.to_k.weight  -> NONZERO  abs_sum=0.832031
+  model.dit.transformer_blocks.20.attn2.to_k.bias    -> NONZERO  abs_sum=0.000353
+  model.dit.transformer_blocks.20.attn2.to_v.weight  -> NONZERO  abs_sum=0.314453
+  model.dit.transformer_blocks.20.attn2.to_v.bias    -> NONZERO  abs_sum=0.107422
+  model.dit.transformer_blocks.20.attn2.to_out.0.weight -> NONZERO  abs_sum=0.558594
+  model.dit.transformer_blocks.20.attn2.to_out.0.bias -> NONZERO  abs_sum=0.023315
+  model.dit.transformer_blocks.20.ff.conv_inverted.weight -> NONZERO  abs_sum=20.750000
+  model.dit.transformer_blocks.20.ff.conv_inverted.bias -> NONZERO  abs_sum=0.122070
+  model.dit.transformer_blocks.20.ff.conv_depth.weight -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.20.ff.conv_depth.bias -> NONZERO  abs_sum=0.300781
+  model.dit.transformer_blocks.20.ff.conv_point.weight -> NONZERO  abs_sum=11.062500
+  model.dit.transformer_blocks.21.scale_shift_table  -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.21.attn1.to_q.weight  -> NONZERO  abs_sum=2.531250
+  model.dit.transformer_blocks.21.attn1.to_k.weight  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.21.attn1.to_v.weight  -> NONZERO  abs_sum=2.187500
+  model.dit.transformer_blocks.21.attn1.to_out.0.weight -> NONZERO  abs_sum=1.671875
+  model.dit.transformer_blocks.21.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003403
+  model.dit.transformer_blocks.21.attn2.to_q.weight  -> NONZERO  abs_sum=0.219727
+  model.dit.transformer_blocks.21.attn2.to_q.bias    -> NONZERO  abs_sum=0.000019
+  model.dit.transformer_blocks.21.attn2.to_k.weight  -> NONZERO  abs_sum=0.314453
+  model.dit.transformer_blocks.21.attn2.to_k.bias    -> NONZERO  abs_sum=0.000231
+  model.dit.transformer_blocks.21.attn2.to_v.weight  -> NONZERO  abs_sum=0.182617
+  model.dit.transformer_blocks.21.attn2.to_v.bias    -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.21.attn2.to_out.0.weight -> NONZERO  abs_sum=0.337891
+  model.dit.transformer_blocks.21.attn2.to_out.0.bias -> NONZERO  abs_sum=0.020874
+  model.dit.transformer_blocks.21.ff.conv_inverted.weight -> NONZERO  abs_sum=19.875000
+  model.dit.transformer_blocks.21.ff.conv_inverted.bias -> NONZERO  abs_sum=0.110352
+  model.dit.transformer_blocks.21.ff.conv_depth.weight -> NONZERO  abs_sum=2.109375
+  model.dit.transformer_blocks.21.ff.conv_depth.bias -> NONZERO  abs_sum=0.248047
+  model.dit.transformer_blocks.21.ff.conv_point.weight -> NONZERO  abs_sum=10.250000
+  model.dit.transformer_blocks.22.scale_shift_table  -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.22.attn1.to_q.weight  -> NONZERO  abs_sum=2.875000
+  model.dit.transformer_blocks.22.attn1.to_k.weight  -> NONZERO  abs_sum=0.574219
+  model.dit.transformer_blocks.22.attn1.to_v.weight  -> NONZERO  abs_sum=1.531250
+  model.dit.transformer_blocks.22.attn1.to_out.0.weight -> NONZERO  abs_sum=1.335938
+  model.dit.transformer_blocks.22.attn1.to_out.0.bias -> NONZERO  abs_sum=0.002457
+  model.dit.transformer_blocks.22.attn2.to_q.weight  -> NONZERO  abs_sum=0.096680
+  model.dit.transformer_blocks.22.attn2.to_q.bias    -> NONZERO  abs_sum=0.000007
+  model.dit.transformer_blocks.22.attn2.to_k.weight  -> NONZERO  abs_sum=0.142578
+  model.dit.transformer_blocks.22.attn2.to_k.bias    -> NONZERO  abs_sum=0.000216
+  model.dit.transformer_blocks.22.attn2.to_v.weight  -> NONZERO  abs_sum=0.166016
+  model.dit.transformer_blocks.22.attn2.to_v.bias    -> NONZERO  abs_sum=0.048096
+  model.dit.transformer_blocks.22.attn2.to_out.0.weight -> NONZERO  abs_sum=0.285156
+  model.dit.transformer_blocks.22.attn2.to_out.0.bias -> NONZERO  abs_sum=0.019043
+  model.dit.transformer_blocks.22.ff.conv_inverted.weight -> NONZERO  abs_sum=19.250000
+  model.dit.transformer_blocks.22.ff.conv_inverted.bias -> NONZERO  abs_sum=0.106934
+  model.dit.transformer_blocks.22.ff.conv_depth.weight -> NONZERO  abs_sum=2.125000
+  model.dit.transformer_blocks.22.ff.conv_depth.bias -> NONZERO  abs_sum=0.251953
+  model.dit.transformer_blocks.22.ff.conv_point.weight -> NONZERO  abs_sum=9.625000
+  model.dit.transformer_blocks.23.scale_shift_table  -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.23.attn1.to_q.weight  -> NONZERO  abs_sum=2.765625
+  model.dit.transformer_blocks.23.attn1.to_k.weight  -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.23.attn1.to_v.weight  -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.23.attn1.to_out.0.weight -> NONZERO  abs_sum=1.093750
+  model.dit.transformer_blocks.23.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001999
+  model.dit.transformer_blocks.23.attn2.to_q.weight  -> NONZERO  abs_sum=0.103027
+  model.dit.transformer_blocks.23.attn2.to_q.bias    -> NONZERO  abs_sum=0.000010
+  model.dit.transformer_blocks.23.attn2.to_k.weight  -> NONZERO  abs_sum=0.197266
+  model.dit.transformer_blocks.23.attn2.to_k.bias    -> NONZERO  abs_sum=0.000250
+  model.dit.transformer_blocks.23.attn2.to_v.weight  -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.23.attn2.to_v.bias    -> NONZERO  abs_sum=0.046875
+  model.dit.transformer_blocks.23.attn2.to_out.0.weight -> NONZERO  abs_sum=0.165039
+  model.dit.transformer_blocks.23.attn2.to_out.0.bias -> NONZERO  abs_sum=0.017090
+  model.dit.transformer_blocks.23.ff.conv_inverted.weight -> NONZERO  abs_sum=18.500000
+  model.dit.transformer_blocks.23.ff.conv_inverted.bias -> NONZERO  abs_sum=0.108887
+  model.dit.transformer_blocks.23.ff.conv_depth.weight -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.23.ff.conv_depth.bias -> NONZERO  abs_sum=0.242188
+  model.dit.transformer_blocks.23.ff.conv_point.weight -> NONZERO  abs_sum=8.625000
+  model.dit.transformer_blocks.24.scale_shift_table  -> NONZERO  abs_sum=0.494141
+  model.dit.transformer_blocks.24.attn1.to_q.weight  -> NONZERO  abs_sum=2.687500
+  model.dit.transformer_blocks.24.attn1.to_k.weight  -> NONZERO  abs_sum=0.451172
+  model.dit.transformer_blocks.24.attn1.to_v.weight  -> NONZERO  abs_sum=0.859375
+  model.dit.transformer_blocks.24.attn1.to_out.0.weight -> NONZERO  abs_sum=0.824219
+  model.dit.transformer_blocks.24.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001442
+  model.dit.transformer_blocks.24.attn2.to_q.weight  -> NONZERO  abs_sum=0.064941
+  model.dit.transformer_blocks.24.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.24.attn2.to_k.weight  -> NONZERO  abs_sum=0.096191
+  model.dit.transformer_blocks.24.attn2.to_k.bias    -> NONZERO  abs_sum=0.000103
+  model.dit.transformer_blocks.24.attn2.to_v.weight  -> NONZERO  abs_sum=0.066895
+  model.dit.transformer_blocks.24.attn2.to_v.bias    -> NONZERO  abs_sum=0.034180
+  model.dit.transformer_blocks.24.attn2.to_out.0.weight -> NONZERO  abs_sum=0.139648
+  model.dit.transformer_blocks.24.attn2.to_out.0.bias -> NONZERO  abs_sum=0.015564
+  model.dit.transformer_blocks.24.ff.conv_inverted.weight -> NONZERO  abs_sum=17.875000
+  model.dit.transformer_blocks.24.ff.conv_inverted.bias -> NONZERO  abs_sum=0.104492
+  model.dit.transformer_blocks.24.ff.conv_depth.weight -> NONZERO  abs_sum=1.828125
+  model.dit.transformer_blocks.24.ff.conv_depth.bias -> NONZERO  abs_sum=0.231445
+  model.dit.transformer_blocks.24.ff.conv_point.weight -> NONZERO  abs_sum=7.781250
+  model.dit.transformer_blocks.25.scale_shift_table  -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.25.attn1.to_q.weight  -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.25.attn1.to_k.weight  -> NONZERO  abs_sum=0.496094
+  model.dit.transformer_blocks.25.attn1.to_v.weight  -> NONZERO  abs_sum=0.972656
+  model.dit.transformer_blocks.25.attn1.to_out.0.weight -> NONZERO  abs_sum=0.757812
+  model.dit.transformer_blocks.25.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001297
+  model.dit.transformer_blocks.25.attn2.to_q.weight  -> NONZERO  abs_sum=0.074707
+  model.dit.transformer_blocks.25.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.25.attn2.to_k.weight  -> NONZERO  abs_sum=0.117676
+  model.dit.transformer_blocks.25.attn2.to_k.bias    -> NONZERO  abs_sum=0.000118
+  model.dit.transformer_blocks.25.attn2.to_v.weight  -> NONZERO  abs_sum=0.076660
+  model.dit.transformer_blocks.25.attn2.to_v.bias    -> NONZERO  abs_sum=0.030884
+  model.dit.transformer_blocks.25.attn2.to_out.0.weight -> NONZERO  abs_sum=0.161133
+  model.dit.transformer_blocks.25.attn2.to_out.0.bias -> NONZERO  abs_sum=0.014038
+  model.dit.transformer_blocks.25.ff.conv_inverted.weight -> NONZERO  abs_sum=16.375000
+  model.dit.transformer_blocks.25.ff.conv_inverted.bias -> NONZERO  abs_sum=0.087891
+  model.dit.transformer_blocks.25.ff.conv_depth.weight -> NONZERO  abs_sum=1.554688
+  model.dit.transformer_blocks.25.ff.conv_depth.bias -> NONZERO  abs_sum=0.181641
+  model.dit.transformer_blocks.25.ff.conv_point.weight -> NONZERO  abs_sum=6.218750
+  model.dit.transformer_blocks.26.scale_shift_table  -> NONZERO  abs_sum=0.500000
+  model.dit.transformer_blocks.26.attn1.to_q.weight  -> NONZERO  abs_sum=1.875000
+  model.dit.transformer_blocks.26.attn1.to_k.weight  -> NONZERO  abs_sum=0.457031
+  model.dit.transformer_blocks.26.attn1.to_v.weight  -> NONZERO  abs_sum=0.652344
+  model.dit.transformer_blocks.26.attn1.to_out.0.weight -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.26.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.26.attn2.to_q.weight  -> NONZERO  abs_sum=0.124023
+  model.dit.transformer_blocks.26.attn2.to_q.bias    -> NONZERO  abs_sum=0.000007
+  model.dit.transformer_blocks.26.attn2.to_k.weight  -> NONZERO  abs_sum=0.122070
+  model.dit.transformer_blocks.26.attn2.to_k.bias    -> NONZERO  abs_sum=0.000132
+  model.dit.transformer_blocks.26.attn2.to_v.weight  -> NONZERO  abs_sum=0.079590
+  model.dit.transformer_blocks.26.attn2.to_v.bias    -> NONZERO  abs_sum=0.028687
+  model.dit.transformer_blocks.26.attn2.to_out.0.weight -> NONZERO  abs_sum=0.157227
+  model.dit.transformer_blocks.26.attn2.to_out.0.bias -> NONZERO  abs_sum=0.012024
+  model.dit.transformer_blocks.26.ff.conv_inverted.weight -> NONZERO  abs_sum=14.062500
+  model.dit.transformer_blocks.26.ff.conv_inverted.bias -> NONZERO  abs_sum=0.083984
+  model.dit.transformer_blocks.26.ff.conv_depth.weight -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.26.ff.conv_depth.bias -> NONZERO  abs_sum=0.166992
+  model.dit.transformer_blocks.26.ff.conv_point.weight -> NONZERO  abs_sum=3.953125
+  model.dit.transformer_blocks.27.scale_shift_table  -> NONZERO  abs_sum=0.632812
+  model.dit.transformer_blocks.27.attn1.to_q.weight  -> NONZERO  abs_sum=1.312500
+  model.dit.transformer_blocks.27.attn1.to_k.weight  -> NONZERO  abs_sum=0.357422
+  model.dit.transformer_blocks.27.attn1.to_v.weight  -> NONZERO  abs_sum=0.648438
+  model.dit.transformer_blocks.27.attn1.to_out.0.weight -> NONZERO  abs_sum=0.298828
+  model.dit.transformer_blocks.27.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.27.attn2.to_q.weight  -> NONZERO  abs_sum=0.070312
+  model.dit.transformer_blocks.27.attn2.to_q.bias    -> NONZERO  abs_sum=0.000003
+  model.dit.transformer_blocks.27.attn2.to_k.weight  -> NONZERO  abs_sum=0.087402
+  model.dit.transformer_blocks.27.attn2.to_k.bias    -> NONZERO  abs_sum=0.000127
+  model.dit.transformer_blocks.27.attn2.to_v.weight  -> NONZERO  abs_sum=0.214844
+  model.dit.transformer_blocks.27.attn2.to_v.bias    -> NONZERO  abs_sum=0.030762
+  model.dit.transformer_blocks.27.attn2.to_out.0.weight -> NONZERO  abs_sum=0.194336
+  model.dit.transformer_blocks.27.attn2.to_out.0.bias -> NONZERO  abs_sum=0.010986
+  model.dit.transformer_blocks.27.ff.conv_inverted.weight -> NONZERO  abs_sum=11.000000
+  model.dit.transformer_blocks.27.ff.conv_inverted.bias -> NONZERO  abs_sum=0.092285
+  model.dit.transformer_blocks.27.ff.conv_depth.weight -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.27.ff.conv_depth.bias -> NONZERO  abs_sum=0.226562
+  model.dit.transformer_blocks.27.ff.conv_point.weight -> NONZERO  abs_sum=1.570312
+  model.dit.proj_out.weight                          -> NONZERO  abs_sum=5.156250
+  model.dit.proj_out.bias                            -> NONZERO  abs_sum=0.033691
+  model.vae_decoder.decoder.conv_in.weight           -> FROZEN
+  model.vae_decoder.decoder.conv_in.bias             -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.norm_out.weight          -> FROZEN
+  model.vae_decoder.decoder.norm_out.bias            -> FROZEN
+  model.vae_decoder.decoder.conv_out.weight          -> FROZEN
+  model.vae_decoder.decoder.conv_out.bias            -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_mlp.0.weight                -> FROZEN
+  model.vae_decoder.down_mlp.0.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.1.weight                -> FROZEN
+  model.vae_decoder.down_mlp.1.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.3.weight                -> FROZEN
+  model.vae_decoder.down_mlp.3.bias                  -> FROZEN
+  model.llm_connector.layers.0.self_attn.q_proj.weight -> NONZERO  abs_sum=0.632812
+  model.llm_connector.layers.0.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000637
+  model.llm_connector.layers.0.self_attn.k_proj.weight -> NONZERO  abs_sum=0.343750
+  model.llm_connector.layers.0.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000163
+  model.llm_connector.layers.0.self_attn.v_proj.weight -> NONZERO  abs_sum=1.546875
+  model.llm_connector.layers.0.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001511
+  model.llm_connector.layers.0.self_attn.o_proj.weight -> NONZERO  abs_sum=2.625000
+  model.llm_connector.layers.0.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.000000
+  model.llm_connector.layers.0.mlp.up_proj.weight    -> NONZERO  abs_sum=4.437500
+  model.llm_connector.layers.0.mlp.down_proj.weight  -> NONZERO  abs_sum=6.468750
+  model.llm_connector.layers.0.input_layernorm.weight -> NONZERO  abs_sum=0.003128
+  model.llm_connector.layers.0.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002930
+  model.llm_connector.layers.1.self_attn.q_proj.weight -> NONZERO  abs_sum=0.699219
+  model.llm_connector.layers.1.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000908
+  model.llm_connector.layers.1.self_attn.k_proj.weight -> NONZERO  abs_sum=0.384766
+  model.llm_connector.layers.1.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000215
+  model.llm_connector.layers.1.self_attn.v_proj.weight -> NONZERO  abs_sum=0.445312
+  model.llm_connector.layers.1.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001434
+  model.llm_connector.layers.1.self_attn.o_proj.weight -> NONZERO  abs_sum=1.476562
+  model.llm_connector.layers.1.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.062500
+  model.llm_connector.layers.1.mlp.up_proj.weight    -> NONZERO  abs_sum=4.218750
+  model.llm_connector.layers.1.mlp.down_proj.weight  -> NONZERO  abs_sum=6.000000
+  model.llm_connector.layers.1.input_layernorm.weight -> NONZERO  abs_sum=0.001633
+  model.llm_connector.layers.1.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002106
+  model.llm_connector.layers.2.self_attn.q_proj.weight -> NONZERO  abs_sum=1.875000
+  model.llm_connector.layers.2.self_attn.q_proj.bias -> NONZERO  abs_sum=0.002258
+  model.llm_connector.layers.2.self_attn.k_proj.weight -> NONZERO  abs_sum=0.679688
+  model.llm_connector.layers.2.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000305
+  model.llm_connector.layers.2.self_attn.v_proj.weight -> NONZERO  abs_sum=0.613281
+  model.llm_connector.layers.2.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001427
+  model.llm_connector.layers.2.self_attn.o_proj.weight -> NONZERO  abs_sum=2.953125
+  model.llm_connector.layers.2.mlp.gate_proj.weight  -> NONZERO  abs_sum=7.406250
+  model.llm_connector.layers.2.mlp.up_proj.weight    -> NONZERO  abs_sum=5.812500
+  model.llm_connector.layers.2.mlp.down_proj.weight  -> NONZERO  abs_sum=8.437500
+  model.llm_connector.layers.2.input_layernorm.weight -> NONZERO  abs_sum=0.002625
+  model.llm_connector.layers.2.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002640
+  model.llm_connector.layers.3.self_attn.q_proj.weight -> NONZERO  abs_sum=3.953125
+  model.llm_connector.layers.3.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004364
+  model.llm_connector.layers.3.self_attn.k_proj.weight -> NONZERO  abs_sum=1.476562
+  model.llm_connector.layers.3.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000507
+  model.llm_connector.layers.3.self_attn.v_proj.weight -> NONZERO  abs_sum=0.652344
+  model.llm_connector.layers.3.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001076
+  model.llm_connector.layers.3.self_attn.o_proj.weight -> NONZERO  abs_sum=5.375000
+  model.llm_connector.layers.3.mlp.gate_proj.weight  -> NONZERO  abs_sum=13.562500
+  model.llm_connector.layers.3.mlp.up_proj.weight    -> NONZERO  abs_sum=9.812500
+  model.llm_connector.layers.3.mlp.down_proj.weight  -> NONZERO  abs_sum=13.500000
+  model.llm_connector.layers.3.input_layernorm.weight -> NONZERO  abs_sum=0.004761
+  model.llm_connector.layers.3.post_attention_layernorm.weight -> NONZERO  abs_sum=0.004120
+  model.llm_connector.layers.4.self_attn.q_proj.weight -> NONZERO  abs_sum=4.906250
+  model.llm_connector.layers.4.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004028
+  model.llm_connector.layers.4.self_attn.k_proj.weight -> NONZERO  abs_sum=1.601562
+  model.llm_connector.layers.4.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000629
+  model.llm_connector.layers.4.self_attn.v_proj.weight -> NONZERO  abs_sum=0.796875
+  model.llm_connector.layers.4.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001091
+  model.llm_connector.layers.4.self_attn.o_proj.weight -> NONZERO  abs_sum=5.343750
+  model.llm_connector.layers.4.mlp.gate_proj.weight  -> NONZERO  abs_sum=17.625000
+  model.llm_connector.layers.4.mlp.up_proj.weight    -> NONZERO  abs_sum=13.500000
+  model.llm_connector.layers.4.mlp.down_proj.weight  -> NONZERO  abs_sum=15.812500
+  model.llm_connector.layers.4.input_layernorm.weight -> NONZERO  abs_sum=0.005035
+  model.llm_connector.layers.4.post_attention_layernorm.weight -> NONZERO  abs_sum=0.005493
+  model.llm_connector.layers.5.self_attn.q_proj.weight -> NONZERO  abs_sum=5.843750
+  model.llm_connector.layers.5.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004791
+  model.llm_connector.layers.5.self_attn.k_proj.weight -> NONZERO  abs_sum=1.906250
+  model.llm_connector.layers.5.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000591
+  model.llm_connector.layers.5.self_attn.v_proj.weight -> NONZERO  abs_sum=0.847656
+  model.llm_connector.layers.5.self_attn.v_proj.bias -> NONZERO  abs_sum=0.000832
+  model.llm_connector.layers.5.self_attn.o_proj.weight -> NONZERO  abs_sum=4.437500
+  model.llm_connector.layers.5.mlp.gate_proj.weight  -> NONZERO  abs_sum=22.000000
+  model.llm_connector.layers.5.mlp.up_proj.weight    -> NONZERO  abs_sum=17.750000
+  model.llm_connector.layers.5.mlp.down_proj.weight  -> NONZERO  abs_sum=18.000000
+  model.llm_connector.layers.5.input_layernorm.weight -> NONZERO  abs_sum=0.005493
+  model.llm_connector.layers.5.post_attention_layernorm.weight -> NONZERO  abs_sum=0.006104
+  model.llm_connector.norm.weight                    -> NONZERO  abs_sum=0.003281
+  model.projector.weight                             -> NONZERO  abs_sum=17.000000
+  model.projector.bias                               -> NONZERO  abs_sum=0.003113
+  model.action_dit_connector.0.weight                -> NONZERO  abs_sum=2.687500
+  model.action_dit_connector.0.bias                  -> NONZERO  abs_sum=0.006256
+  model.action_dit_connector.2.weight                -> NONZERO  abs_sum=1.109375
+  model.action_dit_connector.2.bias                  -> NONZERO  abs_sum=0.007996
+  model.action_dit_connector.4.weight                -> NONZERO  abs_sum=1.445312
+  model.action_dit_connector.4.bias                  -> NONZERO  abs_sum=0.011536
+  model.action_dit_norm.weight                       -> NONZERO  abs_sum=0.002304
+  model.action_dit_projector.0.weight                -> NONZERO  abs_sum=54.250000
+  model.action_dit_projector.0.bias                  -> NONZERO  abs_sum=0.068359
+  model.action_dit_projector.2.weight                -> NONZERO  abs_sum=48.000000
+  model.action_dit_projector.2.bias                  -> NONZERO  abs_sum=0.030884
+  model.action_dit_projector.4.weight                -> NONZERO  abs_sum=37.500000
+  model.action_dit_projector.4.bias                  -> NONZERO  abs_sum=0.013611
+  model.action_dit.layers.0.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.023682
+  model.action_dit.layers.0.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.012268
+  model.action_dit.layers.0.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.115234
+  model.action_dit.layers.0.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.345703
+  model.action_dit.layers.0.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.980469
+  model.action_dit.layers.0.mlp.up_proj.weight       -> NONZERO  abs_sum=1.312500
+  model.action_dit.layers.0.mlp.down_proj.weight     -> NONZERO  abs_sum=1.414062
+  model.action_dit.layers.0.input_layernorm.dense.weight -> NONZERO  abs_sum=0.449219
+  model.action_dit.layers.0.input_layernorm.dense.bias -> NONZERO  abs_sum=0.008606
+  model.action_dit.layers.0.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=1.601562
+  model.action_dit.layers.0.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.043701
+  model.action_dit.layers.1.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.060791
+  model.action_dit.layers.1.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.048340
+  model.action_dit.layers.1.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.217773
+  model.action_dit.layers.1.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.326172
+  model.action_dit.layers.1.mlp.gate_proj.weight     -> NONZERO  abs_sum=3.671875
+  model.action_dit.layers.1.mlp.up_proj.weight       -> NONZERO  abs_sum=6.406250
+  model.action_dit.layers.1.mlp.down_proj.weight     -> NONZERO  abs_sum=5.406250
+  model.action_dit.layers.1.input_layernorm.dense.weight -> NONZERO  abs_sum=0.239258
+  model.action_dit.layers.1.input_layernorm.dense.bias -> NONZERO  abs_sum=0.007019
+  model.action_dit.layers.1.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=3.484375
+  model.action_dit.layers.1.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.100586
+  model.action_dit.layers.2.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.061279
+  model.action_dit.layers.2.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.028564
+  model.action_dit.layers.2.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.086426
+  model.action_dit.layers.2.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.199219
+  model.action_dit.layers.2.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.500000
+  model.action_dit.layers.2.mlp.up_proj.weight       -> NONZERO  abs_sum=0.570312
+  model.action_dit.layers.2.mlp.down_proj.weight     -> NONZERO  abs_sum=0.511719
+  model.action_dit.layers.2.input_layernorm.dense.weight -> NONZERO  abs_sum=0.117188
+  model.action_dit.layers.2.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003387
+  model.action_dit.layers.2.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.597656
+  model.action_dit.layers.2.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.016235
+  model.action_dit.layers.3.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.030151
+  model.action_dit.layers.3.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.012512
+  model.action_dit.layers.3.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.057373
+  model.action_dit.layers.3.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.180664
+  model.action_dit.layers.3.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.376953
+  model.action_dit.layers.3.mlp.up_proj.weight       -> NONZERO  abs_sum=0.363281
+  model.action_dit.layers.3.mlp.down_proj.weight     -> NONZERO  abs_sum=0.298828
+  model.action_dit.layers.3.input_layernorm.dense.weight -> NONZERO  abs_sum=0.077637
+  model.action_dit.layers.3.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002197
+  model.action_dit.layers.3.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.265625
+  model.action_dit.layers.3.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.007721
+  model.action_dit.layers.4.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.051270
+  model.action_dit.layers.4.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.024292
+  model.action_dit.layers.4.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.060547
+  model.action_dit.layers.4.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.145508
+  model.action_dit.layers.4.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.169922
+  model.action_dit.layers.4.mlp.up_proj.weight       -> NONZERO  abs_sum=0.165039
+  model.action_dit.layers.4.mlp.down_proj.weight     -> NONZERO  abs_sum=0.168945
+  model.action_dit.layers.4.input_layernorm.dense.weight -> NONZERO  abs_sum=0.095703
+  model.action_dit.layers.4.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002731
+  model.action_dit.layers.4.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.083008
+  model.action_dit.layers.4.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002319
+  model.action_dit.layers.5.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.051025
+  model.action_dit.layers.5.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.025879
+  model.action_dit.layers.5.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.091797
+  model.action_dit.layers.5.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.130859
+  model.action_dit.layers.5.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.170898
+  model.action_dit.layers.5.mlp.up_proj.weight       -> NONZERO  abs_sum=0.169922
+  model.action_dit.layers.5.mlp.down_proj.weight     -> NONZERO  abs_sum=0.168945
+  model.action_dit.layers.5.input_layernorm.dense.weight -> NONZERO  abs_sum=0.102539
+  model.action_dit.layers.5.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003098
+  model.action_dit.layers.5.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.082031
+  model.action_dit.layers.5.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002304
+  model.action_dit.layers.6.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.023926
+  model.action_dit.layers.6.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.009460
+  model.action_dit.layers.6.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.048584
+  model.action_dit.layers.6.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.126953
+  model.action_dit.layers.6.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.119629
+  model.action_dit.layers.6.mlp.up_proj.weight       -> NONZERO  abs_sum=0.117188
+  model.action_dit.layers.6.mlp.down_proj.weight     -> NONZERO  abs_sum=0.150391
+  model.action_dit.layers.6.input_layernorm.dense.weight -> NONZERO  abs_sum=0.060303
+  model.action_dit.layers.6.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001625
+  model.action_dit.layers.6.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.040039
+  model.action_dit.layers.6.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001129
+  model.action_dit.layers.7.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.030029
+  model.action_dit.layers.7.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.020142
+  model.action_dit.layers.7.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.059082
+  model.action_dit.layers.7.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.111816
+  model.action_dit.layers.7.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.124023
+  model.action_dit.layers.7.mlp.up_proj.weight       -> NONZERO  abs_sum=0.125000
+  model.action_dit.layers.7.mlp.down_proj.weight     -> NONZERO  abs_sum=0.124512
+  model.action_dit.layers.7.input_layernorm.dense.weight -> NONZERO  abs_sum=0.085449
+  model.action_dit.layers.7.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002472
+  model.action_dit.layers.7.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.075195
+  model.action_dit.layers.7.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002243
+  model.action_dit.layers.8.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.134766
+  model.action_dit.layers.8.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.067871
+  model.action_dit.layers.8.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.102051
+  model.action_dit.layers.8.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.554688
+  model.action_dit.layers.8.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.223633
+  model.action_dit.layers.8.mlp.up_proj.weight       -> NONZERO  abs_sum=0.198242
+  model.action_dit.layers.8.mlp.down_proj.weight     -> NONZERO  abs_sum=0.314453
+  model.action_dit.layers.8.input_layernorm.dense.weight -> NONZERO  abs_sum=0.166992
+  model.action_dit.layers.8.input_layernorm.dense.bias -> NONZERO  abs_sum=0.004547
+  model.action_dit.layers.8.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.051270
+  model.action_dit.layers.8.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001450
+  model.action_dit.layers.9.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.114746
+  model.action_dit.layers.9.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.041992
+  model.action_dit.layers.9.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.092773
+  model.action_dit.layers.9.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.357422
+  model.action_dit.layers.9.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.231445
+  model.action_dit.layers.9.mlp.up_proj.weight       -> NONZERO  abs_sum=0.205078
+  model.action_dit.layers.9.mlp.down_proj.weight     -> NONZERO  abs_sum=0.306641
+  model.action_dit.layers.9.input_layernorm.dense.weight -> NONZERO  abs_sum=0.111328
+  model.action_dit.layers.9.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003189
+  model.action_dit.layers.9.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.046387
+  model.action_dit.layers.9.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001320
+  model.action_dit.layers.10.self_attn.q_proj.weight -> NONZERO  abs_sum=0.179688
+  model.action_dit.layers.10.self_attn.k_proj.weight -> NONZERO  abs_sum=0.067383
+  model.action_dit.layers.10.self_attn.v_proj.weight -> NONZERO  abs_sum=0.099609
+  model.action_dit.layers.10.self_attn.o_proj.weight -> NONZERO  abs_sum=0.419922
+  model.action_dit.layers.10.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.265625
+  model.action_dit.layers.10.mlp.up_proj.weight      -> NONZERO  abs_sum=0.233398
+  model.action_dit.layers.10.mlp.down_proj.weight    -> NONZERO  abs_sum=0.332031
+  model.action_dit.layers.10.input_layernorm.dense.weight -> NONZERO  abs_sum=0.126953
+  model.action_dit.layers.10.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003693
+  model.action_dit.layers.10.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.052734
+  model.action_dit.layers.10.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001495
+  model.action_dit.layers.11.self_attn.q_proj.weight -> NONZERO  abs_sum=0.310547
+  model.action_dit.layers.11.self_attn.k_proj.weight -> NONZERO  abs_sum=0.195312
+  model.action_dit.layers.11.self_attn.v_proj.weight -> NONZERO  abs_sum=0.121582
+  model.action_dit.layers.11.self_attn.o_proj.weight -> NONZERO  abs_sum=0.785156
+  model.action_dit.layers.11.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.523438
+  model.action_dit.layers.11.mlp.up_proj.weight      -> NONZERO  abs_sum=0.394531
+  model.action_dit.layers.11.mlp.down_proj.weight    -> NONZERO  abs_sum=0.632812
+  model.action_dit.layers.11.input_layernorm.dense.weight -> NONZERO  abs_sum=0.285156
+  model.action_dit.layers.11.input_layernorm.dense.bias -> NONZERO  abs_sum=0.008301
+  model.action_dit.layers.11.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.091797
+  model.action_dit.layers.11.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002640
+  model.action_dit.layers.12.self_attn.q_proj.weight -> NONZERO  abs_sum=0.109375
+  model.action_dit.layers.12.self_attn.k_proj.weight -> NONZERO  abs_sum=0.030029
+  model.action_dit.layers.12.self_attn.v_proj.weight -> NONZERO  abs_sum=0.086426
+  model.action_dit.layers.12.self_attn.o_proj.weight -> NONZERO  abs_sum=0.367188
+  model.action_dit.layers.12.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.539062
+  model.action_dit.layers.12.mlp.up_proj.weight      -> NONZERO  abs_sum=0.425781
+  model.action_dit.layers.12.mlp.down_proj.weight    -> NONZERO  abs_sum=0.593750
+  model.action_dit.layers.12.input_layernorm.dense.weight -> NONZERO  abs_sum=0.091309
+  model.action_dit.layers.12.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002655
+  model.action_dit.layers.12.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.079102
+  model.action_dit.layers.12.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002274
+  model.action_dit.layers.13.self_attn.q_proj.weight -> NONZERO  abs_sum=0.312500
+  model.action_dit.layers.13.self_attn.k_proj.weight -> NONZERO  abs_sum=0.111816
+  model.action_dit.layers.13.self_attn.v_proj.weight -> NONZERO  abs_sum=0.129883
+  model.action_dit.layers.13.self_attn.o_proj.weight -> NONZERO  abs_sum=0.562500
+  model.action_dit.layers.13.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.746094
+  model.action_dit.layers.13.mlp.up_proj.weight      -> NONZERO  abs_sum=0.601562
+  model.action_dit.layers.13.mlp.down_proj.weight    -> NONZERO  abs_sum=0.859375
+  model.action_dit.layers.13.input_layernorm.dense.weight -> NONZERO  abs_sum=0.216797
+  model.action_dit.layers.13.input_layernorm.dense.bias -> NONZERO  abs_sum=0.005920
+  model.action_dit.layers.13.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.131836
+  model.action_dit.layers.13.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.003815
+  model.action_dit.layers.14.self_attn.q_proj.weight -> NONZERO  abs_sum=0.134766
+  model.action_dit.layers.14.self_attn.k_proj.weight -> NONZERO  abs_sum=0.037109
+  model.action_dit.layers.14.self_attn.v_proj.weight -> NONZERO  abs_sum=0.086426
+  model.action_dit.layers.14.self_attn.o_proj.weight -> NONZERO  abs_sum=0.239258
+  model.action_dit.layers.14.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.753906
+  model.action_dit.layers.14.mlp.up_proj.weight      -> NONZERO  abs_sum=0.652344
+  model.action_dit.layers.14.mlp.down_proj.weight    -> NONZERO  abs_sum=0.789062
+  model.action_dit.layers.14.input_layernorm.dense.weight -> NONZERO  abs_sum=0.076660
+  model.action_dit.layers.14.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002121
+  model.action_dit.layers.14.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.158203
+  model.action_dit.layers.14.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.004517
+  model.action_dit.layers.15.self_attn.q_proj.weight -> NONZERO  abs_sum=0.129883
+  model.action_dit.layers.15.self_attn.k_proj.weight -> NONZERO  abs_sum=0.051514
+  model.action_dit.layers.15.self_attn.v_proj.weight -> NONZERO  abs_sum=0.110840
+  model.action_dit.layers.15.self_attn.o_proj.weight -> NONZERO  abs_sum=0.492188
+  model.action_dit.layers.15.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.695312
+  model.action_dit.layers.15.mlp.up_proj.weight      -> NONZERO  abs_sum=0.597656
+  model.action_dit.layers.15.mlp.down_proj.weight    -> NONZERO  abs_sum=0.789062
+  model.action_dit.layers.15.input_layernorm.dense.weight -> NONZERO  abs_sum=0.234375
+  model.action_dit.layers.15.input_layernorm.dense.bias -> NONZERO  abs_sum=0.006561
+  model.action_dit.layers.15.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.200195
+  model.action_dit.layers.15.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.005707
+  model.action_dit.layers.16.self_attn.q_proj.weight -> NONZERO  abs_sum=0.059814
+  model.action_dit.layers.16.self_attn.k_proj.weight -> NONZERO  abs_sum=0.030273
+  model.action_dit.layers.16.self_attn.v_proj.weight -> NONZERO  abs_sum=0.038330
+  model.action_dit.layers.16.self_attn.o_proj.weight -> NONZERO  abs_sum=0.242188
+  model.action_dit.layers.16.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.652344
+  model.action_dit.layers.16.mlp.up_proj.weight      -> NONZERO  abs_sum=0.675781
+  model.action_dit.layers.16.mlp.down_proj.weight    -> NONZERO  abs_sum=0.453125
+  model.action_dit.layers.16.input_layernorm.dense.weight -> NONZERO  abs_sum=0.119141
+  model.action_dit.layers.16.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002609
+  model.action_dit.layers.16.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.380859
+  model.action_dit.layers.16.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.011108
+  model.action_dit.layers.17.self_attn.q_proj.weight -> NONZERO  abs_sum=0.250000
+  model.action_dit.layers.17.self_attn.k_proj.weight -> NONZERO  abs_sum=0.126953
+  model.action_dit.layers.17.self_attn.v_proj.weight -> NONZERO  abs_sum=0.294922
+  model.action_dit.layers.17.self_attn.o_proj.weight -> NONZERO  abs_sum=0.753906
+  model.action_dit.layers.17.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.726562
+  model.action_dit.layers.17.mlp.up_proj.weight      -> NONZERO  abs_sum=0.714844
+  model.action_dit.layers.17.mlp.down_proj.weight    -> NONZERO  abs_sum=0.753906
+  model.action_dit.layers.17.input_layernorm.dense.weight -> NONZERO  abs_sum=0.339844
+  model.action_dit.layers.17.input_layernorm.dense.bias -> NONZERO  abs_sum=0.009033
+  model.action_dit.layers.17.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.484375
+  model.action_dit.layers.17.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.011719
+  model.action_dit.norm.dense.weight                 -> NONZERO  abs_sum=4.343750
+  model.action_dit.norm.dense.bias                   -> NONZERO  abs_sum=0.129883
+  model.action_in_proj.weight                        -> NONZERO  abs_sum=1.062500
+  model.action_in_proj.bias                          -> NONZERO  abs_sum=0.062500
+  model.action_out_proj.weight                       -> NONZERO  abs_sum=4.343750
+  model.action_out_proj.bias                         -> NONZERO  abs_sum=0.034180
+  model.time_mlp_in.weight                           -> NONZERO  abs_sum=3.265625
+  model.time_mlp_in.bias                             -> NONZERO  abs_sum=0.004242
+  model.time_mlp_out.weight                          -> NONZERO  abs_sum=3.468750
+  model.time_mlp_out.bias                            -> NONZERO  abs_sum=0.020630
+  lm_head.weight                                     -> FROZEN
+
+## [loc_loss]
+  model.latent_queries                               -> ZERO     abs_sum=0.0
+  model.vision_tower.embeddings.class_embedding      -> FROZEN
+  model.vision_tower.embeddings.position_embedding   -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.weight -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.0.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.1.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.2.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.3.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.4.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.5.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.6.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.7.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.8.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.9.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.10.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.10.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.11.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.12.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.13.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.14.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.15.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.16.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.17.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.18.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.19.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.20.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.21.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.22.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.23.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.bias    -> FROZEN
+  model.multi_modal_projector.0.weight               -> FROZEN
+  model.multi_modal_projector.0.bias                 -> FROZEN
+  model.multi_modal_projector.1.weight               -> FROZEN
+  model.multi_modal_projector.1.bias                 -> FROZEN
+  model.multi_modal_projector.3.weight               -> FROZEN
+  model.multi_modal_projector.3.bias                 -> FROZEN
+  model.language_model.embed_tokens.weight           -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.0.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.0.input_layernorm.weight -> FROZEN
+  model.language_model.layers.0.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.1.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.1.input_layernorm.weight -> FROZEN
+  model.language_model.layers.1.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.2.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.2.input_layernorm.weight -> FROZEN
+  model.language_model.layers.2.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.3.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.3.input_layernorm.weight -> FROZEN
+  model.language_model.layers.3.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.4.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.4.input_layernorm.weight -> FROZEN
+  model.language_model.layers.4.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.5.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.5.input_layernorm.weight -> FROZEN
+  model.language_model.layers.5.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.6.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.6.input_layernorm.weight -> FROZEN
+  model.language_model.layers.6.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.7.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.7.input_layernorm.weight -> FROZEN
+  model.language_model.layers.7.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.8.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.8.input_layernorm.weight -> FROZEN
+  model.language_model.layers.8.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.9.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.9.input_layernorm.weight -> FROZEN
+  model.language_model.layers.9.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.10.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.10.input_layernorm.weight -> FROZEN
+  model.language_model.layers.10.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.11.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.11.input_layernorm.weight -> FROZEN
+  model.language_model.layers.11.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.12.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.12.input_layernorm.weight -> FROZEN
+  model.language_model.layers.12.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.13.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.13.input_layernorm.weight -> FROZEN
+  model.language_model.layers.13.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.14.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.14.input_layernorm.weight -> FROZEN
+  model.language_model.layers.14.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.15.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.15.input_layernorm.weight -> FROZEN
+  model.language_model.layers.15.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.16.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.16.input_layernorm.weight -> FROZEN
+  model.language_model.layers.16.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.17.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.17.input_layernorm.weight -> FROZEN
+  model.language_model.layers.17.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.18.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.18.input_layernorm.weight -> FROZEN
+  model.language_model.layers.18.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.19.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.19.input_layernorm.weight -> FROZEN
+  model.language_model.layers.19.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.20.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.20.input_layernorm.weight -> FROZEN
+  model.language_model.layers.20.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.21.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.21.input_layernorm.weight -> FROZEN
+  model.language_model.layers.21.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.22.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.22.input_layernorm.weight -> FROZEN
+  model.language_model.layers.22.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.23.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.23.input_layernorm.weight -> FROZEN
+  model.language_model.layers.23.post_attention_layernorm.weight -> FROZEN
+  model.language_model.norm.weight                   -> FROZEN
+  model.dit.scale_shift_table                        -> NONE
+  model.dit.patch_embed.proj.weight                  -> NONE
+  model.dit.patch_embed.proj.bias                    -> NONE
+  model.dit.time_embed.emb.timestep_embedder.linear_1.weight -> NONE
+  model.dit.time_embed.emb.timestep_embedder.linear_1.bias -> NONE
+  model.dit.time_embed.emb.timestep_embedder.linear_2.weight -> NONE
+  model.dit.time_embed.emb.timestep_embedder.linear_2.bias -> NONE
+  model.dit.time_embed.linear.weight                 -> NONE
+  model.dit.time_embed.linear.bias                   -> NONE
+  model.dit.caption_projection.linear_1.weight       -> NONE
+  model.dit.caption_projection.linear_1.bias         -> NONE
+  model.dit.caption_projection.linear_2.weight       -> NONE
+  model.dit.caption_projection.linear_2.bias         -> NONE
+  model.dit.caption_norm.weight                      -> NONE
+  model.dit.transformer_blocks.0.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.0.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.0.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.0.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.0.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.0.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.0.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.0.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.0.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.0.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.0.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.0.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.0.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.0.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.0.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.0.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.0.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.0.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.0.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.1.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.1.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.1.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.1.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.1.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.1.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.1.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.1.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.1.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.1.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.1.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.1.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.1.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.1.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.1.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.1.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.1.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.1.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.1.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.2.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.2.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.2.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.2.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.2.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.2.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.2.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.2.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.2.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.2.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.2.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.2.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.2.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.2.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.2.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.2.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.2.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.2.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.2.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.3.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.3.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.3.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.3.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.3.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.3.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.3.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.3.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.3.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.3.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.3.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.3.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.3.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.3.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.3.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.3.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.3.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.3.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.3.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.4.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.4.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.4.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.4.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.4.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.4.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.4.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.4.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.4.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.4.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.4.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.4.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.4.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.4.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.4.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.4.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.4.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.4.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.4.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.5.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.5.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.5.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.5.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.5.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.5.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.5.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.5.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.5.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.5.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.5.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.5.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.5.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.5.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.5.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.5.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.5.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.5.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.5.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.6.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.6.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.6.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.6.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.6.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.6.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.6.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.6.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.6.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.6.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.6.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.6.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.6.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.6.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.6.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.6.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.6.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.6.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.6.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.7.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.7.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.7.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.7.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.7.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.7.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.7.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.7.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.7.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.7.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.7.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.7.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.7.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.7.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.7.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.7.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.7.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.7.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.7.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.8.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.8.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.8.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.8.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.8.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.8.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.8.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.8.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.8.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.8.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.8.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.8.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.8.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.8.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.8.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.8.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.8.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.8.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.8.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.9.scale_shift_table   -> NONE
+  model.dit.transformer_blocks.9.attn1.to_q.weight   -> NONE
+  model.dit.transformer_blocks.9.attn1.to_k.weight   -> NONE
+  model.dit.transformer_blocks.9.attn1.to_v.weight   -> NONE
+  model.dit.transformer_blocks.9.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.9.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.9.attn2.to_q.weight   -> NONE
+  model.dit.transformer_blocks.9.attn2.to_q.bias     -> NONE
+  model.dit.transformer_blocks.9.attn2.to_k.weight   -> NONE
+  model.dit.transformer_blocks.9.attn2.to_k.bias     -> NONE
+  model.dit.transformer_blocks.9.attn2.to_v.weight   -> NONE
+  model.dit.transformer_blocks.9.attn2.to_v.bias     -> NONE
+  model.dit.transformer_blocks.9.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.9.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.9.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.9.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.9.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.9.ff.conv_depth.bias  -> NONE
+  model.dit.transformer_blocks.9.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.10.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.10.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.10.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.10.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.10.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.10.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.10.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.10.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.10.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.10.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.10.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.10.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.10.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.10.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.10.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.10.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.10.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.10.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.10.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.11.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.11.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.11.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.11.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.11.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.11.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.11.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.11.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.11.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.11.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.11.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.11.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.11.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.11.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.11.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.11.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.11.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.11.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.11.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.12.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.12.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.12.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.12.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.12.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.12.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.12.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.12.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.12.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.12.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.12.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.12.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.12.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.12.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.12.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.12.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.12.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.12.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.12.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.13.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.13.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.13.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.13.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.13.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.13.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.13.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.13.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.13.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.13.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.13.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.13.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.13.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.13.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.13.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.13.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.13.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.13.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.13.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.14.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.14.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.14.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.14.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.14.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.14.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.14.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.14.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.14.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.14.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.14.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.14.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.14.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.14.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.14.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.14.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.14.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.14.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.14.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.15.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.15.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.15.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.15.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.15.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.15.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.15.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.15.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.15.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.15.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.15.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.15.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.15.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.15.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.15.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.15.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.15.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.15.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.15.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.16.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.16.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.16.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.16.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.16.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.16.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.16.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.16.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.16.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.16.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.16.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.16.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.16.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.16.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.16.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.16.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.16.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.16.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.16.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.17.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.17.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.17.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.17.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.17.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.17.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.17.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.17.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.17.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.17.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.17.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.17.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.17.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.17.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.17.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.17.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.17.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.17.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.17.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.18.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.18.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.18.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.18.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.18.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.18.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.18.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.18.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.18.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.18.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.18.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.18.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.18.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.18.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.18.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.18.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.18.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.18.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.18.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.19.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.19.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.19.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.19.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.19.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.19.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.19.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.19.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.19.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.19.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.19.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.19.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.19.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.19.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.19.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.19.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.19.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.19.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.19.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.20.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.20.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.20.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.20.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.20.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.20.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.20.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.20.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.20.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.20.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.20.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.20.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.20.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.20.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.20.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.20.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.20.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.20.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.20.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.21.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.21.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.21.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.21.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.21.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.21.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.21.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.21.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.21.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.21.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.21.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.21.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.21.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.21.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.21.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.21.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.21.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.21.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.21.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.22.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.22.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.22.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.22.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.22.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.22.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.22.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.22.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.22.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.22.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.22.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.22.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.22.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.22.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.22.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.22.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.22.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.22.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.22.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.23.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.23.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.23.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.23.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.23.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.23.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.23.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.23.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.23.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.23.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.23.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.23.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.23.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.23.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.23.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.23.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.23.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.23.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.23.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.24.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.24.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.24.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.24.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.24.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.24.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.24.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.24.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.24.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.24.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.24.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.24.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.24.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.24.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.24.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.24.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.24.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.24.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.24.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.25.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.25.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.25.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.25.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.25.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.25.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.25.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.25.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.25.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.25.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.25.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.25.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.25.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.25.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.25.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.25.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.25.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.25.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.25.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.26.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.26.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.26.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.26.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.26.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.26.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.26.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.26.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.26.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.26.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.26.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.26.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.26.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.26.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.26.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.26.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.26.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.26.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.26.ff.conv_point.weight -> NONE
+  model.dit.transformer_blocks.27.scale_shift_table  -> NONE
+  model.dit.transformer_blocks.27.attn1.to_q.weight  -> NONE
+  model.dit.transformer_blocks.27.attn1.to_k.weight  -> NONE
+  model.dit.transformer_blocks.27.attn1.to_v.weight  -> NONE
+  model.dit.transformer_blocks.27.attn1.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.27.attn1.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.27.attn2.to_q.weight  -> NONE
+  model.dit.transformer_blocks.27.attn2.to_q.bias    -> NONE
+  model.dit.transformer_blocks.27.attn2.to_k.weight  -> NONE
+  model.dit.transformer_blocks.27.attn2.to_k.bias    -> NONE
+  model.dit.transformer_blocks.27.attn2.to_v.weight  -> NONE
+  model.dit.transformer_blocks.27.attn2.to_v.bias    -> NONE
+  model.dit.transformer_blocks.27.attn2.to_out.0.weight -> NONE
+  model.dit.transformer_blocks.27.attn2.to_out.0.bias -> NONE
+  model.dit.transformer_blocks.27.ff.conv_inverted.weight -> NONE
+  model.dit.transformer_blocks.27.ff.conv_inverted.bias -> NONE
+  model.dit.transformer_blocks.27.ff.conv_depth.weight -> NONE
+  model.dit.transformer_blocks.27.ff.conv_depth.bias -> NONE
+  model.dit.transformer_blocks.27.ff.conv_point.weight -> NONE
+  model.dit.proj_out.weight                          -> NONE
+  model.dit.proj_out.bias                            -> NONE
+  model.vae_decoder.decoder.conv_in.weight           -> FROZEN
+  model.vae_decoder.decoder.conv_in.bias             -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.norm_out.weight          -> FROZEN
+  model.vae_decoder.decoder.norm_out.bias            -> FROZEN
+  model.vae_decoder.decoder.conv_out.weight          -> FROZEN
+  model.vae_decoder.decoder.conv_out.bias            -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_mlp.0.weight                -> FROZEN
+  model.vae_decoder.down_mlp.0.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.1.weight                -> FROZEN
+  model.vae_decoder.down_mlp.1.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.3.weight                -> FROZEN
+  model.vae_decoder.down_mlp.3.bias                  -> FROZEN
+  model.llm_connector.layers.0.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.0.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.0.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.0.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.0.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.0.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.0.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.0.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.0.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.0.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.0.input_layernorm.weight -> NONE
+  model.llm_connector.layers.0.post_attention_layernorm.weight -> NONE
+  model.llm_connector.layers.1.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.1.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.1.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.1.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.1.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.1.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.1.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.1.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.1.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.1.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.1.input_layernorm.weight -> NONE
+  model.llm_connector.layers.1.post_attention_layernorm.weight -> NONE
+  model.llm_connector.layers.2.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.2.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.2.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.2.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.2.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.2.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.2.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.2.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.2.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.2.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.2.input_layernorm.weight -> NONE
+  model.llm_connector.layers.2.post_attention_layernorm.weight -> NONE
+  model.llm_connector.layers.3.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.3.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.3.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.3.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.3.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.3.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.3.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.3.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.3.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.3.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.3.input_layernorm.weight -> NONE
+  model.llm_connector.layers.3.post_attention_layernorm.weight -> NONE
+  model.llm_connector.layers.4.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.4.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.4.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.4.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.4.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.4.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.4.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.4.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.4.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.4.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.4.input_layernorm.weight -> NONE
+  model.llm_connector.layers.4.post_attention_layernorm.weight -> NONE
+  model.llm_connector.layers.5.self_attn.q_proj.weight -> NONE
+  model.llm_connector.layers.5.self_attn.q_proj.bias -> NONE
+  model.llm_connector.layers.5.self_attn.k_proj.weight -> NONE
+  model.llm_connector.layers.5.self_attn.k_proj.bias -> NONE
+  model.llm_connector.layers.5.self_attn.v_proj.weight -> NONE
+  model.llm_connector.layers.5.self_attn.v_proj.bias -> NONE
+  model.llm_connector.layers.5.self_attn.o_proj.weight -> NONE
+  model.llm_connector.layers.5.mlp.gate_proj.weight  -> NONE
+  model.llm_connector.layers.5.mlp.up_proj.weight    -> NONE
+  model.llm_connector.layers.5.mlp.down_proj.weight  -> NONE
+  model.llm_connector.layers.5.input_layernorm.weight -> NONE
+  model.llm_connector.layers.5.post_attention_layernorm.weight -> NONE
+  model.llm_connector.norm.weight                    -> NONE
+  model.projector.weight                             -> NONE
+  model.projector.bias                               -> NONE
+  model.action_dit_connector.0.weight                -> NONZERO  abs_sum=1.343750
+  model.action_dit_connector.0.bias                  -> NONZERO  abs_sum=0.003128
+  model.action_dit_connector.2.weight                -> NONZERO  abs_sum=0.554688
+  model.action_dit_connector.2.bias                  -> NONZERO  abs_sum=0.003998
+  model.action_dit_connector.4.weight                -> NONZERO  abs_sum=0.722656
+  model.action_dit_connector.4.bias                  -> NONZERO  abs_sum=0.005768
+  model.action_dit_norm.weight                       -> NONZERO  abs_sum=0.001152
+  model.action_dit_projector.0.weight                -> NONZERO  abs_sum=27.125000
+  model.action_dit_projector.0.bias                  -> NONZERO  abs_sum=0.034180
+  model.action_dit_projector.2.weight                -> NONZERO  abs_sum=24.000000
+  model.action_dit_projector.2.bias                  -> NONZERO  abs_sum=0.015442
+  model.action_dit_projector.4.weight                -> NONZERO  abs_sum=18.750000
+  model.action_dit_projector.4.bias                  -> NONZERO  abs_sum=0.006805
+  model.action_dit.layers.0.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.011841
+  model.action_dit.layers.0.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.006134
+  model.action_dit.layers.0.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.057617
+  model.action_dit.layers.0.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.172852
+  model.action_dit.layers.0.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.490234
+  model.action_dit.layers.0.mlp.up_proj.weight       -> NONZERO  abs_sum=0.656250
+  model.action_dit.layers.0.mlp.down_proj.weight     -> NONZERO  abs_sum=0.707031
+  model.action_dit.layers.0.input_layernorm.dense.weight -> NONZERO  abs_sum=0.224609
+  model.action_dit.layers.0.input_layernorm.dense.bias -> NONZERO  abs_sum=0.004303
+  model.action_dit.layers.0.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.800781
+  model.action_dit.layers.0.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.021851
+  model.action_dit.layers.1.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.030396
+  model.action_dit.layers.1.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.024170
+  model.action_dit.layers.1.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.108887
+  model.action_dit.layers.1.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.163086
+  model.action_dit.layers.1.mlp.gate_proj.weight     -> NONZERO  abs_sum=1.835938
+  model.action_dit.layers.1.mlp.up_proj.weight       -> NONZERO  abs_sum=3.203125
+  model.action_dit.layers.1.mlp.down_proj.weight     -> NONZERO  abs_sum=2.703125
+  model.action_dit.layers.1.input_layernorm.dense.weight -> NONZERO  abs_sum=0.119629
+  model.action_dit.layers.1.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003510
+  model.action_dit.layers.1.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=1.742188
+  model.action_dit.layers.1.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.050293
+  model.action_dit.layers.2.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.030640
+  model.action_dit.layers.2.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.014282
+  model.action_dit.layers.2.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.043213
+  model.action_dit.layers.2.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.099609
+  model.action_dit.layers.2.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.250000
+  model.action_dit.layers.2.mlp.up_proj.weight       -> NONZERO  abs_sum=0.285156
+  model.action_dit.layers.2.mlp.down_proj.weight     -> NONZERO  abs_sum=0.255859
+  model.action_dit.layers.2.input_layernorm.dense.weight -> NONZERO  abs_sum=0.058594
+  model.action_dit.layers.2.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001694
+  model.action_dit.layers.2.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.298828
+  model.action_dit.layers.2.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.008118
+  model.action_dit.layers.3.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.015076
+  model.action_dit.layers.3.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.006256
+  model.action_dit.layers.3.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.028687
+  model.action_dit.layers.3.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.090332
+  model.action_dit.layers.3.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.188477
+  model.action_dit.layers.3.mlp.up_proj.weight       -> NONZERO  abs_sum=0.181641
+  model.action_dit.layers.3.mlp.down_proj.weight     -> NONZERO  abs_sum=0.149414
+  model.action_dit.layers.3.input_layernorm.dense.weight -> NONZERO  abs_sum=0.038818
+  model.action_dit.layers.3.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001099
+  model.action_dit.layers.3.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.132812
+  model.action_dit.layers.3.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.003860
+  model.action_dit.layers.4.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.025635
+  model.action_dit.layers.4.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.012146
+  model.action_dit.layers.4.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.030273
+  model.action_dit.layers.4.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.072754
+  model.action_dit.layers.4.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.084961
+  model.action_dit.layers.4.mlp.up_proj.weight       -> NONZERO  abs_sum=0.082520
+  model.action_dit.layers.4.mlp.down_proj.weight     -> NONZERO  abs_sum=0.084473
+  model.action_dit.layers.4.input_layernorm.dense.weight -> NONZERO  abs_sum=0.047852
+  model.action_dit.layers.4.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001366
+  model.action_dit.layers.4.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.041504
+  model.action_dit.layers.4.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001160
+  model.action_dit.layers.5.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.025513
+  model.action_dit.layers.5.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.012939
+  model.action_dit.layers.5.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.045898
+  model.action_dit.layers.5.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.065430
+  model.action_dit.layers.5.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.085449
+  model.action_dit.layers.5.mlp.up_proj.weight       -> NONZERO  abs_sum=0.084961
+  model.action_dit.layers.5.mlp.down_proj.weight     -> NONZERO  abs_sum=0.084473
+  model.action_dit.layers.5.input_layernorm.dense.weight -> NONZERO  abs_sum=0.051270
+  model.action_dit.layers.5.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001549
+  model.action_dit.layers.5.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.041016
+  model.action_dit.layers.5.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001152
+  model.action_dit.layers.6.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.011963
+  model.action_dit.layers.6.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.004730
+  model.action_dit.layers.6.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.024292
+  model.action_dit.layers.6.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.063477
+  model.action_dit.layers.6.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.059814
+  model.action_dit.layers.6.mlp.up_proj.weight       -> NONZERO  abs_sum=0.058594
+  model.action_dit.layers.6.mlp.down_proj.weight     -> NONZERO  abs_sum=0.075195
+  model.action_dit.layers.6.input_layernorm.dense.weight -> NONZERO  abs_sum=0.030151
+  model.action_dit.layers.6.input_layernorm.dense.bias -> NONZERO  abs_sum=0.000813
+  model.action_dit.layers.6.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.020020
+  model.action_dit.layers.6.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.000565
+  model.action_dit.layers.7.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.015015
+  model.action_dit.layers.7.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.010071
+  model.action_dit.layers.7.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.029541
+  model.action_dit.layers.7.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.055908
+  model.action_dit.layers.7.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.062012
+  model.action_dit.layers.7.mlp.up_proj.weight       -> NONZERO  abs_sum=0.062500
+  model.action_dit.layers.7.mlp.down_proj.weight     -> NONZERO  abs_sum=0.062256
+  model.action_dit.layers.7.input_layernorm.dense.weight -> NONZERO  abs_sum=0.042725
+  model.action_dit.layers.7.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001236
+  model.action_dit.layers.7.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.037598
+  model.action_dit.layers.7.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001122
+  model.action_dit.layers.8.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.067383
+  model.action_dit.layers.8.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.033936
+  model.action_dit.layers.8.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.051025
+  model.action_dit.layers.8.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.277344
+  model.action_dit.layers.8.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.111816
+  model.action_dit.layers.8.mlp.up_proj.weight       -> NONZERO  abs_sum=0.099121
+  model.action_dit.layers.8.mlp.down_proj.weight     -> NONZERO  abs_sum=0.157227
+  model.action_dit.layers.8.input_layernorm.dense.weight -> NONZERO  abs_sum=0.083496
+  model.action_dit.layers.8.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002274
+  model.action_dit.layers.8.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.025635
+  model.action_dit.layers.8.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.000725
+  model.action_dit.layers.9.self_attn.q_proj.weight  -> NONZERO  abs_sum=0.057373
+  model.action_dit.layers.9.self_attn.k_proj.weight  -> NONZERO  abs_sum=0.020996
+  model.action_dit.layers.9.self_attn.v_proj.weight  -> NONZERO  abs_sum=0.046387
+  model.action_dit.layers.9.self_attn.o_proj.weight  -> NONZERO  abs_sum=0.178711
+  model.action_dit.layers.9.mlp.gate_proj.weight     -> NONZERO  abs_sum=0.115723
+  model.action_dit.layers.9.mlp.up_proj.weight       -> NONZERO  abs_sum=0.102539
+  model.action_dit.layers.9.mlp.down_proj.weight     -> NONZERO  abs_sum=0.153320
+  model.action_dit.layers.9.input_layernorm.dense.weight -> NONZERO  abs_sum=0.055664
+  model.action_dit.layers.9.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001595
+  model.action_dit.layers.9.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.023193
+  model.action_dit.layers.9.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.000660
+  model.action_dit.layers.10.self_attn.q_proj.weight -> NONZERO  abs_sum=0.089844
+  model.action_dit.layers.10.self_attn.k_proj.weight -> NONZERO  abs_sum=0.033691
+  model.action_dit.layers.10.self_attn.v_proj.weight -> NONZERO  abs_sum=0.049805
+  model.action_dit.layers.10.self_attn.o_proj.weight -> NONZERO  abs_sum=0.209961
+  model.action_dit.layers.10.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.132812
+  model.action_dit.layers.10.mlp.up_proj.weight      -> NONZERO  abs_sum=0.116699
+  model.action_dit.layers.10.mlp.down_proj.weight    -> NONZERO  abs_sum=0.166016
+  model.action_dit.layers.10.input_layernorm.dense.weight -> NONZERO  abs_sum=0.063477
+  model.action_dit.layers.10.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001846
+  model.action_dit.layers.10.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.026367
+  model.action_dit.layers.10.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.000748
+  model.action_dit.layers.11.self_attn.q_proj.weight -> NONZERO  abs_sum=0.155273
+  model.action_dit.layers.11.self_attn.k_proj.weight -> NONZERO  abs_sum=0.097656
+  model.action_dit.layers.11.self_attn.v_proj.weight -> NONZERO  abs_sum=0.060791
+  model.action_dit.layers.11.self_attn.o_proj.weight -> NONZERO  abs_sum=0.392578
+  model.action_dit.layers.11.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.261719
+  model.action_dit.layers.11.mlp.up_proj.weight      -> NONZERO  abs_sum=0.197266
+  model.action_dit.layers.11.mlp.down_proj.weight    -> NONZERO  abs_sum=0.316406
+  model.action_dit.layers.11.input_layernorm.dense.weight -> NONZERO  abs_sum=0.142578
+  model.action_dit.layers.11.input_layernorm.dense.bias -> NONZERO  abs_sum=0.004150
+  model.action_dit.layers.11.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.045898
+  model.action_dit.layers.11.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001320
+  model.action_dit.layers.12.self_attn.q_proj.weight -> NONZERO  abs_sum=0.054688
+  model.action_dit.layers.12.self_attn.k_proj.weight -> NONZERO  abs_sum=0.015015
+  model.action_dit.layers.12.self_attn.v_proj.weight -> NONZERO  abs_sum=0.043213
+  model.action_dit.layers.12.self_attn.o_proj.weight -> NONZERO  abs_sum=0.183594
+  model.action_dit.layers.12.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.269531
+  model.action_dit.layers.12.mlp.up_proj.weight      -> NONZERO  abs_sum=0.212891
+  model.action_dit.layers.12.mlp.down_proj.weight    -> NONZERO  abs_sum=0.296875
+  model.action_dit.layers.12.input_layernorm.dense.weight -> NONZERO  abs_sum=0.045654
+  model.action_dit.layers.12.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001328
+  model.action_dit.layers.12.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.039551
+  model.action_dit.layers.12.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001137
+  model.action_dit.layers.13.self_attn.q_proj.weight -> NONZERO  abs_sum=0.156250
+  model.action_dit.layers.13.self_attn.k_proj.weight -> NONZERO  abs_sum=0.055908
+  model.action_dit.layers.13.self_attn.v_proj.weight -> NONZERO  abs_sum=0.064941
+  model.action_dit.layers.13.self_attn.o_proj.weight -> NONZERO  abs_sum=0.281250
+  model.action_dit.layers.13.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.373047
+  model.action_dit.layers.13.mlp.up_proj.weight      -> NONZERO  abs_sum=0.300781
+  model.action_dit.layers.13.mlp.down_proj.weight    -> NONZERO  abs_sum=0.429688
+  model.action_dit.layers.13.input_layernorm.dense.weight -> NONZERO  abs_sum=0.108398
+  model.action_dit.layers.13.input_layernorm.dense.bias -> NONZERO  abs_sum=0.002960
+  model.action_dit.layers.13.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.065918
+  model.action_dit.layers.13.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.001907
+  model.action_dit.layers.14.self_attn.q_proj.weight -> NONZERO  abs_sum=0.067383
+  model.action_dit.layers.14.self_attn.k_proj.weight -> NONZERO  abs_sum=0.018555
+  model.action_dit.layers.14.self_attn.v_proj.weight -> NONZERO  abs_sum=0.043213
+  model.action_dit.layers.14.self_attn.o_proj.weight -> NONZERO  abs_sum=0.119629
+  model.action_dit.layers.14.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.376953
+  model.action_dit.layers.14.mlp.up_proj.weight      -> NONZERO  abs_sum=0.326172
+  model.action_dit.layers.14.mlp.down_proj.weight    -> NONZERO  abs_sum=0.394531
+  model.action_dit.layers.14.input_layernorm.dense.weight -> NONZERO  abs_sum=0.038330
+  model.action_dit.layers.14.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001060
+  model.action_dit.layers.14.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.079102
+  model.action_dit.layers.14.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002258
+  model.action_dit.layers.15.self_attn.q_proj.weight -> NONZERO  abs_sum=0.064941
+  model.action_dit.layers.15.self_attn.k_proj.weight -> NONZERO  abs_sum=0.025757
+  model.action_dit.layers.15.self_attn.v_proj.weight -> NONZERO  abs_sum=0.055420
+  model.action_dit.layers.15.self_attn.o_proj.weight -> NONZERO  abs_sum=0.246094
+  model.action_dit.layers.15.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.347656
+  model.action_dit.layers.15.mlp.up_proj.weight      -> NONZERO  abs_sum=0.298828
+  model.action_dit.layers.15.mlp.down_proj.weight    -> NONZERO  abs_sum=0.394531
+  model.action_dit.layers.15.input_layernorm.dense.weight -> NONZERO  abs_sum=0.117188
+  model.action_dit.layers.15.input_layernorm.dense.bias -> NONZERO  abs_sum=0.003281
+  model.action_dit.layers.15.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.100098
+  model.action_dit.layers.15.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.002853
+  model.action_dit.layers.16.self_attn.q_proj.weight -> NONZERO  abs_sum=0.029907
+  model.action_dit.layers.16.self_attn.k_proj.weight -> NONZERO  abs_sum=0.015137
+  model.action_dit.layers.16.self_attn.v_proj.weight -> NONZERO  abs_sum=0.019165
+  model.action_dit.layers.16.self_attn.o_proj.weight -> NONZERO  abs_sum=0.121094
+  model.action_dit.layers.16.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.326172
+  model.action_dit.layers.16.mlp.up_proj.weight      -> NONZERO  abs_sum=0.337891
+  model.action_dit.layers.16.mlp.down_proj.weight    -> NONZERO  abs_sum=0.226562
+  model.action_dit.layers.16.input_layernorm.dense.weight -> NONZERO  abs_sum=0.059570
+  model.action_dit.layers.16.input_layernorm.dense.bias -> NONZERO  abs_sum=0.001305
+  model.action_dit.layers.16.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.190430
+  model.action_dit.layers.16.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.005554
+  model.action_dit.layers.17.self_attn.q_proj.weight -> NONZERO  abs_sum=0.125000
+  model.action_dit.layers.17.self_attn.k_proj.weight -> NONZERO  abs_sum=0.063477
+  model.action_dit.layers.17.self_attn.v_proj.weight -> NONZERO  abs_sum=0.147461
+  model.action_dit.layers.17.self_attn.o_proj.weight -> NONZERO  abs_sum=0.376953
+  model.action_dit.layers.17.mlp.gate_proj.weight    -> NONZERO  abs_sum=0.363281
+  model.action_dit.layers.17.mlp.up_proj.weight      -> NONZERO  abs_sum=0.357422
+  model.action_dit.layers.17.mlp.down_proj.weight    -> NONZERO  abs_sum=0.376953
+  model.action_dit.layers.17.input_layernorm.dense.weight -> NONZERO  abs_sum=0.169922
+  model.action_dit.layers.17.input_layernorm.dense.bias -> NONZERO  abs_sum=0.004517
+  model.action_dit.layers.17.post_attention_layernorm.dense.weight -> NONZERO  abs_sum=0.242188
+  model.action_dit.layers.17.post_attention_layernorm.dense.bias -> NONZERO  abs_sum=0.005859
+  model.action_dit.norm.dense.weight                 -> NONZERO  abs_sum=2.171875
+  model.action_dit.norm.dense.bias                   -> NONZERO  abs_sum=0.064941
+  model.action_in_proj.weight                        -> NONZERO  abs_sum=0.531250
+  model.action_in_proj.bias                          -> NONZERO  abs_sum=0.031250
+  model.action_out_proj.weight                       -> NONZERO  abs_sum=2.171875
+  model.action_out_proj.bias                         -> NONZERO  abs_sum=0.017090
+  model.time_mlp_in.weight                           -> NONZERO  abs_sum=1.632812
+  model.time_mlp_in.bias                             -> NONZERO  abs_sum=0.002121
+  model.time_mlp_out.weight                          -> NONZERO  abs_sum=1.734375
+  model.time_mlp_out.bias                            -> NONZERO  abs_sum=0.010315
+  lm_head.weight                                     -> FROZEN
+
+## [gen_loss]
+  model.latent_queries                               -> NONZERO  abs_sum=6.406250
+  model.vision_tower.embeddings.class_embedding      -> FROZEN
+  model.vision_tower.embeddings.position_embedding   -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.weight -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.0.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.1.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.2.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.3.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.4.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.5.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.6.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.7.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.8.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.9.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.10.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.10.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.11.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.12.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.13.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.14.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.15.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.16.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.17.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.18.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.19.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.20.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.21.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.22.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.23.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.bias    -> FROZEN
+  model.multi_modal_projector.0.weight               -> FROZEN
+  model.multi_modal_projector.0.bias                 -> FROZEN
+  model.multi_modal_projector.1.weight               -> FROZEN
+  model.multi_modal_projector.1.bias                 -> FROZEN
+  model.multi_modal_projector.3.weight               -> FROZEN
+  model.multi_modal_projector.3.bias                 -> FROZEN
+  model.language_model.embed_tokens.weight           -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.0.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.0.input_layernorm.weight -> FROZEN
+  model.language_model.layers.0.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.1.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.1.input_layernorm.weight -> FROZEN
+  model.language_model.layers.1.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.2.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.2.input_layernorm.weight -> FROZEN
+  model.language_model.layers.2.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.3.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.3.input_layernorm.weight -> FROZEN
+  model.language_model.layers.3.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.4.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.4.input_layernorm.weight -> FROZEN
+  model.language_model.layers.4.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.5.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.5.input_layernorm.weight -> FROZEN
+  model.language_model.layers.5.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.6.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.6.input_layernorm.weight -> FROZEN
+  model.language_model.layers.6.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.7.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.7.input_layernorm.weight -> FROZEN
+  model.language_model.layers.7.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.8.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.8.input_layernorm.weight -> FROZEN
+  model.language_model.layers.8.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.9.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.9.input_layernorm.weight -> FROZEN
+  model.language_model.layers.9.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.10.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.10.input_layernorm.weight -> FROZEN
+  model.language_model.layers.10.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.11.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.11.input_layernorm.weight -> FROZEN
+  model.language_model.layers.11.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.12.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.12.input_layernorm.weight -> FROZEN
+  model.language_model.layers.12.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.13.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.13.input_layernorm.weight -> FROZEN
+  model.language_model.layers.13.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.14.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.14.input_layernorm.weight -> FROZEN
+  model.language_model.layers.14.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.15.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.15.input_layernorm.weight -> FROZEN
+  model.language_model.layers.15.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.16.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.16.input_layernorm.weight -> FROZEN
+  model.language_model.layers.16.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.17.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.17.input_layernorm.weight -> FROZEN
+  model.language_model.layers.17.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.18.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.18.input_layernorm.weight -> FROZEN
+  model.language_model.layers.18.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.19.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.19.input_layernorm.weight -> FROZEN
+  model.language_model.layers.19.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.20.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.20.input_layernorm.weight -> FROZEN
+  model.language_model.layers.20.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.21.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.21.input_layernorm.weight -> FROZEN
+  model.language_model.layers.21.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.22.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.22.input_layernorm.weight -> FROZEN
+  model.language_model.layers.22.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.23.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.23.input_layernorm.weight -> FROZEN
+  model.language_model.layers.23.post_attention_layernorm.weight -> FROZEN
+  model.language_model.norm.weight                   -> FROZEN
+  model.dit.scale_shift_table                        -> NONZERO  abs_sum=0.601562
+  model.dit.patch_embed.proj.weight                  -> NONZERO  abs_sum=1.898438
+  model.dit.patch_embed.proj.bias                    -> NONZERO  abs_sum=0.089355
+  model.dit.time_embed.emb.timestep_embedder.linear_1.weight -> NONZERO  abs_sum=6.625000
+  model.dit.time_embed.emb.timestep_embedder.linear_1.bias -> NONZERO  abs_sum=0.039062
+  model.dit.time_embed.emb.timestep_embedder.linear_2.weight -> NONZERO  abs_sum=9.000000
+  model.dit.time_embed.emb.timestep_embedder.linear_2.bias -> NONZERO  abs_sum=0.613281
+  model.dit.time_embed.linear.weight                 -> NONZERO  abs_sum=19.375000
+  model.dit.time_embed.linear.bias                   -> NONZERO  abs_sum=3.671875
+  model.dit.caption_projection.linear_1.weight       -> NONZERO  abs_sum=5.718750
+  model.dit.caption_projection.linear_1.bias         -> NONZERO  abs_sum=0.000254
+  model.dit.caption_projection.linear_2.weight       -> NONZERO  abs_sum=10.062500
+  model.dit.caption_projection.linear_2.bias         -> NONZERO  abs_sum=0.000160
+  model.dit.caption_norm.weight                      -> NONZERO  abs_sum=2.078125
+  model.dit.transformer_blocks.0.scale_shift_table   -> NONZERO  abs_sum=0.443359
+  model.dit.transformer_blocks.0.attn1.to_q.weight   -> NONZERO  abs_sum=0.059570
+  model.dit.transformer_blocks.0.attn1.to_k.weight   -> NONZERO  abs_sum=0.064941
+  model.dit.transformer_blocks.0.attn1.to_v.weight   -> NONZERO  abs_sum=0.871094
+  model.dit.transformer_blocks.0.attn1.to_out.0.weight -> NONZERO  abs_sum=1.101562
+  model.dit.transformer_blocks.0.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001854
+  model.dit.transformer_blocks.0.attn2.to_q.weight   -> NONZERO  abs_sum=0.108887
+  model.dit.transformer_blocks.0.attn2.to_q.bias     -> NONZERO  abs_sum=0.000141
+  model.dit.transformer_blocks.0.attn2.to_k.weight   -> NONZERO  abs_sum=0.267578
+  model.dit.transformer_blocks.0.attn2.to_k.bias     -> NONZERO  abs_sum=0.000096
+  model.dit.transformer_blocks.0.attn2.to_v.weight   -> NONZERO  abs_sum=0.398438
+  model.dit.transformer_blocks.0.attn2.to_v.bias     -> NONZERO  abs_sum=0.238281
+  model.dit.transformer_blocks.0.attn2.to_out.0.weight -> NONZERO  abs_sum=1.070312
+  model.dit.transformer_blocks.0.attn2.to_out.0.bias -> NONZERO  abs_sum=0.083008
+  model.dit.transformer_blocks.0.ff.conv_inverted.weight -> NONZERO  abs_sum=1.671875
+  model.dit.transformer_blocks.0.ff.conv_inverted.bias -> NONZERO  abs_sum=0.033936
+  model.dit.transformer_blocks.0.ff.conv_depth.weight -> NONZERO  abs_sum=0.400391
+  model.dit.transformer_blocks.0.ff.conv_depth.bias  -> NONZERO  abs_sum=0.157227
+  model.dit.transformer_blocks.0.ff.conv_point.weight -> NONZERO  abs_sum=2.734375
+  model.dit.transformer_blocks.1.scale_shift_table   -> NONZERO  abs_sum=0.431641
+  model.dit.transformer_blocks.1.attn1.to_q.weight   -> NONZERO  abs_sum=0.161133
+  model.dit.transformer_blocks.1.attn1.to_k.weight   -> NONZERO  abs_sum=0.113770
+  model.dit.transformer_blocks.1.attn1.to_v.weight   -> NONZERO  abs_sum=0.738281
+  model.dit.transformer_blocks.1.attn1.to_out.0.weight -> NONZERO  abs_sum=0.781250
+  model.dit.transformer_blocks.1.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003815
+  model.dit.transformer_blocks.1.attn2.to_q.weight   -> NONZERO  abs_sum=0.100586
+  model.dit.transformer_blocks.1.attn2.to_q.bias     -> NONZERO  abs_sum=0.000117
+  model.dit.transformer_blocks.1.attn2.to_k.weight   -> NONZERO  abs_sum=0.154297
+  model.dit.transformer_blocks.1.attn2.to_k.bias     -> NONZERO  abs_sum=0.000060
+  model.dit.transformer_blocks.1.attn2.to_v.weight   -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.1.attn2.to_v.bias     -> NONZERO  abs_sum=0.250000
+  model.dit.transformer_blocks.1.attn2.to_out.0.weight -> NONZERO  abs_sum=0.601562
+  model.dit.transformer_blocks.1.attn2.to_out.0.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.1.ff.conv_inverted.weight -> NONZERO  abs_sum=2.750000
+  model.dit.transformer_blocks.1.ff.conv_inverted.bias -> NONZERO  abs_sum=0.047119
+  model.dit.transformer_blocks.1.ff.conv_depth.weight -> NONZERO  abs_sum=0.453125
+  model.dit.transformer_blocks.1.ff.conv_depth.bias  -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.1.ff.conv_point.weight -> NONZERO  abs_sum=3.187500
+  model.dit.transformer_blocks.2.scale_shift_table   -> NONZERO  abs_sum=0.496094
+  model.dit.transformer_blocks.2.attn1.to_q.weight   -> NONZERO  abs_sum=0.394531
+  model.dit.transformer_blocks.2.attn1.to_k.weight   -> NONZERO  abs_sum=0.231445
+  model.dit.transformer_blocks.2.attn1.to_v.weight   -> NONZERO  abs_sum=0.878906
+  model.dit.transformer_blocks.2.attn1.to_out.0.weight -> NONZERO  abs_sum=0.863281
+  model.dit.transformer_blocks.2.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004425
+  model.dit.transformer_blocks.2.attn2.to_q.weight   -> NONZERO  abs_sum=0.176758
+  model.dit.transformer_blocks.2.attn2.to_q.bias     -> NONZERO  abs_sum=0.000234
+  model.dit.transformer_blocks.2.attn2.to_k.weight   -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.2.attn2.to_k.bias     -> NONZERO  abs_sum=0.000072
+  model.dit.transformer_blocks.2.attn2.to_v.weight   -> NONZERO  abs_sum=0.427734
+  model.dit.transformer_blocks.2.attn2.to_v.bias     -> NONZERO  abs_sum=0.279297
+  model.dit.transformer_blocks.2.attn2.to_out.0.weight -> NONZERO  abs_sum=0.710938
+  model.dit.transformer_blocks.2.attn2.to_out.0.bias -> NONZERO  abs_sum=0.081055
+  model.dit.transformer_blocks.2.ff.conv_inverted.weight -> NONZERO  abs_sum=3.953125
+  model.dit.transformer_blocks.2.ff.conv_inverted.bias -> NONZERO  abs_sum=0.062256
+  model.dit.transformer_blocks.2.ff.conv_depth.weight -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.2.ff.conv_depth.bias  -> NONZERO  abs_sum=0.208984
+  model.dit.transformer_blocks.2.ff.conv_point.weight -> NONZERO  abs_sum=3.593750
+  model.dit.transformer_blocks.3.scale_shift_table   -> NONZERO  abs_sum=0.490234
+  model.dit.transformer_blocks.3.attn1.to_q.weight   -> NONZERO  abs_sum=0.589844
+  model.dit.transformer_blocks.3.attn1.to_k.weight   -> NONZERO  abs_sum=0.312500
+  model.dit.transformer_blocks.3.attn1.to_v.weight   -> NONZERO  abs_sum=0.984375
+  model.dit.transformer_blocks.3.attn1.to_out.0.weight -> NONZERO  abs_sum=1.007812
+  model.dit.transformer_blocks.3.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004730
+  model.dit.transformer_blocks.3.attn2.to_q.weight   -> NONZERO  abs_sum=0.167969
+  model.dit.transformer_blocks.3.attn2.to_q.bias     -> NONZERO  abs_sum=0.000179
+  model.dit.transformer_blocks.3.attn2.to_k.weight   -> NONZERO  abs_sum=0.159180
+  model.dit.transformer_blocks.3.attn2.to_k.bias     -> NONZERO  abs_sum=0.000062
+  model.dit.transformer_blocks.3.attn2.to_v.weight   -> NONZERO  abs_sum=0.326172
+  model.dit.transformer_blocks.3.attn2.to_v.bias     -> NONZERO  abs_sum=0.289062
+  model.dit.transformer_blocks.3.attn2.to_out.0.weight -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.3.attn2.to_out.0.bias -> NONZERO  abs_sum=0.081543
+  model.dit.transformer_blocks.3.ff.conv_inverted.weight -> NONZERO  abs_sum=4.875000
+  model.dit.transformer_blocks.3.ff.conv_inverted.bias -> NONZERO  abs_sum=0.068848
+  model.dit.transformer_blocks.3.ff.conv_depth.weight -> NONZERO  abs_sum=0.593750
+  model.dit.transformer_blocks.3.ff.conv_depth.bias  -> NONZERO  abs_sum=0.225586
+  model.dit.transformer_blocks.3.ff.conv_point.weight -> NONZERO  abs_sum=4.031250
+  model.dit.transformer_blocks.4.scale_shift_table   -> NONZERO  abs_sum=0.511719
+  model.dit.transformer_blocks.4.attn1.to_q.weight   -> NONZERO  abs_sum=0.617188
+  model.dit.transformer_blocks.4.attn1.to_k.weight   -> NONZERO  abs_sum=0.361328
+  model.dit.transformer_blocks.4.attn1.to_v.weight   -> NONZERO  abs_sum=1.164062
+  model.dit.transformer_blocks.4.attn1.to_out.0.weight -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.4.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004761
+  model.dit.transformer_blocks.4.attn2.to_q.weight   -> NONZERO  abs_sum=0.275391
+  model.dit.transformer_blocks.4.attn2.to_q.bias     -> NONZERO  abs_sum=0.000280
+  model.dit.transformer_blocks.4.attn2.to_k.weight   -> NONZERO  abs_sum=0.219727
+  model.dit.transformer_blocks.4.attn2.to_k.bias     -> NONZERO  abs_sum=0.000068
+  model.dit.transformer_blocks.4.attn2.to_v.weight   -> NONZERO  abs_sum=0.480469
+  model.dit.transformer_blocks.4.attn2.to_v.bias     -> NONZERO  abs_sum=0.332031
+  model.dit.transformer_blocks.4.attn2.to_out.0.weight -> NONZERO  abs_sum=0.785156
+  model.dit.transformer_blocks.4.attn2.to_out.0.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.4.ff.conv_inverted.weight -> NONZERO  abs_sum=5.937500
+  model.dit.transformer_blocks.4.ff.conv_inverted.bias -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.4.ff.conv_depth.weight -> NONZERO  abs_sum=0.699219
+  model.dit.transformer_blocks.4.ff.conv_depth.bias  -> NONZERO  abs_sum=0.257812
+  model.dit.transformer_blocks.4.ff.conv_point.weight -> NONZERO  abs_sum=4.500000
+  model.dit.transformer_blocks.5.scale_shift_table   -> NONZERO  abs_sum=0.566406
+  model.dit.transformer_blocks.5.attn1.to_q.weight   -> NONZERO  abs_sum=0.667969
+  model.dit.transformer_blocks.5.attn1.to_k.weight   -> NONZERO  abs_sum=0.429688
+  model.dit.transformer_blocks.5.attn1.to_v.weight   -> NONZERO  abs_sum=1.210938
+  model.dit.transformer_blocks.5.attn1.to_out.0.weight -> NONZERO  abs_sum=1.218750
+  model.dit.transformer_blocks.5.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004883
+  model.dit.transformer_blocks.5.attn2.to_q.weight   -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.5.attn2.to_q.bias     -> NONZERO  abs_sum=0.000549
+  model.dit.transformer_blocks.5.attn2.to_k.weight   -> NONZERO  abs_sum=0.419922
+  model.dit.transformer_blocks.5.attn2.to_k.bias     -> NONZERO  abs_sum=0.000096
+  model.dit.transformer_blocks.5.attn2.to_v.weight   -> NONZERO  abs_sum=0.812500
+  model.dit.transformer_blocks.5.attn2.to_v.bias     -> NONZERO  abs_sum=0.339844
+  model.dit.transformer_blocks.5.attn2.to_out.0.weight -> NONZERO  abs_sum=1.437500
+  model.dit.transformer_blocks.5.attn2.to_out.0.bias -> NONZERO  abs_sum=0.079590
+  model.dit.transformer_blocks.5.ff.conv_inverted.weight -> NONZERO  abs_sum=6.937500
+  model.dit.transformer_blocks.5.ff.conv_inverted.bias -> NONZERO  abs_sum=0.090820
+  model.dit.transformer_blocks.5.ff.conv_depth.weight -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.5.ff.conv_depth.bias  -> NONZERO  abs_sum=0.281250
+  model.dit.transformer_blocks.5.ff.conv_point.weight -> NONZERO  abs_sum=5.062500
+  model.dit.transformer_blocks.6.scale_shift_table   -> NONZERO  abs_sum=0.640625
+  model.dit.transformer_blocks.6.attn1.to_q.weight   -> NONZERO  abs_sum=0.746094
+  model.dit.transformer_blocks.6.attn1.to_k.weight   -> NONZERO  abs_sum=0.550781
+  model.dit.transformer_blocks.6.attn1.to_v.weight   -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.6.attn1.to_out.0.weight -> NONZERO  abs_sum=1.804688
+  model.dit.transformer_blocks.6.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005981
+  model.dit.transformer_blocks.6.attn2.to_q.weight   -> NONZERO  abs_sum=0.808594
+  model.dit.transformer_blocks.6.attn2.to_q.bias     -> NONZERO  abs_sum=0.000729
+  model.dit.transformer_blocks.6.attn2.to_k.weight   -> NONZERO  abs_sum=0.550781
+  model.dit.transformer_blocks.6.attn2.to_k.bias     -> NONZERO  abs_sum=0.000154
+  model.dit.transformer_blocks.6.attn2.to_v.weight   -> NONZERO  abs_sum=1.218750
+  model.dit.transformer_blocks.6.attn2.to_v.bias     -> NONZERO  abs_sum=0.349609
+  model.dit.transformer_blocks.6.attn2.to_out.0.weight -> NONZERO  abs_sum=2.218750
+  model.dit.transformer_blocks.6.attn2.to_out.0.bias -> NONZERO  abs_sum=0.076172
+  model.dit.transformer_blocks.6.ff.conv_inverted.weight -> NONZERO  abs_sum=8.500000
+  model.dit.transformer_blocks.6.ff.conv_inverted.bias -> NONZERO  abs_sum=0.097168
+  model.dit.transformer_blocks.6.ff.conv_depth.weight -> NONZERO  abs_sum=0.941406
+  model.dit.transformer_blocks.6.ff.conv_depth.bias  -> NONZERO  abs_sum=0.287109
+  model.dit.transformer_blocks.6.ff.conv_point.weight -> NONZERO  abs_sum=6.312500
+  model.dit.transformer_blocks.7.scale_shift_table   -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.7.attn1.to_q.weight   -> NONZERO  abs_sum=1.093750
+  model.dit.transformer_blocks.7.attn1.to_k.weight   -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.7.attn1.to_v.weight   -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.7.attn1.to_out.0.weight -> NONZERO  abs_sum=2.546875
+  model.dit.transformer_blocks.7.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006744
+  model.dit.transformer_blocks.7.attn2.to_q.weight   -> NONZERO  abs_sum=0.804688
+  model.dit.transformer_blocks.7.attn2.to_q.bias     -> NONZERO  abs_sum=0.000618
+  model.dit.transformer_blocks.7.attn2.to_k.weight   -> NONZERO  abs_sum=0.589844
+  model.dit.transformer_blocks.7.attn2.to_k.bias     -> NONZERO  abs_sum=0.000166
+  model.dit.transformer_blocks.7.attn2.to_v.weight   -> NONZERO  abs_sum=0.984375
+  model.dit.transformer_blocks.7.attn2.to_v.bias     -> NONZERO  abs_sum=0.349609
+  model.dit.transformer_blocks.7.attn2.to_out.0.weight -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.7.attn2.to_out.0.bias -> NONZERO  abs_sum=0.074219
+  model.dit.transformer_blocks.7.ff.conv_inverted.weight -> NONZERO  abs_sum=10.625000
+  model.dit.transformer_blocks.7.ff.conv_inverted.bias -> NONZERO  abs_sum=0.117188
+  model.dit.transformer_blocks.7.ff.conv_depth.weight -> NONZERO  abs_sum=1.226562
+  model.dit.transformer_blocks.7.ff.conv_depth.bias  -> NONZERO  abs_sum=0.351562
+  model.dit.transformer_blocks.7.ff.conv_point.weight -> NONZERO  abs_sum=7.500000
+  model.dit.transformer_blocks.8.scale_shift_table   -> NONZERO  abs_sum=0.847656
+  model.dit.transformer_blocks.8.attn1.to_q.weight   -> NONZERO  abs_sum=1.296875
+  model.dit.transformer_blocks.8.attn1.to_k.weight   -> NONZERO  abs_sum=1.078125
+  model.dit.transformer_blocks.8.attn1.to_v.weight   -> NONZERO  abs_sum=3.250000
+  model.dit.transformer_blocks.8.attn1.to_out.0.weight -> NONZERO  abs_sum=3.078125
+  model.dit.transformer_blocks.8.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007324
+  model.dit.transformer_blocks.8.attn2.to_q.weight   -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.8.attn2.to_q.bias     -> NONZERO  abs_sum=0.000519
+  model.dit.transformer_blocks.8.attn2.to_k.weight   -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.8.attn2.to_k.bias     -> NONZERO  abs_sum=0.000149
+  model.dit.transformer_blocks.8.attn2.to_v.weight   -> NONZERO  abs_sum=0.828125
+  model.dit.transformer_blocks.8.attn2.to_v.bias     -> NONZERO  abs_sum=0.384766
+  model.dit.transformer_blocks.8.attn2.to_out.0.weight -> NONZERO  abs_sum=1.539062
+  model.dit.transformer_blocks.8.attn2.to_out.0.bias -> NONZERO  abs_sum=0.072754
+  model.dit.transformer_blocks.8.ff.conv_inverted.weight -> NONZERO  abs_sum=13.125000
+  model.dit.transformer_blocks.8.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.8.ff.conv_depth.weight -> NONZERO  abs_sum=1.390625
+  model.dit.transformer_blocks.8.ff.conv_depth.bias  -> NONZERO  abs_sum=0.363281
+  model.dit.transformer_blocks.8.ff.conv_point.weight -> NONZERO  abs_sum=9.062500
+  model.dit.transformer_blocks.9.scale_shift_table   -> NONZERO  abs_sum=0.945312
+  model.dit.transformer_blocks.9.attn1.to_q.weight   -> NONZERO  abs_sum=1.648438
+  model.dit.transformer_blocks.9.attn1.to_k.weight   -> NONZERO  abs_sum=1.359375
+  model.dit.transformer_blocks.9.attn1.to_v.weight   -> NONZERO  abs_sum=4.062500
+  model.dit.transformer_blocks.9.attn1.to_out.0.weight -> NONZERO  abs_sum=3.750000
+  model.dit.transformer_blocks.9.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007812
+  model.dit.transformer_blocks.9.attn2.to_q.weight   -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.9.attn2.to_q.bias     -> NONZERO  abs_sum=0.000786
+  model.dit.transformer_blocks.9.attn2.to_k.weight   -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.9.attn2.to_k.bias     -> NONZERO  abs_sum=0.000305
+  model.dit.transformer_blocks.9.attn2.to_v.weight   -> NONZERO  abs_sum=1.179688
+  model.dit.transformer_blocks.9.attn2.to_v.bias     -> NONZERO  abs_sum=0.375000
+  model.dit.transformer_blocks.9.attn2.to_out.0.weight -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.9.attn2.to_out.0.bias -> NONZERO  abs_sum=0.069336
+  model.dit.transformer_blocks.9.ff.conv_inverted.weight -> NONZERO  abs_sum=16.125000
+  model.dit.transformer_blocks.9.ff.conv_inverted.bias -> NONZERO  abs_sum=0.141602
+  model.dit.transformer_blocks.9.ff.conv_depth.weight -> NONZERO  abs_sum=1.750000
+  model.dit.transformer_blocks.9.ff.conv_depth.bias  -> NONZERO  abs_sum=0.390625
+  model.dit.transformer_blocks.9.ff.conv_point.weight -> NONZERO  abs_sum=10.937500
+  model.dit.transformer_blocks.10.scale_shift_table  -> NONZERO  abs_sum=1.015625
+  model.dit.transformer_blocks.10.attn1.to_q.weight  -> NONZERO  abs_sum=2.031250
+  model.dit.transformer_blocks.10.attn1.to_k.weight  -> NONZERO  abs_sum=1.648438
+  model.dit.transformer_blocks.10.attn1.to_v.weight  -> NONZERO  abs_sum=4.687500
+  model.dit.transformer_blocks.10.attn1.to_out.0.weight -> NONZERO  abs_sum=4.562500
+  model.dit.transformer_blocks.10.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007660
+  model.dit.transformer_blocks.10.attn2.to_q.weight  -> NONZERO  abs_sum=1.289062
+  model.dit.transformer_blocks.10.attn2.to_q.bias    -> NONZERO  abs_sum=0.000584
+  model.dit.transformer_blocks.10.attn2.to_k.weight  -> NONZERO  abs_sum=1.242188
+  model.dit.transformer_blocks.10.attn2.to_k.bias    -> NONZERO  abs_sum=0.000402
+  model.dit.transformer_blocks.10.attn2.to_v.weight  -> NONZERO  abs_sum=1.117188
+  model.dit.transformer_blocks.10.attn2.to_v.bias    -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.10.attn2.to_out.0.weight -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.10.attn2.to_out.0.bias -> NONZERO  abs_sum=0.061523
+  model.dit.transformer_blocks.10.ff.conv_inverted.weight -> NONZERO  abs_sum=20.250000
+  model.dit.transformer_blocks.10.ff.conv_inverted.bias -> NONZERO  abs_sum=0.153320
+  model.dit.transformer_blocks.10.ff.conv_depth.weight -> NONZERO  abs_sum=2.078125
+  model.dit.transformer_blocks.10.ff.conv_depth.bias -> NONZERO  abs_sum=0.419922
+  model.dit.transformer_blocks.10.ff.conv_point.weight -> NONZERO  abs_sum=13.375000
+  model.dit.transformer_blocks.11.scale_shift_table  -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.11.attn1.to_q.weight  -> NONZERO  abs_sum=2.500000
+  model.dit.transformer_blocks.11.attn1.to_k.weight  -> NONZERO  abs_sum=1.898438
+  model.dit.transformer_blocks.11.attn1.to_v.weight  -> NONZERO  abs_sum=5.437500
+  model.dit.transformer_blocks.11.attn1.to_out.0.weight -> NONZERO  abs_sum=4.875000
+  model.dit.transformer_blocks.11.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007446
+  model.dit.transformer_blocks.11.attn2.to_q.weight  -> NONZERO  abs_sum=1.289062
+  model.dit.transformer_blocks.11.attn2.to_q.bias    -> NONZERO  abs_sum=0.000530
+  model.dit.transformer_blocks.11.attn2.to_k.weight  -> NONZERO  abs_sum=1.398438
+  model.dit.transformer_blocks.11.attn2.to_k.bias    -> NONZERO  abs_sum=0.000370
+  model.dit.transformer_blocks.11.attn2.to_v.weight  -> NONZERO  abs_sum=0.812500
+  model.dit.transformer_blocks.11.attn2.to_v.bias    -> NONZERO  abs_sum=0.339844
+  model.dit.transformer_blocks.11.attn2.to_out.0.weight -> NONZERO  abs_sum=1.570312
+  model.dit.transformer_blocks.11.attn2.to_out.0.bias -> NONZERO  abs_sum=0.057373
+  model.dit.transformer_blocks.11.ff.conv_inverted.weight -> NONZERO  abs_sum=23.875000
+  model.dit.transformer_blocks.11.ff.conv_inverted.bias -> NONZERO  abs_sum=0.174805
+  model.dit.transformer_blocks.11.ff.conv_depth.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.11.ff.conv_depth.bias -> NONZERO  abs_sum=0.451172
+  model.dit.transformer_blocks.11.ff.conv_point.weight -> NONZERO  abs_sum=15.500000
+  model.dit.transformer_blocks.12.scale_shift_table  -> NONZERO  abs_sum=1.070312
+  model.dit.transformer_blocks.12.attn1.to_q.weight  -> NONZERO  abs_sum=3.031250
+  model.dit.transformer_blocks.12.attn1.to_k.weight  -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.12.attn1.to_v.weight  -> NONZERO  abs_sum=5.843750
+  model.dit.transformer_blocks.12.attn1.to_out.0.weight -> NONZERO  abs_sum=5.625000
+  model.dit.transformer_blocks.12.attn1.to_out.0.bias -> NONZERO  abs_sum=0.007416
+  model.dit.transformer_blocks.12.attn2.to_q.weight  -> NONZERO  abs_sum=1.593750
+  model.dit.transformer_blocks.12.attn2.to_q.bias    -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.12.attn2.to_k.weight  -> NONZERO  abs_sum=1.828125
+  model.dit.transformer_blocks.12.attn2.to_k.bias    -> NONZERO  abs_sum=0.000675
+  model.dit.transformer_blocks.12.attn2.to_v.weight  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.12.attn2.to_v.bias    -> NONZERO  abs_sum=0.308594
+  model.dit.transformer_blocks.12.attn2.to_out.0.weight -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.12.attn2.to_out.0.bias -> NONZERO  abs_sum=0.051270
+  model.dit.transformer_blocks.12.ff.conv_inverted.weight -> NONZERO  abs_sum=27.625000
+  model.dit.transformer_blocks.12.ff.conv_inverted.bias -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.12.ff.conv_depth.weight -> NONZERO  abs_sum=2.843750
+  model.dit.transformer_blocks.12.ff.conv_depth.bias -> NONZERO  abs_sum=0.460938
+  model.dit.transformer_blocks.12.ff.conv_point.weight -> NONZERO  abs_sum=17.125000
+  model.dit.transformer_blocks.13.scale_shift_table  -> NONZERO  abs_sum=1.007812
+  model.dit.transformer_blocks.13.attn1.to_q.weight  -> NONZERO  abs_sum=3.203125
+  model.dit.transformer_blocks.13.attn1.to_k.weight  -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.13.attn1.to_v.weight  -> NONZERO  abs_sum=5.843750
+  model.dit.transformer_blocks.13.attn1.to_out.0.weight -> NONZERO  abs_sum=5.000000
+  model.dit.transformer_blocks.13.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006653
+  model.dit.transformer_blocks.13.attn2.to_q.weight  -> NONZERO  abs_sum=2.250000
+  model.dit.transformer_blocks.13.attn2.to_q.bias    -> NONZERO  abs_sum=0.000633
+  model.dit.transformer_blocks.13.attn2.to_k.weight  -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.13.attn2.to_k.bias    -> NONZERO  abs_sum=0.000732
+  model.dit.transformer_blocks.13.attn2.to_v.weight  -> NONZERO  abs_sum=1.203125
+  model.dit.transformer_blocks.13.attn2.to_v.bias    -> NONZERO  abs_sum=0.283203
+  model.dit.transformer_blocks.13.attn2.to_out.0.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.13.attn2.to_out.0.bias -> NONZERO  abs_sum=0.045654
+  model.dit.transformer_blocks.13.ff.conv_inverted.weight -> NONZERO  abs_sum=29.500000
+  model.dit.transformer_blocks.13.ff.conv_inverted.bias -> NONZERO  abs_sum=0.177734
+  model.dit.transformer_blocks.13.ff.conv_depth.weight -> NONZERO  abs_sum=2.921875
+  model.dit.transformer_blocks.13.ff.conv_depth.bias -> NONZERO  abs_sum=0.437500
+  model.dit.transformer_blocks.13.ff.conv_point.weight -> NONZERO  abs_sum=18.000000
+  model.dit.transformer_blocks.14.scale_shift_table  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.14.attn1.to_q.weight  -> NONZERO  abs_sum=3.734375
+  model.dit.transformer_blocks.14.attn1.to_k.weight  -> NONZERO  abs_sum=1.703125
+  model.dit.transformer_blocks.14.attn1.to_v.weight  -> NONZERO  abs_sum=4.593750
+  model.dit.transformer_blocks.14.attn1.to_out.0.weight -> NONZERO  abs_sum=4.500000
+  model.dit.transformer_blocks.14.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005737
+  model.dit.transformer_blocks.14.attn2.to_q.weight  -> NONZERO  abs_sum=1.968750
+  model.dit.transformer_blocks.14.attn2.to_q.bias    -> NONZERO  abs_sum=0.000462
+  model.dit.transformer_blocks.14.attn2.to_k.weight  -> NONZERO  abs_sum=2.171875
+  model.dit.transformer_blocks.14.attn2.to_k.bias    -> NONZERO  abs_sum=0.000786
+  model.dit.transformer_blocks.14.attn2.to_v.weight  -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.14.attn2.to_v.bias    -> NONZERO  abs_sum=0.237305
+  model.dit.transformer_blocks.14.attn2.to_out.0.weight -> NONZERO  abs_sum=1.968750
+  model.dit.transformer_blocks.14.attn2.to_out.0.bias -> NONZERO  abs_sum=0.041260
+  model.dit.transformer_blocks.14.ff.conv_inverted.weight -> NONZERO  abs_sum=30.000000
+  model.dit.transformer_blocks.14.ff.conv_inverted.bias -> NONZERO  abs_sum=0.179688
+  model.dit.transformer_blocks.14.ff.conv_depth.weight -> NONZERO  abs_sum=2.968750
+  model.dit.transformer_blocks.14.ff.conv_depth.bias -> NONZERO  abs_sum=0.435547
+  model.dit.transformer_blocks.14.ff.conv_point.weight -> NONZERO  abs_sum=17.750000
+  model.dit.transformer_blocks.15.scale_shift_table  -> NONZERO  abs_sum=0.906250
+  model.dit.transformer_blocks.15.attn1.to_q.weight  -> NONZERO  abs_sum=3.718750
+  model.dit.transformer_blocks.15.attn1.to_k.weight  -> NONZERO  abs_sum=1.679688
+  model.dit.transformer_blocks.15.attn1.to_v.weight  -> NONZERO  abs_sum=4.531250
+  model.dit.transformer_blocks.15.attn1.to_out.0.weight -> NONZERO  abs_sum=4.031250
+  model.dit.transformer_blocks.15.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006348
+  model.dit.transformer_blocks.15.attn2.to_q.weight  -> NONZERO  abs_sum=2.046875
+  model.dit.transformer_blocks.15.attn2.to_q.bias    -> NONZERO  abs_sum=0.000500
+  model.dit.transformer_blocks.15.attn2.to_k.weight  -> NONZERO  abs_sum=2.437500
+  model.dit.transformer_blocks.15.attn2.to_k.bias    -> NONZERO  abs_sum=0.000874
+  model.dit.transformer_blocks.15.attn2.to_v.weight  -> NONZERO  abs_sum=0.968750
+  model.dit.transformer_blocks.15.attn2.to_v.bias    -> NONZERO  abs_sum=0.201172
+  model.dit.transformer_blocks.15.attn2.to_out.0.weight -> NONZERO  abs_sum=1.742188
+  model.dit.transformer_blocks.15.attn2.to_out.0.bias -> NONZERO  abs_sum=0.037842
+  model.dit.transformer_blocks.15.ff.conv_inverted.weight -> NONZERO  abs_sum=28.625000
+  model.dit.transformer_blocks.15.ff.conv_inverted.bias -> NONZERO  abs_sum=0.166016
+  model.dit.transformer_blocks.15.ff.conv_depth.weight -> NONZERO  abs_sum=2.953125
+  model.dit.transformer_blocks.15.ff.conv_depth.bias -> NONZERO  abs_sum=0.410156
+  model.dit.transformer_blocks.15.ff.conv_point.weight -> NONZERO  abs_sum=16.625000
+  model.dit.transformer_blocks.16.scale_shift_table  -> NONZERO  abs_sum=0.855469
+  model.dit.transformer_blocks.16.attn1.to_q.weight  -> NONZERO  abs_sum=3.437500
+  model.dit.transformer_blocks.16.attn1.to_k.weight  -> NONZERO  abs_sum=1.242188
+  model.dit.transformer_blocks.16.attn1.to_v.weight  -> NONZERO  abs_sum=3.781250
+  model.dit.transformer_blocks.16.attn1.to_out.0.weight -> NONZERO  abs_sum=3.343750
+  model.dit.transformer_blocks.16.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005310
+  model.dit.transformer_blocks.16.attn2.to_q.weight  -> NONZERO  abs_sum=1.492188
+  model.dit.transformer_blocks.16.attn2.to_q.bias    -> NONZERO  abs_sum=0.000284
+  model.dit.transformer_blocks.16.attn2.to_k.weight  -> NONZERO  abs_sum=1.835938
+  model.dit.transformer_blocks.16.attn2.to_k.bias    -> NONZERO  abs_sum=0.000702
+  model.dit.transformer_blocks.16.attn2.to_v.weight  -> NONZERO  abs_sum=0.750000
+  model.dit.transformer_blocks.16.attn2.to_v.bias    -> NONZERO  abs_sum=0.203125
+  model.dit.transformer_blocks.16.attn2.to_out.0.weight -> NONZERO  abs_sum=1.296875
+  model.dit.transformer_blocks.16.attn2.to_out.0.bias -> NONZERO  abs_sum=0.033936
+  model.dit.transformer_blocks.16.ff.conv_inverted.weight -> NONZERO  abs_sum=26.250000
+  model.dit.transformer_blocks.16.ff.conv_inverted.bias -> NONZERO  abs_sum=0.150391
+  model.dit.transformer_blocks.16.ff.conv_depth.weight -> NONZERO  abs_sum=2.703125
+  model.dit.transformer_blocks.16.ff.conv_depth.bias -> NONZERO  abs_sum=0.367188
+  model.dit.transformer_blocks.16.ff.conv_point.weight -> NONZERO  abs_sum=15.312500
+  model.dit.transformer_blocks.17.scale_shift_table  -> NONZERO  abs_sum=0.792969
+  model.dit.transformer_blocks.17.attn1.to_q.weight  -> NONZERO  abs_sum=3.281250
+  model.dit.transformer_blocks.17.attn1.to_k.weight  -> NONZERO  abs_sum=1.132812
+  model.dit.transformer_blocks.17.attn1.to_v.weight  -> NONZERO  abs_sum=3.015625
+  model.dit.transformer_blocks.17.attn1.to_out.0.weight -> NONZERO  abs_sum=2.906250
+  model.dit.transformer_blocks.17.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004913
+  model.dit.transformer_blocks.17.attn2.to_q.weight  -> NONZERO  abs_sum=1.304688
+  model.dit.transformer_blocks.17.attn2.to_q.bias    -> NONZERO  abs_sum=0.000234
+  model.dit.transformer_blocks.17.attn2.to_k.weight  -> NONZERO  abs_sum=1.492188
+  model.dit.transformer_blocks.17.attn2.to_k.bias    -> NONZERO  abs_sum=0.000595
+  model.dit.transformer_blocks.17.attn2.to_v.weight  -> NONZERO  abs_sum=0.671875
+  model.dit.transformer_blocks.17.attn2.to_v.bias    -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.17.attn2.to_out.0.weight -> NONZERO  abs_sum=1.273438
+  model.dit.transformer_blocks.17.attn2.to_out.0.bias -> NONZERO  abs_sum=0.032471
+  model.dit.transformer_blocks.17.ff.conv_inverted.weight -> NONZERO  abs_sum=24.375000
+  model.dit.transformer_blocks.17.ff.conv_inverted.bias -> NONZERO  abs_sum=0.146484
+  model.dit.transformer_blocks.17.ff.conv_depth.weight -> NONZERO  abs_sum=2.687500
+  model.dit.transformer_blocks.17.ff.conv_depth.bias -> NONZERO  abs_sum=0.357422
+  model.dit.transformer_blocks.17.ff.conv_point.weight -> NONZERO  abs_sum=14.187500
+  model.dit.transformer_blocks.18.scale_shift_table  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.18.attn1.to_q.weight  -> NONZERO  abs_sum=3.093750
+  model.dit.transformer_blocks.18.attn1.to_k.weight  -> NONZERO  abs_sum=0.878906
+  model.dit.transformer_blocks.18.attn1.to_v.weight  -> NONZERO  abs_sum=2.703125
+  model.dit.transformer_blocks.18.attn1.to_out.0.weight -> NONZERO  abs_sum=2.421875
+  model.dit.transformer_blocks.18.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004913
+  model.dit.transformer_blocks.18.attn2.to_q.weight  -> NONZERO  abs_sum=1.585938
+  model.dit.transformer_blocks.18.attn2.to_q.bias    -> NONZERO  abs_sum=0.000288
+  model.dit.transformer_blocks.18.attn2.to_k.weight  -> NONZERO  abs_sum=1.703125
+  model.dit.transformer_blocks.18.attn2.to_k.bias    -> NONZERO  abs_sum=0.000603
+  model.dit.transformer_blocks.18.attn2.to_v.weight  -> NONZERO  abs_sum=0.699219
+  model.dit.transformer_blocks.18.attn2.to_v.bias    -> NONZERO  abs_sum=0.163086
+  model.dit.transformer_blocks.18.attn2.to_out.0.weight -> NONZERO  abs_sum=1.171875
+  model.dit.transformer_blocks.18.attn2.to_out.0.bias -> NONZERO  abs_sum=0.028931
+  model.dit.transformer_blocks.18.ff.conv_inverted.weight -> NONZERO  abs_sum=22.375000
+  model.dit.transformer_blocks.18.ff.conv_inverted.bias -> NONZERO  abs_sum=0.130859
+  model.dit.transformer_blocks.18.ff.conv_depth.weight -> NONZERO  abs_sum=2.343750
+  model.dit.transformer_blocks.18.ff.conv_depth.bias -> NONZERO  abs_sum=0.316406
+  model.dit.transformer_blocks.18.ff.conv_point.weight -> NONZERO  abs_sum=12.562500
+  model.dit.transformer_blocks.19.scale_shift_table  -> NONZERO  abs_sum=0.660156
+  model.dit.transformer_blocks.19.attn1.to_q.weight  -> NONZERO  abs_sum=2.812500
+  model.dit.transformer_blocks.19.attn1.to_k.weight  -> NONZERO  abs_sum=0.945312
+  model.dit.transformer_blocks.19.attn1.to_v.weight  -> NONZERO  abs_sum=2.890625
+  model.dit.transformer_blocks.19.attn1.to_out.0.weight -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.19.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004364
+  model.dit.transformer_blocks.19.attn2.to_q.weight  -> NONZERO  abs_sum=0.988281
+  model.dit.transformer_blocks.19.attn2.to_q.bias    -> NONZERO  abs_sum=0.000135
+  model.dit.transformer_blocks.19.attn2.to_k.weight  -> NONZERO  abs_sum=1.117188
+  model.dit.transformer_blocks.19.attn2.to_k.bias    -> NONZERO  abs_sum=0.000626
+  model.dit.transformer_blocks.19.attn2.to_v.weight  -> NONZERO  abs_sum=0.425781
+  model.dit.transformer_blocks.19.attn2.to_v.bias    -> NONZERO  abs_sum=0.115723
+  model.dit.transformer_blocks.19.attn2.to_out.0.weight -> NONZERO  abs_sum=0.800781
+  model.dit.transformer_blocks.19.attn2.to_out.0.bias -> NONZERO  abs_sum=0.025879
+  model.dit.transformer_blocks.19.ff.conv_inverted.weight -> NONZERO  abs_sum=21.250000
+  model.dit.transformer_blocks.19.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.19.ff.conv_depth.weight -> NONZERO  abs_sum=2.375000
+  model.dit.transformer_blocks.19.ff.conv_depth.bias -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.19.ff.conv_point.weight -> NONZERO  abs_sum=11.812500
+  model.dit.transformer_blocks.20.scale_shift_table  -> NONZERO  abs_sum=0.609375
+  model.dit.transformer_blocks.20.attn1.to_q.weight  -> NONZERO  abs_sum=2.875000
+  model.dit.transformer_blocks.20.attn1.to_k.weight  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.20.attn1.to_v.weight  -> NONZERO  abs_sum=2.515625
+  model.dit.transformer_blocks.20.attn1.to_out.0.weight -> NONZERO  abs_sum=1.945312
+  model.dit.transformer_blocks.20.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003998
+  model.dit.transformer_blocks.20.attn2.to_q.weight  -> NONZERO  abs_sum=0.726562
+  model.dit.transformer_blocks.20.attn2.to_q.bias    -> NONZERO  abs_sum=0.000099
+  model.dit.transformer_blocks.20.attn2.to_k.weight  -> NONZERO  abs_sum=0.832031
+  model.dit.transformer_blocks.20.attn2.to_k.bias    -> NONZERO  abs_sum=0.000353
+  model.dit.transformer_blocks.20.attn2.to_v.weight  -> NONZERO  abs_sum=0.314453
+  model.dit.transformer_blocks.20.attn2.to_v.bias    -> NONZERO  abs_sum=0.107422
+  model.dit.transformer_blocks.20.attn2.to_out.0.weight -> NONZERO  abs_sum=0.558594
+  model.dit.transformer_blocks.20.attn2.to_out.0.bias -> NONZERO  abs_sum=0.023315
+  model.dit.transformer_blocks.20.ff.conv_inverted.weight -> NONZERO  abs_sum=20.750000
+  model.dit.transformer_blocks.20.ff.conv_inverted.bias -> NONZERO  abs_sum=0.122070
+  model.dit.transformer_blocks.20.ff.conv_depth.weight -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.20.ff.conv_depth.bias -> NONZERO  abs_sum=0.300781
+  model.dit.transformer_blocks.20.ff.conv_point.weight -> NONZERO  abs_sum=11.062500
+  model.dit.transformer_blocks.21.scale_shift_table  -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.21.attn1.to_q.weight  -> NONZERO  abs_sum=2.531250
+  model.dit.transformer_blocks.21.attn1.to_k.weight  -> NONZERO  abs_sum=0.722656
+  model.dit.transformer_blocks.21.attn1.to_v.weight  -> NONZERO  abs_sum=2.187500
+  model.dit.transformer_blocks.21.attn1.to_out.0.weight -> NONZERO  abs_sum=1.671875
+  model.dit.transformer_blocks.21.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003403
+  model.dit.transformer_blocks.21.attn2.to_q.weight  -> NONZERO  abs_sum=0.219727
+  model.dit.transformer_blocks.21.attn2.to_q.bias    -> NONZERO  abs_sum=0.000019
+  model.dit.transformer_blocks.21.attn2.to_k.weight  -> NONZERO  abs_sum=0.314453
+  model.dit.transformer_blocks.21.attn2.to_k.bias    -> NONZERO  abs_sum=0.000231
+  model.dit.transformer_blocks.21.attn2.to_v.weight  -> NONZERO  abs_sum=0.182617
+  model.dit.transformer_blocks.21.attn2.to_v.bias    -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.21.attn2.to_out.0.weight -> NONZERO  abs_sum=0.337891
+  model.dit.transformer_blocks.21.attn2.to_out.0.bias -> NONZERO  abs_sum=0.020874
+  model.dit.transformer_blocks.21.ff.conv_inverted.weight -> NONZERO  abs_sum=19.875000
+  model.dit.transformer_blocks.21.ff.conv_inverted.bias -> NONZERO  abs_sum=0.110352
+  model.dit.transformer_blocks.21.ff.conv_depth.weight -> NONZERO  abs_sum=2.109375
+  model.dit.transformer_blocks.21.ff.conv_depth.bias -> NONZERO  abs_sum=0.248047
+  model.dit.transformer_blocks.21.ff.conv_point.weight -> NONZERO  abs_sum=10.250000
+  model.dit.transformer_blocks.22.scale_shift_table  -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.22.attn1.to_q.weight  -> NONZERO  abs_sum=2.875000
+  model.dit.transformer_blocks.22.attn1.to_k.weight  -> NONZERO  abs_sum=0.574219
+  model.dit.transformer_blocks.22.attn1.to_v.weight  -> NONZERO  abs_sum=1.531250
+  model.dit.transformer_blocks.22.attn1.to_out.0.weight -> NONZERO  abs_sum=1.335938
+  model.dit.transformer_blocks.22.attn1.to_out.0.bias -> NONZERO  abs_sum=0.002457
+  model.dit.transformer_blocks.22.attn2.to_q.weight  -> NONZERO  abs_sum=0.096680
+  model.dit.transformer_blocks.22.attn2.to_q.bias    -> NONZERO  abs_sum=0.000007
+  model.dit.transformer_blocks.22.attn2.to_k.weight  -> NONZERO  abs_sum=0.142578
+  model.dit.transformer_blocks.22.attn2.to_k.bias    -> NONZERO  abs_sum=0.000216
+  model.dit.transformer_blocks.22.attn2.to_v.weight  -> NONZERO  abs_sum=0.166016
+  model.dit.transformer_blocks.22.attn2.to_v.bias    -> NONZERO  abs_sum=0.048096
+  model.dit.transformer_blocks.22.attn2.to_out.0.weight -> NONZERO  abs_sum=0.285156
+  model.dit.transformer_blocks.22.attn2.to_out.0.bias -> NONZERO  abs_sum=0.019043
+  model.dit.transformer_blocks.22.ff.conv_inverted.weight -> NONZERO  abs_sum=19.250000
+  model.dit.transformer_blocks.22.ff.conv_inverted.bias -> NONZERO  abs_sum=0.106934
+  model.dit.transformer_blocks.22.ff.conv_depth.weight -> NONZERO  abs_sum=2.125000
+  model.dit.transformer_blocks.22.ff.conv_depth.bias -> NONZERO  abs_sum=0.251953
+  model.dit.transformer_blocks.22.ff.conv_point.weight -> NONZERO  abs_sum=9.625000
+  model.dit.transformer_blocks.23.scale_shift_table  -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.23.attn1.to_q.weight  -> NONZERO  abs_sum=2.765625
+  model.dit.transformer_blocks.23.attn1.to_k.weight  -> NONZERO  abs_sum=0.562500
+  model.dit.transformer_blocks.23.attn1.to_v.weight  -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.23.attn1.to_out.0.weight -> NONZERO  abs_sum=1.093750
+  model.dit.transformer_blocks.23.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001999
+  model.dit.transformer_blocks.23.attn2.to_q.weight  -> NONZERO  abs_sum=0.103027
+  model.dit.transformer_blocks.23.attn2.to_q.bias    -> NONZERO  abs_sum=0.000010
+  model.dit.transformer_blocks.23.attn2.to_k.weight  -> NONZERO  abs_sum=0.197266
+  model.dit.transformer_blocks.23.attn2.to_k.bias    -> NONZERO  abs_sum=0.000250
+  model.dit.transformer_blocks.23.attn2.to_v.weight  -> NONZERO  abs_sum=0.080566
+  model.dit.transformer_blocks.23.attn2.to_v.bias    -> NONZERO  abs_sum=0.046875
+  model.dit.transformer_blocks.23.attn2.to_out.0.weight -> NONZERO  abs_sum=0.165039
+  model.dit.transformer_blocks.23.attn2.to_out.0.bias -> NONZERO  abs_sum=0.017090
+  model.dit.transformer_blocks.23.ff.conv_inverted.weight -> NONZERO  abs_sum=18.500000
+  model.dit.transformer_blocks.23.ff.conv_inverted.bias -> NONZERO  abs_sum=0.108887
+  model.dit.transformer_blocks.23.ff.conv_depth.weight -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.23.ff.conv_depth.bias -> NONZERO  abs_sum=0.242188
+  model.dit.transformer_blocks.23.ff.conv_point.weight -> NONZERO  abs_sum=8.625000
+  model.dit.transformer_blocks.24.scale_shift_table  -> NONZERO  abs_sum=0.494141
+  model.dit.transformer_blocks.24.attn1.to_q.weight  -> NONZERO  abs_sum=2.687500
+  model.dit.transformer_blocks.24.attn1.to_k.weight  -> NONZERO  abs_sum=0.451172
+  model.dit.transformer_blocks.24.attn1.to_v.weight  -> NONZERO  abs_sum=0.859375
+  model.dit.transformer_blocks.24.attn1.to_out.0.weight -> NONZERO  abs_sum=0.824219
+  model.dit.transformer_blocks.24.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001442
+  model.dit.transformer_blocks.24.attn2.to_q.weight  -> NONZERO  abs_sum=0.064941
+  model.dit.transformer_blocks.24.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.24.attn2.to_k.weight  -> NONZERO  abs_sum=0.096191
+  model.dit.transformer_blocks.24.attn2.to_k.bias    -> NONZERO  abs_sum=0.000103
+  model.dit.transformer_blocks.24.attn2.to_v.weight  -> NONZERO  abs_sum=0.066895
+  model.dit.transformer_blocks.24.attn2.to_v.bias    -> NONZERO  abs_sum=0.034180
+  model.dit.transformer_blocks.24.attn2.to_out.0.weight -> NONZERO  abs_sum=0.139648
+  model.dit.transformer_blocks.24.attn2.to_out.0.bias -> NONZERO  abs_sum=0.015564
+  model.dit.transformer_blocks.24.ff.conv_inverted.weight -> NONZERO  abs_sum=17.875000
+  model.dit.transformer_blocks.24.ff.conv_inverted.bias -> NONZERO  abs_sum=0.104492
+  model.dit.transformer_blocks.24.ff.conv_depth.weight -> NONZERO  abs_sum=1.828125
+  model.dit.transformer_blocks.24.ff.conv_depth.bias -> NONZERO  abs_sum=0.231445
+  model.dit.transformer_blocks.24.ff.conv_point.weight -> NONZERO  abs_sum=7.781250
+  model.dit.transformer_blocks.25.scale_shift_table  -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.25.attn1.to_q.weight  -> NONZERO  abs_sum=2.234375
+  model.dit.transformer_blocks.25.attn1.to_k.weight  -> NONZERO  abs_sum=0.496094
+  model.dit.transformer_blocks.25.attn1.to_v.weight  -> NONZERO  abs_sum=0.972656
+  model.dit.transformer_blocks.25.attn1.to_out.0.weight -> NONZERO  abs_sum=0.757812
+  model.dit.transformer_blocks.25.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001297
+  model.dit.transformer_blocks.25.attn2.to_q.weight  -> NONZERO  abs_sum=0.074707
+  model.dit.transformer_blocks.25.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.25.attn2.to_k.weight  -> NONZERO  abs_sum=0.117676
+  model.dit.transformer_blocks.25.attn2.to_k.bias    -> NONZERO  abs_sum=0.000118
+  model.dit.transformer_blocks.25.attn2.to_v.weight  -> NONZERO  abs_sum=0.076660
+  model.dit.transformer_blocks.25.attn2.to_v.bias    -> NONZERO  abs_sum=0.030884
+  model.dit.transformer_blocks.25.attn2.to_out.0.weight -> NONZERO  abs_sum=0.161133
+  model.dit.transformer_blocks.25.attn2.to_out.0.bias -> NONZERO  abs_sum=0.014038
+  model.dit.transformer_blocks.25.ff.conv_inverted.weight -> NONZERO  abs_sum=16.375000
+  model.dit.transformer_blocks.25.ff.conv_inverted.bias -> NONZERO  abs_sum=0.087891
+  model.dit.transformer_blocks.25.ff.conv_depth.weight -> NONZERO  abs_sum=1.554688
+  model.dit.transformer_blocks.25.ff.conv_depth.bias -> NONZERO  abs_sum=0.181641
+  model.dit.transformer_blocks.25.ff.conv_point.weight -> NONZERO  abs_sum=6.218750
+  model.dit.transformer_blocks.26.scale_shift_table  -> NONZERO  abs_sum=0.500000
+  model.dit.transformer_blocks.26.attn1.to_q.weight  -> NONZERO  abs_sum=1.875000
+  model.dit.transformer_blocks.26.attn1.to_k.weight  -> NONZERO  abs_sum=0.457031
+  model.dit.transformer_blocks.26.attn1.to_v.weight  -> NONZERO  abs_sum=0.652344
+  model.dit.transformer_blocks.26.attn1.to_out.0.weight -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.26.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.26.attn2.to_q.weight  -> NONZERO  abs_sum=0.124023
+  model.dit.transformer_blocks.26.attn2.to_q.bias    -> NONZERO  abs_sum=0.000007
+  model.dit.transformer_blocks.26.attn2.to_k.weight  -> NONZERO  abs_sum=0.122070
+  model.dit.transformer_blocks.26.attn2.to_k.bias    -> NONZERO  abs_sum=0.000132
+  model.dit.transformer_blocks.26.attn2.to_v.weight  -> NONZERO  abs_sum=0.079590
+  model.dit.transformer_blocks.26.attn2.to_v.bias    -> NONZERO  abs_sum=0.028687
+  model.dit.transformer_blocks.26.attn2.to_out.0.weight -> NONZERO  abs_sum=0.157227
+  model.dit.transformer_blocks.26.attn2.to_out.0.bias -> NONZERO  abs_sum=0.012024
+  model.dit.transformer_blocks.26.ff.conv_inverted.weight -> NONZERO  abs_sum=14.062500
+  model.dit.transformer_blocks.26.ff.conv_inverted.bias -> NONZERO  abs_sum=0.083984
+  model.dit.transformer_blocks.26.ff.conv_depth.weight -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.26.ff.conv_depth.bias -> NONZERO  abs_sum=0.166992
+  model.dit.transformer_blocks.26.ff.conv_point.weight -> NONZERO  abs_sum=3.953125
+  model.dit.transformer_blocks.27.scale_shift_table  -> NONZERO  abs_sum=0.632812
+  model.dit.transformer_blocks.27.attn1.to_q.weight  -> NONZERO  abs_sum=1.312500
+  model.dit.transformer_blocks.27.attn1.to_k.weight  -> NONZERO  abs_sum=0.357422
+  model.dit.transformer_blocks.27.attn1.to_v.weight  -> NONZERO  abs_sum=0.648438
+  model.dit.transformer_blocks.27.attn1.to_out.0.weight -> NONZERO  abs_sum=0.298828
+  model.dit.transformer_blocks.27.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000546
+  model.dit.transformer_blocks.27.attn2.to_q.weight  -> NONZERO  abs_sum=0.070312
+  model.dit.transformer_blocks.27.attn2.to_q.bias    -> NONZERO  abs_sum=0.000003
+  model.dit.transformer_blocks.27.attn2.to_k.weight  -> NONZERO  abs_sum=0.087402
+  model.dit.transformer_blocks.27.attn2.to_k.bias    -> NONZERO  abs_sum=0.000127
+  model.dit.transformer_blocks.27.attn2.to_v.weight  -> NONZERO  abs_sum=0.214844
+  model.dit.transformer_blocks.27.attn2.to_v.bias    -> NONZERO  abs_sum=0.030762
+  model.dit.transformer_blocks.27.attn2.to_out.0.weight -> NONZERO  abs_sum=0.194336
+  model.dit.transformer_blocks.27.attn2.to_out.0.bias -> NONZERO  abs_sum=0.010986
+  model.dit.transformer_blocks.27.ff.conv_inverted.weight -> NONZERO  abs_sum=11.000000
+  model.dit.transformer_blocks.27.ff.conv_inverted.bias -> NONZERO  abs_sum=0.092285
+  model.dit.transformer_blocks.27.ff.conv_depth.weight -> NONZERO  abs_sum=1.062500
+  model.dit.transformer_blocks.27.ff.conv_depth.bias -> NONZERO  abs_sum=0.226562
+  model.dit.transformer_blocks.27.ff.conv_point.weight -> NONZERO  abs_sum=1.570312
+  model.dit.proj_out.weight                          -> NONZERO  abs_sum=5.156250
+  model.dit.proj_out.bias                            -> NONZERO  abs_sum=0.033691
+  model.vae_decoder.decoder.conv_in.weight           -> FROZEN
+  model.vae_decoder.decoder.conv_in.bias             -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.norm_out.weight          -> FROZEN
+  model.vae_decoder.decoder.norm_out.bias            -> FROZEN
+  model.vae_decoder.decoder.conv_out.weight          -> FROZEN
+  model.vae_decoder.decoder.conv_out.bias            -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_mlp.0.weight                -> FROZEN
+  model.vae_decoder.down_mlp.0.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.1.weight                -> FROZEN
+  model.vae_decoder.down_mlp.1.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.3.weight                -> FROZEN
+  model.vae_decoder.down_mlp.3.bias                  -> FROZEN
+  model.llm_connector.layers.0.self_attn.q_proj.weight -> NONZERO  abs_sum=0.632812
+  model.llm_connector.layers.0.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000637
+  model.llm_connector.layers.0.self_attn.k_proj.weight -> NONZERO  abs_sum=0.343750
+  model.llm_connector.layers.0.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000163
+  model.llm_connector.layers.0.self_attn.v_proj.weight -> NONZERO  abs_sum=1.546875
+  model.llm_connector.layers.0.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001511
+  model.llm_connector.layers.0.self_attn.o_proj.weight -> NONZERO  abs_sum=2.625000
+  model.llm_connector.layers.0.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.000000
+  model.llm_connector.layers.0.mlp.up_proj.weight    -> NONZERO  abs_sum=4.437500
+  model.llm_connector.layers.0.mlp.down_proj.weight  -> NONZERO  abs_sum=6.468750
+  model.llm_connector.layers.0.input_layernorm.weight -> NONZERO  abs_sum=0.003128
+  model.llm_connector.layers.0.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002930
+  model.llm_connector.layers.1.self_attn.q_proj.weight -> NONZERO  abs_sum=0.699219
+  model.llm_connector.layers.1.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000908
+  model.llm_connector.layers.1.self_attn.k_proj.weight -> NONZERO  abs_sum=0.384766
+  model.llm_connector.layers.1.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000215
+  model.llm_connector.layers.1.self_attn.v_proj.weight -> NONZERO  abs_sum=0.445312
+  model.llm_connector.layers.1.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001434
+  model.llm_connector.layers.1.self_attn.o_proj.weight -> NONZERO  abs_sum=1.476562
+  model.llm_connector.layers.1.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.062500
+  model.llm_connector.layers.1.mlp.up_proj.weight    -> NONZERO  abs_sum=4.218750
+  model.llm_connector.layers.1.mlp.down_proj.weight  -> NONZERO  abs_sum=6.000000
+  model.llm_connector.layers.1.input_layernorm.weight -> NONZERO  abs_sum=0.001633
+  model.llm_connector.layers.1.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002106
+  model.llm_connector.layers.2.self_attn.q_proj.weight -> NONZERO  abs_sum=1.875000
+  model.llm_connector.layers.2.self_attn.q_proj.bias -> NONZERO  abs_sum=0.002258
+  model.llm_connector.layers.2.self_attn.k_proj.weight -> NONZERO  abs_sum=0.679688
+  model.llm_connector.layers.2.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000305
+  model.llm_connector.layers.2.self_attn.v_proj.weight -> NONZERO  abs_sum=0.613281
+  model.llm_connector.layers.2.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001427
+  model.llm_connector.layers.2.self_attn.o_proj.weight -> NONZERO  abs_sum=2.953125
+  model.llm_connector.layers.2.mlp.gate_proj.weight  -> NONZERO  abs_sum=7.406250
+  model.llm_connector.layers.2.mlp.up_proj.weight    -> NONZERO  abs_sum=5.812500
+  model.llm_connector.layers.2.mlp.down_proj.weight  -> NONZERO  abs_sum=8.437500
+  model.llm_connector.layers.2.input_layernorm.weight -> NONZERO  abs_sum=0.002625
+  model.llm_connector.layers.2.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002640
+  model.llm_connector.layers.3.self_attn.q_proj.weight -> NONZERO  abs_sum=3.953125
+  model.llm_connector.layers.3.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004364
+  model.llm_connector.layers.3.self_attn.k_proj.weight -> NONZERO  abs_sum=1.476562
+  model.llm_connector.layers.3.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000507
+  model.llm_connector.layers.3.self_attn.v_proj.weight -> NONZERO  abs_sum=0.652344
+  model.llm_connector.layers.3.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001076
+  model.llm_connector.layers.3.self_attn.o_proj.weight -> NONZERO  abs_sum=5.375000
+  model.llm_connector.layers.3.mlp.gate_proj.weight  -> NONZERO  abs_sum=13.562500
+  model.llm_connector.layers.3.mlp.up_proj.weight    -> NONZERO  abs_sum=9.812500
+  model.llm_connector.layers.3.mlp.down_proj.weight  -> NONZERO  abs_sum=13.500000
+  model.llm_connector.layers.3.input_layernorm.weight -> NONZERO  abs_sum=0.004761
+  model.llm_connector.layers.3.post_attention_layernorm.weight -> NONZERO  abs_sum=0.004120
+  model.llm_connector.layers.4.self_attn.q_proj.weight -> NONZERO  abs_sum=4.906250
+  model.llm_connector.layers.4.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004028
+  model.llm_connector.layers.4.self_attn.k_proj.weight -> NONZERO  abs_sum=1.601562
+  model.llm_connector.layers.4.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000629
+  model.llm_connector.layers.4.self_attn.v_proj.weight -> NONZERO  abs_sum=0.796875
+  model.llm_connector.layers.4.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001091
+  model.llm_connector.layers.4.self_attn.o_proj.weight -> NONZERO  abs_sum=5.343750
+  model.llm_connector.layers.4.mlp.gate_proj.weight  -> NONZERO  abs_sum=17.625000
+  model.llm_connector.layers.4.mlp.up_proj.weight    -> NONZERO  abs_sum=13.500000
+  model.llm_connector.layers.4.mlp.down_proj.weight  -> NONZERO  abs_sum=15.812500
+  model.llm_connector.layers.4.input_layernorm.weight -> NONZERO  abs_sum=0.005035
+  model.llm_connector.layers.4.post_attention_layernorm.weight -> NONZERO  abs_sum=0.005493
+  model.llm_connector.layers.5.self_attn.q_proj.weight -> NONZERO  abs_sum=5.843750
+  model.llm_connector.layers.5.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004791
+  model.llm_connector.layers.5.self_attn.k_proj.weight -> NONZERO  abs_sum=1.906250
+  model.llm_connector.layers.5.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000591
+  model.llm_connector.layers.5.self_attn.v_proj.weight -> NONZERO  abs_sum=0.847656
+  model.llm_connector.layers.5.self_attn.v_proj.bias -> NONZERO  abs_sum=0.000832
+  model.llm_connector.layers.5.self_attn.o_proj.weight -> NONZERO  abs_sum=4.437500
+  model.llm_connector.layers.5.mlp.gate_proj.weight  -> NONZERO  abs_sum=22.000000
+  model.llm_connector.layers.5.mlp.up_proj.weight    -> NONZERO  abs_sum=17.750000
+  model.llm_connector.layers.5.mlp.down_proj.weight  -> NONZERO  abs_sum=18.000000
+  model.llm_connector.layers.5.input_layernorm.weight -> NONZERO  abs_sum=0.005493
+  model.llm_connector.layers.5.post_attention_layernorm.weight -> NONZERO  abs_sum=0.006104
+  model.llm_connector.norm.weight                    -> NONZERO  abs_sum=0.003281
+  model.projector.weight                             -> NONZERO  abs_sum=17.000000
+  model.projector.bias                               -> NONZERO  abs_sum=0.003113
+  model.action_dit_connector.0.weight                -> NONE
+  model.action_dit_connector.0.bias                  -> NONE
+  model.action_dit_connector.2.weight                -> NONE
+  model.action_dit_connector.2.bias                  -> NONE
+  model.action_dit_connector.4.weight                -> NONE
+  model.action_dit_connector.4.bias                  -> NONE
+  model.action_dit_norm.weight                       -> NONE
+  model.action_dit_projector.0.weight                -> NONE
+  model.action_dit_projector.0.bias                  -> NONE
+  model.action_dit_projector.2.weight                -> NONE
+  model.action_dit_projector.2.bias                  -> NONE
+  model.action_dit_projector.4.weight                -> NONE
+  model.action_dit_projector.4.bias                  -> NONE
+  model.action_dit.layers.0.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.0.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.0.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.0.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.0.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.0.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.0.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.0.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.1.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.1.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.1.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.1.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.1.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.1.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.1.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.1.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.2.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.2.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.2.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.2.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.2.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.2.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.2.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.2.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.3.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.3.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.3.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.3.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.3.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.3.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.3.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.3.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.4.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.4.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.4.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.4.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.4.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.4.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.4.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.4.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.5.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.5.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.5.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.5.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.5.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.5.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.5.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.5.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.6.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.6.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.6.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.6.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.6.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.6.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.6.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.6.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.7.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.7.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.7.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.7.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.7.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.7.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.7.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.7.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.8.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.8.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.8.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.8.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.8.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.8.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.8.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.8.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.9.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.9.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.9.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.9.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.9.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.9.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.9.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.9.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.10.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.10.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.10.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.10.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.10.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.10.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.10.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.10.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.11.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.11.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.11.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.11.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.11.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.11.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.11.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.11.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.12.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.12.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.12.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.12.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.12.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.12.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.12.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.12.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.13.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.13.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.13.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.13.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.13.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.13.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.13.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.13.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.14.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.14.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.14.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.14.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.14.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.14.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.14.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.14.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.15.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.15.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.15.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.15.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.15.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.15.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.15.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.15.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.16.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.16.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.16.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.16.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.16.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.16.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.16.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.16.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.17.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.17.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.17.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.17.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.17.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.17.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.17.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.17.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.norm.dense.weight                 -> NONE
+  model.action_dit.norm.dense.bias                   -> NONE
+  model.action_in_proj.weight                        -> NONE
+  model.action_in_proj.bias                          -> NONE
+  model.action_out_proj.weight                       -> NONE
+  model.action_out_proj.bias                         -> NONE
+  model.time_mlp_in.weight                           -> NONE
+  model.time_mlp_in.bias                             -> NONE
+  model.time_mlp_out.weight                          -> NONE
+  model.time_mlp_out.bias                            -> NONE
+  lm_head.weight                                     -> FROZEN
+
+## [loc_aux_loss]
+  model.latent_queries                               -> NONZERO  abs_sum=6.062500
+  model.vision_tower.embeddings.class_embedding      -> FROZEN
+  model.vision_tower.embeddings.position_embedding   -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.weight -> FROZEN
+  model.vision_tower.embeddings.patch_embedding.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.0.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.0.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.0.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.1.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.1.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.1.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.2.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.2.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.2.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.3.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.3.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.3.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.4.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.4.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.4.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.5.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.5.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.5.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.6.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.6.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.6.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.7.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.7.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.7.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.8.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.8.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.8.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.ls1            -> FROZEN
+  model.vision_tower.encoder.layers.9.ls2            -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.qkv.bias  -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc1.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.9.mlp.fc2.bias   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm1.bias     -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.weight   -> FROZEN
+  model.vision_tower.encoder.layers.9.norm2.bias     -> FROZEN
+  model.vision_tower.encoder.layers.10.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.10.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.10.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.10.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.11.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.11.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.11.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.12.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.12.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.12.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.13.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.13.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.13.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.14.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.14.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.14.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.15.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.15.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.15.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.16.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.16.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.16.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.17.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.17.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.17.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.18.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.18.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.18.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.19.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.19.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.19.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.20.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.20.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.20.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.21.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.21.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.21.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.22.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.22.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.22.norm2.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.ls1           -> FROZEN
+  model.vision_tower.encoder.layers.23.ls2           -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.qkv.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.attn.proj.bias -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc1.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.weight -> FROZEN
+  model.vision_tower.encoder.layers.23.mlp.fc2.bias  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm1.bias    -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.weight  -> FROZEN
+  model.vision_tower.encoder.layers.23.norm2.bias    -> FROZEN
+  model.multi_modal_projector.0.weight               -> FROZEN
+  model.multi_modal_projector.0.bias                 -> FROZEN
+  model.multi_modal_projector.1.weight               -> FROZEN
+  model.multi_modal_projector.1.bias                 -> FROZEN
+  model.multi_modal_projector.3.weight               -> FROZEN
+  model.multi_modal_projector.3.bias                 -> FROZEN
+  model.language_model.embed_tokens.weight           -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.0.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.0.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.0.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.0.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.0.input_layernorm.weight -> FROZEN
+  model.language_model.layers.0.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.1.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.1.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.1.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.1.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.1.input_layernorm.weight -> FROZEN
+  model.language_model.layers.1.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.2.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.2.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.2.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.2.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.2.input_layernorm.weight -> FROZEN
+  model.language_model.layers.2.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.3.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.3.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.3.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.3.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.3.input_layernorm.weight -> FROZEN
+  model.language_model.layers.3.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.4.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.4.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.4.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.4.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.4.input_layernorm.weight -> FROZEN
+  model.language_model.layers.4.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.5.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.5.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.5.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.5.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.5.input_layernorm.weight -> FROZEN
+  model.language_model.layers.5.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.6.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.6.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.6.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.6.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.6.input_layernorm.weight -> FROZEN
+  model.language_model.layers.6.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.7.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.7.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.7.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.7.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.7.input_layernorm.weight -> FROZEN
+  model.language_model.layers.7.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.8.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.8.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.8.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.8.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.8.input_layernorm.weight -> FROZEN
+  model.language_model.layers.8.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.9.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.9.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.9.mlp.up_proj.weight   -> FROZEN
+  model.language_model.layers.9.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.9.input_layernorm.weight -> FROZEN
+  model.language_model.layers.9.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.10.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.10.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.10.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.10.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.10.input_layernorm.weight -> FROZEN
+  model.language_model.layers.10.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.11.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.11.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.11.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.11.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.11.input_layernorm.weight -> FROZEN
+  model.language_model.layers.11.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.12.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.12.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.12.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.12.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.12.input_layernorm.weight -> FROZEN
+  model.language_model.layers.12.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.13.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.13.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.13.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.13.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.13.input_layernorm.weight -> FROZEN
+  model.language_model.layers.13.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.14.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.14.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.14.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.14.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.14.input_layernorm.weight -> FROZEN
+  model.language_model.layers.14.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.15.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.15.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.15.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.15.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.15.input_layernorm.weight -> FROZEN
+  model.language_model.layers.15.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.16.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.16.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.16.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.16.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.16.input_layernorm.weight -> FROZEN
+  model.language_model.layers.16.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.17.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.17.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.17.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.17.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.17.input_layernorm.weight -> FROZEN
+  model.language_model.layers.17.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.18.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.18.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.18.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.18.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.18.input_layernorm.weight -> FROZEN
+  model.language_model.layers.18.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.19.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.19.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.19.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.19.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.19.input_layernorm.weight -> FROZEN
+  model.language_model.layers.19.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.20.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.20.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.20.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.20.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.20.input_layernorm.weight -> FROZEN
+  model.language_model.layers.20.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.21.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.21.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.21.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.21.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.21.input_layernorm.weight -> FROZEN
+  model.language_model.layers.21.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.22.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.22.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.22.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.22.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.22.input_layernorm.weight -> FROZEN
+  model.language_model.layers.22.post_attention_layernorm.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.q_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.k_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.weight -> FROZEN
+  model.language_model.layers.23.self_attn.v_proj.bias -> FROZEN
+  model.language_model.layers.23.self_attn.o_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.gate_proj.weight -> FROZEN
+  model.language_model.layers.23.mlp.up_proj.weight  -> FROZEN
+  model.language_model.layers.23.mlp.down_proj.weight -> FROZEN
+  model.language_model.layers.23.input_layernorm.weight -> FROZEN
+  model.language_model.layers.23.post_attention_layernorm.weight -> FROZEN
+  model.language_model.norm.weight                   -> FROZEN
+  model.dit.scale_shift_table                        -> NONZERO  abs_sum=0.222656
+  model.dit.patch_embed.proj.weight                  -> NONZERO  abs_sum=1.515625
+  model.dit.patch_embed.proj.bias                    -> NONZERO  abs_sum=0.070312
+  model.dit.time_embed.emb.timestep_embedder.linear_1.weight -> NONZERO  abs_sum=4.437500
+  model.dit.time_embed.emb.timestep_embedder.linear_1.bias -> NONZERO  abs_sum=0.027466
+  model.dit.time_embed.emb.timestep_embedder.linear_2.weight -> NONZERO  abs_sum=5.906250
+  model.dit.time_embed.emb.timestep_embedder.linear_2.bias -> NONZERO  abs_sum=0.453125
+  model.dit.time_embed.linear.weight                 -> NONZERO  abs_sum=12.562500
+  model.dit.time_embed.linear.bias                   -> NONZERO  abs_sum=2.843750
+  model.dit.caption_projection.linear_1.weight       -> NONZERO  abs_sum=5.937500
+  model.dit.caption_projection.linear_1.bias         -> NONZERO  abs_sum=0.000273
+  model.dit.caption_projection.linear_2.weight       -> NONZERO  abs_sum=9.812500
+  model.dit.caption_projection.linear_2.bias         -> NONZERO  abs_sum=0.000157
+  model.dit.caption_norm.weight                      -> NONZERO  abs_sum=2.125000
+  model.dit.transformer_blocks.0.scale_shift_table   -> NONZERO  abs_sum=0.316406
+  model.dit.transformer_blocks.0.attn1.to_q.weight   -> NONZERO  abs_sum=0.040039
+  model.dit.transformer_blocks.0.attn1.to_k.weight   -> NONZERO  abs_sum=0.041260
+  model.dit.transformer_blocks.0.attn1.to_v.weight   -> NONZERO  abs_sum=0.472656
+  model.dit.transformer_blocks.0.attn1.to_out.0.weight -> NONZERO  abs_sum=0.601562
+  model.dit.transformer_blocks.0.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001122
+  model.dit.transformer_blocks.0.attn2.to_q.weight   -> NONZERO  abs_sum=0.083008
+  model.dit.transformer_blocks.0.attn2.to_q.bias     -> NONZERO  abs_sum=0.000121
+  model.dit.transformer_blocks.0.attn2.to_k.weight   -> NONZERO  abs_sum=0.167969
+  model.dit.transformer_blocks.0.attn2.to_k.bias     -> NONZERO  abs_sum=0.000082
+  model.dit.transformer_blocks.0.attn2.to_v.weight   -> NONZERO  abs_sum=0.345703
+  model.dit.transformer_blocks.0.attn2.to_v.bias     -> NONZERO  abs_sum=0.219727
+  model.dit.transformer_blocks.0.attn2.to_out.0.weight -> NONZERO  abs_sum=0.839844
+  model.dit.transformer_blocks.0.attn2.to_out.0.bias -> NONZERO  abs_sum=0.067871
+  model.dit.transformer_blocks.0.ff.conv_inverted.weight -> NONZERO  abs_sum=1.164062
+  model.dit.transformer_blocks.0.ff.conv_inverted.bias -> NONZERO  abs_sum=0.027222
+  model.dit.transformer_blocks.0.ff.conv_depth.weight -> NONZERO  abs_sum=0.296875
+  model.dit.transformer_blocks.0.ff.conv_depth.bias  -> NONZERO  abs_sum=0.125000
+  model.dit.transformer_blocks.0.ff.conv_point.weight -> NONZERO  abs_sum=1.945312
+  model.dit.transformer_blocks.1.scale_shift_table   -> NONZERO  abs_sum=0.318359
+  model.dit.transformer_blocks.1.attn1.to_q.weight   -> NONZERO  abs_sum=0.102539
+  model.dit.transformer_blocks.1.attn1.to_k.weight   -> NONZERO  abs_sum=0.075684
+  model.dit.transformer_blocks.1.attn1.to_v.weight   -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.1.attn1.to_out.0.weight -> NONZERO  abs_sum=0.492188
+  model.dit.transformer_blocks.1.attn1.to_out.0.bias -> NONZERO  abs_sum=0.002808
+  model.dit.transformer_blocks.1.attn2.to_q.weight   -> NONZERO  abs_sum=0.093262
+  model.dit.transformer_blocks.1.attn2.to_q.bias     -> NONZERO  abs_sum=0.000117
+  model.dit.transformer_blocks.1.attn2.to_k.weight   -> NONZERO  abs_sum=0.122070
+  model.dit.transformer_blocks.1.attn2.to_k.bias     -> NONZERO  abs_sum=0.000030
+  model.dit.transformer_blocks.1.attn2.to_v.weight   -> NONZERO  abs_sum=0.267578
+  model.dit.transformer_blocks.1.attn2.to_v.bias     -> NONZERO  abs_sum=0.236328
+  model.dit.transformer_blocks.1.attn2.to_out.0.weight -> NONZERO  abs_sum=0.500000
+  model.dit.transformer_blocks.1.attn2.to_out.0.bias -> NONZERO  abs_sum=0.066895
+  model.dit.transformer_blocks.1.ff.conv_inverted.weight -> NONZERO  abs_sum=1.835938
+  model.dit.transformer_blocks.1.ff.conv_inverted.bias -> NONZERO  abs_sum=0.034424
+  model.dit.transformer_blocks.1.ff.conv_depth.weight -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.1.ff.conv_depth.bias  -> NONZERO  abs_sum=0.139648
+  model.dit.transformer_blocks.1.ff.conv_point.weight -> NONZERO  abs_sum=2.171875
+  model.dit.transformer_blocks.2.scale_shift_table   -> NONZERO  abs_sum=0.355469
+  model.dit.transformer_blocks.2.attn1.to_q.weight   -> NONZERO  abs_sum=0.257812
+  model.dit.transformer_blocks.2.attn1.to_k.weight   -> NONZERO  abs_sum=0.148438
+  model.dit.transformer_blocks.2.attn1.to_v.weight   -> NONZERO  abs_sum=0.570312
+  model.dit.transformer_blocks.2.attn1.to_out.0.weight -> NONZERO  abs_sum=0.558594
+  model.dit.transformer_blocks.2.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003494
+  model.dit.transformer_blocks.2.attn2.to_q.weight   -> NONZERO  abs_sum=0.129883
+  model.dit.transformer_blocks.2.attn2.to_q.bias     -> NONZERO  abs_sum=0.000151
+  model.dit.transformer_blocks.2.attn2.to_k.weight   -> NONZERO  abs_sum=0.117188
+  model.dit.transformer_blocks.2.attn2.to_k.bias     -> NONZERO  abs_sum=0.000047
+  model.dit.transformer_blocks.2.attn2.to_v.weight   -> NONZERO  abs_sum=0.337891
+  model.dit.transformer_blocks.2.attn2.to_v.bias     -> NONZERO  abs_sum=0.233398
+  model.dit.transformer_blocks.2.attn2.to_out.0.weight -> NONZERO  abs_sum=0.546875
+  model.dit.transformer_blocks.2.attn2.to_out.0.bias -> NONZERO  abs_sum=0.068359
+  model.dit.transformer_blocks.2.ff.conv_inverted.weight -> NONZERO  abs_sum=2.562500
+  model.dit.transformer_blocks.2.ff.conv_inverted.bias -> NONZERO  abs_sum=0.045654
+  model.dit.transformer_blocks.2.ff.conv_depth.weight -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.2.ff.conv_depth.bias  -> NONZERO  abs_sum=0.164062
+  model.dit.transformer_blocks.2.ff.conv_point.weight -> NONZERO  abs_sum=2.375000
+  model.dit.transformer_blocks.3.scale_shift_table   -> NONZERO  abs_sum=0.404297
+  model.dit.transformer_blocks.3.attn1.to_q.weight   -> NONZERO  abs_sum=0.380859
+  model.dit.transformer_blocks.3.attn1.to_k.weight   -> NONZERO  abs_sum=0.208984
+  model.dit.transformer_blocks.3.attn1.to_v.weight   -> NONZERO  abs_sum=0.742188
+  model.dit.transformer_blocks.3.attn1.to_out.0.weight -> NONZERO  abs_sum=0.687500
+  model.dit.transformer_blocks.3.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004059
+  model.dit.transformer_blocks.3.attn2.to_q.weight   -> NONZERO  abs_sum=0.168945
+  model.dit.transformer_blocks.3.attn2.to_q.bias     -> NONZERO  abs_sum=0.000223
+  model.dit.transformer_blocks.3.attn2.to_k.weight   -> NONZERO  abs_sum=0.154297
+  model.dit.transformer_blocks.3.attn2.to_k.bias     -> NONZERO  abs_sum=0.000044
+  model.dit.transformer_blocks.3.attn2.to_v.weight   -> NONZERO  abs_sum=0.289062
+  model.dit.transformer_blocks.3.attn2.to_v.bias     -> NONZERO  abs_sum=0.250000
+  model.dit.transformer_blocks.3.attn2.to_out.0.weight -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.3.attn2.to_out.0.bias -> NONZERO  abs_sum=0.070312
+  model.dit.transformer_blocks.3.ff.conv_inverted.weight -> NONZERO  abs_sum=3.171875
+  model.dit.transformer_blocks.3.ff.conv_inverted.bias -> NONZERO  abs_sum=0.052490
+  model.dit.transformer_blocks.3.ff.conv_depth.weight -> NONZERO  abs_sum=0.408203
+  model.dit.transformer_blocks.3.ff.conv_depth.bias  -> NONZERO  abs_sum=0.181641
+  model.dit.transformer_blocks.3.ff.conv_point.weight -> NONZERO  abs_sum=2.640625
+  model.dit.transformer_blocks.4.scale_shift_table   -> NONZERO  abs_sum=0.425781
+  model.dit.transformer_blocks.4.attn1.to_q.weight   -> NONZERO  abs_sum=0.406250
+  model.dit.transformer_blocks.4.attn1.to_k.weight   -> NONZERO  abs_sum=0.243164
+  model.dit.transformer_blocks.4.attn1.to_v.weight   -> NONZERO  abs_sum=0.886719
+  model.dit.transformer_blocks.4.attn1.to_out.0.weight -> NONZERO  abs_sum=0.773438
+  model.dit.transformer_blocks.4.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004150
+  model.dit.transformer_blocks.4.attn2.to_q.weight   -> NONZERO  abs_sum=0.234375
+  model.dit.transformer_blocks.4.attn2.to_q.bias     -> NONZERO  abs_sum=0.000280
+  model.dit.transformer_blocks.4.attn2.to_k.weight   -> NONZERO  abs_sum=0.170898
+  model.dit.transformer_blocks.4.attn2.to_k.bias     -> NONZERO  abs_sum=0.000041
+  model.dit.transformer_blocks.4.attn2.to_v.weight   -> NONZERO  abs_sum=0.468750
+  model.dit.transformer_blocks.4.attn2.to_v.bias     -> NONZERO  abs_sum=0.279297
+  model.dit.transformer_blocks.4.attn2.to_out.0.weight -> NONZERO  abs_sum=0.785156
+  model.dit.transformer_blocks.4.attn2.to_out.0.bias -> NONZERO  abs_sum=0.070312
+  model.dit.transformer_blocks.4.ff.conv_inverted.weight -> NONZERO  abs_sum=3.875000
+  model.dit.transformer_blocks.4.ff.conv_inverted.bias -> NONZERO  abs_sum=0.059814
+  model.dit.transformer_blocks.4.ff.conv_depth.weight -> NONZERO  abs_sum=0.470703
+  model.dit.transformer_blocks.4.ff.conv_depth.bias  -> NONZERO  abs_sum=0.199219
+  model.dit.transformer_blocks.4.ff.conv_point.weight -> NONZERO  abs_sum=2.906250
+  model.dit.transformer_blocks.5.scale_shift_table   -> NONZERO  abs_sum=0.515625
+  model.dit.transformer_blocks.5.attn1.to_q.weight   -> NONZERO  abs_sum=0.474609
+  model.dit.transformer_blocks.5.attn1.to_k.weight   -> NONZERO  abs_sum=0.308594
+  model.dit.transformer_blocks.5.attn1.to_v.weight   -> NONZERO  abs_sum=1.023438
+  model.dit.transformer_blocks.5.attn1.to_out.0.weight -> NONZERO  abs_sum=0.964844
+  model.dit.transformer_blocks.5.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004578
+  model.dit.transformer_blocks.5.attn2.to_q.weight   -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.5.attn2.to_q.bias     -> NONZERO  abs_sum=0.000710
+  model.dit.transformer_blocks.5.attn2.to_k.weight   -> NONZERO  abs_sum=0.417969
+  model.dit.transformer_blocks.5.attn2.to_k.bias     -> NONZERO  abs_sum=0.000093
+  model.dit.transformer_blocks.5.attn2.to_v.weight   -> NONZERO  abs_sum=0.816406
+  model.dit.transformer_blocks.5.attn2.to_v.bias     -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.5.attn2.to_out.0.weight -> NONZERO  abs_sum=1.335938
+  model.dit.transformer_blocks.5.attn2.to_out.0.bias -> NONZERO  abs_sum=0.072754
+  model.dit.transformer_blocks.5.ff.conv_inverted.weight -> NONZERO  abs_sum=4.906250
+  model.dit.transformer_blocks.5.ff.conv_inverted.bias -> NONZERO  abs_sum=0.074707
+  model.dit.transformer_blocks.5.ff.conv_depth.weight -> NONZERO  abs_sum=0.570312
+  model.dit.transformer_blocks.5.ff.conv_depth.bias  -> NONZERO  abs_sum=0.235352
+  model.dit.transformer_blocks.5.ff.conv_point.weight -> NONZERO  abs_sum=3.500000
+  model.dit.transformer_blocks.6.scale_shift_table   -> NONZERO  abs_sum=0.582031
+  model.dit.transformer_blocks.6.attn1.to_q.weight   -> NONZERO  abs_sum=0.554688
+  model.dit.transformer_blocks.6.attn1.to_k.weight   -> NONZERO  abs_sum=0.443359
+  model.dit.transformer_blocks.6.attn1.to_v.weight   -> NONZERO  abs_sum=1.804688
+  model.dit.transformer_blocks.6.attn1.to_out.0.weight -> NONZERO  abs_sum=1.507812
+  model.dit.transformer_blocks.6.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005646
+  model.dit.transformer_blocks.6.attn2.to_q.weight   -> NONZERO  abs_sum=0.730469
+  model.dit.transformer_blocks.6.attn2.to_q.bias     -> NONZERO  abs_sum=0.000782
+  model.dit.transformer_blocks.6.attn2.to_k.weight   -> NONZERO  abs_sum=0.500000
+  model.dit.transformer_blocks.6.attn2.to_k.bias     -> NONZERO  abs_sum=0.000135
+  model.dit.transformer_blocks.6.attn2.to_v.weight   -> NONZERO  abs_sum=1.203125
+  model.dit.transformer_blocks.6.attn2.to_v.bias     -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.6.attn2.to_out.0.weight -> NONZERO  abs_sum=2.015625
+  model.dit.transformer_blocks.6.attn2.to_out.0.bias -> NONZERO  abs_sum=0.068848
+  model.dit.transformer_blocks.6.ff.conv_inverted.weight -> NONZERO  abs_sum=6.000000
+  model.dit.transformer_blocks.6.ff.conv_inverted.bias -> NONZERO  abs_sum=0.079102
+  model.dit.transformer_blocks.6.ff.conv_depth.weight -> NONZERO  abs_sum=0.734375
+  model.dit.transformer_blocks.6.ff.conv_depth.bias  -> NONZERO  abs_sum=0.249023
+  model.dit.transformer_blocks.6.ff.conv_point.weight -> NONZERO  abs_sum=4.343750
+  model.dit.transformer_blocks.7.scale_shift_table   -> NONZERO  abs_sum=0.589844
+  model.dit.transformer_blocks.7.attn1.to_q.weight   -> NONZERO  abs_sum=0.710938
+  model.dit.transformer_blocks.7.attn1.to_k.weight   -> NONZERO  abs_sum=0.515625
+  model.dit.transformer_blocks.7.attn1.to_v.weight   -> NONZERO  abs_sum=1.914062
+  model.dit.transformer_blocks.7.attn1.to_out.0.weight -> NONZERO  abs_sum=1.851562
+  model.dit.transformer_blocks.7.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005737
+  model.dit.transformer_blocks.7.attn2.to_q.weight   -> NONZERO  abs_sum=0.742188
+  model.dit.transformer_blocks.7.attn2.to_q.bias     -> NONZERO  abs_sum=0.000679
+  model.dit.transformer_blocks.7.attn2.to_k.weight   -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.7.attn2.to_k.bias     -> NONZERO  abs_sum=0.000133
+  model.dit.transformer_blocks.7.attn2.to_v.weight   -> NONZERO  abs_sum=0.867188
+  model.dit.transformer_blocks.7.attn2.to_v.bias     -> NONZERO  abs_sum=0.318359
+  model.dit.transformer_blocks.7.attn2.to_out.0.weight -> NONZERO  abs_sum=1.523438
+  model.dit.transformer_blocks.7.attn2.to_out.0.bias -> NONZERO  abs_sum=0.062988
+  model.dit.transformer_blocks.7.ff.conv_inverted.weight -> NONZERO  abs_sum=6.781250
+  model.dit.transformer_blocks.7.ff.conv_inverted.bias -> NONZERO  abs_sum=0.082520
+  model.dit.transformer_blocks.7.ff.conv_depth.weight -> NONZERO  abs_sum=0.769531
+  model.dit.transformer_blocks.7.ff.conv_depth.bias  -> NONZERO  abs_sum=0.250000
+  model.dit.transformer_blocks.7.ff.conv_point.weight -> NONZERO  abs_sum=4.812500
+  model.dit.transformer_blocks.8.scale_shift_table   -> NONZERO  abs_sum=0.632812
+  model.dit.transformer_blocks.8.attn1.to_q.weight   -> NONZERO  abs_sum=0.800781
+  model.dit.transformer_blocks.8.attn1.to_k.weight   -> NONZERO  abs_sum=0.671875
+  model.dit.transformer_blocks.8.attn1.to_v.weight   -> NONZERO  abs_sum=2.203125
+  model.dit.transformer_blocks.8.attn1.to_out.0.weight -> NONZERO  abs_sum=2.203125
+  model.dit.transformer_blocks.8.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006104
+  model.dit.transformer_blocks.8.attn2.to_q.weight   -> NONZERO  abs_sum=0.617188
+  model.dit.transformer_blocks.8.attn2.to_q.bias     -> NONZERO  abs_sum=0.000496
+  model.dit.transformer_blocks.8.attn2.to_k.weight   -> NONZERO  abs_sum=0.468750
+  model.dit.transformer_blocks.8.attn2.to_k.bias     -> NONZERO  abs_sum=0.000129
+  model.dit.transformer_blocks.8.attn2.to_v.weight   -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.8.attn2.to_v.bias     -> NONZERO  abs_sum=0.300781
+  model.dit.transformer_blocks.8.attn2.to_out.0.weight -> NONZERO  abs_sum=1.515625
+  model.dit.transformer_blocks.8.attn2.to_out.0.bias -> NONZERO  abs_sum=0.059570
+  model.dit.transformer_blocks.8.ff.conv_inverted.weight -> NONZERO  abs_sum=8.562500
+  model.dit.transformer_blocks.8.ff.conv_inverted.bias -> NONZERO  abs_sum=0.091797
+  model.dit.transformer_blocks.8.ff.conv_depth.weight -> NONZERO  abs_sum=0.984375
+  model.dit.transformer_blocks.8.ff.conv_depth.bias  -> NONZERO  abs_sum=0.275391
+  model.dit.transformer_blocks.8.ff.conv_point.weight -> NONZERO  abs_sum=6.000000
+  model.dit.transformer_blocks.9.scale_shift_table   -> NONZERO  abs_sum=0.734375
+  model.dit.transformer_blocks.9.attn1.to_q.weight   -> NONZERO  abs_sum=0.945312
+  model.dit.transformer_blocks.9.attn1.to_k.weight   -> NONZERO  abs_sum=0.750000
+  model.dit.transformer_blocks.9.attn1.to_v.weight   -> NONZERO  abs_sum=2.781250
+  model.dit.transformer_blocks.9.attn1.to_out.0.weight -> NONZERO  abs_sum=2.687500
+  model.dit.transformer_blocks.9.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006409
+  model.dit.transformer_blocks.9.attn2.to_q.weight   -> NONZERO  abs_sum=0.957031
+  model.dit.transformer_blocks.9.attn2.to_q.bias     -> NONZERO  abs_sum=0.000599
+  model.dit.transformer_blocks.9.attn2.to_k.weight   -> NONZERO  abs_sum=0.750000
+  model.dit.transformer_blocks.9.attn2.to_k.bias     -> NONZERO  abs_sum=0.000240
+  model.dit.transformer_blocks.9.attn2.to_v.weight   -> NONZERO  abs_sum=1.109375
+  model.dit.transformer_blocks.9.attn2.to_v.bias     -> NONZERO  abs_sum=0.306641
+  model.dit.transformer_blocks.9.attn2.to_out.0.weight -> NONZERO  abs_sum=2.140625
+  model.dit.transformer_blocks.9.attn2.to_out.0.bias -> NONZERO  abs_sum=0.056396
+  model.dit.transformer_blocks.9.ff.conv_inverted.weight -> NONZERO  abs_sum=11.312500
+  model.dit.transformer_blocks.9.ff.conv_inverted.bias -> NONZERO  abs_sum=0.109375
+  model.dit.transformer_blocks.9.ff.conv_depth.weight -> NONZERO  abs_sum=1.250000
+  model.dit.transformer_blocks.9.ff.conv_depth.bias  -> NONZERO  abs_sum=0.326172
+  model.dit.transformer_blocks.9.ff.conv_point.weight -> NONZERO  abs_sum=7.687500
+  model.dit.transformer_blocks.10.scale_shift_table  -> NONZERO  abs_sum=0.875000
+  model.dit.transformer_blocks.10.attn1.to_q.weight  -> NONZERO  abs_sum=1.164062
+  model.dit.transformer_blocks.10.attn1.to_k.weight  -> NONZERO  abs_sum=0.976562
+  model.dit.transformer_blocks.10.attn1.to_v.weight  -> NONZERO  abs_sum=3.718750
+  model.dit.transformer_blocks.10.attn1.to_out.0.weight -> NONZERO  abs_sum=3.625000
+  model.dit.transformer_blocks.10.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006989
+  model.dit.transformer_blocks.10.attn2.to_q.weight  -> NONZERO  abs_sum=1.539062
+  model.dit.transformer_blocks.10.attn2.to_q.bias    -> NONZERO  abs_sum=0.000969
+  model.dit.transformer_blocks.10.attn2.to_k.weight  -> NONZERO  abs_sum=1.406250
+  model.dit.transformer_blocks.10.attn2.to_k.bias    -> NONZERO  abs_sum=0.000408
+  model.dit.transformer_blocks.10.attn2.to_v.weight  -> NONZERO  abs_sum=1.234375
+  model.dit.transformer_blocks.10.attn2.to_v.bias    -> NONZERO  abs_sum=0.333984
+  model.dit.transformer_blocks.10.attn2.to_out.0.weight -> NONZERO  abs_sum=2.625000
+  model.dit.transformer_blocks.10.attn2.to_out.0.bias -> NONZERO  abs_sum=0.053711
+  model.dit.transformer_blocks.10.ff.conv_inverted.weight -> NONZERO  abs_sum=14.937500
+  model.dit.transformer_blocks.10.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.10.ff.conv_depth.weight -> NONZERO  abs_sum=1.640625
+  model.dit.transformer_blocks.10.ff.conv_depth.bias -> NONZERO  abs_sum=0.367188
+  model.dit.transformer_blocks.10.ff.conv_point.weight -> NONZERO  abs_sum=9.750000
+  model.dit.transformer_blocks.11.scale_shift_table  -> NONZERO  abs_sum=0.832031
+  model.dit.transformer_blocks.11.attn1.to_q.weight  -> NONZERO  abs_sum=1.421875
+  model.dit.transformer_blocks.11.attn1.to_k.weight  -> NONZERO  abs_sum=1.164062
+  model.dit.transformer_blocks.11.attn1.to_v.weight  -> NONZERO  abs_sum=4.218750
+  model.dit.transformer_blocks.11.attn1.to_out.0.weight -> NONZERO  abs_sum=3.671875
+  model.dit.transformer_blocks.11.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006561
+  model.dit.transformer_blocks.11.attn2.to_q.weight  -> NONZERO  abs_sum=1.296875
+  model.dit.transformer_blocks.11.attn2.to_q.bias    -> NONZERO  abs_sum=0.000668
+  model.dit.transformer_blocks.11.attn2.to_k.weight  -> NONZERO  abs_sum=1.421875
+  model.dit.transformer_blocks.11.attn2.to_k.bias    -> NONZERO  abs_sum=0.000345
+  model.dit.transformer_blocks.11.attn2.to_v.weight  -> NONZERO  abs_sum=0.800781
+  model.dit.transformer_blocks.11.attn2.to_v.bias    -> NONZERO  abs_sum=0.271484
+  model.dit.transformer_blocks.11.attn2.to_out.0.weight -> NONZERO  abs_sum=1.773438
+  model.dit.transformer_blocks.11.attn2.to_out.0.bias -> NONZERO  abs_sum=0.047607
+  model.dit.transformer_blocks.11.ff.conv_inverted.weight -> NONZERO  abs_sum=16.750000
+  model.dit.transformer_blocks.11.ff.conv_inverted.bias -> NONZERO  abs_sum=0.133789
+  model.dit.transformer_blocks.11.ff.conv_depth.weight -> NONZERO  abs_sum=1.742188
+  model.dit.transformer_blocks.11.ff.conv_depth.bias -> NONZERO  abs_sum=0.361328
+  model.dit.transformer_blocks.11.ff.conv_point.weight -> NONZERO  abs_sum=10.687500
+  model.dit.transformer_blocks.12.scale_shift_table  -> NONZERO  abs_sum=0.910156
+  model.dit.transformer_blocks.12.attn1.to_q.weight  -> NONZERO  abs_sum=2.078125
+  model.dit.transformer_blocks.12.attn1.to_k.weight  -> NONZERO  abs_sum=1.367188
+  model.dit.transformer_blocks.12.attn1.to_v.weight  -> NONZERO  abs_sum=4.750000
+  model.dit.transformer_blocks.12.attn1.to_out.0.weight -> NONZERO  abs_sum=4.218750
+  model.dit.transformer_blocks.12.attn1.to_out.0.bias -> NONZERO  abs_sum=0.006439
+  model.dit.transformer_blocks.12.attn2.to_q.weight  -> NONZERO  abs_sum=1.523438
+  model.dit.transformer_blocks.12.attn2.to_q.bias    -> NONZERO  abs_sum=0.000622
+  model.dit.transformer_blocks.12.attn2.to_k.weight  -> NONZERO  abs_sum=1.687500
+  model.dit.transformer_blocks.12.attn2.to_k.bias    -> NONZERO  abs_sum=0.000380
+  model.dit.transformer_blocks.12.attn2.to_v.weight  -> NONZERO  abs_sum=0.953125
+  model.dit.transformer_blocks.12.attn2.to_v.bias    -> NONZERO  abs_sum=0.292969
+  model.dit.transformer_blocks.12.attn2.to_out.0.weight -> NONZERO  abs_sum=2.140625
+  model.dit.transformer_blocks.12.attn2.to_out.0.bias -> NONZERO  abs_sum=0.042480
+  model.dit.transformer_blocks.12.ff.conv_inverted.weight -> NONZERO  abs_sum=19.000000
+  model.dit.transformer_blocks.12.ff.conv_inverted.bias -> NONZERO  abs_sum=0.134766
+  model.dit.transformer_blocks.12.ff.conv_depth.weight -> NONZERO  abs_sum=1.945312
+  model.dit.transformer_blocks.12.ff.conv_depth.bias -> NONZERO  abs_sum=0.355469
+  model.dit.transformer_blocks.12.ff.conv_point.weight -> NONZERO  abs_sum=11.875000
+  model.dit.transformer_blocks.13.scale_shift_table  -> NONZERO  abs_sum=0.800781
+  model.dit.transformer_blocks.13.attn1.to_q.weight  -> NONZERO  abs_sum=1.929688
+  model.dit.transformer_blocks.13.attn1.to_k.weight  -> NONZERO  abs_sum=1.179688
+  model.dit.transformer_blocks.13.attn1.to_v.weight  -> NONZERO  abs_sum=4.593750
+  model.dit.transformer_blocks.13.attn1.to_out.0.weight -> NONZERO  abs_sum=3.656250
+  model.dit.transformer_blocks.13.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005676
+  model.dit.transformer_blocks.13.attn2.to_q.weight  -> NONZERO  abs_sum=2.046875
+  model.dit.transformer_blocks.13.attn2.to_q.bias    -> NONZERO  abs_sum=0.000664
+  model.dit.transformer_blocks.13.attn2.to_k.weight  -> NONZERO  abs_sum=2.156250
+  model.dit.transformer_blocks.13.attn2.to_k.bias    -> NONZERO  abs_sum=0.000622
+  model.dit.transformer_blocks.13.attn2.to_v.weight  -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.13.attn2.to_v.bias    -> NONZERO  abs_sum=0.257812
+  model.dit.transformer_blocks.13.attn2.to_out.0.weight -> NONZERO  abs_sum=2.265625
+  model.dit.transformer_blocks.13.attn2.to_out.0.bias -> NONZERO  abs_sum=0.036865
+  model.dit.transformer_blocks.13.ff.conv_inverted.weight -> NONZERO  abs_sum=20.250000
+  model.dit.transformer_blocks.13.ff.conv_inverted.bias -> NONZERO  abs_sum=0.133789
+  model.dit.transformer_blocks.13.ff.conv_depth.weight -> NONZERO  abs_sum=2.046875
+  model.dit.transformer_blocks.13.ff.conv_depth.bias -> NONZERO  abs_sum=0.335938
+  model.dit.transformer_blocks.13.ff.conv_point.weight -> NONZERO  abs_sum=12.562500
+  model.dit.transformer_blocks.14.scale_shift_table  -> NONZERO  abs_sum=0.820312
+  model.dit.transformer_blocks.14.attn1.to_q.weight  -> NONZERO  abs_sum=2.390625
+  model.dit.transformer_blocks.14.attn1.to_k.weight  -> NONZERO  abs_sum=1.109375
+  model.dit.transformer_blocks.14.attn1.to_v.weight  -> NONZERO  abs_sum=3.656250
+  model.dit.transformer_blocks.14.attn1.to_out.0.weight -> NONZERO  abs_sum=3.343750
+  model.dit.transformer_blocks.14.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005188
+  model.dit.transformer_blocks.14.attn2.to_q.weight  -> NONZERO  abs_sum=1.945312
+  model.dit.transformer_blocks.14.attn2.to_q.bias    -> NONZERO  abs_sum=0.000542
+  model.dit.transformer_blocks.14.attn2.to_k.weight  -> NONZERO  abs_sum=2.171875
+  model.dit.transformer_blocks.14.attn2.to_k.bias    -> NONZERO  abs_sum=0.000790
+  model.dit.transformer_blocks.14.attn2.to_v.weight  -> NONZERO  abs_sum=1.226562
+  model.dit.transformer_blocks.14.attn2.to_v.bias    -> NONZERO  abs_sum=0.259766
+  model.dit.transformer_blocks.14.attn2.to_out.0.weight -> NONZERO  abs_sum=2.515625
+  model.dit.transformer_blocks.14.attn2.to_out.0.bias -> NONZERO  abs_sum=0.034424
+  model.dit.transformer_blocks.14.ff.conv_inverted.weight -> NONZERO  abs_sum=21.000000
+  model.dit.transformer_blocks.14.ff.conv_inverted.bias -> NONZERO  abs_sum=0.135742
+  model.dit.transformer_blocks.14.ff.conv_depth.weight -> NONZERO  abs_sum=2.062500
+  model.dit.transformer_blocks.14.ff.conv_depth.bias -> NONZERO  abs_sum=0.339844
+  model.dit.transformer_blocks.14.ff.conv_point.weight -> NONZERO  abs_sum=13.000000
+  model.dit.transformer_blocks.15.scale_shift_table  -> NONZERO  abs_sum=0.769531
+  model.dit.transformer_blocks.15.attn1.to_q.weight  -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.15.attn1.to_k.weight  -> NONZERO  abs_sum=1.210938
+  model.dit.transformer_blocks.15.attn1.to_v.weight  -> NONZERO  abs_sum=3.593750
+  model.dit.transformer_blocks.15.attn1.to_out.0.weight -> NONZERO  abs_sum=3.406250
+  model.dit.transformer_blocks.15.attn1.to_out.0.bias -> NONZERO  abs_sum=0.005554
+  model.dit.transformer_blocks.15.attn2.to_q.weight  -> NONZERO  abs_sum=1.578125
+  model.dit.transformer_blocks.15.attn2.to_q.bias    -> NONZERO  abs_sum=0.000401
+  model.dit.transformer_blocks.15.attn2.to_k.weight  -> NONZERO  abs_sum=1.929688
+  model.dit.transformer_blocks.15.attn2.to_k.bias    -> NONZERO  abs_sum=0.000854
+  model.dit.transformer_blocks.15.attn2.to_v.weight  -> NONZERO  abs_sum=0.925781
+  model.dit.transformer_blocks.15.attn2.to_v.bias    -> NONZERO  abs_sum=0.177734
+  model.dit.transformer_blocks.15.attn2.to_out.0.weight -> NONZERO  abs_sum=1.898438
+  model.dit.transformer_blocks.15.attn2.to_out.0.bias -> NONZERO  abs_sum=0.028564
+  model.dit.transformer_blocks.15.ff.conv_inverted.weight -> NONZERO  abs_sum=20.000000
+  model.dit.transformer_blocks.15.ff.conv_inverted.bias -> NONZERO  abs_sum=0.126953
+  model.dit.transformer_blocks.15.ff.conv_depth.weight -> NONZERO  abs_sum=2.046875
+  model.dit.transformer_blocks.15.ff.conv_depth.bias -> NONZERO  abs_sum=0.312500
+  model.dit.transformer_blocks.15.ff.conv_point.weight -> NONZERO  abs_sum=12.000000
+  model.dit.transformer_blocks.16.scale_shift_table  -> NONZERO  abs_sum=0.632812
+  model.dit.transformer_blocks.16.attn1.to_q.weight  -> NONZERO  abs_sum=2.359375
+  model.dit.transformer_blocks.16.attn1.to_k.weight  -> NONZERO  abs_sum=0.929688
+  model.dit.transformer_blocks.16.attn1.to_v.weight  -> NONZERO  abs_sum=3.109375
+  model.dit.transformer_blocks.16.attn1.to_out.0.weight -> NONZERO  abs_sum=2.656250
+  model.dit.transformer_blocks.16.attn1.to_out.0.bias -> NONZERO  abs_sum=0.004395
+  model.dit.transformer_blocks.16.attn2.to_q.weight  -> NONZERO  abs_sum=1.281250
+  model.dit.transformer_blocks.16.attn2.to_q.bias    -> NONZERO  abs_sum=0.000277
+  model.dit.transformer_blocks.16.attn2.to_k.weight  -> NONZERO  abs_sum=1.351562
+  model.dit.transformer_blocks.16.attn2.to_k.bias    -> NONZERO  abs_sum=0.000568
+  model.dit.transformer_blocks.16.attn2.to_v.weight  -> NONZERO  abs_sum=0.718750
+  model.dit.transformer_blocks.16.attn2.to_v.bias    -> NONZERO  abs_sum=0.161133
+  model.dit.transformer_blocks.16.attn2.to_out.0.weight -> NONZERO  abs_sum=1.460938
+  model.dit.transformer_blocks.16.attn2.to_out.0.bias -> NONZERO  abs_sum=0.024658
+  model.dit.transformer_blocks.16.ff.conv_inverted.weight -> NONZERO  abs_sum=17.875000
+  model.dit.transformer_blocks.16.ff.conv_inverted.bias -> NONZERO  abs_sum=0.108887
+  model.dit.transformer_blocks.16.ff.conv_depth.weight -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.16.ff.conv_depth.bias -> NONZERO  abs_sum=0.265625
+  model.dit.transformer_blocks.16.ff.conv_point.weight -> NONZERO  abs_sum=10.937500
+  model.dit.transformer_blocks.17.scale_shift_table  -> NONZERO  abs_sum=0.593750
+  model.dit.transformer_blocks.17.attn1.to_q.weight  -> NONZERO  abs_sum=2.390625
+  model.dit.transformer_blocks.17.attn1.to_k.weight  -> NONZERO  abs_sum=0.875000
+  model.dit.transformer_blocks.17.attn1.to_v.weight  -> NONZERO  abs_sum=2.468750
+  model.dit.transformer_blocks.17.attn1.to_out.0.weight -> NONZERO  abs_sum=2.203125
+  model.dit.transformer_blocks.17.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003601
+  model.dit.transformer_blocks.17.attn2.to_q.weight  -> NONZERO  abs_sum=1.242188
+  model.dit.transformer_blocks.17.attn2.to_q.bias    -> NONZERO  abs_sum=0.000275
+  model.dit.transformer_blocks.17.attn2.to_k.weight  -> NONZERO  abs_sum=1.468750
+  model.dit.transformer_blocks.17.attn2.to_k.bias    -> NONZERO  abs_sum=0.000526
+  model.dit.transformer_blocks.17.attn2.to_v.weight  -> NONZERO  abs_sum=0.640625
+  model.dit.transformer_blocks.17.attn2.to_v.bias    -> NONZERO  abs_sum=0.132812
+  model.dit.transformer_blocks.17.attn2.to_out.0.weight -> NONZERO  abs_sum=1.234375
+  model.dit.transformer_blocks.17.attn2.to_out.0.bias -> NONZERO  abs_sum=0.021118
+  model.dit.transformer_blocks.17.ff.conv_inverted.weight -> NONZERO  abs_sum=16.250000
+  model.dit.transformer_blocks.17.ff.conv_inverted.bias -> NONZERO  abs_sum=0.100098
+  model.dit.transformer_blocks.17.ff.conv_depth.weight -> NONZERO  abs_sum=1.781250
+  model.dit.transformer_blocks.17.ff.conv_depth.bias -> NONZERO  abs_sum=0.242188
+  model.dit.transformer_blocks.17.ff.conv_point.weight -> NONZERO  abs_sum=9.875000
+  model.dit.transformer_blocks.18.scale_shift_table  -> NONZERO  abs_sum=0.519531
+  model.dit.transformer_blocks.18.attn1.to_q.weight  -> NONZERO  abs_sum=1.921875
+  model.dit.transformer_blocks.18.attn1.to_k.weight  -> NONZERO  abs_sum=0.605469
+  model.dit.transformer_blocks.18.attn1.to_v.weight  -> NONZERO  abs_sum=1.906250
+  model.dit.transformer_blocks.18.attn1.to_out.0.weight -> NONZERO  abs_sum=1.820312
+  model.dit.transformer_blocks.18.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003448
+  model.dit.transformer_blocks.18.attn2.to_q.weight  -> NONZERO  abs_sum=1.218750
+  model.dit.transformer_blocks.18.attn2.to_q.bias    -> NONZERO  abs_sum=0.000224
+  model.dit.transformer_blocks.18.attn2.to_k.weight  -> NONZERO  abs_sum=1.320312
+  model.dit.transformer_blocks.18.attn2.to_k.bias    -> NONZERO  abs_sum=0.000460
+  model.dit.transformer_blocks.18.attn2.to_v.weight  -> NONZERO  abs_sum=0.585938
+  model.dit.transformer_blocks.18.attn2.to_v.bias    -> NONZERO  abs_sum=0.116699
+  model.dit.transformer_blocks.18.attn2.to_out.0.weight -> NONZERO  abs_sum=1.109375
+  model.dit.transformer_blocks.18.attn2.to_out.0.bias -> NONZERO  abs_sum=0.018921
+  model.dit.transformer_blocks.18.ff.conv_inverted.weight -> NONZERO  abs_sum=14.750000
+  model.dit.transformer_blocks.18.ff.conv_inverted.bias -> NONZERO  abs_sum=0.088379
+  model.dit.transformer_blocks.18.ff.conv_depth.weight -> NONZERO  abs_sum=1.546875
+  model.dit.transformer_blocks.18.ff.conv_depth.bias -> NONZERO  abs_sum=0.216797
+  model.dit.transformer_blocks.18.ff.conv_point.weight -> NONZERO  abs_sum=8.812500
+  model.dit.transformer_blocks.19.scale_shift_table  -> NONZERO  abs_sum=0.474609
+  model.dit.transformer_blocks.19.attn1.to_q.weight  -> NONZERO  abs_sum=1.812500
+  model.dit.transformer_blocks.19.attn1.to_k.weight  -> NONZERO  abs_sum=0.660156
+  model.dit.transformer_blocks.19.attn1.to_v.weight  -> NONZERO  abs_sum=2.203125
+  model.dit.transformer_blocks.19.attn1.to_out.0.weight -> NONZERO  abs_sum=1.617188
+  model.dit.transformer_blocks.19.attn1.to_out.0.bias -> NONZERO  abs_sum=0.003098
+  model.dit.transformer_blocks.19.attn2.to_q.weight  -> NONZERO  abs_sum=0.917969
+  model.dit.transformer_blocks.19.attn2.to_q.bias    -> NONZERO  abs_sum=0.000131
+  model.dit.transformer_blocks.19.attn2.to_k.weight  -> NONZERO  abs_sum=1.039062
+  model.dit.transformer_blocks.19.attn2.to_k.bias    -> NONZERO  abs_sum=0.000467
+  model.dit.transformer_blocks.19.attn2.to_v.weight  -> NONZERO  abs_sum=0.347656
+  model.dit.transformer_blocks.19.attn2.to_v.bias    -> NONZERO  abs_sum=0.084961
+  model.dit.transformer_blocks.19.attn2.to_out.0.weight -> NONZERO  abs_sum=0.734375
+  model.dit.transformer_blocks.19.attn2.to_out.0.bias -> NONZERO  abs_sum=0.015747
+  model.dit.transformer_blocks.19.ff.conv_inverted.weight -> NONZERO  abs_sum=13.625000
+  model.dit.transformer_blocks.19.ff.conv_inverted.bias -> NONZERO  abs_sum=0.078125
+  model.dit.transformer_blocks.19.ff.conv_depth.weight -> NONZERO  abs_sum=1.414062
+  model.dit.transformer_blocks.19.ff.conv_depth.bias -> NONZERO  abs_sum=0.190430
+  model.dit.transformer_blocks.19.ff.conv_point.weight -> NONZERO  abs_sum=8.062500
+  model.dit.transformer_blocks.20.scale_shift_table  -> NONZERO  abs_sum=0.437500
+  model.dit.transformer_blocks.20.attn1.to_q.weight  -> NONZERO  abs_sum=1.789062
+  model.dit.transformer_blocks.20.attn1.to_k.weight  -> NONZERO  abs_sum=0.472656
+  model.dit.transformer_blocks.20.attn1.to_v.weight  -> NONZERO  abs_sum=1.843750
+  model.dit.transformer_blocks.20.attn1.to_out.0.weight -> NONZERO  abs_sum=1.343750
+  model.dit.transformer_blocks.20.attn1.to_out.0.bias -> NONZERO  abs_sum=0.002777
+  model.dit.transformer_blocks.20.attn2.to_q.weight  -> NONZERO  abs_sum=0.617188
+  model.dit.transformer_blocks.20.attn2.to_q.bias    -> NONZERO  abs_sum=0.000090
+  model.dit.transformer_blocks.20.attn2.to_k.weight  -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.20.attn2.to_k.bias    -> NONZERO  abs_sum=0.000336
+  model.dit.transformer_blocks.20.attn2.to_v.weight  -> NONZERO  abs_sum=0.310547
+  model.dit.transformer_blocks.20.attn2.to_v.bias    -> NONZERO  abs_sum=0.071289
+  model.dit.transformer_blocks.20.attn2.to_out.0.weight -> NONZERO  abs_sum=0.710938
+  model.dit.transformer_blocks.20.attn2.to_out.0.bias -> NONZERO  abs_sum=0.013733
+  model.dit.transformer_blocks.20.ff.conv_inverted.weight -> NONZERO  abs_sum=13.500000
+  model.dit.transformer_blocks.20.ff.conv_inverted.bias -> NONZERO  abs_sum=0.079102
+  model.dit.transformer_blocks.20.ff.conv_depth.weight -> NONZERO  abs_sum=1.476562
+  model.dit.transformer_blocks.20.ff.conv_depth.bias -> NONZERO  abs_sum=0.192383
+  model.dit.transformer_blocks.20.ff.conv_point.weight -> NONZERO  abs_sum=7.718750
+  model.dit.transformer_blocks.21.scale_shift_table  -> NONZERO  abs_sum=0.400391
+  model.dit.transformer_blocks.21.attn1.to_q.weight  -> NONZERO  abs_sum=1.601562
+  model.dit.transformer_blocks.21.attn1.to_k.weight  -> NONZERO  abs_sum=0.472656
+  model.dit.transformer_blocks.21.attn1.to_v.weight  -> NONZERO  abs_sum=1.531250
+  model.dit.transformer_blocks.21.attn1.to_out.0.weight -> NONZERO  abs_sum=1.132812
+  model.dit.transformer_blocks.21.attn1.to_out.0.bias -> NONZERO  abs_sum=0.002228
+  model.dit.transformer_blocks.21.attn2.to_q.weight  -> NONZERO  abs_sum=0.141602
+  model.dit.transformer_blocks.21.attn2.to_q.bias    -> NONZERO  abs_sum=0.000018
+  model.dit.transformer_blocks.21.attn2.to_k.weight  -> NONZERO  abs_sum=0.183594
+  model.dit.transformer_blocks.21.attn2.to_k.bias    -> NONZERO  abs_sum=0.000189
+  model.dit.transformer_blocks.21.attn2.to_v.weight  -> NONZERO  abs_sum=0.146484
+  model.dit.transformer_blocks.21.attn2.to_v.bias    -> NONZERO  abs_sum=0.052002
+  model.dit.transformer_blocks.21.attn2.to_out.0.weight -> NONZERO  abs_sum=0.343750
+  model.dit.transformer_blocks.21.attn2.to_out.0.bias -> NONZERO  abs_sum=0.011597
+  model.dit.transformer_blocks.21.ff.conv_inverted.weight -> NONZERO  abs_sum=12.812500
+  model.dit.transformer_blocks.21.ff.conv_inverted.bias -> NONZERO  abs_sum=0.071777
+  model.dit.transformer_blocks.21.ff.conv_depth.weight -> NONZERO  abs_sum=1.312500
+  model.dit.transformer_blocks.21.ff.conv_depth.bias -> NONZERO  abs_sum=0.160156
+  model.dit.transformer_blocks.21.ff.conv_point.weight -> NONZERO  abs_sum=7.031250
+  model.dit.transformer_blocks.22.scale_shift_table  -> NONZERO  abs_sum=0.373047
+  model.dit.transformer_blocks.22.attn1.to_q.weight  -> NONZERO  abs_sum=1.843750
+  model.dit.transformer_blocks.22.attn1.to_k.weight  -> NONZERO  abs_sum=0.353516
+  model.dit.transformer_blocks.22.attn1.to_v.weight  -> NONZERO  abs_sum=1.046875
+  model.dit.transformer_blocks.22.attn1.to_out.0.weight -> NONZERO  abs_sum=0.921875
+  model.dit.transformer_blocks.22.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001587
+  model.dit.transformer_blocks.22.attn2.to_q.weight  -> NONZERO  abs_sum=0.081543
+  model.dit.transformer_blocks.22.attn2.to_q.bias    -> NONZERO  abs_sum=0.000008
+  model.dit.transformer_blocks.22.attn2.to_k.weight  -> NONZERO  abs_sum=0.094727
+  model.dit.transformer_blocks.22.attn2.to_k.bias    -> NONZERO  abs_sum=0.000083
+  model.dit.transformer_blocks.22.attn2.to_v.weight  -> NONZERO  abs_sum=0.088867
+  model.dit.transformer_blocks.22.attn2.to_v.bias    -> NONZERO  abs_sum=0.031982
+  model.dit.transformer_blocks.22.attn2.to_out.0.weight -> NONZERO  abs_sum=0.158203
+  model.dit.transformer_blocks.22.attn2.to_out.0.bias -> NONZERO  abs_sum=0.010376
+  model.dit.transformer_blocks.22.ff.conv_inverted.weight -> NONZERO  abs_sum=12.312500
+  model.dit.transformer_blocks.22.ff.conv_inverted.bias -> NONZERO  abs_sum=0.067383
+  model.dit.transformer_blocks.22.ff.conv_depth.weight -> NONZERO  abs_sum=1.265625
+  model.dit.transformer_blocks.22.ff.conv_depth.bias -> NONZERO  abs_sum=0.150391
+  model.dit.transformer_blocks.22.ff.conv_point.weight -> NONZERO  abs_sum=6.531250
+  model.dit.transformer_blocks.23.scale_shift_table  -> NONZERO  abs_sum=0.371094
+  model.dit.transformer_blocks.23.attn1.to_q.weight  -> NONZERO  abs_sum=1.757812
+  model.dit.transformer_blocks.23.attn1.to_k.weight  -> NONZERO  abs_sum=0.330078
+  model.dit.transformer_blocks.23.attn1.to_v.weight  -> NONZERO  abs_sum=0.789062
+  model.dit.transformer_blocks.23.attn1.to_out.0.weight -> NONZERO  abs_sum=0.761719
+  model.dit.transformer_blocks.23.attn1.to_out.0.bias -> NONZERO  abs_sum=0.001259
+  model.dit.transformer_blocks.23.attn2.to_q.weight  -> NONZERO  abs_sum=0.055176
+  model.dit.transformer_blocks.23.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.23.attn2.to_k.weight  -> NONZERO  abs_sum=0.115234
+  model.dit.transformer_blocks.23.attn2.to_k.bias    -> NONZERO  abs_sum=0.000140
+  model.dit.transformer_blocks.23.attn2.to_v.weight  -> NONZERO  abs_sum=0.086426
+  model.dit.transformer_blocks.23.attn2.to_v.bias    -> NONZERO  abs_sum=0.028198
+  model.dit.transformer_blocks.23.attn2.to_out.0.weight -> NONZERO  abs_sum=0.227539
+  model.dit.transformer_blocks.23.attn2.to_out.0.bias -> NONZERO  abs_sum=0.008911
+  model.dit.transformer_blocks.23.ff.conv_inverted.weight -> NONZERO  abs_sum=12.062500
+  model.dit.transformer_blocks.23.ff.conv_inverted.bias -> NONZERO  abs_sum=0.064453
+  model.dit.transformer_blocks.23.ff.conv_depth.weight -> NONZERO  abs_sum=1.179688
+  model.dit.transformer_blocks.23.ff.conv_depth.bias -> NONZERO  abs_sum=0.134766
+  model.dit.transformer_blocks.23.ff.conv_point.weight -> NONZERO  abs_sum=5.937500
+  model.dit.transformer_blocks.24.scale_shift_table  -> NONZERO  abs_sum=0.347656
+  model.dit.transformer_blocks.24.attn1.to_q.weight  -> NONZERO  abs_sum=1.656250
+  model.dit.transformer_blocks.24.attn1.to_k.weight  -> NONZERO  abs_sum=0.267578
+  model.dit.transformer_blocks.24.attn1.to_v.weight  -> NONZERO  abs_sum=0.539062
+  model.dit.transformer_blocks.24.attn1.to_out.0.weight -> NONZERO  abs_sum=0.574219
+  model.dit.transformer_blocks.24.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000885
+  model.dit.transformer_blocks.24.attn2.to_q.weight  -> NONZERO  abs_sum=0.041748
+  model.dit.transformer_blocks.24.attn2.to_q.bias    -> NONZERO  abs_sum=0.000003
+  model.dit.transformer_blocks.24.attn2.to_k.weight  -> NONZERO  abs_sum=0.080078
+  model.dit.transformer_blocks.24.attn2.to_k.bias    -> NONZERO  abs_sum=0.000105
+  model.dit.transformer_blocks.24.attn2.to_v.weight  -> NONZERO  abs_sum=0.046875
+  model.dit.transformer_blocks.24.attn2.to_v.bias    -> NONZERO  abs_sum=0.018433
+  model.dit.transformer_blocks.24.attn2.to_out.0.weight -> NONZERO  abs_sum=0.109375
+  model.dit.transformer_blocks.24.attn2.to_out.0.bias -> NONZERO  abs_sum=0.007568
+  model.dit.transformer_blocks.24.ff.conv_inverted.weight -> NONZERO  abs_sum=11.812500
+  model.dit.transformer_blocks.24.ff.conv_inverted.bias -> NONZERO  abs_sum=0.059326
+  model.dit.transformer_blocks.24.ff.conv_depth.weight -> NONZERO  abs_sum=1.085938
+  model.dit.transformer_blocks.24.ff.conv_depth.bias -> NONZERO  abs_sum=0.121094
+  model.dit.transformer_blocks.24.ff.conv_point.weight -> NONZERO  abs_sum=5.500000
+  model.dit.transformer_blocks.25.scale_shift_table  -> NONZERO  abs_sum=0.367188
+  model.dit.transformer_blocks.25.attn1.to_q.weight  -> NONZERO  abs_sum=1.445312
+  model.dit.transformer_blocks.25.attn1.to_k.weight  -> NONZERO  abs_sum=0.300781
+  model.dit.transformer_blocks.25.attn1.to_v.weight  -> NONZERO  abs_sum=0.527344
+  model.dit.transformer_blocks.25.attn1.to_out.0.weight -> NONZERO  abs_sum=0.558594
+  model.dit.transformer_blocks.25.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000721
+  model.dit.transformer_blocks.25.attn2.to_q.weight  -> NONZERO  abs_sum=0.045898
+  model.dit.transformer_blocks.25.attn2.to_q.bias    -> NONZERO  abs_sum=0.000003
+  model.dit.transformer_blocks.25.attn2.to_k.weight  -> NONZERO  abs_sum=0.059814
+  model.dit.transformer_blocks.25.attn2.to_k.bias    -> NONZERO  abs_sum=0.000086
+  model.dit.transformer_blocks.25.attn2.to_v.weight  -> NONZERO  abs_sum=0.055664
+  model.dit.transformer_blocks.25.attn2.to_v.bias    -> NONZERO  abs_sum=0.012207
+  model.dit.transformer_blocks.25.attn2.to_out.0.weight -> NONZERO  abs_sum=0.145508
+  model.dit.transformer_blocks.25.attn2.to_out.0.bias -> NONZERO  abs_sum=0.006042
+  model.dit.transformer_blocks.25.ff.conv_inverted.weight -> NONZERO  abs_sum=11.875000
+  model.dit.transformer_blocks.25.ff.conv_inverted.bias -> NONZERO  abs_sum=0.056396
+  model.dit.transformer_blocks.25.ff.conv_depth.weight -> NONZERO  abs_sum=1.023438
+  model.dit.transformer_blocks.25.ff.conv_depth.bias -> NONZERO  abs_sum=0.109863
+  model.dit.transformer_blocks.25.ff.conv_point.weight -> NONZERO  abs_sum=4.750000
+  model.dit.transformer_blocks.26.scale_shift_table  -> NONZERO  abs_sum=0.337891
+  model.dit.transformer_blocks.26.attn1.to_q.weight  -> NONZERO  abs_sum=1.226562
+  model.dit.transformer_blocks.26.attn1.to_k.weight  -> NONZERO  abs_sum=0.275391
+  model.dit.transformer_blocks.26.attn1.to_v.weight  -> NONZERO  abs_sum=0.302734
+  model.dit.transformer_blocks.26.attn1.to_out.0.weight -> NONZERO  abs_sum=0.341797
+  model.dit.transformer_blocks.26.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000254
+  model.dit.transformer_blocks.26.attn2.to_q.weight  -> NONZERO  abs_sum=0.076172
+  model.dit.transformer_blocks.26.attn2.to_q.bias    -> NONZERO  abs_sum=0.000004
+  model.dit.transformer_blocks.26.attn2.to_k.weight  -> NONZERO  abs_sum=0.080078
+  model.dit.transformer_blocks.26.attn2.to_k.bias    -> NONZERO  abs_sum=0.000082
+  model.dit.transformer_blocks.26.attn2.to_v.weight  -> NONZERO  abs_sum=0.052490
+  model.dit.transformer_blocks.26.attn2.to_v.bias    -> NONZERO  abs_sum=0.010010
+  model.dit.transformer_blocks.26.attn2.to_out.0.weight -> NONZERO  abs_sum=0.100586
+  model.dit.transformer_blocks.26.attn2.to_out.0.bias -> NONZERO  abs_sum=0.004517
+  model.dit.transformer_blocks.26.ff.conv_inverted.weight -> NONZERO  abs_sum=11.125000
+  model.dit.transformer_blocks.26.ff.conv_inverted.bias -> NONZERO  abs_sum=0.056885
+  model.dit.transformer_blocks.26.ff.conv_depth.weight -> NONZERO  abs_sum=0.894531
+  model.dit.transformer_blocks.26.ff.conv_depth.bias -> NONZERO  abs_sum=0.104980
+  model.dit.transformer_blocks.26.ff.conv_point.weight -> NONZERO  abs_sum=3.187500
+  model.dit.transformer_blocks.27.scale_shift_table  -> NONZERO  abs_sum=0.359375
+  model.dit.transformer_blocks.27.attn1.to_q.weight  -> NONZERO  abs_sum=0.968750
+  model.dit.transformer_blocks.27.attn1.to_k.weight  -> NONZERO  abs_sum=0.198242
+  model.dit.transformer_blocks.27.attn1.to_v.weight  -> NONZERO  abs_sum=0.193359
+  model.dit.transformer_blocks.27.attn1.to_out.0.weight -> NONZERO  abs_sum=0.153320
+  model.dit.transformer_blocks.27.attn1.to_out.0.bias -> NONZERO  abs_sum=0.000162
+  model.dit.transformer_blocks.27.attn2.to_q.weight  -> NONZERO  abs_sum=0.087891
+  model.dit.transformer_blocks.27.attn2.to_q.bias    -> NONZERO  abs_sum=0.000005
+  model.dit.transformer_blocks.27.attn2.to_k.weight  -> NONZERO  abs_sum=0.097168
+  model.dit.transformer_blocks.27.attn2.to_k.bias    -> NONZERO  abs_sum=0.000117
+  model.dit.transformer_blocks.27.attn2.to_v.weight  -> NONZERO  abs_sum=0.080078
+  model.dit.transformer_blocks.27.attn2.to_v.bias    -> NONZERO  abs_sum=0.008545
+  model.dit.transformer_blocks.27.attn2.to_out.0.weight -> NONZERO  abs_sum=0.096680
+  model.dit.transformer_blocks.27.attn2.to_out.0.bias -> NONZERO  abs_sum=0.003326
+  model.dit.transformer_blocks.27.ff.conv_inverted.weight -> NONZERO  abs_sum=9.562500
+  model.dit.transformer_blocks.27.ff.conv_inverted.bias -> NONZERO  abs_sum=0.061035
+  model.dit.transformer_blocks.27.ff.conv_depth.weight -> NONZERO  abs_sum=0.750000
+  model.dit.transformer_blocks.27.ff.conv_depth.bias -> NONZERO  abs_sum=0.127930
+  model.dit.transformer_blocks.27.ff.conv_point.weight -> NONZERO  abs_sum=1.250000
+  model.dit.proj_out.weight                          -> NONZERO  abs_sum=5.093750
+  model.dit.proj_out.bias                            -> NONZERO  abs_sum=0.007477
+  model.vae_decoder.decoder.conv_in.weight           -> FROZEN
+  model.vae_decoder.decoder.conv_in.bias             -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.0.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.1.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.1.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.2.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv1.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.conv2.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.2.3.norm.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.3.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.0.conv.bias  -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.4.3.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.0.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.1.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_q.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_k.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_v.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_in.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_qkv_multiscale.0.proj_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.to_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.attn.norm_out.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_inverted.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_depth.bias -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.conv_point.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.weight -> FROZEN
+  model.vae_decoder.decoder.up_blocks.5.2.conv_out.norm.bias -> FROZEN
+  model.vae_decoder.decoder.norm_out.weight          -> FROZEN
+  model.vae_decoder.decoder.norm_out.bias            -> FROZEN
+  model.vae_decoder.decoder.conv_out.weight          -> FROZEN
+  model.vae_decoder.decoder.conv_out.bias            -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.0.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.1.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.0.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.1.bias         -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.weight       -> FROZEN
+  model.vae_decoder.down_blocks.2.mlp.3.bias         -> FROZEN
+  model.vae_decoder.down_mlp.0.weight                -> FROZEN
+  model.vae_decoder.down_mlp.0.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.1.weight                -> FROZEN
+  model.vae_decoder.down_mlp.1.bias                  -> FROZEN
+  model.vae_decoder.down_mlp.3.weight                -> FROZEN
+  model.vae_decoder.down_mlp.3.bias                  -> FROZEN
+  model.llm_connector.layers.0.self_attn.q_proj.weight -> NONZERO  abs_sum=0.640625
+  model.llm_connector.layers.0.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000633
+  model.llm_connector.layers.0.self_attn.k_proj.weight -> NONZERO  abs_sum=0.333984
+  model.llm_connector.layers.0.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000160
+  model.llm_connector.layers.0.self_attn.v_proj.weight -> NONZERO  abs_sum=1.617188
+  model.llm_connector.layers.0.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001884
+  model.llm_connector.layers.0.self_attn.o_proj.weight -> NONZERO  abs_sum=2.734375
+  model.llm_connector.layers.0.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.218750
+  model.llm_connector.layers.0.mlp.up_proj.weight    -> NONZERO  abs_sum=4.625000
+  model.llm_connector.layers.0.mlp.down_proj.weight  -> NONZERO  abs_sum=6.593750
+  model.llm_connector.layers.0.input_layernorm.weight -> NONZERO  abs_sum=0.003342
+  model.llm_connector.layers.0.post_attention_layernorm.weight -> NONZERO  abs_sum=0.003418
+  model.llm_connector.layers.1.self_attn.q_proj.weight -> NONZERO  abs_sum=0.738281
+  model.llm_connector.layers.1.self_attn.q_proj.bias -> NONZERO  abs_sum=0.000992
+  model.llm_connector.layers.1.self_attn.k_proj.weight -> NONZERO  abs_sum=0.388672
+  model.llm_connector.layers.1.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000200
+  model.llm_connector.layers.1.self_attn.v_proj.weight -> NONZERO  abs_sum=0.480469
+  model.llm_connector.layers.1.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001755
+  model.llm_connector.layers.1.self_attn.o_proj.weight -> NONZERO  abs_sum=1.476562
+  model.llm_connector.layers.1.mlp.gate_proj.weight  -> NONZERO  abs_sum=5.156250
+  model.llm_connector.layers.1.mlp.up_proj.weight    -> NONZERO  abs_sum=4.343750
+  model.llm_connector.layers.1.mlp.down_proj.weight  -> NONZERO  abs_sum=5.968750
+  model.llm_connector.layers.1.input_layernorm.weight -> NONZERO  abs_sum=0.001717
+  model.llm_connector.layers.1.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002457
+  model.llm_connector.layers.2.self_attn.q_proj.weight -> NONZERO  abs_sum=1.531250
+  model.llm_connector.layers.2.self_attn.q_proj.bias -> NONZERO  abs_sum=0.001999
+  model.llm_connector.layers.2.self_attn.k_proj.weight -> NONZERO  abs_sum=0.628906
+  model.llm_connector.layers.2.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000256
+  model.llm_connector.layers.2.self_attn.v_proj.weight -> NONZERO  abs_sum=0.558594
+  model.llm_connector.layers.2.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001617
+  model.llm_connector.layers.2.self_attn.o_proj.weight -> NONZERO  abs_sum=2.218750
+  model.llm_connector.layers.2.mlp.gate_proj.weight  -> NONZERO  abs_sum=6.906250
+  model.llm_connector.layers.2.mlp.up_proj.weight    -> NONZERO  abs_sum=5.500000
+  model.llm_connector.layers.2.mlp.down_proj.weight  -> NONZERO  abs_sum=7.843750
+  model.llm_connector.layers.2.input_layernorm.weight -> NONZERO  abs_sum=0.002441
+  model.llm_connector.layers.2.post_attention_layernorm.weight -> NONZERO  abs_sum=0.002975
+  model.llm_connector.layers.3.self_attn.q_proj.weight -> NONZERO  abs_sum=3.234375
+  model.llm_connector.layers.3.self_attn.q_proj.bias -> NONZERO  abs_sum=0.003479
+  model.llm_connector.layers.3.self_attn.k_proj.weight -> NONZERO  abs_sum=1.437500
+  model.llm_connector.layers.3.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000519
+  model.llm_connector.layers.3.self_attn.v_proj.weight -> NONZERO  abs_sum=0.574219
+  model.llm_connector.layers.3.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001144
+  model.llm_connector.layers.3.self_attn.o_proj.weight -> NONZERO  abs_sum=4.437500
+  model.llm_connector.layers.3.mlp.gate_proj.weight  -> NONZERO  abs_sum=12.062500
+  model.llm_connector.layers.3.mlp.up_proj.weight    -> NONZERO  abs_sum=8.812500
+  model.llm_connector.layers.3.mlp.down_proj.weight  -> NONZERO  abs_sum=12.000000
+  model.llm_connector.layers.3.input_layernorm.weight -> NONZERO  abs_sum=0.004364
+  model.llm_connector.layers.3.post_attention_layernorm.weight -> NONZERO  abs_sum=0.003998
+  model.llm_connector.layers.4.self_attn.q_proj.weight -> NONZERO  abs_sum=5.156250
+  model.llm_connector.layers.4.self_attn.q_proj.bias -> NONZERO  abs_sum=0.005188
+  model.llm_connector.layers.4.self_attn.k_proj.weight -> NONZERO  abs_sum=1.812500
+  model.llm_connector.layers.4.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000648
+  model.llm_connector.layers.4.self_attn.v_proj.weight -> NONZERO  abs_sum=0.855469
+  model.llm_connector.layers.4.self_attn.v_proj.bias -> NONZERO  abs_sum=0.000977
+  model.llm_connector.layers.4.self_attn.o_proj.weight -> NONZERO  abs_sum=6.031250
+  model.llm_connector.layers.4.mlp.gate_proj.weight  -> NONZERO  abs_sum=15.000000
+  model.llm_connector.layers.4.mlp.up_proj.weight    -> NONZERO  abs_sum=10.875000
+  model.llm_connector.layers.4.mlp.down_proj.weight  -> NONZERO  abs_sum=12.687500
+  model.llm_connector.layers.4.input_layernorm.weight -> NONZERO  abs_sum=0.006073
+  model.llm_connector.layers.4.post_attention_layernorm.weight -> NONZERO  abs_sum=0.005249
+  model.llm_connector.layers.5.self_attn.q_proj.weight -> NONZERO  abs_sum=6.250000
+  model.llm_connector.layers.5.self_attn.q_proj.bias -> NONZERO  abs_sum=0.004974
+  model.llm_connector.layers.5.self_attn.k_proj.weight -> NONZERO  abs_sum=2.109375
+  model.llm_connector.layers.5.self_attn.k_proj.bias -> NONZERO  abs_sum=0.000656
+  model.llm_connector.layers.5.self_attn.v_proj.weight -> NONZERO  abs_sum=1.148438
+  model.llm_connector.layers.5.self_attn.v_proj.bias -> NONZERO  abs_sum=0.001144
+  model.llm_connector.layers.5.self_attn.o_proj.weight -> NONZERO  abs_sum=6.000000
+  model.llm_connector.layers.5.mlp.gate_proj.weight  -> NONZERO  abs_sum=23.250000
+  model.llm_connector.layers.5.mlp.up_proj.weight    -> NONZERO  abs_sum=19.375000
+  model.llm_connector.layers.5.mlp.down_proj.weight  -> NONZERO  abs_sum=19.625000
+  model.llm_connector.layers.5.input_layernorm.weight -> NONZERO  abs_sum=0.006348
+  model.llm_connector.layers.5.post_attention_layernorm.weight -> NONZERO  abs_sum=0.007416
+  model.llm_connector.norm.weight                    -> NONZERO  abs_sum=0.003433
+  model.projector.weight                             -> NONZERO  abs_sum=18.875000
+  model.projector.bias                               -> NONZERO  abs_sum=0.003616
+  model.action_dit_connector.0.weight                -> NONE
+  model.action_dit_connector.0.bias                  -> NONE
+  model.action_dit_connector.2.weight                -> NONE
+  model.action_dit_connector.2.bias                  -> NONE
+  model.action_dit_connector.4.weight                -> NONE
+  model.action_dit_connector.4.bias                  -> NONE
+  model.action_dit_norm.weight                       -> NONE
+  model.action_dit_projector.0.weight                -> NONE
+  model.action_dit_projector.0.bias                  -> NONE
+  model.action_dit_projector.2.weight                -> NONE
+  model.action_dit_projector.2.bias                  -> NONE
+  model.action_dit_projector.4.weight                -> NONE
+  model.action_dit_projector.4.bias                  -> NONE
+  model.action_dit.layers.0.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.0.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.0.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.0.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.0.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.0.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.0.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.0.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.0.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.1.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.1.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.1.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.1.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.1.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.1.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.1.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.1.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.1.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.2.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.2.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.2.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.2.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.2.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.2.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.2.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.2.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.2.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.3.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.3.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.3.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.3.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.3.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.3.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.3.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.3.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.3.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.4.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.4.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.4.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.4.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.4.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.4.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.4.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.4.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.4.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.5.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.5.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.5.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.5.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.5.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.5.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.5.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.5.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.5.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.6.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.6.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.6.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.6.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.6.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.6.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.6.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.6.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.6.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.7.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.7.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.7.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.7.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.7.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.7.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.7.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.7.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.7.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.8.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.8.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.8.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.8.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.8.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.8.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.8.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.8.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.8.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.9.self_attn.q_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.k_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.v_proj.weight  -> NONE
+  model.action_dit.layers.9.self_attn.o_proj.weight  -> NONE
+  model.action_dit.layers.9.mlp.gate_proj.weight     -> NONE
+  model.action_dit.layers.9.mlp.up_proj.weight       -> NONE
+  model.action_dit.layers.9.mlp.down_proj.weight     -> NONE
+  model.action_dit.layers.9.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.9.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.9.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.9.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.10.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.10.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.10.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.10.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.10.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.10.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.10.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.10.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.10.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.11.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.11.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.11.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.11.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.11.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.11.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.11.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.11.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.11.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.12.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.12.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.12.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.12.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.12.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.12.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.12.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.12.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.12.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.13.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.13.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.13.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.13.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.13.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.13.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.13.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.13.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.13.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.14.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.14.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.14.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.14.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.14.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.14.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.14.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.14.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.14.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.15.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.15.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.15.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.15.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.15.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.15.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.15.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.15.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.15.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.16.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.16.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.16.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.16.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.16.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.16.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.16.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.16.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.16.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.layers.17.self_attn.q_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.k_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.v_proj.weight -> NONE
+  model.action_dit.layers.17.self_attn.o_proj.weight -> NONE
+  model.action_dit.layers.17.mlp.gate_proj.weight    -> NONE
+  model.action_dit.layers.17.mlp.up_proj.weight      -> NONE
+  model.action_dit.layers.17.mlp.down_proj.weight    -> NONE
+  model.action_dit.layers.17.input_layernorm.dense.weight -> NONE
+  model.action_dit.layers.17.input_layernorm.dense.bias -> NONE
+  model.action_dit.layers.17.post_attention_layernorm.dense.weight -> NONE
+  model.action_dit.layers.17.post_attention_layernorm.dense.bias -> NONE
+  model.action_dit.norm.dense.weight                 -> NONE
+  model.action_dit.norm.dense.bias                   -> NONE
+  model.action_in_proj.weight                        -> NONE
+  model.action_in_proj.bias                          -> NONE
+  model.action_out_proj.weight                       -> NONE
+  model.action_out_proj.bias                         -> NONE
+  model.time_mlp_in.weight                           -> NONE
+  model.time_mlp_in.bias                             -> NONE
+  model.time_mlp_out.weight                          -> NONE
+  model.time_mlp_out.bias                            -> NONE
+  lm_head.weight                                     -> FROZEN
+
+
+#  print_optimizer_managed_param_summary(self)
+
+OPTIMIZER MANAGED PARAMS
+
+## count=845
+## model.latent_queries
+## model.dit.scale_shift_table
+  model.dit.patch_embed.proj.weight
+  model.dit.time_embed.emb.timestep_embedder.linear_1.weight
+  model.dit.time_embed.emb.timestep_embedder.linear_2.weight
+  model.dit.time_embed.linear.weight
+  model.dit.caption_projection.linear_1.weight
+  model.dit.caption_projection.linear_2.weight
+  model.dit.caption_norm.weight
+  model.dit.transformer_blocks.0.scale_shift_table
+  model.dit.transformer_blocks.0.attn1.to_q.weight
+  model.dit.transformer_blocks.0.attn1.to_k.weight
+  model.dit.transformer_blocks.0.attn1.to_v.weight
+  model.dit.transformer_blocks.0.attn1.to_out.0.weight
+  model.dit.transformer_blocks.0.attn2.to_q.weight
+  model.dit.transformer_blocks.0.attn2.to_k.weight
+  model.dit.transformer_blocks.0.attn2.to_v.weight
+  model.dit.transformer_blocks.0.attn2.to_out.0.weight
+  model.dit.transformer_blocks.0.ff.conv_inverted.weight
+  model.dit.transformer_blocks.0.ff.conv_depth.weight
+  model.dit.transformer_blocks.0.ff.conv_point.weight
+  model.dit.transformer_blocks.1.scale_shift_table
+  model.dit.transformer_blocks.1.attn1.to_q.weight
+  model.dit.transformer_blocks.1.attn1.to_k.weight
+  model.dit.transformer_blocks.1.attn1.to_v.weight
+  model.dit.transformer_blocks.1.attn1.to_out.0.weight
+  model.dit.transformer_blocks.1.attn2.to_q.weight
+  model.dit.transformer_blocks.1.attn2.to_k.weight
+  model.dit.transformer_blocks.1.attn2.to_v.weight
+  model.dit.transformer_blocks.1.attn2.to_out.0.weight
+  model.dit.transformer_blocks.1.ff.conv_inverted.weight
+  model.dit.transformer_blocks.1.ff.conv_depth.weight
+  model.dit.transformer_blocks.1.ff.conv_point.weight
+  model.dit.transformer_blocks.2.scale_shift_table
+  model.dit.transformer_blocks.2.attn1.to_q.weight
+  model.dit.transformer_blocks.2.attn1.to_k.weight
+  model.dit.transformer_blocks.2.attn1.to_v.weight
+  model.dit.transformer_blocks.2.attn1.to_out.0.weight
+  model.dit.transformer_blocks.2.attn2.to_q.weight
+  model.dit.transformer_blocks.2.attn2.to_k.weight
+  model.dit.transformer_blocks.2.attn2.to_v.weight
+  model.dit.transformer_blocks.2.attn2.to_out.0.weight
+  model.dit.transformer_blocks.2.ff.conv_inverted.weight
+  model.dit.transformer_blocks.2.ff.conv_depth.weight
+  model.dit.transformer_blocks.2.ff.conv_point.weight
+  model.dit.transformer_blocks.3.scale_shift_table
+  model.dit.transformer_blocks.3.attn1.to_q.weight
+  model.dit.transformer_blocks.3.attn1.to_k.weight
+  model.dit.transformer_blocks.3.attn1.to_v.weight
+  model.dit.transformer_blocks.3.attn1.to_out.0.weight
+  model.dit.transformer_blocks.3.attn2.to_q.weight
+  model.dit.transformer_blocks.3.attn2.to_k.weight
+  model.dit.transformer_blocks.3.attn2.to_v.weight
+  model.dit.transformer_blocks.3.attn2.to_out.0.weight
+  model.dit.transformer_blocks.3.ff.conv_inverted.weight
+  model.dit.transformer_blocks.3.ff.conv_depth.weight
+  model.dit.transformer_blocks.3.ff.conv_point.weight
+  model.dit.transformer_blocks.4.scale_shift_table
+  model.dit.transformer_blocks.4.attn1.to_q.weight
+  model.dit.transformer_blocks.4.attn1.to_k.weight
+  model.dit.transformer_blocks.4.attn1.to_v.weight
+  model.dit.transformer_blocks.4.attn1.to_out.0.weight
+  model.dit.transformer_blocks.4.attn2.to_q.weight
+  model.dit.transformer_blocks.4.attn2.to_k.weight
+  model.dit.transformer_blocks.4.attn2.to_v.weight
+  model.dit.transformer_blocks.4.attn2.to_out.0.weight
+  model.dit.transformer_blocks.4.ff.conv_inverted.weight
+  model.dit.transformer_blocks.4.ff.conv_depth.weight
+  model.dit.transformer_blocks.4.ff.conv_point.weight
+  model.dit.transformer_blocks.5.scale_shift_table
+  model.dit.transformer_blocks.5.attn1.to_q.weight
+  model.dit.transformer_blocks.5.attn1.to_k.weight
+  model.dit.transformer_blocks.5.attn1.to_v.weight
+  model.dit.transformer_blocks.5.attn1.to_out.0.weight
+  model.dit.transformer_blocks.5.attn2.to_q.weight
+  model.dit.transformer_blocks.5.attn2.to_k.weight
+  model.dit.transformer_blocks.5.attn2.to_v.weight
+  model.dit.transformer_blocks.5.attn2.to_out.0.weight
+  model.dit.transformer_blocks.5.ff.conv_inverted.weight
+  model.dit.transformer_blocks.5.ff.conv_depth.weight
+  model.dit.transformer_blocks.5.ff.conv_point.weight
+  model.dit.transformer_blocks.6.scale_shift_table
+  model.dit.transformer_blocks.6.attn1.to_q.weight
+  model.dit.transformer_blocks.6.attn1.to_k.weight
+  model.dit.transformer_blocks.6.attn1.to_v.weight
+  model.dit.transformer_blocks.6.attn1.to_out.0.weight
+  model.dit.transformer_blocks.6.attn2.to_q.weight
+  model.dit.transformer_blocks.6.attn2.to_k.weight
+  model.dit.transformer_blocks.6.attn2.to_v.weight
+  model.dit.transformer_blocks.6.attn2.to_out.0.weight
+  model.dit.transformer_blocks.6.ff.conv_inverted.weight
+  model.dit.transformer_blocks.6.ff.conv_depth.weight
+  model.dit.transformer_blocks.6.ff.conv_point.weight
+  model.dit.transformer_blocks.7.scale_shift_table
+  model.dit.transformer_blocks.7.attn1.to_q.weight
+  model.dit.transformer_blocks.7.attn1.to_k.weight
+  model.dit.transformer_blocks.7.attn1.to_v.weight
+  model.dit.transformer_blocks.7.attn1.to_out.0.weight
+  model.dit.transformer_blocks.7.attn2.to_q.weight
+  model.dit.transformer_blocks.7.attn2.to_k.weight
+  model.dit.transformer_blocks.7.attn2.to_v.weight
+  model.dit.transformer_blocks.7.attn2.to_out.0.weight
+  model.dit.transformer_blocks.7.ff.conv_inverted.weight
+  model.dit.transformer_blocks.7.ff.conv_depth.weight
+  model.dit.transformer_blocks.7.ff.conv_point.weight
+  model.dit.transformer_blocks.8.scale_shift_table
+  model.dit.transformer_blocks.8.attn1.to_q.weight
+  model.dit.transformer_blocks.8.attn1.to_k.weight
+  model.dit.transformer_blocks.8.attn1.to_v.weight
+  model.dit.transformer_blocks.8.attn1.to_out.0.weight
+  model.dit.transformer_blocks.8.attn2.to_q.weight
+  model.dit.transformer_blocks.8.attn2.to_k.weight
+  model.dit.transformer_blocks.8.attn2.to_v.weight
+  model.dit.transformer_blocks.8.attn2.to_out.0.weight
+  model.dit.transformer_blocks.8.ff.conv_inverted.weight
+  model.dit.transformer_blocks.8.ff.conv_depth.weight
+  model.dit.transformer_blocks.8.ff.conv_point.weight
+  model.dit.transformer_blocks.9.scale_shift_table
+  model.dit.transformer_blocks.9.attn1.to_q.weight
+  model.dit.transformer_blocks.9.attn1.to_k.weight
+  model.dit.transformer_blocks.9.attn1.to_v.weight
+  model.dit.transformer_blocks.9.attn1.to_out.0.weight
+  model.dit.transformer_blocks.9.attn2.to_q.weight
+  model.dit.transformer_blocks.9.attn2.to_k.weight
+  model.dit.transformer_blocks.9.attn2.to_v.weight
+  model.dit.transformer_blocks.9.attn2.to_out.0.weight
+  model.dit.transformer_blocks.9.ff.conv_inverted.weight
+  model.dit.transformer_blocks.9.ff.conv_depth.weight
+  model.dit.transformer_blocks.9.ff.conv_point.weight
+  model.dit.transformer_blocks.10.scale_shift_table
+  model.dit.transformer_blocks.10.attn1.to_q.weight
+  model.dit.transformer_blocks.10.attn1.to_k.weight
+  model.dit.transformer_blocks.10.attn1.to_v.weight
+  model.dit.transformer_blocks.10.attn1.to_out.0.weight
+  model.dit.transformer_blocks.10.attn2.to_q.weight
+  model.dit.transformer_blocks.10.attn2.to_k.weight
+  model.dit.transformer_blocks.10.attn2.to_v.weight
+  model.dit.transformer_blocks.10.attn2.to_out.0.weight
+  model.dit.transformer_blocks.10.ff.conv_inverted.weight
+  model.dit.transformer_blocks.10.ff.conv_depth.weight
+  model.dit.transformer_blocks.10.ff.conv_point.weight
+  model.dit.transformer_blocks.11.scale_shift_table
+  model.dit.transformer_blocks.11.attn1.to_q.weight
+  model.dit.transformer_blocks.11.attn1.to_k.weight
+  model.dit.transformer_blocks.11.attn1.to_v.weight
+  model.dit.transformer_blocks.11.attn1.to_out.0.weight
+  model.dit.transformer_blocks.11.attn2.to_q.weight
+  model.dit.transformer_blocks.11.attn2.to_k.weight
+  model.dit.transformer_blocks.11.attn2.to_v.weight
+  model.dit.transformer_blocks.11.attn2.to_out.0.weight
+  model.dit.transformer_blocks.11.ff.conv_inverted.weight
+  model.dit.transformer_blocks.11.ff.conv_depth.weight
+  model.dit.transformer_blocks.11.ff.conv_point.weight
+  model.dit.transformer_blocks.12.scale_shift_table
+  model.dit.transformer_blocks.12.attn1.to_q.weight
+  model.dit.transformer_blocks.12.attn1.to_k.weight
+  model.dit.transformer_blocks.12.attn1.to_v.weight
+  model.dit.transformer_blocks.12.attn1.to_out.0.weight
+  model.dit.transformer_blocks.12.attn2.to_q.weight
+  model.dit.transformer_blocks.12.attn2.to_k.weight
+  model.dit.transformer_blocks.12.attn2.to_v.weight
+  model.dit.transformer_blocks.12.attn2.to_out.0.weight
+  model.dit.transformer_blocks.12.ff.conv_inverted.weight
+  model.dit.transformer_blocks.12.ff.conv_depth.weight
+  model.dit.transformer_blocks.12.ff.conv_point.weight
+  model.dit.transformer_blocks.13.scale_shift_table
+  model.dit.transformer_blocks.13.attn1.to_q.weight
+  model.dit.transformer_blocks.13.attn1.to_k.weight
+  model.dit.transformer_blocks.13.attn1.to_v.weight
+  model.dit.transformer_blocks.13.attn1.to_out.0.weight
+  model.dit.transformer_blocks.13.attn2.to_q.weight
+  model.dit.transformer_blocks.13.attn2.to_k.weight
+  model.dit.transformer_blocks.13.attn2.to_v.weight
+  model.dit.transformer_blocks.13.attn2.to_out.0.weight
+  model.dit.transformer_blocks.13.ff.conv_inverted.weight
+  model.dit.transformer_blocks.13.ff.conv_depth.weight
+  model.dit.transformer_blocks.13.ff.conv_point.weight
+  model.dit.transformer_blocks.14.scale_shift_table
+  model.dit.transformer_blocks.14.attn1.to_q.weight
+  model.dit.transformer_blocks.14.attn1.to_k.weight
+  model.dit.transformer_blocks.14.attn1.to_v.weight
+  model.dit.transformer_blocks.14.attn1.to_out.0.weight
+  model.dit.transformer_blocks.14.attn2.to_q.weight
+  model.dit.transformer_blocks.14.attn2.to_k.weight
+  model.dit.transformer_blocks.14.attn2.to_v.weight
+  model.dit.transformer_blocks.14.attn2.to_out.0.weight
+  model.dit.transformer_blocks.14.ff.conv_inverted.weight
+  model.dit.transformer_blocks.14.ff.conv_depth.weight
+  model.dit.transformer_blocks.14.ff.conv_point.weight
+  model.dit.transformer_blocks.15.scale_shift_table
+  model.dit.transformer_blocks.15.attn1.to_q.weight
+  model.dit.transformer_blocks.15.attn1.to_k.weight
+  model.dit.transformer_blocks.15.attn1.to_v.weight
+  model.dit.transformer_blocks.15.attn1.to_out.0.weight
+  model.dit.transformer_blocks.15.attn2.to_q.weight
+  model.dit.transformer_blocks.15.attn2.to_k.weight
+  model.dit.transformer_blocks.15.attn2.to_v.weight
+  model.dit.transformer_blocks.15.attn2.to_out.0.weight
+  model.dit.transformer_blocks.15.ff.conv_inverted.weight
+  model.dit.transformer_blocks.15.ff.conv_depth.weight
+  model.dit.transformer_blocks.15.ff.conv_point.weight
+  model.dit.transformer_blocks.16.scale_shift_table
+  model.dit.transformer_blocks.16.attn1.to_q.weight
+  model.dit.transformer_blocks.16.attn1.to_k.weight
+  model.dit.transformer_blocks.16.attn1.to_v.weight
+  model.dit.transformer_blocks.16.attn1.to_out.0.weight
+  model.dit.transformer_blocks.16.attn2.to_q.weight
+  model.dit.transformer_blocks.16.attn2.to_k.weight
+  model.dit.transformer_blocks.16.attn2.to_v.weight
+  model.dit.transformer_blocks.16.attn2.to_out.0.weight
+  model.dit.transformer_blocks.16.ff.conv_inverted.weight
+  model.dit.transformer_blocks.16.ff.conv_depth.weight
+  model.dit.transformer_blocks.16.ff.conv_point.weight
+  model.dit.transformer_blocks.17.scale_shift_table
+  model.dit.transformer_blocks.17.attn1.to_q.weight
+  model.dit.transformer_blocks.17.attn1.to_k.weight
+  model.dit.transformer_blocks.17.attn1.to_v.weight
+  model.dit.transformer_blocks.17.attn1.to_out.0.weight
+  model.dit.transformer_blocks.17.attn2.to_q.weight
+  model.dit.transformer_blocks.17.attn2.to_k.weight
+  model.dit.transformer_blocks.17.attn2.to_v.weight
+  model.dit.transformer_blocks.17.attn2.to_out.0.weight
+  model.dit.transformer_blocks.17.ff.conv_inverted.weight
+  model.dit.transformer_blocks.17.ff.conv_depth.weight
+  model.dit.transformer_blocks.17.ff.conv_point.weight
+  model.dit.transformer_blocks.18.scale_shift_table
+  model.dit.transformer_blocks.18.attn1.to_q.weight
+  model.dit.transformer_blocks.18.attn1.to_k.weight
+  model.dit.transformer_blocks.18.attn1.to_v.weight
+  model.dit.transformer_blocks.18.attn1.to_out.0.weight
+  model.dit.transformer_blocks.18.attn2.to_q.weight
+  model.dit.transformer_blocks.18.attn2.to_k.weight
+  model.dit.transformer_blocks.18.attn2.to_v.weight
+  model.dit.transformer_blocks.18.attn2.to_out.0.weight
+  model.dit.transformer_blocks.18.ff.conv_inverted.weight
+  model.dit.transformer_blocks.18.ff.conv_depth.weight
+  model.dit.transformer_blocks.18.ff.conv_point.weight
+  model.dit.transformer_blocks.19.scale_shift_table
+  model.dit.transformer_blocks.19.attn1.to_q.weight
+  model.dit.transformer_blocks.19.attn1.to_k.weight
+  model.dit.transformer_blocks.19.attn1.to_v.weight
+  model.dit.transformer_blocks.19.attn1.to_out.0.weight
+  model.dit.transformer_blocks.19.attn2.to_q.weight
+  model.dit.transformer_blocks.19.attn2.to_k.weight
+  model.dit.transformer_blocks.19.attn2.to_v.weight
+  model.dit.transformer_blocks.19.attn2.to_out.0.weight
+  model.dit.transformer_blocks.19.ff.conv_inverted.weight
+  model.dit.transformer_blocks.19.ff.conv_depth.weight
+  model.dit.transformer_blocks.19.ff.conv_point.weight
+  model.dit.transformer_blocks.20.scale_shift_table
+  model.dit.transformer_blocks.20.attn1.to_q.weight
+  model.dit.transformer_blocks.20.attn1.to_k.weight
+  model.dit.transformer_blocks.20.attn1.to_v.weight
+  model.dit.transformer_blocks.20.attn1.to_out.0.weight
+  model.dit.transformer_blocks.20.attn2.to_q.weight
+  model.dit.transformer_blocks.20.attn2.to_k.weight
+  model.dit.transformer_blocks.20.attn2.to_v.weight
+  model.dit.transformer_blocks.20.attn2.to_out.0.weight
+  model.dit.transformer_blocks.20.ff.conv_inverted.weight
+  model.dit.transformer_blocks.20.ff.conv_depth.weight
+  model.dit.transformer_blocks.20.ff.conv_point.weight
+  model.dit.transformer_blocks.21.scale_shift_table
+  model.dit.transformer_blocks.21.attn1.to_q.weight
+  model.dit.transformer_blocks.21.attn1.to_k.weight
+  model.dit.transformer_blocks.21.attn1.to_v.weight
+  model.dit.transformer_blocks.21.attn1.to_out.0.weight
+  model.dit.transformer_blocks.21.attn2.to_q.weight
+  model.dit.transformer_blocks.21.attn2.to_k.weight
+  model.dit.transformer_blocks.21.attn2.to_v.weight
+  model.dit.transformer_blocks.21.attn2.to_out.0.weight
+  model.dit.transformer_blocks.21.ff.conv_inverted.weight
+  model.dit.transformer_blocks.21.ff.conv_depth.weight
+  model.dit.transformer_blocks.21.ff.conv_point.weight
+  model.dit.transformer_blocks.22.scale_shift_table
+  model.dit.transformer_blocks.22.attn1.to_q.weight
+  model.dit.transformer_blocks.22.attn1.to_k.weight
+  model.dit.transformer_blocks.22.attn1.to_v.weight
+  model.dit.transformer_blocks.22.attn1.to_out.0.weight
+  model.dit.transformer_blocks.22.attn2.to_q.weight
+  model.dit.transformer_blocks.22.attn2.to_k.weight
+  model.dit.transformer_blocks.22.attn2.to_v.weight
+  model.dit.transformer_blocks.22.attn2.to_out.0.weight
+  model.dit.transformer_blocks.22.ff.conv_inverted.weight
+  model.dit.transformer_blocks.22.ff.conv_depth.weight
+  model.dit.transformer_blocks.22.ff.conv_point.weight
+  model.dit.transformer_blocks.23.scale_shift_table
+  model.dit.transformer_blocks.23.attn1.to_q.weight
+  model.dit.transformer_blocks.23.attn1.to_k.weight
+  model.dit.transformer_blocks.23.attn1.to_v.weight
+  model.dit.transformer_blocks.23.attn1.to_out.0.weight
+  model.dit.transformer_blocks.23.attn2.to_q.weight
+  model.dit.transformer_blocks.23.attn2.to_k.weight
+  model.dit.transformer_blocks.23.attn2.to_v.weight
+  model.dit.transformer_blocks.23.attn2.to_out.0.weight
+  model.dit.transformer_blocks.23.ff.conv_inverted.weight
+  model.dit.transformer_blocks.23.ff.conv_depth.weight
+  model.dit.transformer_blocks.23.ff.conv_point.weight
+  model.dit.transformer_blocks.24.scale_shift_table
+  model.dit.transformer_blocks.24.attn1.to_q.weight
+  model.dit.transformer_blocks.24.attn1.to_k.weight
+  model.dit.transformer_blocks.24.attn1.to_v.weight
+  model.dit.transformer_blocks.24.attn1.to_out.0.weight
+  model.dit.transformer_blocks.24.attn2.to_q.weight
+  model.dit.transformer_blocks.24.attn2.to_k.weight
+  model.dit.transformer_blocks.24.attn2.to_v.weight
+  model.dit.transformer_blocks.24.attn2.to_out.0.weight
+  model.dit.transformer_blocks.24.ff.conv_inverted.weight
+  model.dit.transformer_blocks.24.ff.conv_depth.weight
+  model.dit.transformer_blocks.24.ff.conv_point.weight
+  model.dit.transformer_blocks.25.scale_shift_table
+  model.dit.transformer_blocks.25.attn1.to_q.weight
+  model.dit.transformer_blocks.25.attn1.to_k.weight
+  model.dit.transformer_blocks.25.attn1.to_v.weight
+  model.dit.transformer_blocks.25.attn1.to_out.0.weight
+  model.dit.transformer_blocks.25.attn2.to_q.weight
+  model.dit.transformer_blocks.25.attn2.to_k.weight
+  model.dit.transformer_blocks.25.attn2.to_v.weight
+  model.dit.transformer_blocks.25.attn2.to_out.0.weight
+  model.dit.transformer_blocks.25.ff.conv_inverted.weight
+  model.dit.transformer_blocks.25.ff.conv_depth.weight
+  model.dit.transformer_blocks.25.ff.conv_point.weight
+  model.dit.transformer_blocks.26.scale_shift_table
+  model.dit.transformer_blocks.26.attn1.to_q.weight
+  model.dit.transformer_blocks.26.attn1.to_k.weight
+  model.dit.transformer_blocks.26.attn1.to_v.weight
+  model.dit.transformer_blocks.26.attn1.to_out.0.weight
+  model.dit.transformer_blocks.26.attn2.to_q.weight
+  model.dit.transformer_blocks.26.attn2.to_k.weight
+  model.dit.transformer_blocks.26.attn2.to_v.weight
+  model.dit.transformer_blocks.26.attn2.to_out.0.weight
+  model.dit.transformer_blocks.26.ff.conv_inverted.weight
+  model.dit.transformer_blocks.26.ff.conv_depth.weight
+  model.dit.transformer_blocks.26.ff.conv_point.weight
+  model.dit.transformer_blocks.27.scale_shift_table
+  model.dit.transformer_blocks.27.attn1.to_q.weight
+  model.dit.transformer_blocks.27.attn1.to_k.weight
+  model.dit.transformer_blocks.27.attn1.to_v.weight
+  model.dit.transformer_blocks.27.attn1.to_out.0.weight
+  model.dit.transformer_blocks.27.attn2.to_q.weight
+  model.dit.transformer_blocks.27.attn2.to_k.weight
+  model.dit.transformer_blocks.27.attn2.to_v.weight
+  model.dit.transformer_blocks.27.attn2.to_out.0.weight
+  model.dit.transformer_blocks.27.ff.conv_inverted.weight
+  model.dit.transformer_blocks.27.ff.conv_depth.weight
+  model.dit.transformer_blocks.27.ff.conv_point.weight
+  model.dit.proj_out.weight
+  ## model.llm_connector.layers.0.self_attn.q_proj.weight
+  model.llm_connector.layers.0.self_attn.k_proj.weight
+  model.llm_connector.layers.0.self_attn.v_proj.weight
+  model.llm_connector.layers.0.self_attn.o_proj.weight
+  model.llm_connector.layers.0.mlp.gate_proj.weight
+  model.llm_connector.layers.0.mlp.up_proj.weight
+  model.llm_connector.layers.0.mlp.down_proj.weight
+  model.llm_connector.layers.0.input_layernorm.weight
+  model.llm_connector.layers.0.post_attention_layernorm.weight
+  model.llm_connector.layers.1.self_attn.q_proj.weight
+  model.llm_connector.layers.1.self_attn.k_proj.weight
+  model.llm_connector.layers.1.self_attn.v_proj.weight
+  model.llm_connector.layers.1.self_attn.o_proj.weight
+  model.llm_connector.layers.1.mlp.gate_proj.weight
+  model.llm_connector.layers.1.mlp.up_proj.weight
+  model.llm_connector.layers.1.mlp.down_proj.weight
+  model.llm_connector.layers.1.input_layernorm.weight
+  model.llm_connector.layers.1.post_attention_layernorm.weight
+  model.llm_connector.layers.2.self_attn.q_proj.weight
+  model.llm_connector.layers.2.self_attn.k_proj.weight
+  model.llm_connector.layers.2.self_attn.v_proj.weight
+  model.llm_connector.layers.2.self_attn.o_proj.weight
+  model.llm_connector.layers.2.mlp.gate_proj.weight
+  model.llm_connector.layers.2.mlp.up_proj.weight
+  model.llm_connector.layers.2.mlp.down_proj.weight
+  model.llm_connector.layers.2.input_layernorm.weight
+  model.llm_connector.layers.2.post_attention_layernorm.weight
+  model.llm_connector.layers.3.self_attn.q_proj.weight
+  model.llm_connector.layers.3.self_attn.k_proj.weight
+  model.llm_connector.layers.3.self_attn.v_proj.weight
+  model.llm_connector.layers.3.self_attn.o_proj.weight
+  model.llm_connector.layers.3.mlp.gate_proj.weight
+  model.llm_connector.layers.3.mlp.up_proj.weight
+  model.llm_connector.layers.3.mlp.down_proj.weight
+  model.llm_connector.layers.3.input_layernorm.weight
+  model.llm_connector.layers.3.post_attention_layernorm.weight
+  model.llm_connector.layers.4.self_attn.q_proj.weight
+  model.llm_connector.layers.4.self_attn.k_proj.weight
+  model.llm_connector.layers.4.self_attn.v_proj.weight
+  model.llm_connector.layers.4.self_attn.o_proj.weight
+  model.llm_connector.layers.4.mlp.gate_proj.weight
+  model.llm_connector.layers.4.mlp.up_proj.weight
+  model.llm_connector.layers.4.mlp.down_proj.weight
+  model.llm_connector.layers.4.input_layernorm.weight
+  model.llm_connector.layers.4.post_attention_layernorm.weight
+  model.llm_connector.layers.5.self_attn.q_proj.weight
+  model.llm_connector.layers.5.self_attn.k_proj.weight
+  model.llm_connector.layers.5.self_attn.v_proj.weight
+  model.llm_connector.layers.5.self_attn.o_proj.weight
+  model.llm_connector.layers.5.mlp.gate_proj.weight
+  model.llm_connector.layers.5.mlp.up_proj.weight
+  model.llm_connector.layers.5.mlp.down_proj.weight
+  model.llm_connector.layers.5.input_layernorm.weight
+  model.llm_connector.layers.5.post_attention_layernorm.weight
+  model.llm_connector.norm.weight
+  ## model.projector.weight
+  ## model.dit.patch_embed.proj.bias
+  model.dit.time_embed.emb.timestep_embedder.linear_1.bias
+  model.dit.time_embed.emb.timestep_embedder.linear_2.bias
+  model.dit.time_embed.linear.bias
+  model.dit.caption_projection.linear_1.bias
+  model.dit.caption_projection.linear_2.bias
+  model.dit.transformer_blocks.0.attn1.to_out.0.bias
+  model.dit.transformer_blocks.0.attn2.to_q.bias
+  model.dit.transformer_blocks.0.attn2.to_k.bias
+  model.dit.transformer_blocks.0.attn2.to_v.bias
+  model.dit.transformer_blocks.0.attn2.to_out.0.bias
+  model.dit.transformer_blocks.0.ff.conv_inverted.bias
+  model.dit.transformer_blocks.0.ff.conv_depth.bias
+  model.dit.transformer_blocks.1.attn1.to_out.0.bias
+  model.dit.transformer_blocks.1.attn2.to_q.bias
+  model.dit.transformer_blocks.1.attn2.to_k.bias
+  model.dit.transformer_blocks.1.attn2.to_v.bias
+  model.dit.transformer_blocks.1.attn2.to_out.0.bias
+  model.dit.transformer_blocks.1.ff.conv_inverted.bias
+  model.dit.transformer_blocks.1.ff.conv_depth.bias
+  model.dit.transformer_blocks.2.attn1.to_out.0.bias
+  model.dit.transformer_blocks.2.attn2.to_q.bias
+  model.dit.transformer_blocks.2.attn2.to_k.bias
+  model.dit.transformer_blocks.2.attn2.to_v.bias
+  model.dit.transformer_blocks.2.attn2.to_out.0.bias
+  model.dit.transformer_blocks.2.ff.conv_inverted.bias
+  model.dit.transformer_blocks.2.ff.conv_depth.bias
+  model.dit.transformer_blocks.3.attn1.to_out.0.bias
+  model.dit.transformer_blocks.3.attn2.to_q.bias
+  model.dit.transformer_blocks.3.attn2.to_k.bias
+  model.dit.transformer_blocks.3.attn2.to_v.bias
+  model.dit.transformer_blocks.3.attn2.to_out.0.bias
+  model.dit.transformer_blocks.3.ff.conv_inverted.bias
+  model.dit.transformer_blocks.3.ff.conv_depth.bias
+  model.dit.transformer_blocks.4.attn1.to_out.0.bias
+  model.dit.transformer_blocks.4.attn2.to_q.bias
+  model.dit.transformer_blocks.4.attn2.to_k.bias
+  model.dit.transformer_blocks.4.attn2.to_v.bias
+  model.dit.transformer_blocks.4.attn2.to_out.0.bias
+  model.dit.transformer_blocks.4.ff.conv_inverted.bias
+  model.dit.transformer_blocks.4.ff.conv_depth.bias
+  model.dit.transformer_blocks.5.attn1.to_out.0.bias
+  model.dit.transformer_blocks.5.attn2.to_q.bias
+  model.dit.transformer_blocks.5.attn2.to_k.bias
+  model.dit.transformer_blocks.5.attn2.to_v.bias
+  model.dit.transformer_blocks.5.attn2.to_out.0.bias
+  model.dit.transformer_blocks.5.ff.conv_inverted.bias
+  model.dit.transformer_blocks.5.ff.conv_depth.bias
+  model.dit.transformer_blocks.6.attn1.to_out.0.bias
+  model.dit.transformer_blocks.6.attn2.to_q.bias
+  model.dit.transformer_blocks.6.attn2.to_k.bias
+  model.dit.transformer_blocks.6.attn2.to_v.bias
+  model.dit.transformer_blocks.6.attn2.to_out.0.bias
+  model.dit.transformer_blocks.6.ff.conv_inverted.bias
+  model.dit.transformer_blocks.6.ff.conv_depth.bias
+  model.dit.transformer_blocks.7.attn1.to_out.0.bias
+  model.dit.transformer_blocks.7.attn2.to_q.bias
+  model.dit.transformer_blocks.7.attn2.to_k.bias
+  model.dit.transformer_blocks.7.attn2.to_v.bias
+  model.dit.transformer_blocks.7.attn2.to_out.0.bias
+  model.dit.transformer_blocks.7.ff.conv_inverted.bias
+  model.dit.transformer_blocks.7.ff.conv_depth.bias
+  model.dit.transformer_blocks.8.attn1.to_out.0.bias
+  model.dit.transformer_blocks.8.attn2.to_q.bias
+  model.dit.transformer_blocks.8.attn2.to_k.bias
+  model.dit.transformer_blocks.8.attn2.to_v.bias
+  model.dit.transformer_blocks.8.attn2.to_out.0.bias
+  model.dit.transformer_blocks.8.ff.conv_inverted.bias
+  model.dit.transformer_blocks.8.ff.conv_depth.bias
+  model.dit.transformer_blocks.9.attn1.to_out.0.bias
+  model.dit.transformer_blocks.9.attn2.to_q.bias
+  model.dit.transformer_blocks.9.attn2.to_k.bias
+  model.dit.transformer_blocks.9.attn2.to_v.bias
+  model.dit.transformer_blocks.9.attn2.to_out.0.bias
+  model.dit.transformer_blocks.9.ff.conv_inverted.bias
+  model.dit.transformer_blocks.9.ff.conv_depth.bias
+  model.dit.transformer_blocks.10.attn1.to_out.0.bias
+  model.dit.transformer_blocks.10.attn2.to_q.bias
+  model.dit.transformer_blocks.10.attn2.to_k.bias
+  model.dit.transformer_blocks.10.attn2.to_v.bias
+  model.dit.transformer_blocks.10.attn2.to_out.0.bias
+  model.dit.transformer_blocks.10.ff.conv_inverted.bias
+  model.dit.transformer_blocks.10.ff.conv_depth.bias
+  model.dit.transformer_blocks.11.attn1.to_out.0.bias
+  model.dit.transformer_blocks.11.attn2.to_q.bias
+  model.dit.transformer_blocks.11.attn2.to_k.bias
+  model.dit.transformer_blocks.11.attn2.to_v.bias
+  model.dit.transformer_blocks.11.attn2.to_out.0.bias
+  model.dit.transformer_blocks.11.ff.conv_inverted.bias
+  model.dit.transformer_blocks.11.ff.conv_depth.bias
+  model.dit.transformer_blocks.12.attn1.to_out.0.bias
+  model.dit.transformer_blocks.12.attn2.to_q.bias
+  model.dit.transformer_blocks.12.attn2.to_k.bias
+  model.dit.transformer_blocks.12.attn2.to_v.bias
+  model.dit.transformer_blocks.12.attn2.to_out.0.bias
+  model.dit.transformer_blocks.12.ff.conv_inverted.bias
+  model.dit.transformer_blocks.12.ff.conv_depth.bias
+  model.dit.transformer_blocks.13.attn1.to_out.0.bias
+  model.dit.transformer_blocks.13.attn2.to_q.bias
+  model.dit.transformer_blocks.13.attn2.to_k.bias
+  model.dit.transformer_blocks.13.attn2.to_v.bias
+  model.dit.transformer_blocks.13.attn2.to_out.0.bias
+  model.dit.transformer_blocks.13.ff.conv_inverted.bias
+  model.dit.transformer_blocks.13.ff.conv_depth.bias
+  model.dit.transformer_blocks.14.attn1.to_out.0.bias
+  model.dit.transformer_blocks.14.attn2.to_q.bias
+  model.dit.transformer_blocks.14.attn2.to_k.bias
+  model.dit.transformer_blocks.14.attn2.to_v.bias
+  model.dit.transformer_blocks.14.attn2.to_out.0.bias
+  model.dit.transformer_blocks.14.ff.conv_inverted.bias
+  model.dit.transformer_blocks.14.ff.conv_depth.bias
+  model.dit.transformer_blocks.15.attn1.to_out.0.bias
+  model.dit.transformer_blocks.15.attn2.to_q.bias
+  model.dit.transformer_blocks.15.attn2.to_k.bias
+  model.dit.transformer_blocks.15.attn2.to_v.bias
+  model.dit.transformer_blocks.15.attn2.to_out.0.bias
+  model.dit.transformer_blocks.15.ff.conv_inverted.bias
+  model.dit.transformer_blocks.15.ff.conv_depth.bias
+  model.dit.transformer_blocks.16.attn1.to_out.0.bias
+  model.dit.transformer_blocks.16.attn2.to_q.bias
+  model.dit.transformer_blocks.16.attn2.to_k.bias
+  model.dit.transformer_blocks.16.attn2.to_v.bias
+  model.dit.transformer_blocks.16.attn2.to_out.0.bias
+  model.dit.transformer_blocks.16.ff.conv_inverted.bias
+  model.dit.transformer_blocks.16.ff.conv_depth.bias
+  model.dit.transformer_blocks.17.attn1.to_out.0.bias
+  model.dit.transformer_blocks.17.attn2.to_q.bias
+  model.dit.transformer_blocks.17.attn2.to_k.bias
+  model.dit.transformer_blocks.17.attn2.to_v.bias
+  model.dit.transformer_blocks.17.attn2.to_out.0.bias
+  model.dit.transformer_blocks.17.ff.conv_inverted.bias
+  model.dit.transformer_blocks.17.ff.conv_depth.bias
+  model.dit.transformer_blocks.18.attn1.to_out.0.bias
+  model.dit.transformer_blocks.18.attn2.to_q.bias
+  model.dit.transformer_blocks.18.attn2.to_k.bias
+  model.dit.transformer_blocks.18.attn2.to_v.bias
+  model.dit.transformer_blocks.18.attn2.to_out.0.bias
+  model.dit.transformer_blocks.18.ff.conv_inverted.bias
+  model.dit.transformer_blocks.18.ff.conv_depth.bias
+  model.dit.transformer_blocks.19.attn1.to_out.0.bias
+  model.dit.transformer_blocks.19.attn2.to_q.bias
+  model.dit.transformer_blocks.19.attn2.to_k.bias
+  model.dit.transformer_blocks.19.attn2.to_v.bias
+  model.dit.transformer_blocks.19.attn2.to_out.0.bias
+  model.dit.transformer_blocks.19.ff.conv_inverted.bias
+  model.dit.transformer_blocks.19.ff.conv_depth.bias
+  model.dit.transformer_blocks.20.attn1.to_out.0.bias
+  model.dit.transformer_blocks.20.attn2.to_q.bias
+  model.dit.transformer_blocks.20.attn2.to_k.bias
+  model.dit.transformer_blocks.20.attn2.to_v.bias
+  model.dit.transformer_blocks.20.attn2.to_out.0.bias
+  model.dit.transformer_blocks.20.ff.conv_inverted.bias
+  model.dit.transformer_blocks.20.ff.conv_depth.bias
+  model.dit.transformer_blocks.21.attn1.to_out.0.bias
+  model.dit.transformer_blocks.21.attn2.to_q.bias
+  model.dit.transformer_blocks.21.attn2.to_k.bias
+  model.dit.transformer_blocks.21.attn2.to_v.bias
+  model.dit.transformer_blocks.21.attn2.to_out.0.bias
+  model.dit.transformer_blocks.21.ff.conv_inverted.bias
+  model.dit.transformer_blocks.21.ff.conv_depth.bias
+  model.dit.transformer_blocks.22.attn1.to_out.0.bias
+  model.dit.transformer_blocks.22.attn2.to_q.bias
+  model.dit.transformer_blocks.22.attn2.to_k.bias
+  model.dit.transformer_blocks.22.attn2.to_v.bias
+  model.dit.transformer_blocks.22.attn2.to_out.0.bias
+  model.dit.transformer_blocks.22.ff.conv_inverted.bias
+  model.dit.transformer_blocks.22.ff.conv_depth.bias
+  model.dit.transformer_blocks.23.attn1.to_out.0.bias
+  model.dit.transformer_blocks.23.attn2.to_q.bias
+  model.dit.transformer_blocks.23.attn2.to_k.bias
+  model.dit.transformer_blocks.23.attn2.to_v.bias
+  model.dit.transformer_blocks.23.attn2.to_out.0.bias
+  model.dit.transformer_blocks.23.ff.conv_inverted.bias
+  model.dit.transformer_blocks.23.ff.conv_depth.bias
+  model.dit.transformer_blocks.24.attn1.to_out.0.bias
+  model.dit.transformer_blocks.24.attn2.to_q.bias
+  model.dit.transformer_blocks.24.attn2.to_k.bias
+  model.dit.transformer_blocks.24.attn2.to_v.bias
+  model.dit.transformer_blocks.24.attn2.to_out.0.bias
+  model.dit.transformer_blocks.24.ff.conv_inverted.bias
+  model.dit.transformer_blocks.24.ff.conv_depth.bias
+  model.dit.transformer_blocks.25.attn1.to_out.0.bias
+  model.dit.transformer_blocks.25.attn2.to_q.bias
+  model.dit.transformer_blocks.25.attn2.to_k.bias
+  model.dit.transformer_blocks.25.attn2.to_v.bias
+  model.dit.transformer_blocks.25.attn2.to_out.0.bias
+  model.dit.transformer_blocks.25.ff.conv_inverted.bias
+  model.dit.transformer_blocks.25.ff.conv_depth.bias
+  model.dit.transformer_blocks.26.attn1.to_out.0.bias
+  model.dit.transformer_blocks.26.attn2.to_q.bias
+  model.dit.transformer_blocks.26.attn2.to_k.bias
+  model.dit.transformer_blocks.26.attn2.to_v.bias
+  model.dit.transformer_blocks.26.attn2.to_out.0.bias
+  model.dit.transformer_blocks.26.ff.conv_inverted.bias
+  model.dit.transformer_blocks.26.ff.conv_depth.bias
+  model.dit.transformer_blocks.27.attn1.to_out.0.bias
+  model.dit.transformer_blocks.27.attn2.to_q.bias
+  model.dit.transformer_blocks.27.attn2.to_k.bias
+  model.dit.transformer_blocks.27.attn2.to_v.bias
+  model.dit.transformer_blocks.27.attn2.to_out.0.bias
+  model.dit.transformer_blocks.27.ff.conv_inverted.bias
+  model.dit.transformer_blocks.27.ff.conv_depth.bias
+  model.dit.proj_out.bias
+  ## model.llm_connector.layers.0.self_attn.q_proj.bias
+  model.llm_connector.layers.0.self_attn.k_proj.bias
+  model.llm_connector.layers.0.self_attn.v_proj.bias
+  model.llm_connector.layers.1.self_attn.q_proj.bias
+  model.llm_connector.layers.1.self_attn.k_proj.bias
+  model.llm_connector.layers.1.self_attn.v_proj.bias
+  model.llm_connector.layers.2.self_attn.q_proj.bias
+  model.llm_connector.layers.2.self_attn.k_proj.bias
+  model.llm_connector.layers.2.self_attn.v_proj.bias
+  model.llm_connector.layers.3.self_attn.q_proj.bias
+  model.llm_connector.layers.3.self_attn.k_proj.bias
+  model.llm_connector.layers.3.self_attn.v_proj.bias
+  model.llm_connector.layers.4.self_attn.q_proj.bias
+  model.llm_connector.layers.4.self_attn.k_proj.bias
+  model.llm_connector.layers.4.self_attn.v_proj.bias
+  model.llm_connector.layers.5.self_attn.q_proj.bias
+  model.llm_connector.layers.5.self_attn.k_proj.bias
+  model.llm_connector.layers.5.self_attn.v_proj.bias
+  ## model.projector.bias
+  ## model.action_dit_connector.0.weight
+  model.action_dit_connector.2.weight
+  model.action_dit_connector.4.weight
+ ##  model.action_dit_norm.weight
+  ## model.action_dit_projector.0.weight
+  model.action_dit_projector.2.weight
+  model.action_dit_projector.4.weight
+ ##  model.action_dit_connector.0.bias
+  model.action_dit_connector.2.bias
+  model.action_dit_connector.4.bias
+ ##  model.action_dit_projector.0.bias
+  model.action_dit_projector.2.bias
+  model.action_dit_projector.4.bias
+  ## model.action_dit.layers.0.self_attn.q_proj.weight
+  model.action_dit.layers.0.self_attn.k_proj.weight
+  model.action_dit.layers.0.self_attn.v_proj.weight
+  model.action_dit.layers.0.self_attn.o_proj.weight
+  model.action_dit.layers.0.mlp.gate_proj.weight
+  model.action_dit.layers.0.mlp.up_proj.weight
+  model.action_dit.layers.0.mlp.down_proj.weight
+  model.action_dit.layers.0.input_layernorm.dense.weight
+  model.action_dit.layers.0.post_attention_layernorm.dense.weight
+  model.action_dit.layers.1.self_attn.q_proj.weight
+  model.action_dit.layers.1.self_attn.k_proj.weight
+  model.action_dit.layers.1.self_attn.v_proj.weight
+  model.action_dit.layers.1.self_attn.o_proj.weight
+  model.action_dit.layers.1.mlp.gate_proj.weight
+  model.action_dit.layers.1.mlp.up_proj.weight
+  model.action_dit.layers.1.mlp.down_proj.weight
+  model.action_dit.layers.1.input_layernorm.dense.weight
+  model.action_dit.layers.1.post_attention_layernorm.dense.weight
+  model.action_dit.layers.2.self_attn.q_proj.weight
+  model.action_dit.layers.2.self_attn.k_proj.weight
+  model.action_dit.layers.2.self_attn.v_proj.weight
+  model.action_dit.layers.2.self_attn.o_proj.weight
+  model.action_dit.layers.2.mlp.gate_proj.weight
+  model.action_dit.layers.2.mlp.up_proj.weight
+  model.action_dit.layers.2.mlp.down_proj.weight
+  model.action_dit.layers.2.input_layernorm.dense.weight
+  model.action_dit.layers.2.post_attention_layernorm.dense.weight
+  model.action_dit.layers.3.self_attn.q_proj.weight
+  model.action_dit.layers.3.self_attn.k_proj.weight
+  model.action_dit.layers.3.self_attn.v_proj.weight
+  model.action_dit.layers.3.self_attn.o_proj.weight
+  model.action_dit.layers.3.mlp.gate_proj.weight
+  model.action_dit.layers.3.mlp.up_proj.weight
+  model.action_dit.layers.3.mlp.down_proj.weight
+  model.action_dit.layers.3.input_layernorm.dense.weight
+  model.action_dit.layers.3.post_attention_layernorm.dense.weight
+  model.action_dit.layers.4.self_attn.q_proj.weight
+  model.action_dit.layers.4.self_attn.k_proj.weight
+  model.action_dit.layers.4.self_attn.v_proj.weight
+  model.action_dit.layers.4.self_attn.o_proj.weight
+  model.action_dit.layers.4.mlp.gate_proj.weight
+  model.action_dit.layers.4.mlp.up_proj.weight
+  model.action_dit.layers.4.mlp.down_proj.weight
+  model.action_dit.layers.4.input_layernorm.dense.weight
+  model.action_dit.layers.4.post_attention_layernorm.dense.weight
+  model.action_dit.layers.5.self_attn.q_proj.weight
+  model.action_dit.layers.5.self_attn.k_proj.weight
+  model.action_dit.layers.5.self_attn.v_proj.weight
+  model.action_dit.layers.5.self_attn.o_proj.weight
+  model.action_dit.layers.5.mlp.gate_proj.weight
+  model.action_dit.layers.5.mlp.up_proj.weight
+  model.action_dit.layers.5.mlp.down_proj.weight
+  model.action_dit.layers.5.input_layernorm.dense.weight
+  model.action_dit.layers.5.post_attention_layernorm.dense.weight
+  model.action_dit.layers.6.self_attn.q_proj.weight
+  model.action_dit.layers.6.self_attn.k_proj.weight
+  model.action_dit.layers.6.self_attn.v_proj.weight
+  model.action_dit.layers.6.self_attn.o_proj.weight
+  model.action_dit.layers.6.mlp.gate_proj.weight
+  model.action_dit.layers.6.mlp.up_proj.weight
+  model.action_dit.layers.6.mlp.down_proj.weight
+  model.action_dit.layers.6.input_layernorm.dense.weight
+  model.action_dit.layers.6.post_attention_layernorm.dense.weight
+  model.action_dit.layers.7.self_attn.q_proj.weight
+  model.action_dit.layers.7.self_attn.k_proj.weight
+  model.action_dit.layers.7.self_attn.v_proj.weight
+  model.action_dit.layers.7.self_attn.o_proj.weight
+  model.action_dit.layers.7.mlp.gate_proj.weight
+  model.action_dit.layers.7.mlp.up_proj.weight
+  model.action_dit.layers.7.mlp.down_proj.weight
+  model.action_dit.layers.7.input_layernorm.dense.weight
+  model.action_dit.layers.7.post_attention_layernorm.dense.weight
+  model.action_dit.layers.8.self_attn.q_proj.weight
+  model.action_dit.layers.8.self_attn.k_proj.weight
+  model.action_dit.layers.8.self_attn.v_proj.weight
+  model.action_dit.layers.8.self_attn.o_proj.weight
+  model.action_dit.layers.8.mlp.gate_proj.weight
+  model.action_dit.layers.8.mlp.up_proj.weight
+  model.action_dit.layers.8.mlp.down_proj.weight
+  model.action_dit.layers.8.input_layernorm.dense.weight
+  model.action_dit.layers.8.post_attention_layernorm.dense.weight
+  model.action_dit.layers.9.self_attn.q_proj.weight
+  model.action_dit.layers.9.self_attn.k_proj.weight
+  model.action_dit.layers.9.self_attn.v_proj.weight
+  model.action_dit.layers.9.self_attn.o_proj.weight
+  model.action_dit.layers.9.mlp.gate_proj.weight
+  model.action_dit.layers.9.mlp.up_proj.weight
+  model.action_dit.layers.9.mlp.down_proj.weight
+  model.action_dit.layers.9.input_layernorm.dense.weight
+  model.action_dit.layers.9.post_attention_layernorm.dense.weight
+  model.action_dit.layers.10.self_attn.q_proj.weight
+  model.action_dit.layers.10.self_attn.k_proj.weight
+  model.action_dit.layers.10.self_attn.v_proj.weight
+  model.action_dit.layers.10.self_attn.o_proj.weight
+  model.action_dit.layers.10.mlp.gate_proj.weight
+  model.action_dit.layers.10.mlp.up_proj.weight
+  model.action_dit.layers.10.mlp.down_proj.weight
+  model.action_dit.layers.10.input_layernorm.dense.weight
+  model.action_dit.layers.10.post_attention_layernorm.dense.weight
+  model.action_dit.layers.11.self_attn.q_proj.weight
+  model.action_dit.layers.11.self_attn.k_proj.weight
+  model.action_dit.layers.11.self_attn.v_proj.weight
+  model.action_dit.layers.11.self_attn.o_proj.weight
+  model.action_dit.layers.11.mlp.gate_proj.weight
+  model.action_dit.layers.11.mlp.up_proj.weight
+  model.action_dit.layers.11.mlp.down_proj.weight
+  model.action_dit.layers.11.input_layernorm.dense.weight
+  model.action_dit.layers.11.post_attention_layernorm.dense.weight
+  model.action_dit.layers.12.self_attn.q_proj.weight
+  model.action_dit.layers.12.self_attn.k_proj.weight
+  model.action_dit.layers.12.self_attn.v_proj.weight
+  model.action_dit.layers.12.self_attn.o_proj.weight
+  model.action_dit.layers.12.mlp.gate_proj.weight
+  model.action_dit.layers.12.mlp.up_proj.weight
+  model.action_dit.layers.12.mlp.down_proj.weight
+  model.action_dit.layers.12.input_layernorm.dense.weight
+  model.action_dit.layers.12.post_attention_layernorm.dense.weight
+  model.action_dit.layers.13.self_attn.q_proj.weight
+  model.action_dit.layers.13.self_attn.k_proj.weight
+  model.action_dit.layers.13.self_attn.v_proj.weight
+  model.action_dit.layers.13.self_attn.o_proj.weight
+  model.action_dit.layers.13.mlp.gate_proj.weight
+  model.action_dit.layers.13.mlp.up_proj.weight
+  model.action_dit.layers.13.mlp.down_proj.weight
+  model.action_dit.layers.13.input_layernorm.dense.weight
+  model.action_dit.layers.13.post_attention_layernorm.dense.weight
+  model.action_dit.layers.14.self_attn.q_proj.weight
+  model.action_dit.layers.14.self_attn.k_proj.weight
+  model.action_dit.layers.14.self_attn.v_proj.weight
+  model.action_dit.layers.14.self_attn.o_proj.weight
+  model.action_dit.layers.14.mlp.gate_proj.weight
+  model.action_dit.layers.14.mlp.up_proj.weight
+  model.action_dit.layers.14.mlp.down_proj.weight
+  model.action_dit.layers.14.input_layernorm.dense.weight
+  model.action_dit.layers.14.post_attention_layernorm.dense.weight
+  model.action_dit.layers.15.self_attn.q_proj.weight
+  model.action_dit.layers.15.self_attn.k_proj.weight
+  model.action_dit.layers.15.self_attn.v_proj.weight
+  model.action_dit.layers.15.self_attn.o_proj.weight
+  model.action_dit.layers.15.mlp.gate_proj.weight
+  model.action_dit.layers.15.mlp.up_proj.weight
+  model.action_dit.layers.15.mlp.down_proj.weight
+  model.action_dit.layers.15.input_layernorm.dense.weight
+  model.action_dit.layers.15.post_attention_layernorm.dense.weight
+  model.action_dit.layers.16.self_attn.q_proj.weight
+  model.action_dit.layers.16.self_attn.k_proj.weight
+  model.action_dit.layers.16.self_attn.v_proj.weight
+  model.action_dit.layers.16.self_attn.o_proj.weight
+  model.action_dit.layers.16.mlp.gate_proj.weight
+  model.action_dit.layers.16.mlp.up_proj.weight
+  model.action_dit.layers.16.mlp.down_proj.weight
+  model.action_dit.layers.16.input_layernorm.dense.weight
+  model.action_dit.layers.16.post_attention_layernorm.dense.weight
+  model.action_dit.layers.17.self_attn.q_proj.weight
+  model.action_dit.layers.17.self_attn.k_proj.weight
+  model.action_dit.layers.17.self_attn.v_proj.weight
+  model.action_dit.layers.17.self_attn.o_proj.weight
+  model.action_dit.layers.17.mlp.gate_proj.weight
+  model.action_dit.layers.17.mlp.up_proj.weight
+  model.action_dit.layers.17.mlp.down_proj.weight
+  model.action_dit.layers.17.input_layernorm.dense.weight
+  model.action_dit.layers.17.post_attention_layernorm.dense.weight
+  model.action_dit.norm.dense.weight
+  ## model.action_in_proj.weight
+ ##  model.action_out_proj.weight
+  ## model.time_mlp_in.weight
+  ## model.time_mlp_out.weight
+  ## model.action_dit.layers.0.input_layernorm.dense.bias
+  model.action_dit.layers.0.post_attention_layernorm.dense.bias
+  model.action_dit.layers.1.input_layernorm.dense.bias
+  model.action_dit.layers.1.post_attention_layernorm.dense.bias
+  model.action_dit.layers.2.input_layernorm.dense.bias
+  model.action_dit.layers.2.post_attention_layernorm.dense.bias
+  model.action_dit.layers.3.input_layernorm.dense.bias
+  model.action_dit.layers.3.post_attention_layernorm.dense.bias
+  model.action_dit.layers.4.input_layernorm.dense.bias
+  model.action_dit.layers.4.post_attention_layernorm.dense.bias
+  model.action_dit.layers.5.input_layernorm.dense.bias
+  model.action_dit.layers.5.post_attention_layernorm.dense.bias
+  model.action_dit.layers.6.input_layernorm.dense.bias
+  model.action_dit.layers.6.post_attention_layernorm.dense.bias
+  model.action_dit.layers.7.input_layernorm.dense.bias
+  model.action_dit.layers.7.post_attention_layernorm.dense.bias
+  model.action_dit.layers.8.input_layernorm.dense.bias
+  model.action_dit.layers.8.post_attention_layernorm.dense.bias
+  model.action_dit.layers.9.input_layernorm.dense.bias
+  model.action_dit.layers.9.post_attention_layernorm.dense.bias
+  model.action_dit.layers.10.input_layernorm.dense.bias
+  model.action_dit.layers.10.post_attention_layernorm.dense.bias
+  model.action_dit.layers.11.input_layernorm.dense.bias
+  model.action_dit.layers.11.post_attention_layernorm.dense.bias
+  model.action_dit.layers.12.input_layernorm.dense.bias
+  model.action_dit.layers.12.post_attention_layernorm.dense.bias
+  model.action_dit.layers.13.input_layernorm.dense.bias
+  model.action_dit.layers.13.post_attention_layernorm.dense.bias
+  model.action_dit.layers.14.input_layernorm.dense.bias
+  model.action_dit.layers.14.post_attention_layernorm.dense.bias
+  model.action_dit.layers.15.input_layernorm.dense.bias
+  model.action_dit.layers.15.post_attention_layernorm.dense.bias
+  model.action_dit.layers.16.input_layernorm.dense.bias
+  model.action_dit.layers.16.post_attention_layernorm.dense.bias
+  model.action_dit.layers.17.input_layernorm.dense.bias
+  model.action_dit.layers.17.post_attention_layernorm.dense.bias
+  model.action_dit.norm.dense.bias
+  ## model.action_in_proj.bias
+  ## model.action_out_proj.bias
+  ## model.time_mlp_in.bias
+  ## model.time_mlp_out.bias
 
 
 
