@@ -571,7 +571,27 @@ class Unified_UniLIP_InternVL_MetaModel:
                 for p in self.multi_modal_projector.parameters(): p.requires_grad = True
 
         # 2. LLM Backbone
-        if not model_args.fix_llm:
+        if getattr(model_args, "train_shared_llm_tail_only", False):
+            for p in self.language_model.parameters():
+                p.requires_grad = False
+
+            total_layers = len(self.language_model.layers)
+            tail_num_layers = min(
+                max(int(getattr(model_args, "shared_llm_tail_num_layers", 2)), 0),
+                total_layers,
+            )
+            start_layer_idx = total_layers - tail_num_layers
+            for layer_idx in range(start_layer_idx, total_layers):
+                for p in self.language_model.layers[layer_idx].parameters():
+                    p.requires_grad = True
+
+            logging.info(
+                "train_shared_llm_tail_only=True: freeze language_model backbone except last %d layer(s) [%d:%d)",
+                tail_num_layers,
+                start_layer_idx,
+                total_layers,
+            )
+        elif not model_args.fix_llm:
             if self.is_lora:
                 # LoRA模式：LLM主体冻结，由PEFT接管
                 for p in self.language_model.parameters(): p.requires_grad = False
@@ -1554,7 +1574,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 2. LLM Backbone (Qwen2Model)
         # =========================================================
         # 结构: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
-        if not model_args.fix_llm:
+        if not model_args.fix_llm and not getattr(model_args, "train_shared_llm_tail_only", False):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
