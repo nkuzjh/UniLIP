@@ -809,6 +809,8 @@ def main():
 
     # 6. Load Weights
     ckpt_path = csgo_config['ckpt_path']
+    if ckpt_path is None or not os.path.exists(ckpt_path):
+        raise ValueError(f"Checkpoint path {ckpt_path} does not exist. Please provide a valid checkpoint path in the config.")
     print(f"📥 Loading Checkpoint: {ckpt_path}")
     if ckpt_path.endswith(".safetensors"):
         state_dict = safe_load_file(ckpt_path, device="cpu")

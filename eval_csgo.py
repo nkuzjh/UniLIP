@@ -379,6 +379,8 @@ def main():
 
 
     ckpt_path = csgo_config['ckpt_path']
+    if ckpt_path is None or not os.path.exists(ckpt_path):
+        raise ValueError(f"Checkpoint path {ckpt_path} does not exist. Please provide a valid checkpoint path in the config.")
     print(f"🚀 Loading model from {csgo_config['ckpt_path']}...")
     load_custom_checkpoint(model, ckpt_path)
 
