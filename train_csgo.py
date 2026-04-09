@@ -173,7 +173,8 @@ class ModelArguments:
     fix_vit: bool = field(default=True)
     fix_llm: bool = field(default=True)
     train_mm_projector_only: bool = field(default=False)
-    train_mm_projector_only: bool = field(default=False)
+    train_shared_llm_tail_only: bool = field(default=False)
+    shared_llm_tail_num_layers: int = field(default=2)
     connect_layer: int=field(default=6)
     mllm_path: Optional[str] = field(default="")
     mllm_hf_path: Optional[str] = field(default="")
@@ -230,6 +231,7 @@ class TrainingArguments(transformers.TrainingArguments):
     lora_bias: str = "none"
 
     mm_projector_lr: Optional[float] = None
+    shared_llm_tail_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
     pretrain_path : str = "none"
@@ -1886,6 +1888,16 @@ def train(attn_implementation=None):
         getattr(model_args, "train_mm_projector_only", False),
     )
     model.config.train_mm_projector_only = model_args.train_mm_projector_only
+    model_args.train_shared_llm_tail_only = csgo_config.get(
+        "train_shared_llm_tail_only",
+        getattr(model_args, "train_shared_llm_tail_only", False),
+    )
+    model.config.train_shared_llm_tail_only = model_args.train_shared_llm_tail_only
+    model_args.shared_llm_tail_num_layers = int(csgo_config.get(
+        "shared_llm_tail_num_layers",
+        getattr(model_args, "shared_llm_tail_num_layers", 2),
+    ))
+    model.config.shared_llm_tail_num_layers = model_args.shared_llm_tail_num_layers
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
@@ -1894,9 +1906,9 @@ def train(attn_implementation=None):
         "mm_projector_lr",
         training_args.mm_projector_lr,
     )
-    model.config.mm_projector_lr = training_args.mm_projector_lr = csgo_config.get(
-        "mm_projector_lr",
-        training_args.mm_projector_lr,
+    model.config.shared_llm_tail_lr = training_args.shared_llm_tail_lr = csgo_config.get(
+        "shared_llm_tail_lr",
+        training_args.shared_llm_tail_lr,
     )
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
