@@ -242,6 +242,7 @@ def load_custom_checkpoint(model, ckpt_path):
         else:
             state_dict = torch.load(ckpt_path, map_location="cpu")
 
+        state_dict = smart_matching_state_dict_keys(state_dict, model)
         msg = model.load_state_dict(state_dict, strict=False)
         print(f"   -> Direct load msg: {msg}")
         return # 这是一个完整权重文件，加载完直接返回
@@ -305,6 +306,25 @@ class InferenceArgs:
         self.fix_vit = True
         self.fix_llm = True
 
+def smart_matching_state_dict_keys(state_dict, model):
+    new_state_dict = {}
+    for k, v in state_dict.items():
+        if k.startswith("language_model.lm_head."):
+            new_k = k[len("language_model."):]
+        elif k.startswith("language_model.model."):
+            new_k =  "model.language_model." + k[len("language_model.model."):]
+        elif k.startswith("vision_tower."):
+            new_k = "model." + k
+        elif k.startswith("multi_modal_projector."):
+            new_k = "model." + k
+        else:
+            new_k = k
+        new_state_dict[new_k] = v
+    print(f"replace language_model.lm_head. to language_model.")
+    print(f"replace language_model.model. to model.language_model.")
+    print(f"replace vision_tower. to model.vision_tower.")
+    print(f"replace multi_modal_projector. to model.multi_modal_projector.")
+    return new_state_dict
 
 # ==========================================
 # 3. 主推理逻辑

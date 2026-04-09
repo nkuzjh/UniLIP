@@ -696,6 +696,10 @@ def smart_matching_state_dict_keys(state_dict, model):
         else:
             new_k = k
         new_state_dict[new_k] = v
+    print(f"replace language_model.lm_head. to language_model.")
+    print(f"replace language_model.model. to model.language_model.")
+    print(f"replace vision_tower. to model.vision_tower.")
+    print(f"replace multi_modal_projector. to model.multi_modal_projector.")
     return new_state_dict
 
 # ==========================================
