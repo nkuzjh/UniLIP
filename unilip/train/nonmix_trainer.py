@@ -490,6 +490,30 @@ class NonMixTrainer(Trainer):
                     if any(key in name for key in parameter_names)
                 ]
 
+            def get_shared_llm_tail_parameter_names():
+                if not getattr(opt_model.config, "train_shared_llm_tail_only", False):
+                    return []
+
+                shared_num_layers = int(getattr(opt_model.config, "shared_llm_tail_num_layers", 0) or 0)
+                if shared_num_layers <= 0:
+                    return []
+
+                base_model = getattr(opt_model, "model", None)
+                language_model = getattr(base_model, "language_model", None) if base_model is not None else None
+                if language_model is None or not hasattr(language_model, "layers"):
+                    return []
+
+                total_layers = len(language_model.layers)
+                start_layer_idx = max(0, total_layers - shared_num_layers)
+                parameter_names = []
+                for name, _ in opt_model.named_parameters():
+                    if any(
+                        f"language_model.layers.{layer_idx}." in name
+                        for layer_idx in range(start_layer_idx, total_layers)
+                    ):
+                        parameter_names.append(name)
+                return parameter_names
+
             def is_mm_projector_parameter(name):
                 return "mm_projector" in name or "multi_modal_projector" in name
 
@@ -744,6 +768,39 @@ class NonMixTrainer(Trainer):
                         ],
                         "weight_decay": 0.0,
                         "lr": self.args.action_dit_lr,
+                    },
+                ])
+
+            shared_llm_tail_parameters = get_shared_llm_tail_parameter_names()
+            if len(shared_llm_tail_parameters) > 0 and self.args.shared_llm_tail_lr is not None:
+                shared_llm_tail_param_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in shared_llm_tail_parameters and p.requires_grad
+                }
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in shared_llm_tail_param_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in shared_llm_tail_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": self.args.shared_llm_tail_lr,
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in shared_llm_tail_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": self.args.shared_llm_tail_lr,
                     },
                 ])
 
