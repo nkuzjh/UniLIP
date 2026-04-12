@@ -1791,19 +1791,19 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 **eval_csgo.py** 4000 8000 12000
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp18_gen.yaml      ```
     **benchmark_csgo.py**
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp18_gen/test_20260410_154456/gen_imgs/de_dust2 --all --batch_size 8       ``
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp18_gen/test_20260410_154456/gen_imgs/de_nuke --all --batch_size 8       ``
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp18_gen/test_20260410_154456/gen_imgs/de_ancient --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp18_gen/test_20260411_152910/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp18_gen/test_20260411_152910/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp18_gen/test_20260411_152910/gen_imgs/de_ancient --all --batch_size 8       ``
 **continuous gen** 4000 8000 12000
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp18_gen_conti.yaml      ```
     **benchmark_csgo.py**
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_dust2 --all --batch_size 8       ``
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_nuke --all --batch_size 8       ``
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_ancient --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_nuke --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_ancient --all --batch_size 8       ``
     **frames to video**
-    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_compared_videos/de_dust2 --max_duration 10        ``
-    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_nuke --gt_dir data/preprocessed_data/de_nuke/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_compared_videos/de_nuke --max_duration 10        ``
-    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_imgs/de_ancient --gt_dir data/preprocessed_data/de_ancient/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260410_154501/gen_compared_videos/de_ancient --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_compared_videos/de_dust2 --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_nuke --gt_dir data/preprocessed_data/de_nuke/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_compared_videos/de_nuke --max_duration 10        ``
+    ``    python frames_to_video.py --img_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_imgs/de_ancient --gt_dir data/preprocessed_data/de_ancient/imgs --output_dir outputs_eval/exp18_gen_conti/test_20260411_152913/gen_compared_videos/de_ancient --max_duration 10        ``
 
 ### exp18_dust2
 - exp18
