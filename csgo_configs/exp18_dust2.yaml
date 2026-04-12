@@ -30,8 +30,8 @@ pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/
 
 use_external_loc_model: False
 
-base_init_ckpt_path: "outputs/csgo_1b/exp14_loc/checkpoint-14040/model.safetensors"
-gen_init_ckpt_path: "outputs/csgo_1b/exp14_gen/checkpoint-14040/model.safetensors"
+base_init_ckpt_path: "outputs/csgo_1b/exp14_dust2_loc/checkpoint-7800/model.safetensors"
+gen_init_ckpt_path: "outputs/csgo_1b/exp14_dust2_gen/checkpoint-7800/model.safetensors"
 
 img_size: 448
 
