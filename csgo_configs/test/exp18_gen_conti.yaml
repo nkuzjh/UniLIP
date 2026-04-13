@@ -43,7 +43,7 @@ is_lora: False
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp18_initbase_exp14_loc_checkpoint-14040_initgen_exp14_gen_checkpoint-14040/checkpoint-12000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp18_initbase_exp14_loc_checkpoint-14040_initgen_exp14_gen_checkpoint-14040/checkpoint-20000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 is_conti_gen: True
