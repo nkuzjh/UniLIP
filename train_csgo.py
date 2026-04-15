@@ -1867,6 +1867,13 @@ def train(attn_implementation=None):
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.is_loc_repa_loss = csgo_config.get("is_loc_repa_loss", False)
+    model.config.alpha_loc_repa_loss = csgo_config.get("alpha_loc_repa_loss", 0.0)
+    model.config.loc_repa_teacher_ckpt_path = csgo_config.get("loc_repa_teacher_ckpt_path", None)
+    model.config.loc_repa_feature_type = csgo_config.get("loc_repa_feature_type", "action_prefix_tokens")
+    model.config.loc_repa_loss_type = csgo_config.get("loc_repa_loss_type", "cosine")
+    model.config.loc_repa_use_und_tokens_only = csgo_config.get("loc_repa_use_und_tokens_only", True)
+    model.config.loc_repa_timestep_weight = csgo_config.get("loc_repa_timestep_weight", "linear_1m_sigma")
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
     model.config.alpha_loc_schedule_steps = csgo_config.get("alpha_loc_schedule_steps", None)
     model.config.alpha_loc_schedule_values = csgo_config.get("alpha_loc_schedule_values", None)
@@ -2083,6 +2090,25 @@ def train(attn_implementation=None):
             loc_init_ckpt_path=loc_init_ckpt_path,
         )
         logging.info("Updated output_dir for selective init experiment: %s", training_args.output_dir)
+
+    if getattr(model.config, "is_loc_repa_loss", False):
+        loc_repa_teacher_ckpt_path = getattr(model.config, "loc_repa_teacher_ckpt_path", None)
+        if not loc_repa_teacher_ckpt_path:
+            raise ValueError("is_loc_repa_loss=True requires loc_repa_teacher_ckpt_path.")
+        if not hasattr(model, "initialize_loc_repa_teacher_from_state_dict"):
+            raise RuntimeError("Current model does not support loc_repa teacher attachment.")
+
+        teacher_state_dict = load_checkpoint_state_dict(loc_repa_teacher_ckpt_path)
+        teacher_state_dict = smart_matching_state_dict_keys(teacher_state_dict, model)
+        model.initialize_loc_repa_teacher_from_state_dict(teacher_state_dict)
+        logging.info(
+            "Loc-REPA teacher attached (frozen eval): ckpt=%s, feature_type=%s, loss_type=%s, train_mm_projector_only=%s, train_shared_llm_tail_only=%s",
+            loc_repa_teacher_ckpt_path,
+            getattr(model.config, "loc_repa_feature_type", "action_prefix_tokens"),
+            getattr(model.config, "loc_repa_loss_type", "cosine"),
+            getattr(model_args, "train_mm_projector_only", False),
+            getattr(model_args, "train_shared_llm_tail_only", False),
+        )
 
 
     # def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:

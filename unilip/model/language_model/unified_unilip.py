@@ -1700,6 +1700,349 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     def get_external_localization_model(self):
         return self.__dict__.get("_external_localization_model", None)
 
+    def set_loc_repa_teacher(self, teacher_bundle: Dict[str, nn.Module]) -> None:
+        self.__dict__["_loc_repa_teacher"] = teacher_bundle
+
+    def get_loc_repa_teacher(self):
+        return self.__dict__.get("_loc_repa_teacher", None)
+
+    def initialize_loc_repa_teacher_from_state_dict(self, teacher_state_dict: Dict[str, torch.Tensor]) -> None:
+        if not getattr(self.config, "use_pi05_action_dit", False):
+            raise ValueError("loc_repa teacher currently only supports use_pi05_action_dit=True.")
+        if not getattr(self.config, "is_action_dit_projector", False):
+            raise ValueError("loc_repa teacher currently requires is_action_dit_projector=True.")
+        if not hasattr(self.model, "action_dit_connector"):
+            raise RuntimeError("Current model has no action_dit_connector; cannot initialize loc_repa teacher.")
+
+        teacher_bundle = {
+            "vision_tower": copy.deepcopy(self.model.vision_tower),
+            "multi_modal_projector": copy.deepcopy(self.model.multi_modal_projector),
+            "language_model": copy.deepcopy(self.model.language_model),
+            "action_dit_connector": copy.deepcopy(self.model.action_dit_connector),
+            "action_dit_norm": copy.deepcopy(self.model.action_dit_norm),
+            "action_dit_projector": copy.deepcopy(self.model.action_dit_projector),
+        }
+
+        teacher_modules = [
+            ("vision_tower", teacher_bundle["vision_tower"]),
+            ("multi_modal_projector", teacher_bundle["multi_modal_projector"]),
+            ("language_model", teacher_bundle["language_model"]),
+            ("action_dit_connector", teacher_bundle["action_dit_connector"]),
+            ("action_dit_norm", teacher_bundle["action_dit_norm"]),
+            ("action_dit_projector", teacher_bundle["action_dit_projector"]),
+        ]
+
+        for prefix, module in teacher_modules:
+            state_to_load = {}
+            full_prefix = f"model.{prefix}."
+            for key, value in teacher_state_dict.items():
+                if key == f"model.{prefix}":
+                    continue
+                if key.startswith(full_prefix):
+                    state_to_load[key[len(full_prefix):]] = value
+
+            if len(state_to_load) == 0:
+                raise RuntimeError(f"Failed to find any teacher weights for {prefix} in loc_repa teacher checkpoint.")
+
+            msg = module.load_state_dict(state_to_load, strict=False)
+            logging.info("Loaded loc_repa teacher %s: %s", prefix, msg)
+            ref_module = getattr(self.model, prefix)
+            try:
+                ref_param = next(ref_module.parameters())
+                module.to(device=ref_param.device, dtype=ref_param.dtype)
+            except StopIteration:
+                module.to(device=self.device, dtype=self.dtype)
+            module.eval()
+            module.requires_grad_(False)
+
+        self.set_loc_repa_teacher(teacher_bundle)
+
+    def _decode_pred_pixels_input_from_flow(
+        self,
+        sigmas: torch.Tensor,
+        noisy_latents: torch.Tensor,
+        noise_pred: torch.Tensor,
+        und_image_map: torch.Tensor,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        pred_latents_x0 = noisy_latents - sigmas * noise_pred
+        pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
+
+        with torch.enable_grad():
+            mini_batch_size = 64
+            pred_pixels_list = []
+            for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
+                batch_latents = pred_latents_scaled[i : i + mini_batch_size]
+                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+                pred_pixels_list.append(batch_pixels)
+            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+
+        pred_pixels_norm = (pred_pixels + 1.0) / 2.0
+        target_hw = und_image_map.shape[-2:]
+        if pred_pixels_norm.shape[-2:] != target_hw:
+            pred_pixels_norm = F.interpolate(
+                pred_pixels_norm,
+                size=target_hw,
+                mode="bilinear",
+                align_corners=False,
+            )
+        pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
+        return pred_pixels_input, pred_pixels_norm
+
+    def _pixel_shuffle(self, x, scale_factor=0.5):
+        n, w, h, c = x.size()
+        x = x.view(n, w, int(h * scale_factor), int(c / scale_factor))
+        x = x.permute(0, 2, 1, 3).contiguous()
+        x = x.view(
+            n,
+            int(h * scale_factor),
+            int(w * scale_factor),
+            int(c / (scale_factor * scale_factor)),
+        )
+        x = x.permute(0, 2, 1, 3).contiguous()
+        return x
+
+    def _extract_teacher_image_embeds(self, teacher_bundle, pixel_values):
+        if pixel_values is None:
+            return None
+        vision_tower = teacher_bundle["vision_tower"]
+        multi_modal_projector = teacher_bundle["multi_modal_projector"]
+        vision_dtype = vision_tower.embeddings.patch_embedding.weight.dtype
+        vision_feature_layer = getattr(self.config, "vision_feature_layer", -1)
+        if vision_feature_layer == -1:
+            vit_embeds = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=False,
+                return_dict=True,
+            ).last_hidden_state
+        else:
+            vit_embeds = vision_tower(
+                pixel_values.to(dtype=vision_dtype),
+                output_hidden_states=True,
+                return_dict=True,
+            ).hidden_states[vision_feature_layer]
+        vit_embeds = vit_embeds[:, 1:, :]
+        h = w = int(vit_embeds.shape[1] ** 0.5)
+        vit_embeds = vit_embeds.reshape(vit_embeds.shape[0], h, w, -1)
+        vit_embeds = self._pixel_shuffle(vit_embeds, scale_factor=0.5)
+        vit_embeds = vit_embeds.reshape(vit_embeds.shape[0], -1, vit_embeds.shape[-1])
+        vit_embeds = multi_modal_projector(vit_embeds)
+        return vit_embeds
+
+    def _extract_loc_repa_prefix_features(
+        self,
+        fps_image: torch.Tensor,
+        map_image: torch.Tensor,
+        loc_input_ids: torch.Tensor,
+        loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        task_id: torch.Tensor,
+        use_teacher: bool = False,
+    ) -> torch.Tensor:
+        if not getattr(self.config, "use_pi05_action_dit", False):
+            raise ValueError("loc_repa feature extraction currently only supports use_pi05_action_dit=True.")
+        if not getattr(self.config, "is_action_dit_projector", False):
+            raise ValueError("loc_repa feature extraction currently requires is_action_dit_projector=True.")
+        if not getattr(self.config, "loc_repa_use_und_tokens_only", True):
+            raise ValueError("loc_repa currently only supports loc_repa_use_und_tokens_only=True.")
+
+        if use_teacher:
+            teacher_bundle = self.get_loc_repa_teacher()
+            if teacher_bundle is None:
+                raise RuntimeError("loc_repa teacher is not initialized before teacher feature extraction.")
+
+            with torch.no_grad():
+                teacher_language_model = teacher_bundle["language_model"]
+                und_image_embeds = self._extract_teacher_image_embeds(teacher_bundle, fps_image)
+                aux_image_embeds = self._extract_teacher_image_embeds(teacher_bundle, map_image)
+
+                und_image_idx, aux_image_idx = split_image_tokens(loc_input_ids, IMAGE_TOKEN_IDX)
+                text_embeds = teacher_language_model.embed_tokens(loc_input_ids)
+                text_embeds = text_embeds.clone()
+                if und_image_embeds is not None and und_image_idx.any():
+                    text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).flatten(0, 1)
+                if aux_image_embeds is not None and aux_image_idx.any():
+                    text_embeds[aux_image_idx] = aux_image_embeds.to(text_embeds.device).flatten(0, 1)
+
+                teacher_attention_mask = attention_mask
+                teacher_position_ids = torch.cumsum(teacher_attention_mask, dim=1) - 1
+                teacher_position_ids[teacher_position_ids < 0] = 0
+
+                outputs = teacher_language_model(
+                    attention_mask=teacher_attention_mask,
+                    position_ids=teacher_position_ids,
+                    inputs_embeds=text_embeds,
+                    output_hidden_states=True,
+                    return_dict=True,
+                    use_cache=False,
+                )
+                hidden_states = outputs.hidden_states[-1]
+
+                if und_image_embeds is not None and und_image_idx.any():
+                    hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+                if aux_image_embeds is not None and aux_image_idx.any():
+                    hidden_states[aux_image_idx] = aux_image_embeds.to(hidden_states.device).flatten(0, 1)
+
+                hidden_states = teacher_bundle["action_dit_connector"](hidden_states)
+                hidden_states = teacher_bundle["action_dit_norm"](hidden_states)
+                hidden_states = teacher_bundle["action_dit_projector"](hidden_states)
+
+                token_counts = und_image_idx.sum(dim=1)
+                if not torch.all(token_counts == token_counts[0]):
+                    raise RuntimeError(f"Inconsistent und token counts for loc_repa teacher feature extraction: {token_counts.tolist()}")
+                num_tokens = int(token_counts[0].item())
+                batch_size = hidden_states.shape[0]
+                hidden_dim = hidden_states.shape[-1]
+                prefix_tokens = hidden_states[und_image_idx].reshape(batch_size, num_tokens, hidden_dim)
+                return prefix_tokens
+
+        combined_und_images = torch.cat([fps_image, map_image], dim=0)
+        loc_task_id = torch.zeros_like(task_id)
+
+        student_modules = [
+            self.model.action_dit_connector,
+            self.model.action_dit_norm,
+            self.model.action_dit_projector,
+        ]
+        student_states = [
+            (
+                module,
+                module.training,
+                [param.requires_grad for param in module.parameters()],
+            )
+            for module in student_modules
+        ]
+        for module in student_modules:
+            module.requires_grad_(False)
+            module.eval()
+
+        try:
+            with torch.enable_grad():
+                (
+                    _,
+                    position_ids,
+                    attention_mask,
+                    _,
+                    inputs_embeds,
+                    _,
+                    _,
+                    combined_img_idx,
+                    combined_image_embeds,
+                    _,
+                ) = self.prepare_inputs_labels_for_multimodal(
+                    loc_input_ids,
+                    None,
+                    attention_mask,
+                    None,
+                    loc_labels,
+                    None,
+                    combined_und_images,
+                    None,
+                    None,
+                    None,
+                    loc_task_id,
+                )
+
+                und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...]
+                aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]
+                und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]
+                aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]
+
+                position_ids = torch.cumsum(attention_mask, dim=1) - 1
+                position_ids[position_ids < 0] = 0
+
+                outputs = self.model.language_model(
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    inputs_embeds=inputs_embeds,
+                    output_hidden_states=True,
+                    return_dict=True,
+                    use_cache=False,
+                )
+                hidden_states = outputs.hidden_states[-1]
+
+                if und_image_embeds is not None and und_img_idx is not None:
+                    hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+                if aux_image_embeds is not None and aux_img_idx is not None:
+                    hidden_states[aux_img_idx] = aux_image_embeds.to(hidden_states.device).flatten(0, 1)
+
+                hidden_states = self.get_model().action_dit_connector(hidden_states)
+                hidden_states = self.get_model().action_dit_norm(hidden_states)
+                hidden_states = self.get_model().action_dit_projector(hidden_states)
+
+                token_counts = und_img_idx.sum(dim=1)
+                if not torch.all(token_counts == token_counts[0]):
+                    raise RuntimeError(f"Inconsistent und token counts for loc_repa feature extraction: {token_counts.tolist()}")
+                num_tokens = int(token_counts[0].item())
+                batch_size = hidden_states.shape[0]
+                hidden_dim = hidden_states.shape[-1]
+                prefix_tokens = hidden_states[und_img_idx].reshape(batch_size, num_tokens, hidden_dim)
+                return prefix_tokens
+        finally:
+            for module, was_training, grad_flags in student_states:
+                for param, grad_flag in zip(module.parameters(), grad_flags):
+                    param.requires_grad_(grad_flag)
+                module.train(was_training)
+
+    def _compute_loc_repa_loss(
+        self,
+        student_feat: torch.Tensor,
+        teacher_feat: torch.Tensor,
+        sigmas: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        loss_type = getattr(self.config, "loc_repa_loss_type", "cosine")
+        if loss_type != "cosine":
+            raise ValueError(f"Unsupported loc_repa_loss_type: {loss_type}")
+
+        student_feat = F.normalize(student_feat, dim=-1)
+        teacher_feat = F.normalize(teacher_feat.detach(), dim=-1)
+        token_loss = 1.0 - (student_feat * teacher_feat).sum(dim=-1)
+        sample_loss = token_loss.mean(dim=-1)
+
+        timestep_weight_type = getattr(self.config, "loc_repa_timestep_weight", "linear_1m_sigma")
+        if timestep_weight_type == "linear_1m_sigma":
+            weight = (1.0 - sigmas).clamp(min=0).squeeze()
+        else:
+            raise ValueError(f"Unsupported loc_repa_timestep_weight: {timestep_weight_type}")
+
+        sample_loss = sample_loss * weight
+        return (sample_loss * loss_mask[:, 1]).mean().to(torch.float32)
+
+    def forward_for_loc_repa_loss(
+        self,
+        sigmas: torch.Tensor,
+        pred_pixels_input: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        gen_image: torch.Tensor,
+        task_id: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        if self.get_loc_repa_teacher() is None:
+            raise RuntimeError("loc_repa teacher is not initialized before forward.")
+
+        student_feat = self._extract_loc_repa_prefix_features(
+            fps_image=pred_pixels_input,
+            map_image=und_image_map,
+            loc_input_ids=aux_loc_input_ids,
+            loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            task_id=task_id,
+            use_teacher=False,
+        )
+        teacher_feat = self._extract_loc_repa_prefix_features(
+            fps_image=gen_image,
+            map_image=und_image_map,
+            loc_input_ids=aux_loc_input_ids,
+            loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            task_id=task_id,
+            use_teacher=True,
+        )
+        return self._compute_loc_repa_loss(student_feat, teacher_feat, sigmas, loss_mask)
+
     def _normalize_for_external_loc_model(self, image_01: torch.Tensor) -> torch.Tensor:
         target_size = int(getattr(self.config, "external_loc_input_size", 224))
         if image_01.shape[-1] != target_size or image_01.shape[-2] != target_size:
@@ -1966,13 +2309,37 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Apply Mask: Only count loss for Gen samples
                     # masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
                     masked_gen_loss = (gen_loss * genbrh_loss_mask[:, 1]).mean()
+                    masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
+                    masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     # bs=8显存占用=6884MiB
+                    pred_pixels_input = None
+                    if getattr(self.config, "is_loc_aux_loss", False) or getattr(self.config, "is_loc_repa_loss", False):
+                        pred_pixels_input, _ = self._decode_pred_pixels_input_from_flow(
+                            sigmas=sigmas,
+                            noisy_latents=noisy_latents,
+                            noise_pred=noise_pred,
+                            und_image_map=genbrh_und_image,
+                        )
+
+                    if getattr(self.config, "is_loc_repa_loss", False) and pred_pixels_input is not None:
+                        masked_loc_repa_loss = self.forward_for_loc_repa_loss(
+                            sigmas=sigmas,
+                            pred_pixels_input=pred_pixels_input,
+                            aux_loc_input_ids=genbrh_aux_loc_input_ids,
+                            aux_loc_labels=genbrh_aux_loc_labels,
+                            attention_mask=genbrh_aux_loc_attention_mask,
+                            und_image_map=genbrh_und_image,
+                            gen_image=genbrh_gen_image,
+                            task_id=torch.zeros_like(genbrh_task_id),
+                            loss_mask=genbrh_loss_mask,
+                        )
+
                     # =========================================================
                     # [NEW] Auxiliary Localization Loss (Consistency Check)
                     # =========================================================
                     # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
-                    if getattr(self.config, 'is_loc_aux_loss', False) and genbrh_actions is not None:
+                    if getattr(self.config, 'is_loc_aux_loss', False) and genbrh_actions is not None and pred_pixels_input is not None:
                         # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
                         masked_loc_aux_loss = self.forward_for_aux_loc_loss(
                             sigmas, #torch.Size([16, 1, 1, 1])
@@ -1990,14 +2357,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                             torch.zeros_like(genbrh_task_id), #torch.Size([16])
                             return_dict, #True
                             genbrh_actions, #torch.Size([16, 1, 5])
-                            genbrh_loss_mask #torch.Size([16, 2])
+                            genbrh_loss_mask, #torch.Size([16, 2])
+                            pred_pixels_input=pred_pixels_input,
                         )
-                    else:
-                        masked_loc_aux_loss = torch.nn.MSELoss()(genbrh_hidden_states, torch.clone(genbrh_hidden_states.detach())).to(torch.float32)
 
             else:
                 masked_gen_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_loc_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
@@ -2262,8 +2629,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
+        alpha_loc_repa_loss = torch.tensor(getattr(self.model.config, "alpha_loc_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
-        total_loss = masked_gen_loss + masked_loc_loss * alpha_loc_loss + masked_loc_aux_loss * alpha_loc_aux_loss
+        total_loss = (
+            masked_gen_loss
+            + masked_loc_loss * alpha_loc_loss
+            + masked_loc_repa_loss * alpha_loc_repa_loss
+            + masked_loc_aux_loss * alpha_loc_aux_loss
+        )
         # logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
         # 224 + lora=64
         # bs=8显存占用=13316MiB
@@ -2302,6 +2675,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+                "loc_repa_loss": masked_loc_repa_loss.detach().cpu().numpy().item(),
+                "alpha_loc_repa": alpha_loc_repa_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_repa_loss": (masked_loc_repa_loss * alpha_loc_repa_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_repa_loss_over_gen_loss": (
+                    (masked_loc_repa_loss * alpha_loc_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
                     if masked_gen_loss.item() > 0 else None
                 ),
             }
@@ -2344,7 +2724,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         task_id,
         return_dict,
         actions,
-        loss_mask
+        loss_mask,
+        pred_pixels_input: Optional[torch.Tensor] = None,
     ):
         # vt_gc_enabled = getattr(self.model.vision_tower, "gradient_checkpointing", False)
         # lm_gc_enabled = getattr(self.model.language_model, "gradient_checkpointing", False)
@@ -2357,56 +2738,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # if action_gc_enabled:
         #     self.model.action_dit.gradient_checkpointing = False
 
-        # 1. Estimate x_0 (Clean Latent) from current prediction
-        # Flow Matching (Euler): x_t = (1-t)x_0 + t*x_1; v = x_1 - x_0
-        # => x_0 = x_t - t * v (approx)
-        # 注意: 这里的 sigmas 对应 t。target 对应 v (如果 noise_scheduler 是 rectified flow)
-        # 如果是 standard diffusion, 公式不同。这里假设是 Rectified Flow (Sana Default)
-        t_broadcast = sigmas
-        pred_latents_x0 = noisy_latents - t_broadcast * noise_pred # \hat{x}_0 (Latent Space)
-
-        # 2. VAE Decode (Latent -> Pixel)
-        # [Gradient Flow] 梯度需要流经 pred_latents_x0 -> noise_pred -> DiT
-        # 因此这里不能用 no_grad
-        # scale back: UniLIP Factor
-        pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
-        # VAE Decode is heavy! Use with caution.
-        # with torch.no_grad():
-        with torch.enable_grad():
-            # pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled) # [BS, 3, H, W] (-1~1)
-
-            # [修改] 使用 Mini-Batch 循环解码，避免 Tensor 过大
-            mini_batch_size = 96#64  # 安全值，根据显存调整 (1, 2, 4, 8)
-            pred_pixels_list = []
-            # 显式循环解码
-            for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
-                batch_latents = pred_latents_scaled[i : i + mini_batch_size]
-
-                # 使用 no_grad (如果你不需要 VAE 的梯度，通常 VAE 是冻结的)
-                # 注意：如果 pred_latents_scaled 需要梯度回传到 DiT，这里不能用 no_grad！
-                # 根据你的代码逻辑，你需要梯度流向 DiT，所以必须保留梯度计算。
-
-                # 这里的 checkpointing 非常关键！
-                # 如果 VAE 没有开启 GC，这一步会吃掉巨大显存。
-                # 但针对 Int32 Overflow，我们主要是为了减少单次 Conv2d 的输入规模。
-                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
-                pred_pixels_list.append(batch_pixels)
-            # 重新拼接
-            pred_pixels = torch.cat(pred_pixels_list, dim=0)
-
-        # bs=8显存占用=13314MiB
-        # 3. Process for Vision Encoder (SigLIP)
-        # SigLIP expects [0, 1] and specific normalization
-        # pred_pixels is [-1, 1], convert to [0, 1]
-        pred_pixels_norm = (pred_pixels + 1.0) / 2.0
-        # Resize to Vision Encoder size (e.g. 448) if needed
-        # VAE output is usually 512 or 1024. SigLIP is 448.
-        if pred_pixels_norm.shape[-1] != gen_image.size(0):
-            pred_pixels_norm = F.interpolate(pred_pixels_norm, size=(und_image_map.shape[-2],und_image_map.shape[-1]), mode='bilinear', align_corners=False)
-        # SigLIP Normalization (Mean/Std) - Approximate or use processor values
-        # mean = [0.5, 0.5, 0.5], std = [0.5, 0.5, 0.5] for simplicity/speed in training loop
-        # Or use self.image_processor logic
-        pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
+        if pred_pixels_input is None:
+            pred_pixels_input, pred_pixels_norm = self._decode_pred_pixels_input_from_flow(
+                sigmas=sigmas,
+                noisy_latents=noisy_latents,
+                noise_pred=noise_pred,
+                und_image_map=und_image_map,
+            )
+        else:
+            pred_pixels_norm = ((pred_pixels_input * 0.5) + 0.5).clamp(0.0, 1.0)
 
         # 4. Forward Localization Branch with Generated Image
         # [Important] Freeze Loc Branch weights to avoid updating them with noisy gradients
