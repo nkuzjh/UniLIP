@@ -29,9 +29,9 @@ img_size: 448
 
 ### data
 data_dir: "data/preprocessed_data"
-train_maps: ['de_dust2','de_nuke', 'de_ancient']
-val_maps: ['de_dust2','de_nuke', 'de_ancient']
-test_maps: ['de_dust2','de_nuke', 'de_ancient']
+train_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']
+val_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']
+test_maps: ['de_dust2'] #,'de_nuke', 'de_ancient']
 
 
 ### lora
@@ -39,7 +39,7 @@ is_lora: False
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp14_1_gen/checkpoint-28000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp14_1_dust2_gen/checkpoint-15600/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 is_conti_gen: True

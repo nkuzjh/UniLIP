@@ -7,12 +7,12 @@ debug: False
 ### model
 is_multi_task: True
 is_action_dit_dense_timestep: True
-alpha_loc_loss: 1  # 当 is_multi_task_balanced==False and task_mix_ratio=0.0 时失效
+alpha_loc_loss: 1  # 当is_multi_task_balanced==False时失效
 
-is_loc_aux_loss: False  # 当 is_multi_task_balanced==False and task_mix_ratio=1.0 时失效
+is_loc_aux_loss: False  # 当is_multi_task_balanced==False时失效
 
 is_multi_task_balanced: False
-task_mix_ratio: 0.0 # 当is_multi_task_balanced==True时失效
+task_mix_ratio: 1.0 # 当is_multi_task_balanced==True时失效
 
 is_action_dit_projector: True
 action_dit_projector_lr: 0.0005
@@ -29,9 +29,9 @@ img_size: 448
 
 ### data
 data_dir: "data/preprocessed_data"
-train_maps: ['de_dust2','de_nuke', 'de_ancient']
-val_maps: ['de_dust2','de_nuke', 'de_ancient']
-test_maps: ['de_dust2','de_nuke', 'de_ancient']
+train_maps: ['de_dust2'] #, 'de_nuke', 'de_ancient']
+val_maps: ['de_dust2'] #, 'de_nuke', 'de_ancient']
+test_maps: ['de_dust2'] #, 'de_nuke', 'de_ancient']
 
 
 ### lora
@@ -39,10 +39,9 @@ is_lora: False
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp14_1_gen/checkpoint-28000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp14_dust2_loc/checkpoint-7800/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
-is_conti_gen: True
 
 # 模仿训练时的 model_args
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
