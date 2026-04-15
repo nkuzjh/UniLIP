@@ -1,0 +1,50 @@
+###################
+### config.yaml
+###################
+debug: False
+
+
+### model
+is_multi_task: True
+is_multi_task_balanced: True
+alpha_loc_loss: 2
+alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
+alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
+
+# Exp17_5: exp17_2_dust2 + independent loc-aware REPA loss
+is_loc_aux_loss: True
+alpha_loc_aux_loss: 0.0
+alpha_loc_aux_schedule_steps: [0, 3000, 4000, 5000, 10000]
+alpha_loc_aux_schedule_values: [0.0, 1.0, 2.0, 5.0, 10.0]
+
+is_loc_repa_loss: True
+alpha_loc_repa_loss: 0.1
+loc_repa_teacher_ckpt_path: "outputs/csgo_1b/exp14_dust2_loc/checkpoint-4000/model.safetensors"
+loc_repa_feature_type: "action_prefix_tokens"
+loc_repa_loss_type: "cosine"
+loc_repa_use_und_tokens_only: True
+loc_repa_timestep_weight: "linear_1m_sigma"
+
+is_action_dit_dense_timestep: True
+is_action_dit_projector: True
+action_dit_projector_lr: 0.0005
+action_dit_lr: 0.0001
+is_aciton_dit_vae_small_init: False
+
+use_pi05_action_dit: True
+pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+
+use_external_loc_model: False
+
+img_size: 448
+
+
+### data
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2']
+val_maps: ['de_dust2']
+test_maps: ['de_dust2']
+
+
+### lora
+is_lora: False
