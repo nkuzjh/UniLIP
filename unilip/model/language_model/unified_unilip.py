@@ -1706,6 +1706,42 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     def get_loc_repa_teacher(self):
         return self.__dict__.get("_loc_repa_teacher", None)
 
+    def _ensure_loc_repa_teacher_on_device(self, device: torch.device) -> None:
+        teacher_bundle = self.get_loc_repa_teacher()
+        if teacher_bundle is None:
+            return
+
+        module_names = [
+            "vision_tower",
+            "multi_modal_projector",
+            "language_model",
+            "action_dit_connector",
+            "action_dit_norm",
+            "action_dit_projector",
+        ]
+        for module_name in module_names:
+            teacher_module = teacher_bundle[module_name]
+            student_module = getattr(self.model, module_name)
+            try:
+                ref_param = next(student_module.parameters())
+                target_dtype = ref_param.dtype
+            except StopIteration:
+                target_dtype = None
+
+            try:
+                teacher_param = next(teacher_module.parameters())
+                teacher_device = teacher_param.device
+                teacher_dtype = teacher_param.dtype
+            except StopIteration:
+                teacher_device = device
+                teacher_dtype = target_dtype
+
+            if teacher_device != device or (target_dtype is not None and teacher_dtype != target_dtype):
+                if target_dtype is not None:
+                    teacher_module.to(device=device, dtype=target_dtype)
+                else:
+                    teacher_module.to(device=device)
+
     def initialize_loc_repa_teacher_from_state_dict(self, teacher_state_dict: Dict[str, torch.Tensor]) -> None:
         if not getattr(self.config, "use_pi05_action_dit", False):
             raise ValueError("loc_repa teacher currently only supports use_pi05_action_dit=True.")
@@ -1849,6 +1885,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             teacher_bundle = self.get_loc_repa_teacher()
             if teacher_bundle is None:
                 raise RuntimeError("loc_repa teacher is not initialized before teacher feature extraction.")
+            self._ensure_loc_repa_teacher_on_device(fps_image.device)
 
             with torch.no_grad():
                 teacher_language_model = teacher_bundle["language_model"]
