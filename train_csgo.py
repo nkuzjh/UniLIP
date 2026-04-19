@@ -175,6 +175,8 @@ class ModelArguments:
     train_mm_projector_only: bool = field(default=False)
     train_shared_llm_tail_only: bool = field(default=False)
     shared_llm_tail_num_layers: int = field(default=2)
+    shared_llm_tail_lora_enabled: bool = field(default=False)
+    shared_llm_tail_lora_mode: str = field(default="lora_only")
     connect_layer: int=field(default=6)
     mllm_path: Optional[str] = field(default="")
     mllm_hf_path: Optional[str] = field(default="")
@@ -232,6 +234,10 @@ class TrainingArguments(transformers.TrainingArguments):
 
     mm_projector_lr: Optional[float] = None
     shared_llm_tail_lr: Optional[float] = None
+    shared_llm_tail_lora_r: int = 16
+    shared_llm_tail_lora_alpha: int = 32
+    shared_llm_tail_lora_dropout: float = 0.05
+    shared_llm_tail_lora_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
     pretrain_path : str = "none"
@@ -1905,6 +1911,16 @@ def train(attn_implementation=None):
         getattr(model_args, "shared_llm_tail_num_layers", 2),
     ))
     model.config.shared_llm_tail_num_layers = model_args.shared_llm_tail_num_layers
+    model_args.shared_llm_tail_lora_enabled = csgo_config.get(
+        "shared_llm_tail_lora_enabled",
+        getattr(model_args, "shared_llm_tail_lora_enabled", False),
+    )
+    model.config.shared_llm_tail_lora_enabled = model_args.shared_llm_tail_lora_enabled
+    model_args.shared_llm_tail_lora_mode = csgo_config.get(
+        "shared_llm_tail_lora_mode",
+        getattr(model_args, "shared_llm_tail_lora_mode", "lora_only"),
+    )
+    model.config.shared_llm_tail_lora_mode = model_args.shared_llm_tail_lora_mode
 
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
@@ -1917,6 +1933,34 @@ def train(attn_implementation=None):
         "shared_llm_tail_lr",
         training_args.shared_llm_tail_lr,
     )
+    model.config.shared_llm_tail_lora_r = training_args.shared_llm_tail_lora_r = int(csgo_config.get(
+        "shared_llm_tail_lora_r",
+        training_args.shared_llm_tail_lora_r,
+    ))
+    model.config.shared_llm_tail_lora_alpha = training_args.shared_llm_tail_lora_alpha = int(csgo_config.get(
+        "shared_llm_tail_lora_alpha",
+        training_args.shared_llm_tail_lora_alpha,
+    ))
+    model.config.shared_llm_tail_lora_dropout = training_args.shared_llm_tail_lora_dropout = float(csgo_config.get(
+        "shared_llm_tail_lora_dropout",
+        training_args.shared_llm_tail_lora_dropout,
+    ))
+    model.config.shared_llm_tail_lora_lr = training_args.shared_llm_tail_lora_lr = csgo_config.get(
+        "shared_llm_tail_lora_lr",
+        training_args.shared_llm_tail_lora_lr,
+    )
+
+    if model_args.shared_llm_tail_lora_enabled:
+        if not model_args.train_shared_llm_tail_only:
+            raise ValueError("shared_llm_tail_lora_enabled=True requires train_shared_llm_tail_only=True.")
+        if model_args.shared_llm_tail_num_layers <= 6:
+            raise ValueError("shared_llm_tail_lora_enabled=True requires shared_llm_tail_num_layers > 6.")
+        if model_args.shared_llm_tail_lora_mode != "lora_only":
+            raise ValueError("This version only supports shared_llm_tail_lora_mode='lora_only'.")
+        if training_args.shared_llm_tail_lora_lr is None:
+            raise ValueError("shared_llm_tail_lora_enabled=True requires shared_llm_tail_lora_lr.")
+        if not model_args.fix_llm:
+            raise ValueError("shared_llm_tail_lora_enabled=True is incompatible with fix_llm=False (whole-LLM finetuning/LoRA).")
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
     model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)

@@ -70,6 +70,7 @@
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
 | `exp17_6_dust2` | loc-aware REPA + shared tail | `exp17_5_dust2 + train_shared_llm_tail_only` |
 | `exp17_6_1_dust2` | loc-aware REPA + deeper shared tail | `exp17_6_dust2` 的 6-layer shared tail full finetune 对照 |
+| `exp17_6_2_dust2` | loc-aware REPA + 12-layer shared tail lora_only | 资源受限下的更深 shared tail 替代方案 |
 | `exp18_dust2` | warm-start 对照 | 用于比较 warm-start joint 与 scratch joint |
 
 ## Implemented Loc-aware REPA Line
@@ -97,6 +98,7 @@
 | `exp17_5_dust2` | 在 `exp17_2_dust2` 上加入独立 `loc-aware REPA` | `is_loc_repa_loss=True` |
 | `exp17_6_dust2` | 在 `exp17_5_dust2` 上再打开 shared LLM tail | `train_shared_llm_tail_only=True` |
 | `exp17_6_1_dust2` | 在 `exp17_6_dust2` 上把 shared LLM tail 从 2 层扩展到 6 层 | `shared_llm_tail_num_layers=6` |
+| `exp17_6_2_dust2` | 在 `exp17_6_dust2` 上启用 12-layer shared tail 的 lora_only 方案 | `shared_llm_tail_num_layers=12`; `shared_llm_tail_lora_enabled=True`; `shared_llm_tail_lora_mode=lora_only` |
 
 ### Current notes
 
@@ -177,6 +179,7 @@ x = x / (x.std(dim=1, keepdim=True) + 1e-6)
 | `exp17_5_dust2` | `exp17_2_dust2` | `is_loc_repa_loss=True`; `alpha_loc_repa_loss=0.1`; `loc_repa_teacher_ckpt_path=...exp14_dust2_loc...`; `loc_repa_feature_type=action_prefix_tokens`; `loc_repa_loss_type=cosine`; `loc_repa_timestep_weight=linear_1m_sigma` | 加 loc-aware REPA |
 | `exp17_6_dust2` | `exp17_5_dust2` | `train_shared_llm_tail_only=True`; `shared_llm_tail_num_layers=2`; `shared_llm_tail_lr=1.0e-5` | 在 loc-aware REPA 基础上增加 shared tail |
 | `exp17_6_1_dust2` | `exp17_6_dust2` | `shared_llm_tail_num_layers=6` | 比较 6-layer shared tail full finetune 与 2-layer shared tail 的差异 |
+| `exp17_6_2_dust2` | `exp17_6_dust2` | `shared_llm_tail_num_layers=12`; `shared_llm_tail_lora_enabled=True`; `shared_llm_tail_lora_mode=lora_only`; `shared_llm_tail_lora_r=16`; `shared_llm_tail_lora_alpha=32`; `shared_llm_tail_lora_dropout=0.05`; `shared_llm_tail_lora_lr=1.0e-4` | 资源受限下验证更深 shared tail 的 LoRA-only 替代路径 |
 
 ### B. Traditional REPA line
 

@@ -514,6 +514,15 @@ class NonMixTrainer(Trainer):
                         parameter_names.append(name)
                 return parameter_names
 
+            def get_shared_llm_tail_lora_parameter_names():
+                shared_tail_parameters = set(get_shared_llm_tail_parameter_names())
+                if len(shared_tail_parameters) == 0:
+                    return []
+                return [
+                    name for name, _ in opt_model.named_parameters()
+                    if name in shared_tail_parameters and "lora_" in name
+                ]
+
             def is_mm_projector_parameter(name):
                 return "mm_projector" in name or "multi_modal_projector" in name
 
@@ -801,6 +810,39 @@ class NonMixTrainer(Trainer):
                         ],
                         "weight_decay": 0.0,
                         "lr": self.args.shared_llm_tail_lr,
+                    },
+                ])
+
+            shared_llm_tail_lora_parameters = get_shared_llm_tail_lora_parameter_names()
+            if len(shared_llm_tail_lora_parameters) > 0 and self.args.shared_llm_tail_lora_lr is not None:
+                shared_llm_tail_lora_param_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in shared_llm_tail_lora_parameters and p.requires_grad
+                }
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in shared_llm_tail_lora_param_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in shared_llm_tail_lora_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": self.args.shared_llm_tail_lora_lr,
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in shared_llm_tail_lora_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": self.args.shared_llm_tail_lora_lr,
                     },
                 ])
 

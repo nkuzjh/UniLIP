@@ -1551,8 +1551,65 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         return peft_module
 
+    def _get_shared_llm_tail_layer_indices(self):
+        total_layers = len(self.model.language_model.layers)
+        tail_num_layers = min(
+            max(int(getattr(self.config, "shared_llm_tail_num_layers", 0) or 0), 0),
+            total_layers,
+        )
+        start_layer_idx = max(0, total_layers - tail_num_layers)
+        return list(range(start_layer_idx, total_layers))
+
+    def _apply_lora_to_language_model_tail_layers(self, model_args, training_args):
+        tail_layer_indices = self._get_shared_llm_tail_layer_indices()
+        if len(tail_layer_indices) == 0:
+            logging.warning("shared_llm_tail_lora_enabled=True but tail layer range is empty, skipping tail LoRA injection.")
+            return
+
+        logging.info(
+            "🚀 Injecting dedicated tail LoRA into language_model.layers[%d:%d) with mode=%s",
+            tail_layer_indices[0],
+            tail_layer_indices[-1] + 1,
+            getattr(model_args, "shared_llm_tail_lora_mode", "lora_only"),
+        )
+
+        target_modules = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+        for layer_idx in tail_layer_indices:
+            layer_module = self.model.language_model.layers[layer_idx]
+            if isinstance(layer_module, PeftModel) or hasattr(layer_module, "peft_config"):
+                raise RuntimeError(
+                    f"language_model.layers[{layer_idx}] is already wrapped by PEFT; refusing to inject shared tail LoRA twice."
+                )
+
+            lora_config = LoraConfig(
+                r=training_args.shared_llm_tail_lora_r,
+                lora_alpha=training_args.shared_llm_tail_lora_alpha,
+                target_modules=target_modules,
+                lora_dropout=training_args.shared_llm_tail_lora_dropout,
+                bias="none",
+                task_type=None,
+                modules_to_save=None,
+            )
+            wrapped_layer = get_peft_model(layer_module, lora_config)
+            self.model.language_model.layers[layer_idx] = wrapped_layer
+            logging.info("📊 language_model.layers.%d dedicated tail LoRA injected", layer_idx)
+            wrapped_layer.print_trainable_parameters()
+
+    def _freeze_language_model_tail_base_keep_lora_only(self):
+        tail_layer_indices = self._get_shared_llm_tail_layer_indices()
+        for layer_idx in tail_layer_indices:
+            layer_module = self.model.language_model.layers[layer_idx]
+            for name, param in layer_module.named_parameters():
+                param.requires_grad = ("lora_" in name)
+
+        logging.info(
+            "🔒 Applied lora_only freeze to language_model tail layers [%d:%d)",
+            tail_layer_indices[0] if len(tail_layer_indices) > 0 else 0,
+            (tail_layer_indices[-1] + 1) if len(tail_layer_indices) > 0 else 0,
+        )
+
     def inject_lora_to_sub_module(self, model_args, training_args):
-        if not getattr(training_args, 'is_lora', False):
+        if not getattr(training_args, 'is_lora', False) and not getattr(model_args, "shared_llm_tail_lora_enabled", False):
             return
 
         logging.info("🌟 Starting Modular LoRA Injection for Unified UniLIP...")
@@ -1583,11 +1640,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # modules_to_save=["lm_head", "embed_tokens"],
                 module_name="language_model"
             )
+        elif getattr(model_args, "train_shared_llm_tail_only", False) and getattr(model_args, "shared_llm_tail_lora_enabled", False):
+            self._apply_lora_to_language_model_tail_layers(model_args, training_args)
+            if getattr(model_args, "shared_llm_tail_lora_mode", "lora_only") == "lora_only":
+                self._freeze_language_model_tail_base_keep_lora_only()
         # =========================================================
         # 3. LLM Connector (Qwen2Model Slice)
         # =========================================================
         # 结构同 LLM
-        if not self.get_model().fix_connect:
+        if getattr(training_args, 'is_lora', False) and not self.get_model().fix_connect:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r // 2,
                 lora_alpha=training_args.lora_alpha,
@@ -1605,7 +1666,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 注意：Sana 的 GLUMBConv 使用的是 Conv2d，LoRA 默认不转 Conv2d 除非指定。
         # 这里我们主要对 Attention 和 Timestep MLP 做 LoRA。
         # to_q/k/v 匹配 Attention, linear_1/2 匹配 TimestepEmbedder & CaptionProjection
-        if not self.get_model().fix_dit:
+        if getattr(training_args, 'is_lora', False) and not self.get_model().fix_dit:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1618,14 +1679,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 5. Loc Action DiT (Qwen2Model Slice) or (Pi05 Action DiT)
         # =========================================================
         # 结构同 LLM
-        self._apply_lora_to_module(
-            lora_r=training_args.lora_r,
-            lora_alpha=training_args.lora_alpha,
-            lora_dropout=training_args.lora_dropout,
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-            # modules_to_save=None,
-            module_name="action_dit"
-        )
+        if getattr(training_args, 'is_lora', False):
+            self._apply_lora_to_module(
+                lora_r=training_args.lora_r,
+                lora_alpha=training_args.lora_alpha,
+                lora_dropout=training_args.lora_dropout,
+                target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+                # modules_to_save=None,
+                module_name="action_dit"
+            )
 
         # =========================================================
         # 6. [关键] 统一开启非 LoRA 模块 (Heads/Projectors) 的梯度
