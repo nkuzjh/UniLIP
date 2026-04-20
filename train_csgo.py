@@ -1873,6 +1873,20 @@ def train(attn_implementation=None):
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
+    model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
+    model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")
+    model.config.repa_teacher_name_or_path = csgo_config.get("repa_teacher_name_or_path", "facebook/dinov2-base")
+    model.config.repa_teacher_input_size = int(csgo_config.get("repa_teacher_input_size", 224))
+    model.config.repa_teacher_hidden_size = int(csgo_config.get("repa_teacher_hidden_size", 768))
+    model.config.repa_dit_layer_idx = int(csgo_config.get("repa_dit_layer_idx", 6))
+    model.config.repa_align_type = csgo_config.get("repa_align_type", "patch_wise")
+    model.config.repa_expected_num_patches = int(csgo_config.get("repa_expected_num_patches", 256))
+    model.config.repa_projector_type = csgo_config.get("repa_projector_type", "mlp3_silu")
+    model.config.repa_mlp_num_layers = int(csgo_config.get("repa_mlp_num_layers", 3))
+    model.config.repa_mlp_activation = csgo_config.get("repa_mlp_activation", "silu")
+    model.config.repa_mlp_hidden_ratio = float(csgo_config.get("repa_mlp_hidden_ratio", 1.0))
+    model.config.repa_detach_condition = csgo_config.get("repa_detach_condition", True)
     model.config.is_loc_repa_loss = csgo_config.get("is_loc_repa_loss", False)
     model.config.alpha_loc_repa_loss = csgo_config.get("alpha_loc_repa_loss", 0.0)
     model.config.loc_repa_teacher_ckpt_path = csgo_config.get("loc_repa_teacher_ckpt_path", None)
@@ -1967,6 +1981,16 @@ def train(attn_implementation=None):
 
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
+    if model.config.is_repa_loss:
+        if model.config.repa_teacher_type != "dinov2":
+            raise ValueError("Current implementation only supports repa_teacher_type='dinov2'.")
+        if model.config.repa_align_type != "patch_wise":
+            raise ValueError("Current implementation only supports repa_align_type='patch_wise'.")
+        if model.config.repa_projector_type != "mlp3_silu":
+            raise ValueError("Current implementation only supports repa_projector_type='mlp3_silu'.")
+        if model.config.repa_mlp_activation != "silu":
+            raise ValueError("Current implementation only supports repa_mlp_activation='silu'.")
+
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False
     # fix dit False
@@ -1985,6 +2009,10 @@ def train(attn_implementation=None):
         model.get_model().initialize_localization_modules(model_args=model_args)
     else:
         logging.info("Skip UniLIP internal localization module initialization.")
+
+    if getattr(model, "initialize_repa_modules_from_config", None) is not None:
+        model.initialize_repa_modules_from_config()
+
     model.to(torch.bfloat16)
 
     if model.config.use_external_loc_model:
@@ -2153,6 +2181,11 @@ def train(attn_implementation=None):
             getattr(model_args, "train_mm_projector_only", False),
             getattr(model_args, "train_shared_llm_tail_only", False),
         )
+
+    if getattr(model.config, "is_repa_loss", False):
+        if not hasattr(model, "initialize_repa_teacher"):
+            raise RuntimeError("Current model does not support REPA teacher attachment.")
+        model.initialize_repa_teacher()
 
 
     # def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:

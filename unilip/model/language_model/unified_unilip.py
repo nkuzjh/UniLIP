@@ -115,6 +115,28 @@ def small_init_weights(m):
             nn.init.zeros_(m.bias)
 
 
+class REPAMLPProjector(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, num_layers: int = 3, hidden_ratio: float = 1.0):
+        super().__init__()
+        if num_layers < 1:
+            raise ValueError(f"REPA projector num_layers must be >= 1, got {num_layers}")
+
+        hidden_dim = max(int(in_dim * hidden_ratio), 1)
+        layers = []
+        prev_dim = in_dim
+        for layer_idx in range(num_layers - 1):
+            next_dim = hidden_dim
+            layers.append(nn.Linear(prev_dim, next_dim))
+            layers.append(nn.SiLU())
+            prev_dim = next_dim
+        layers.append(nn.Linear(prev_dim, out_dim))
+        self.net = nn.Sequential(*layers)
+        self.net.apply(init_weights)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.net(x)
+
+
 
 class AttentionPooler(nn.Module):
     """
@@ -1755,6 +1777,92 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     def get_model(self):
         return self.model
 
+    def initialize_repa_modules_from_config(self) -> None:
+        if not getattr(self.config, "is_repa_loss", False):
+            return
+
+        projector_type = getattr(self.config, "repa_projector_type", "mlp3_silu")
+        if projector_type != "mlp3_silu":
+            raise ValueError(f"Unsupported repa_projector_type for current implementation: {projector_type}")
+
+        if hasattr(self.model, "repa_projector"):
+            return
+
+        student_dim = self.get_model().dit.config.num_attention_heads * self.get_model().dit.config.attention_head_dim
+        teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
+        if teacher_type != "dinov2":
+            raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
+
+        teacher_dim = int(getattr(self.config, "repa_teacher_hidden_size", 768))
+        num_layers = int(getattr(self.config, "repa_mlp_num_layers", 3))
+        hidden_ratio = float(getattr(self.config, "repa_mlp_hidden_ratio", 1.0))
+        self.model.repa_projector = REPAMLPProjector(
+            in_dim=student_dim,
+            out_dim=teacher_dim,
+            num_layers=num_layers,
+            hidden_ratio=hidden_ratio,
+        )
+        self.model.repa_projector.to(dtype=self.get_model().projector.weight.dtype)
+        self.model.repa_projector.requires_grad_(True)
+        logging.info(
+            "Initialized REPA projector: type=%s student_dim=%s teacher_dim=%s num_layers=%s hidden_ratio=%.3f",
+            projector_type,
+            student_dim,
+            teacher_dim,
+            num_layers,
+            hidden_ratio,
+        )
+
+    def set_repa_teacher(self, teacher_bundle: Dict[str, nn.Module]) -> None:
+        self.__dict__["_repa_teacher"] = teacher_bundle
+
+    def get_repa_teacher(self):
+        return self.__dict__.get("_repa_teacher", None)
+
+    def _ensure_repa_teacher_on_device(self, device: torch.device) -> None:
+        teacher_bundle = self.get_repa_teacher()
+        if teacher_bundle is None:
+            return
+
+        teacher_model = teacher_bundle["model"]
+        try:
+            teacher_param = next(teacher_model.parameters())
+            teacher_device = teacher_param.device
+        except StopIteration:
+            teacher_device = device
+
+        if teacher_device != device:
+            teacher_model.to(device=device)
+
+    def initialize_repa_teacher(self) -> None:
+        teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
+        if teacher_type != "dinov2":
+            raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
+
+        teacher_name = getattr(self.config, "repa_teacher_name_or_path", "facebook/dinov2-base")
+        teacher_model = AutoModel.from_pretrained(
+            teacher_name,
+            low_cpu_mem_usage=True,
+        )
+        teacher_model.eval()
+        teacher_model.requires_grad_(False)
+
+        teacher_hidden_size = int(getattr(teacher_model.config, "hidden_size", 768))
+        self.config.repa_teacher_hidden_size = teacher_hidden_size
+        self.set_repa_teacher(
+            {
+                "type": teacher_type,
+                "name_or_path": teacher_name,
+                "model": teacher_model,
+            }
+        )
+        logging.info(
+            "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
+            teacher_type,
+            teacher_name,
+            teacher_hidden_size,
+        )
+
     def set_external_localization_model(self, external_model: nn.Module) -> None:
         # Keep it out of nn.Module registration to avoid saving/updating in UniLIP checkpoints.
         self.__dict__["_external_localization_model"] = external_model
@@ -1925,6 +2033,131 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         vit_embeds = vit_embeds.reshape(vit_embeds.shape[0], -1, vit_embeds.shape[-1])
         vit_embeds = multi_modal_projector(vit_embeds)
         return vit_embeds
+
+    def _normalize_for_repa_teacher(self, image: torch.Tensor) -> torch.Tensor:
+        image_01 = (image.float() + 1.0) / 2.0
+        target_size = int(getattr(self.config, "repa_teacher_input_size", 224))
+        if image_01.shape[-2:] != (target_size, target_size):
+            image_01 = F.interpolate(
+                image_01,
+                size=(target_size, target_size),
+                mode="bilinear",
+                align_corners=False,
+            )
+        mean = torch.tensor([0.485, 0.456, 0.406], device=image_01.device, dtype=image_01.dtype).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=image_01.device, dtype=image_01.dtype).view(1, 3, 1, 1)
+        return (image_01 - mean) / std
+
+    def _extract_repa_teacher_patch_features(self, image: torch.Tensor) -> torch.Tensor:
+        teacher_bundle = self.get_repa_teacher()
+        if teacher_bundle is None:
+            raise RuntimeError("REPA teacher is not initialized before teacher feature extraction.")
+
+        self._ensure_repa_teacher_on_device(image.device)
+        teacher_model = teacher_bundle["model"]
+        teacher_dtype = next(teacher_model.parameters()).dtype
+        teacher_inputs = self._normalize_for_repa_teacher(image).to(device=image.device, dtype=teacher_dtype)
+
+        with torch.no_grad():
+            teacher_outputs = teacher_model(
+                pixel_values=teacher_inputs,
+                output_hidden_states=False,
+                return_dict=True,
+            )
+
+        teacher_feat = teacher_outputs.last_hidden_state[:, 1:, :]
+        expected_tokens = int(getattr(self.config, "repa_expected_num_patches", 256))
+        if teacher_feat.shape[1] != expected_tokens:
+            raise RuntimeError(
+                f"Unexpected REPA teacher patch count: got {teacher_feat.shape[1]}, expected {expected_tokens}."
+            )
+        return teacher_feat
+
+    def _forward_dit_with_repa_hidden(
+        self,
+        noisy_latents: torch.Tensor,
+        timesteps: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
+        encoder_attention_mask: torch.Tensor,
+        detach_condition: bool = False,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        block_idx = int(getattr(self.config, "repa_dit_layer_idx", 6))
+        dit_model = self.get_model().dit
+        if not hasattr(dit_model, "transformer_blocks"):
+            raise RuntimeError("Current DiT model has no transformer_blocks; cannot capture REPA hidden states.")
+        if block_idx < 0 or block_idx >= len(dit_model.transformer_blocks):
+            raise ValueError(f"repa_dit_layer_idx={block_idx} out of range for {len(dit_model.transformer_blocks)} blocks")
+
+        hidden_cache = {}
+
+        def _capture_hidden(_module, _inputs, output):
+            hidden_cache["hidden"] = output
+
+        handle = dit_model.transformer_blocks[block_idx].register_forward_hook(_capture_hidden)
+        try:
+            dit_encoder_hidden_states = encoder_hidden_states.detach() if detach_condition else encoder_hidden_states
+            noise_pred = dit_model(
+                noisy_latents,
+                timestep=timesteps,
+                encoder_hidden_states=dit_encoder_hidden_states,
+                encoder_attention_mask=encoder_attention_mask,
+                return_dict=False,
+            )[0]
+        finally:
+            handle.remove()
+
+        repa_hidden = hidden_cache.get("hidden", None)
+        if repa_hidden is None:
+            raise RuntimeError(f"Failed to capture REPA hidden states from DiT block {block_idx}.")
+        return noise_pred, repa_hidden
+
+    def _extract_repa_student_patch_features(self, repa_hidden: torch.Tensor) -> torch.Tensor:
+        align_type = getattr(self.config, "repa_align_type", "patch_wise")
+        if align_type != "patch_wise":
+            raise ValueError(f"Unsupported repa_align_type for current implementation: {align_type}")
+        if not hasattr(self.get_model(), "repa_projector"):
+            raise RuntimeError("REPA projector is not initialized before student feature extraction.")
+
+        expected_tokens = int(getattr(self.config, "repa_expected_num_patches", 256))
+        if repa_hidden.shape[1] != expected_tokens:
+            raise RuntimeError(
+                f"Unexpected REPA student token count: got {repa_hidden.shape[1]}, expected {expected_tokens}."
+            )
+
+        student_feat = self.get_model().repa_projector(repa_hidden)
+        return student_feat
+
+    def _compute_repa_loss(
+        self,
+        student_feat: torch.Tensor,
+        teacher_feat: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        student_feat = F.normalize(student_feat.float(), dim=-1)
+        teacher_feat = F.normalize(teacher_feat.detach().float(), dim=-1)
+        token_loss = 1.0 - (student_feat * teacher_feat).sum(dim=-1)
+        sample_loss = token_loss.mean(dim=-1)
+        return (sample_loss * loss_mask[:, 1].float()).mean().to(torch.float32)
+
+    def forward_for_repa_loss(
+        self,
+        noisy_latents: torch.Tensor,
+        timesteps: torch.Tensor,
+        encoder_hidden_states: torch.Tensor,
+        encoder_attention_mask: torch.Tensor,
+        clean_image: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> torch.Tensor:
+        _, repa_hidden = self._forward_dit_with_repa_hidden(
+            noisy_latents=noisy_latents,
+            timesteps=timesteps,
+            encoder_hidden_states=encoder_hidden_states,
+            encoder_attention_mask=encoder_attention_mask,
+            detach_condition=bool(getattr(self.config, "repa_detach_condition", True)),
+        )
+        student_feat = self._extract_repa_student_patch_features(repa_hidden)
+        teacher_feat = self._extract_repa_teacher_patch_features(clean_image)
+        return self._compute_repa_loss(student_feat, teacher_feat, loss_mask)
 
     def _extract_loc_repa_prefix_features(
         self,
@@ -2392,13 +2625,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     noisy_latents = (1.0 - sigmas) * latents + sigmas * noise #torch.Size([128, 32, 16, 16])
 
                     # Forward DiT
-                    noise_pred = self.get_model().dit(
-                        noisy_latents, #torch.Size([128, 32, 16, 16])
-                        timestep=timesteps, #128
-                        encoder_hidden_states=img_hidden_states, # [BS, Seq, C] ##torch.Size([128, 707, 2304])
-                        encoder_attention_mask=genbrh_attention_mask, #torch.Size([128, 707])
-                        return_dict=False
-                    )[0] #torch.Size([128, 32, 16, 16])
+                    noise_pred, _ = self._forward_dit_with_repa_hidden(
+                        noisy_latents=noisy_latents,
+                        timesteps=timesteps,
+                        encoder_hidden_states=img_hidden_states,
+                        encoder_attention_mask=genbrh_attention_mask,
+                        detach_condition=False,
+                    )
 
                     target = noise - latents #torch.Size([128, 32, 16, 16])
                     # Compute raw MSE loss per sample [BS, ...]
@@ -2408,6 +2641,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Apply Mask: Only count loss for Gen samples
                     # masked_gen_loss = (gen_loss * loss_mask[:, 1]).mean()#loss_mask[:, 1].sum()=tensor(71., device='cuda:0', dtype=torch.bfloat16)
                     masked_gen_loss = (gen_loss * genbrh_loss_mask[:, 1]).mean()
+                    masked_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     # bs=8显存占用=6884MiB
@@ -2430,6 +2664,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                             und_image_map=genbrh_und_image,
                             gen_image=genbrh_gen_image,
                             task_id=torch.zeros_like(genbrh_task_id),
+                            loss_mask=genbrh_loss_mask,
+                        )
+
+                    if getattr(self.config, "is_repa_loss", False):
+                        masked_repa_loss = self.forward_for_repa_loss(
+                            noisy_latents=noisy_latents,
+                            timesteps=timesteps,
+                            encoder_hidden_states=img_hidden_states,
+                            encoder_attention_mask=genbrh_attention_mask,
+                            clean_image=genbrh_gen_image,
                             loss_mask=genbrh_loss_mask,
                         )
 
@@ -2462,6 +2706,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
             else:
                 masked_gen_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
@@ -2728,10 +2973,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
+        alpha_repa_loss = torch.tensor(getattr(self.model.config, "alpha_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_repa_loss = torch.tensor(getattr(self.model.config, "alpha_loc_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
         total_loss = (
             masked_gen_loss
+            + masked_repa_loss * alpha_repa_loss
             + masked_loc_loss * alpha_loc_loss
             + masked_loc_repa_loss * alpha_loc_repa_loss
             + masked_loc_aux_loss * alpha_loc_aux_loss
@@ -2776,6 +3023,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
                     if masked_gen_loss.item() > 0 else None
                 ),
+                "repa_loss": masked_repa_loss.detach().cpu().numpy().item(),
+                "alpha_repa": alpha_repa_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_repa_loss": (masked_repa_loss * alpha_repa_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_repa_loss_over_gen_loss": (
+                    (masked_repa_loss * alpha_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
                 "loc_repa_loss": masked_loc_repa_loss.detach().cpu().numpy().item(),
                 "alpha_loc_repa": alpha_loc_repa_loss.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_repa_loss": (masked_loc_repa_loss * alpha_loc_repa_loss).detach().cpu().numpy().item(),
@@ -2794,6 +3048,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     "total_loss": total_loss,
                     "loc_loss": masked_loc_loss,
                     "gen_loss": masked_gen_loss,
+                    "repa_loss": masked_repa_loss,
                     "loc_aux_loss": masked_loc_aux_loss,
                     "loc_repa_loss": masked_loc_repa_loss,
                 },
