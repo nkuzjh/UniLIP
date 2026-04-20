@@ -3049,8 +3049,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     "loc_loss": masked_loc_loss,
                     "gen_loss": masked_gen_loss,
                     "repa_loss": masked_repa_loss,
-                    "loc_aux_loss": masked_loc_aux_loss,
-                    "loc_repa_loss": masked_loc_repa_loss,
+                    # "loc_aux_loss": masked_loc_aux_loss,
+                    # "loc_repa_loss": masked_loc_repa_loss,
                 },
             )
             print_loss_route_summary(route_results)
