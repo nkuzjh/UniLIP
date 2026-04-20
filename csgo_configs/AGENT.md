@@ -71,6 +71,7 @@
 | `exp17_6_dust2` | loc-aware REPA + shared tail | `exp17_5_dust2 + train_shared_llm_tail_only` |
 | `exp17_6_1_dust2` | loc-aware REPA + deeper shared tail | `exp17_6_dust2` 的 6-layer shared tail full finetune 对照 |
 | `exp17_6_2_dust2` | loc-aware REPA + 12-layer shared tail lora_only | 资源受限下的更深 shared tail 替代方案 |
+| `exp17_7_dust2` | traditional REPA baseline | `exp17_2_dust2 + DINOv2 teacher + DiT layer-6 patch-wise REPA` |
 | `exp18_dust2` | warm-start 对照 | 用于比较 warm-start joint 与 scratch joint |
 
 ## Implemented Loc-aware REPA Line
@@ -109,7 +110,7 @@
 - `exp17_6_dust2` 的一个已修复问题是：
   - non-registered teacher 在 forward 前需要按需迁移到当前 CUDA device。
 
-## Planned Traditional REPA Line
+## Traditional REPA Line
 
 ### Goal
 
@@ -128,6 +129,23 @@
   - `1 - cosine(student_feature, teacher_feature)`
 - 对齐方式:
   - 默认使用 `patch-wise` alignment
+
+### Current implementation status
+
+当前工作区已经落地了 traditional REPA 的第一版实现，对应 `exp17_7_dust2`：
+
+- 已实现：
+  - `teacher = DINOv2`
+  - `student = Sana DiT` 中间层 hidden states
+  - `student_layer = 6`
+  - `alignment = patch-wise`
+  - `projector = three-layer MLP + SiLU`
+  - `L_repa` 只更新 `DiT + repa projector`
+  - `repa_detach_condition = True`，避免 `repa_loss` 额外更新 `llm_connector/projector`
+- 尚未实现：
+  - `teacher = UniLIP vision`
+  - `projector = conv_spatialnorm`
+  - 更通用的 `align_type` / teacher / projector 扩展
 
 ### Recommended default design
 
@@ -183,19 +201,33 @@ x = x / (x.std(dim=1, keepdim=True) + 1e-6)
 
 ### B. Traditional REPA line
 
-以下键名是建议命名，尚未在代码中落地：
+当前代码里已经落地并可直接在 yaml 中使用的 traditional REPA 键如下：
 
 ```yaml
 is_repa_loss: True
 alpha_repa_loss: 0.1
-repa_teacher_type: dinov2            # or unilip_vision
-repa_dit_layer_idx: 6                # or 8
+repa_teacher_type: dinov2
+repa_teacher_name_or_path: facebook/dinov2-base
+repa_teacher_input_size: 224
+repa_teacher_hidden_size: 768
+repa_dit_layer_idx: 6
 repa_align_type: patch_wise
-repa_projector_type: mlp3_silu       # or conv_spatialnorm
-repa_update_modules: dit_only        # first version: only DiT + repa projector
+repa_expected_num_patches: 256
+repa_projector_type: mlp3_silu
+repa_mlp_num_layers: 3
+repa_mlp_activation: silu
+repa_mlp_hidden_ratio: 1.0
+repa_detach_condition: True
 ```
 
-如果是原始 REPA 的 projector，建议默认：
+当前版本代码约束：
+
+- `repa_teacher_type` 目前只支持 `dinov2`
+- `repa_align_type` 目前只支持 `patch_wise`
+- `repa_projector_type` 目前只支持 `mlp3_silu`
+- `repa_mlp_activation` 目前只支持 `silu`
+
+如果是原始 REPA 的 projector，当前实现默认：
 
 ```yaml
 repa_mlp_num_layers: 3
@@ -203,7 +235,7 @@ repa_mlp_activation: silu
 repa_mlp_hidden_ratio: 1.0
 ```
 
-如果是 iREPA 变体的 projector，建议默认：
+如果后续扩展 iREPA 变体的 projector，建议默认：
 
 ```yaml
 repa_use_spatial_norm: True
@@ -259,6 +291,9 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp17_2_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`
 - `csgo_configs/exp17_6_dust2.yaml`
+- `csgo_configs/exp17_6_1_dust2.yaml`
+- `csgo_configs/exp17_6_2_dust2.yaml`
+- `csgo_configs/exp17_7_dust2.yaml`
 - `record.md`
 - `train_csgo.py`
 - `unilip/model/language_model/unified_unilip.py`
