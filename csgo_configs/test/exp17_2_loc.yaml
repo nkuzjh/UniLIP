@@ -43,7 +43,7 @@ is_lora: False
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp17_2/checkpoint-28000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp17_2/checkpoint-36000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 
