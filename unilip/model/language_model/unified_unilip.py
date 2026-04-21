@@ -1790,7 +1790,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         student_dim = self.get_model().dit.config.num_attention_heads * self.get_model().dit.config.attention_head_dim
         teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
-        if teacher_type != "dinov2":
+        if teacher_type not in {"dinov2", "unilip_vision"}:
             raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
 
         teacher_dim = int(getattr(self.config, "repa_teacher_hidden_size", 768))
@@ -1824,44 +1824,108 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if teacher_bundle is None:
             return
 
-        teacher_model = teacher_bundle["model"]
-        try:
-            teacher_param = next(teacher_model.parameters())
-            teacher_device = teacher_param.device
-        except StopIteration:
-            teacher_device = device
+        teacher_type = teacher_bundle.get("type", "dinov2")
+        if teacher_type == "dinov2":
+            teacher_model = teacher_bundle["model"]
+            try:
+                teacher_param = next(teacher_model.parameters())
+                teacher_device = teacher_param.device
+            except StopIteration:
+                teacher_device = device
 
-        if teacher_device != device:
-            teacher_model.to(device=device)
+            if teacher_device != device:
+                teacher_model.to(device=device)
+            return
+
+        if teacher_type == "unilip_vision":
+            for module_name in ["vision_tower", "multi_modal_projector"]:
+                teacher_module = teacher_bundle[module_name]
+                ref_module = getattr(self.model, module_name)
+                try:
+                    ref_param = next(ref_module.parameters())
+                    target_dtype = ref_param.dtype
+                except StopIteration:
+                    target_dtype = None
+
+                try:
+                    teacher_param = next(teacher_module.parameters())
+                    teacher_device = teacher_param.device
+                    teacher_dtype = teacher_param.dtype
+                except StopIteration:
+                    teacher_device = device
+                    teacher_dtype = target_dtype
+
+                if teacher_device != device or (target_dtype is not None and teacher_dtype != target_dtype):
+                    if target_dtype is not None:
+                        teacher_module.to(device=device, dtype=target_dtype)
+                    else:
+                        teacher_module.to(device=device)
+            return
+
+        raise ValueError(f"Unsupported repa_teacher_type for device placement: {teacher_type}")
 
     def initialize_repa_teacher(self) -> None:
         teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
-        if teacher_type != "dinov2":
-            raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
-
         teacher_name = getattr(self.config, "repa_teacher_name_or_path", "facebook/dinov2-base")
-        teacher_model = AutoModel.from_pretrained(
-            teacher_name,
-            low_cpu_mem_usage=True,
-        )
-        teacher_model.eval()
-        teacher_model.requires_grad_(False)
 
-        teacher_hidden_size = int(getattr(teacher_model.config, "hidden_size", 768))
-        self.config.repa_teacher_hidden_size = teacher_hidden_size
-        self.set_repa_teacher(
-            {
-                "type": teacher_type,
-                "name_or_path": teacher_name,
-                "model": teacher_model,
-            }
-        )
-        logging.info(
-            "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
-            teacher_type,
-            teacher_name,
-            teacher_hidden_size,
-        )
+        if teacher_type == "dinov2":
+            teacher_model = AutoModel.from_pretrained(
+                teacher_name,
+                low_cpu_mem_usage=True,
+            )
+            teacher_model.eval()
+            teacher_model.requires_grad_(False)
+
+            teacher_hidden_size = int(getattr(teacher_model.config, "hidden_size", 768))
+            self.config.repa_teacher_hidden_size = teacher_hidden_size
+            self.set_repa_teacher(
+                {
+                    "type": teacher_type,
+                    "name_or_path": teacher_name,
+                    "model": teacher_model,
+                }
+            )
+            logging.info(
+                "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
+                teacher_type,
+                teacher_name,
+                teacher_hidden_size,
+            )
+            return
+
+        if teacher_type == "unilip_vision":
+            vision_tower = copy.deepcopy(self.model.vision_tower)
+            multi_modal_projector = copy.deepcopy(self.model.multi_modal_projector)
+            vision_tower.eval()
+            vision_tower.requires_grad_(False)
+            multi_modal_projector.eval()
+            multi_modal_projector.requires_grad_(False)
+
+            teacher_hidden_size = int(getattr(self.config, "repa_teacher_hidden_size", 0))
+            if teacher_hidden_size <= 0:
+                projector_tail = multi_modal_projector[-1] if isinstance(multi_modal_projector, nn.Sequential) else multi_modal_projector
+                teacher_hidden_size = getattr(projector_tail, "out_features", None)
+            if teacher_hidden_size is None or int(teacher_hidden_size) <= 0:
+                raise ValueError("repa_teacher_hidden_size must be set for repa_teacher_type='unilip_vision'.")
+
+            self.config.repa_teacher_hidden_size = int(teacher_hidden_size)
+            self.set_repa_teacher(
+                {
+                    "type": teacher_type,
+                    "name_or_path": teacher_name,
+                    "vision_tower": vision_tower,
+                    "multi_modal_projector": multi_modal_projector,
+                }
+            )
+            logging.info(
+                "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
+                teacher_type,
+                teacher_name,
+                teacher_hidden_size,
+            )
+            return
+
+        raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
 
     def set_external_localization_model(self, external_model: nn.Module) -> None:
         # Keep it out of nn.Module registration to avoid saving/updating in UniLIP checkpoints.
@@ -2054,18 +2118,26 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             raise RuntimeError("REPA teacher is not initialized before teacher feature extraction.")
 
         self._ensure_repa_teacher_on_device(image.device)
-        teacher_model = teacher_bundle["model"]
-        teacher_dtype = next(teacher_model.parameters()).dtype
-        teacher_inputs = self._normalize_for_repa_teacher(image).to(device=image.device, dtype=teacher_dtype)
+        teacher_type = teacher_bundle.get("type", "dinov2")
+        if teacher_type == "dinov2":
+            teacher_model = teacher_bundle["model"]
+            teacher_dtype = next(teacher_model.parameters()).dtype
+            teacher_inputs = self._normalize_for_repa_teacher(image).to(device=image.device, dtype=teacher_dtype)
 
-        with torch.no_grad():
-            teacher_outputs = teacher_model(
-                pixel_values=teacher_inputs,
-                output_hidden_states=False,
-                return_dict=True,
-            )
+            with torch.no_grad():
+                teacher_outputs = teacher_model(
+                    pixel_values=teacher_inputs,
+                    output_hidden_states=False,
+                    return_dict=True,
+                )
 
-        teacher_feat = teacher_outputs.last_hidden_state[:, 1:, :]
+            teacher_feat = teacher_outputs.last_hidden_state[:, 1:, :]
+        elif teacher_type == "unilip_vision":
+            with torch.no_grad():
+                teacher_feat = self._extract_teacher_image_embeds(teacher_bundle, image)
+        else:
+            raise ValueError(f"Unsupported repa_teacher_type for teacher feature extraction: {teacher_type}")
+
         expected_tokens = int(getattr(self.config, "repa_expected_num_patches", 256))
         if teacher_feat.shape[1] != expected_tokens:
             raise RuntimeError(

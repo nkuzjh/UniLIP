@@ -52,6 +52,7 @@
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
+| `exp17_4_1_dust2` | `exp17_4_dust2` 的更深 shared-tail 版本 | `shared_llm_tail_num_layers=6` 的 full finetune 对照 |
 
 ### Selective warm-start unified line
 
@@ -59,6 +60,7 @@
 |---|---|---|
 | `exp18` | base/loc 从 `exp14_loc`，gen 从 `exp14_gen` 的 joint warm-start | 非 `dust2` 专用 |
 | `exp18_dust2` | `exp18` 的 `dust2` 专用版 | 用于比较 warm-start 与 scratch unified |
+| `exp18_1_dust2` | `exp18_dust2` 的 `dust2` 调整版 | 改用 `exp14_1_dust2_gen@8000` 作为 gen init，并降低 loc lr |
 
 ## Dust2 Mainline: Current Anchor Experiments
 
@@ -67,12 +69,16 @@
 | 配置 | 当前定位 | 作用 |
 |---|---|---|
 | `exp17_2_dust2` | 主 baseline | `gen + loc + aux_loc` |
+| `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
+| `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
 | `exp17_6_dust2` | loc-aware REPA + shared tail | `exp17_5_dust2 + train_shared_llm_tail_only` |
 | `exp17_6_1_dust2` | loc-aware REPA + deeper shared tail | `exp17_6_dust2` 的 6-layer shared tail full finetune 对照 |
 | `exp17_6_2_dust2` | loc-aware REPA + 12-layer shared tail lora_only | 资源受限下的更深 shared tail 替代方案 |
 | `exp17_7_dust2` | traditional REPA baseline | `exp17_2_dust2 + DINOv2 teacher + DiT layer-6 patch-wise REPA` |
+| `exp17_8_dust2` | traditional REPA + aux_loc | `exp17_7_dust2 + aux_loc` |
 | `exp18_dust2` | warm-start 对照 | 用于比较 warm-start joint 与 scratch joint |
+| `exp18_1_dust2` | warm-start 调整版 | 比较不同 gen warm-start 来源和更保守 loc lr 的影响 |
 
 ## Implemented Loc-aware REPA Line
 
@@ -136,6 +142,7 @@
 
 - 已实现：
   - `teacher = DINOv2`
+  - `teacher = UniLIP vision`
   - `student = Sana DiT` 中间层 hidden states
   - `student_layer = 6`
   - `alignment = patch-wise`
@@ -143,7 +150,6 @@
   - `L_repa` 只更新 `DiT + repa projector`
   - `repa_detach_condition = True`，避免 `repa_loss` 额外更新 `llm_connector/projector`
 - 尚未实现：
-  - `teacher = UniLIP vision`
   - `projector = conv_spatialnorm`
   - 更通用的 `align_type` / teacher / projector 扩展
 
@@ -205,7 +211,7 @@ x = x / (x.std(dim=1, keepdim=True) + 1e-6)
 
 ```yaml
 is_repa_loss: True
-alpha_repa_loss: 0.1
+alpha_repa_loss: 0.5
 repa_teacher_type: dinov2
 repa_teacher_name_or_path: facebook/dinov2-base
 repa_teacher_input_size: 224
@@ -222,7 +228,7 @@ repa_detach_condition: True
 
 当前版本代码约束：
 
-- `repa_teacher_type` 目前只支持 `dinov2`
+- `repa_teacher_type` 目前支持 `dinov2` 和 `unilip_vision`
 - `repa_align_type` 目前只支持 `patch_wise`
 - `repa_projector_type` 目前只支持 `mlp3_silu`
 - `repa_mlp_activation` 目前只支持 `silu`
@@ -245,7 +251,7 @@ repa_spatial_norm_gamma: 1.0
 
 | 配置 | 相对父实验 | 需要改的键 | 目的 |
 |---|---|---|---|
-| `exp17_7_dust2` | `exp17_2_dust2` | `is_repa_loss=True`; `alpha_repa_loss=0.1`; `repa_teacher_type=dinov2`; `repa_dit_layer_idx=6`; `repa_align_type=patch_wise`; `repa_projector_type=mlp3_silu`; `repa_mlp_num_layers=3`; `repa_mlp_activation=silu`; `repa_mlp_hidden_ratio=1.0`; `is_loc_aux_loss=False` | 标准 REPA 主起点 |
+| `exp17_7_dust2` | `exp17_2_dust2` | `is_repa_loss=True`; `alpha_repa_loss=0.5`; `repa_teacher_type=dinov2`; `repa_dit_layer_idx=6`; `repa_align_type=patch_wise`; `repa_projector_type=mlp3_silu`; `repa_mlp_num_layers=3`; `repa_mlp_activation=silu`; `repa_mlp_hidden_ratio=1.0`; `is_loc_aux_loss=False` | 标准 REPA 主起点 |
 | `exp17_8_dust2` | `exp17_7_dust2` | `is_loc_aux_loss=True` | 观察 REPA 与 `aux_loc` 的互补性 |
 | `exp17_9_dust2` | `exp17_2_dust2` | 同 `exp17_7_dust2`，但 `repa_teacher_type=unilip_vision` 且 `is_loc_aux_loss=False` | 用 UniLIP vision 作为 teacher 的 teacher ablation |
 | `exp17_10_dust2` | `exp17_9_dust2` | `is_loc_aux_loss=True` | 观察 UniLIP vision teacher 与 `aux_loc` 的互补性 |
@@ -289,11 +295,15 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp14_dust2_gen.yaml`
 - `csgo_configs/exp14_dust2_loc.yaml`
 - `csgo_configs/exp17_2_dust2.yaml`
+- `csgo_configs/exp17_4_dust2.yaml`
+- `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`
 - `csgo_configs/exp17_6_dust2.yaml`
 - `csgo_configs/exp17_6_1_dust2.yaml`
 - `csgo_configs/exp17_6_2_dust2.yaml`
 - `csgo_configs/exp17_7_dust2.yaml`
+- `csgo_configs/exp18_dust2.yaml`
+- `csgo_configs/exp18_1_dust2.yaml`
 - `record.md`
 - `train_csgo.py`
 - `unilip/model/language_model/unified_unilip.py`

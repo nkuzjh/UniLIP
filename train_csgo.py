@@ -1982,8 +1982,8 @@ def train(attn_implementation=None):
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
     if model.config.is_repa_loss:
-        if model.config.repa_teacher_type != "dinov2":
-            raise ValueError("Current implementation only supports repa_teacher_type='dinov2'.")
+        if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:
+            raise ValueError("Current implementation only supports repa_teacher_type in {'dinov2', 'unilip_vision'}.")
         if model.config.repa_align_type != "patch_wise":
             raise ValueError("Current implementation only supports repa_align_type='patch_wise'.")
         if model.config.repa_projector_type != "mlp3_silu":
