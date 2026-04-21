@@ -147,10 +147,10 @@
   - `student_layer = 6`
   - `alignment = patch-wise`
   - `projector = three-layer MLP + SiLU`
+  - `projector = conv_spatialnorm`
   - `L_repa` 只更新 `DiT + repa projector`
   - `repa_detach_condition = True`，避免 `repa_loss` 额外更新 `llm_connector/projector`
 - 尚未实现：
-  - `projector = conv_spatialnorm`
   - 更通用的 `align_type` / teacher / projector 扩展
 
 ### Recommended default design
@@ -230,8 +230,9 @@ repa_detach_condition: True
 
 - `repa_teacher_type` 目前支持 `dinov2` 和 `unilip_vision`
 - `repa_align_type` 目前只支持 `patch_wise`
-- `repa_projector_type` 目前只支持 `mlp3_silu`
+- `repa_projector_type` 目前支持 `mlp3_silu` 和 `conv_spatialnorm`
 - `repa_mlp_activation` 目前只支持 `silu`
+- `conv_spatialnorm` 目前只支持 `repa_conv_kernel_size=3`
 
 如果是原始 REPA 的 projector，当前实现默认：
 
@@ -241,7 +242,7 @@ repa_mlp_activation: silu
 repa_mlp_hidden_ratio: 1.0
 ```
 
-如果后续扩展 iREPA 变体的 projector，建议默认：
+如果使用 iREPA 变体的 projector，建议默认：
 
 ```yaml
 repa_use_spatial_norm: True
@@ -255,7 +256,7 @@ repa_spatial_norm_gamma: 1.0
 | `exp17_8_dust2` | `exp17_7_dust2` | `is_loc_aux_loss=True` | 观察 REPA 与 `aux_loc` 的互补性 |
 | `exp17_9_dust2` | `exp17_2_dust2` | 同 `exp17_7_dust2`，但 `repa_teacher_type=unilip_vision` 且 `is_loc_aux_loss=False` | 用 UniLIP vision 作为 teacher 的 teacher ablation |
 | `exp17_10_dust2` | `exp17_9_dust2` | `is_loc_aux_loss=True` | 观察 UniLIP vision teacher 与 `aux_loc` 的互补性 |
-| `exp17_11_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `repa_projector_type=conv_spatialnorm`; `repa_use_spatial_norm=True`; `repa_conv_kernel_size=3`; `repa_spatial_norm_gamma=1.0` | 比较 iREPA 变体与原始 REPA projector |
+| `exp17_11_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `repa_projector_type=conv_spatialnorm`; `repa_use_spatial_norm=True`; `repa_conv_kernel_size=3`; `repa_spatial_norm_gamma=1.0` | 比较 iREPA 变体与原始 REPA projector。配置文件先保留 teacher 占位符，待选定父实验后再替换 |
 | `exp17_12_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `repa_dit_layer_idx=8` | student 层位 ablation |
 | `exp17_13_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `train_shared_llm_tail_only=True`; `shared_llm_tail_num_layers=2`; `shared_llm_tail_lr=1.0e-5` | shared tail 与传统 REPA 的交互实验 |
 

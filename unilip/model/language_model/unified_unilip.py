@@ -137,6 +137,74 @@ class REPAMLPProjector(nn.Module):
         return self.net(x)
 
 
+class REPASpatialNorm(nn.Module):
+    def __init__(self, gamma: float = 1.0, eps: float = 1e-6):
+        super().__init__()
+        self.gamma = float(gamma)
+        self.eps = float(eps)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_float = x.float()
+        mean = x_float.mean(dim=(2, 3), keepdim=True)
+        std = x_float.std(dim=(2, 3), keepdim=True, unbiased=False)
+        x_float = x_float - self.gamma * mean
+        x_float = x_float / (std + self.eps)
+        return x_float.to(dtype=x.dtype)
+
+
+class REPAConvSpatialNormProjector(nn.Module):
+    def __init__(
+        self,
+        in_dim: int,
+        out_dim: int,
+        expected_num_patches: int,
+        kernel_size: int = 3,
+        use_spatial_norm: bool = True,
+        spatial_norm_gamma: float = 1.0,
+    ):
+        super().__init__()
+        if kernel_size != 3:
+            raise ValueError(f"Current REPA conv projector only supports kernel_size=3, got {kernel_size}")
+
+        grid_size = math.isqrt(expected_num_patches)
+        if grid_size * grid_size != expected_num_patches:
+            raise ValueError(
+                f"REPA conv projector requires square patch layout, got expected_num_patches={expected_num_patches}"
+            )
+
+        self.in_dim = int(in_dim)
+        self.out_dim = int(out_dim)
+        self.expected_num_patches = int(expected_num_patches)
+        self.grid_size = int(grid_size)
+        self.use_spatial_norm = bool(use_spatial_norm)
+        self.spatial_norm = REPASpatialNorm(gamma=spatial_norm_gamma) if self.use_spatial_norm else None
+        self.proj = nn.Conv2d(self.in_dim, self.out_dim, kernel_size=kernel_size, padding=kernel_size // 2)
+        nn.init.normal_(self.proj.weight, std=0.02)
+        if self.proj.bias is not None:
+            nn.init.zeros_(self.proj.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 3:
+            raise ValueError(f"REPA conv projector expects [B, T, C], got shape={tuple(x.shape)}")
+
+        batch_size, num_tokens, hidden_size = x.shape
+        if num_tokens != self.expected_num_patches:
+            raise RuntimeError(
+                f"Unexpected REPA student token count in conv projector: got {num_tokens}, expected {self.expected_num_patches}."
+            )
+        if hidden_size != self.in_dim:
+            raise RuntimeError(
+                f"Unexpected REPA student hidden size in conv projector: got {hidden_size}, expected {self.in_dim}."
+            )
+
+        x = x.transpose(1, 2).contiguous().view(batch_size, hidden_size, self.grid_size, self.grid_size)
+        if self.spatial_norm is not None:
+            x = self.spatial_norm(x)
+        x = self.proj(x)
+        x = x.flatten(2).transpose(1, 2).contiguous()
+        return x
+
+
 
 class AttentionPooler(nn.Module):
     """
@@ -1782,7 +1850,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             return
 
         projector_type = getattr(self.config, "repa_projector_type", "mlp3_silu")
-        if projector_type != "mlp3_silu":
+        if projector_type not in {"mlp3_silu", "conv_spatialnorm"}:
             raise ValueError(f"Unsupported repa_projector_type for current implementation: {projector_type}")
 
         if hasattr(self.model, "repa_projector"):
@@ -1794,23 +1862,46 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
 
         teacher_dim = int(getattr(self.config, "repa_teacher_hidden_size", 768))
-        num_layers = int(getattr(self.config, "repa_mlp_num_layers", 3))
-        hidden_ratio = float(getattr(self.config, "repa_mlp_hidden_ratio", 1.0))
-        self.model.repa_projector = REPAMLPProjector(
-            in_dim=student_dim,
-            out_dim=teacher_dim,
-            num_layers=num_layers,
-            hidden_ratio=hidden_ratio,
-        )
+        if projector_type == "mlp3_silu":
+            num_layers = int(getattr(self.config, "repa_mlp_num_layers", 3))
+            hidden_ratio = float(getattr(self.config, "repa_mlp_hidden_ratio", 1.0))
+            self.model.repa_projector = REPAMLPProjector(
+                in_dim=student_dim,
+                out_dim=teacher_dim,
+                num_layers=num_layers,
+                hidden_ratio=hidden_ratio,
+            )
+            projector_log_kwargs = {
+                "num_layers": num_layers,
+                "hidden_ratio": hidden_ratio,
+            }
+        else:
+            expected_num_patches = int(getattr(self.config, "repa_expected_num_patches", 256))
+            conv_kernel_size = int(getattr(self.config, "repa_conv_kernel_size", 3))
+            use_spatial_norm = bool(getattr(self.config, "repa_use_spatial_norm", True))
+            spatial_norm_gamma = float(getattr(self.config, "repa_spatial_norm_gamma", 1.0))
+            self.model.repa_projector = REPAConvSpatialNormProjector(
+                in_dim=student_dim,
+                out_dim=teacher_dim,
+                expected_num_patches=expected_num_patches,
+                kernel_size=conv_kernel_size,
+                use_spatial_norm=use_spatial_norm,
+                spatial_norm_gamma=spatial_norm_gamma,
+            )
+            projector_log_kwargs = {
+                "expected_num_patches": expected_num_patches,
+                "kernel_size": conv_kernel_size,
+                "use_spatial_norm": use_spatial_norm,
+                "spatial_norm_gamma": spatial_norm_gamma,
+            }
         self.model.repa_projector.to(dtype=self.get_model().projector.weight.dtype)
         self.model.repa_projector.requires_grad_(True)
         logging.info(
-            "Initialized REPA projector: type=%s student_dim=%s teacher_dim=%s num_layers=%s hidden_ratio=%.3f",
+            "Initialized REPA projector: type=%s student_dim=%s teacher_dim=%s extra=%s",
             projector_type,
             student_dim,
             teacher_dim,
-            num_layers,
-            hidden_ratio,
+            projector_log_kwargs,
         )
 
     def set_repa_teacher(self, teacher_bundle: Dict[str, nn.Module]) -> None:

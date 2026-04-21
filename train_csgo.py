@@ -1886,6 +1886,9 @@ def train(attn_implementation=None):
     model.config.repa_mlp_num_layers = int(csgo_config.get("repa_mlp_num_layers", 3))
     model.config.repa_mlp_activation = csgo_config.get("repa_mlp_activation", "silu")
     model.config.repa_mlp_hidden_ratio = float(csgo_config.get("repa_mlp_hidden_ratio", 1.0))
+    model.config.repa_use_spatial_norm = csgo_config.get("repa_use_spatial_norm", False)
+    model.config.repa_conv_kernel_size = int(csgo_config.get("repa_conv_kernel_size", 3))
+    model.config.repa_spatial_norm_gamma = float(csgo_config.get("repa_spatial_norm_gamma", 1.0))
     model.config.repa_detach_condition = csgo_config.get("repa_detach_condition", True)
     model.config.is_loc_repa_loss = csgo_config.get("is_loc_repa_loss", False)
     model.config.alpha_loc_repa_loss = csgo_config.get("alpha_loc_repa_loss", 0.0)
@@ -1986,10 +1989,14 @@ def train(attn_implementation=None):
             raise ValueError("Current implementation only supports repa_teacher_type in {'dinov2', 'unilip_vision'}.")
         if model.config.repa_align_type != "patch_wise":
             raise ValueError("Current implementation only supports repa_align_type='patch_wise'.")
-        if model.config.repa_projector_type != "mlp3_silu":
-            raise ValueError("Current implementation only supports repa_projector_type='mlp3_silu'.")
-        if model.config.repa_mlp_activation != "silu":
-            raise ValueError("Current implementation only supports repa_mlp_activation='silu'.")
+        if model.config.repa_projector_type not in {"mlp3_silu", "conv_spatialnorm"}:
+            raise ValueError("Current implementation only supports repa_projector_type in {'mlp3_silu', 'conv_spatialnorm'}.")
+        if model.config.repa_projector_type == "mlp3_silu":
+            if model.config.repa_mlp_activation != "silu":
+                raise ValueError("Current implementation only supports repa_mlp_activation='silu'.")
+        if model.config.repa_projector_type == "conv_spatialnorm":
+            if model.config.repa_conv_kernel_size != 3:
+                raise ValueError("Current implementation only supports repa_conv_kernel_size=3 for conv_spatialnorm.")
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False
