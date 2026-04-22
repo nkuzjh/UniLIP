@@ -49,6 +49,7 @@
 | `exp17_1` | `exp17` 的动态 `alpha_loc_aux` 版本 | schedule: `[0,3000,4000,5000,10000] -> [0,1,2,5,10]` |
 | `exp17_2` | `exp17_1` + 动态 `alpha_loc` / 新 loc lr grouping | 当前 unified 主线基线 |
 | `exp17_2_dust2` | `exp17_2` 的 `dust2` 专用版 | 当前 `dust2` 主 baseline |
+| `exp19_dust2` | `exp17_2_dust2` 的 `aux_loc` step-level periodic gate 版本 | 在保留 `alpha_loc_aux` schedule 的同时加入周期 gate，并在 gate 关闭时跳过 aux_loc 前向链路 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -69,6 +70,7 @@
 | 配置 | 当前定位 | 作用 |
 |---|---|---|
 | `exp17_2_dust2` | 主 baseline | `gen + loc + aux_loc` |
+| `exp19_dust2` | `aux_loc` 周期 gate baseline | `exp17_2_dust2 + step-level periodic gate for aux_loc` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -79,6 +81,37 @@
 | `exp17_8_dust2` | traditional REPA + aux_loc | `exp17_7_dust2 + aux_loc` |
 | `exp18_dust2` | warm-start 对照 | 用于比较 warm-start joint 与 scratch joint |
 | `exp18_1_dust2` | warm-start 调整版 | 比较不同 gen warm-start 来源和更保守 loc lr 的影响 |
+
+### Aux-loc step gate support
+
+当前代码已经支持对 `aux_loc_loss` 做 step-level periodic gate，适用于 `exp17_2_dust2` 这类 unified baseline 的变体实验：
+
+- `effective_alpha_loc_aux(step) = scheduled_alpha_loc_aux(step) * periodic_gate(step)`
+- 当当前 step 的 `effective_alpha_loc_aux == 0` 时：
+  - 不进入 `forward_for_aux_loc_loss()`
+  - 如果该 step 也没有 `loc_repa_loss`，则连 `pred_pixels_input` 的解码也一起跳过
+- 这意味着 gate 关闭时不仅不更新生成分支的 aux 路径，也能节省显存和训练时间
+
+当前可用配置键：
+
+```yaml
+is_loc_aux_step_gate: True
+loc_aux_gate_cycle_steps: 300
+loc_aux_gate_on_steps: 100
+loc_aux_gate_start_step: 0
+```
+
+对应实验：
+
+- `exp19_dust2`
+  - 基于 `exp17_2_dust2`
+  - 保留 `alpha_loc_aux_schedule_steps/values`
+  - 再乘一个周期 gate
+  - train/test 配置已补齐：
+    - `csgo_configs/exp19_dust2.yaml`
+    - `csgo_configs/test/exp19_dust2_gen.yaml`
+    - `csgo_configs/test/exp19_dust2_gen_conti.yaml`
+    - `csgo_configs/test/exp19_dust2_loc.yaml`
 
 ## Implemented Loc-aware REPA Line
 
