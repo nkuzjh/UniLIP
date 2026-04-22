@@ -11,18 +11,18 @@ alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
 
-# Exp17_11_dust2 template: replace the __BASE_*__ teacher block with the better one from exp17_8_dust2 or exp17_10_dust2 before running.
-is_loc_aux_loss: True
+# Exp17_11_dust2: exp17_2_dust2 + iREPA baseline (DINOv2 teacher, DiT layer 6, patch-wise, conv+spatialnorm projector)
+is_loc_aux_loss: False
 alpha_loc_aux_loss: 0.0
 alpha_loc_aux_schedule_steps: [0, 3000, 4000, 5000, 10000]
 alpha_loc_aux_schedule_values: [0.0, 1.0, 2.0, 5.0, 10.0]
 
 is_repa_loss: True
 alpha_repa_loss: 0.5
-repa_teacher_type: "__BASE_REPA_TEACHER_TYPE__"
-repa_teacher_name_or_path: "__BASE_REPA_TEACHER_NAME_OR_PATH__"
-repa_teacher_input_size: "__BASE_REPA_TEACHER_INPUT_SIZE__"
-repa_teacher_hidden_size: "__BASE_REPA_TEACHER_HIDDEN_SIZE__"
+repa_teacher_type: "dinov2"
+repa_teacher_name_or_path: "facebook/dinov2-base"
+repa_teacher_input_size: 224
+repa_teacher_hidden_size: 768
 repa_dit_layer_idx: 6
 repa_align_type: "patch_wise"
 repa_expected_num_patches: 256

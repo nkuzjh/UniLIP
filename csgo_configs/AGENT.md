@@ -221,9 +221,9 @@ x = x / (x.std(dim=1, keepdim=True) + 1e-6)
 | 5 | `exp17_8_dust2` | `exp17_7_dust2` | 打开 `aux_loc` | 验证标准 REPA 与 `aux_loc` 是否互补 |
 | 6 | `exp17_9_dust2` | `exp17_2_dust2` | 传统 REPA, `teacher=UniLIP vision`, `layer=6`, `align=patch_wise`, `projector=mlp3_silu`, `aux_loc=off` | 验证 domain-specific teacher 是否优于 DINOv2 |
 | 7 | `exp17_10_dust2` | `exp17_9_dust2` | 打开 `aux_loc` | 验证 UniLIP vision teacher 与 `aux_loc` 联合时的效果 |
-| 8 | `exp17_11_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | 改 `projector=conv_spatialnorm` | 验证 iREPA 变体是否优于原始 REPA 的 MLP projector |
-| 9 | `exp17_12_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | 改 `layer=8` | 验证 student feature 挂在 DiT 第 6 层还是第 8 层更合适 |
-| 10 | `exp17_13_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | 打开 shared LLM tail | 验证 shared tail 是否也能增强传统 REPA |
+| 8 | `exp17_11_dust2` | `exp17_2_dust2` | iREPA, `teacher=DINOv2`, `layer=6`, `align=patch_wise`, `projector=conv_spatialnorm`, `aux_loc=off` | 验证 iREPA 是否可直接作为主方法替代经典 REPA |
+| 9 | `exp17_12_dust2` | `exp17_11_dust2` | 打开 `aux_loc` 或改 `layer=8` | 在 iREPA 主方法基础上继续做组合或层位扩展 |
+| 10 | `exp17_13_dust2` | `exp17_11_dust2` 或 `exp17_12_dust2` | 打开 shared LLM tail | 验证 shared tail 是否也能增强 iREPA 主方法 |
 
 ## REPA Config Diff Table
 
@@ -289,9 +289,9 @@ repa_spatial_norm_gamma: 1.0
 | `exp17_8_dust2` | `exp17_7_dust2` | `is_loc_aux_loss=True` | 观察 REPA 与 `aux_loc` 的互补性 |
 | `exp17_9_dust2` | `exp17_2_dust2` | 同 `exp17_7_dust2`，但 `repa_teacher_type=unilip_vision` 且 `is_loc_aux_loss=False` | 用 UniLIP vision 作为 teacher 的 teacher ablation |
 | `exp17_10_dust2` | `exp17_9_dust2` | `is_loc_aux_loss=True` | 观察 UniLIP vision teacher 与 `aux_loc` 的互补性 |
-| `exp17_11_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `repa_projector_type=conv_spatialnorm`; `repa_use_spatial_norm=True`; `repa_conv_kernel_size=3`; `repa_spatial_norm_gamma=1.0` | 比较 iREPA 变体与原始 REPA projector。配置文件先保留 teacher 占位符，待选定父实验后再替换 |
-| `exp17_12_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `repa_dit_layer_idx=8` | student 层位 ablation |
-| `exp17_13_dust2` | `exp17_8_dust2` 或 `exp17_10_dust2` 中较优者 | `train_shared_llm_tail_only=True`; `shared_llm_tail_num_layers=2`; `shared_llm_tail_lr=1.0e-5` | shared tail 与传统 REPA 的交互实验 |
+| `exp17_11_dust2` | `exp17_2_dust2` | `is_repa_loss=True`; `alpha_repa_loss=0.5`; `repa_teacher_type=dinov2`; `repa_teacher_name_or_path=facebook/dinov2-base`; `repa_teacher_input_size=224`; `repa_teacher_hidden_size=768`; `repa_dit_layer_idx=6`; `repa_align_type=patch_wise`; `repa_projector_type=conv_spatialnorm`; `repa_use_spatial_norm=True`; `repa_conv_kernel_size=3`; `repa_spatial_norm_gamma=1.0`; `is_loc_aux_loss=False` | iREPA 主方法起点 |
+| `exp17_12_dust2` | `exp17_11_dust2` | `is_loc_aux_loss=True` 或 `repa_dit_layer_idx=8` | iREPA 的 `aux_loc` 组合或 layer 扩展 |
+| `exp17_13_dust2` | `exp17_11_dust2` 或 `exp17_12_dust2` | `train_shared_llm_tail_only=True`; `shared_llm_tail_num_layers=2`; `shared_llm_tail_lr=1.0e-5` | shared tail 与 iREPA 主方法的交互实验 |
 
 ## Recommended Execution Order
 
@@ -313,8 +313,8 @@ repa_spatial_norm_gamma: 1.0
 - 先固定当前 unified + loc-aware REPA 的锚点。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
-- 再比较 projector 结构和 layer。
-- 最后才引入 shared tail，避免过早增加训练耦合。
+- 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
+- 最后才引入 `aux_loc` 组合、layer 扩展和 shared tail，避免过早增加训练耦合。
 
 ## Practical Notes
 

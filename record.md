@@ -2089,18 +2089,22 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
     ``    python frames_to_video.py --img_dir outputs_eval/exp17_10_dust2_gen_conti/test_/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp17_10_dust2_gen_conti/test_/gen_compared_videos/de_dust2 --max_duration 10        ``
 
 ### exp17_11_dust2
-- template base: `__EXP17_11_BASE__` (`exp17_8_dust2` or `exp17_10_dust2`)
-- replace the teacher block placeholders in `csgo_configs/exp17_11_dust2.yaml` and `csgo_configs/test/exp17_11_dust2_*.yaml` before running
-- keep teacher / aux_loc / layer fixed to the chosen base experiment
+- exp17_2_dust2 + iREPA baseline
+- teacher: DINOv2 base on clean target image
+- teacher input size: 224
+- teacher hidden size: 768
+- student feature: Sana DiT block index 6 hidden states
+- align type: patch_wise
 - repa projector: conv + spatial norm
 - repa_projector_type: `conv_spatialnorm`
 - repa_use_spatial_norm: True
 - repa_conv_kernel_size: 3
 - repa_spatial_norm_gamma: 1.0
+- repa_detach_condition: True
 - is_repa_loss: True
 - alpha_repa_loss: 0.5
-- is_loc_aux_loss: True
-- purpose: compare iREPA-style conv projector against the original REPA MLP projector under the same teacher and aux_loc setting
+- is_loc_aux_loss: False
+- purpose: verify whether iREPA can directly replace classical REPA as the main method
 - dust2
 
 **train_csgo.py**
