@@ -1614,18 +1614,71 @@ def _piecewise_linear_value(step, steps, values):
     return float(values[-1])
 
 
-class AlphaLocAuxScheduleCallback(TrainerCallback):
-    def __init__(self, steps, values):
-        self.steps = [int(x) for x in steps]
-        self.values = [float(x) for x in values]
+def _periodic_binary_gate(step, cycle_steps, on_steps, start_step=0):
+    if cycle_steps <= 0:
+        raise ValueError("cycle_steps must be > 0")
+    if on_steps < 0 or on_steps > cycle_steps:
+        raise ValueError("on_steps must be in [0, cycle_steps]")
+    if start_step < 0:
+        raise ValueError("start_step must be >= 0")
 
-        if len(self.steps) != len(self.values) or len(self.steps) == 0:
-            raise ValueError("alpha_loc_aux schedule steps/values must have the same non-zero length")
-        if any(self.steps[idx] < self.steps[idx - 1] for idx in range(1, len(self.steps))):
-            raise ValueError("alpha_loc_aux schedule steps must be non-decreasing")
+    if step < start_step:
+        return 1.0
+
+    phase = (step - start_step) % cycle_steps
+    return 1.0 if phase < on_steps else 0.0
+
+
+class AlphaLocAuxControlCallback(TrainerCallback):
+    def __init__(
+        self,
+        steps=None,
+        values=None,
+        use_step_gate=False,
+        gate_cycle_steps=0,
+        gate_on_steps=0,
+        gate_start_step=0,
+        base_alpha=1.0,
+    ):
+        self.steps = [int(x) for x in steps] if steps is not None else None
+        self.values = [float(x) for x in values] if values is not None else None
+        self.use_step_gate = bool(use_step_gate)
+        self.gate_cycle_steps = int(gate_cycle_steps)
+        self.gate_on_steps = int(gate_on_steps)
+        self.gate_start_step = int(gate_start_step)
+        self.base_alpha = float(base_alpha)
+
+        if self.steps is not None:
+            if len(self.steps) != len(self.values) or len(self.steps) == 0:
+                raise ValueError("alpha_loc_aux schedule steps/values must have the same non-zero length")
+            if any(self.steps[idx] < self.steps[idx - 1] for idx in range(1, len(self.steps))):
+                raise ValueError("alpha_loc_aux schedule steps must be non-decreasing")
+
+        if self.use_step_gate:
+            if self.gate_cycle_steps <= 0:
+                raise ValueError("loc_aux_gate_cycle_steps must be > 0 when step gate is enabled.")
+            if self.gate_on_steps < 0 or self.gate_on_steps > self.gate_cycle_steps:
+                raise ValueError("loc_aux_gate_on_steps must be in [0, loc_aux_gate_cycle_steps].")
+            if self.gate_start_step < 0:
+                raise ValueError("loc_aux_gate_start_step must be >= 0.")
+
+    def _compute_alpha(self, step):
+        if self.steps is not None:
+            alpha = _piecewise_linear_value(step, self.steps, self.values)
+        else:
+            alpha = self.base_alpha
+
+        if self.use_step_gate:
+            alpha *= _periodic_binary_gate(
+                step=step,
+                cycle_steps=self.gate_cycle_steps,
+                on_steps=self.gate_on_steps,
+                start_step=self.gate_start_step,
+            )
+        return float(alpha)
 
     def _set_alpha(self, model, step):
-        alpha = _piecewise_linear_value(step, self.steps, self.values)
+        alpha = self._compute_alpha(step)
 
         candidates = [model]
         if hasattr(model, "module"):
@@ -1873,6 +1926,10 @@ def train(attn_implementation=None):
     model.config.pi05_pytorch_weight_path = csgo_config.get("pi05_pytorch_weight_path", False)
     model.config.is_loc_aux_loss = csgo_config.get("is_loc_aux_loss", False)
     model.config.alpha_loc_aux_loss = csgo_config.get("alpha_loc_aux_loss", 1.0)
+    model.config.is_loc_aux_step_gate = csgo_config.get("is_loc_aux_step_gate", False)
+    model.config.loc_aux_gate_cycle_steps = int(csgo_config.get("loc_aux_gate_cycle_steps", 0))
+    model.config.loc_aux_gate_on_steps = int(csgo_config.get("loc_aux_gate_on_steps", 0))
+    model.config.loc_aux_gate_start_step = int(csgo_config.get("loc_aux_gate_start_step", 0))
     model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
     model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
     model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")
@@ -1983,6 +2040,14 @@ def train(attn_implementation=None):
     model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
 
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
+
+    if model.config.is_loc_aux_step_gate:
+        if model.config.loc_aux_gate_cycle_steps <= 0:
+            raise ValueError("loc_aux_gate_cycle_steps must be > 0 when is_loc_aux_step_gate=True.")
+        if model.config.loc_aux_gate_on_steps < 0 or model.config.loc_aux_gate_on_steps > model.config.loc_aux_gate_cycle_steps:
+            raise ValueError("loc_aux_gate_on_steps must be in [0, loc_aux_gate_cycle_steps].")
+        if model.config.loc_aux_gate_start_step < 0:
+            raise ValueError("loc_aux_gate_start_step must be >= 0.")
 
     if model.config.is_repa_loss:
         if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:
@@ -2265,13 +2330,20 @@ def train(attn_implementation=None):
 
     alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
     alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
+    is_loc_aux_step_gate = bool(csgo_config.get("is_loc_aux_step_gate", False))
     if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None:
         if alpha_loc_aux_schedule_steps is None or alpha_loc_aux_schedule_values is None:
             raise ValueError("alpha_loc_aux schedule requires both alpha_loc_aux_schedule_steps and alpha_loc_aux_schedule_values")
+    if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None or is_loc_aux_step_gate:
         callbacks.append(
-            AlphaLocAuxScheduleCallback(
+            AlphaLocAuxControlCallback(
                 steps=alpha_loc_aux_schedule_steps,
                 values=alpha_loc_aux_schedule_values,
+                use_step_gate=is_loc_aux_step_gate,
+                gate_cycle_steps=int(csgo_config.get("loc_aux_gate_cycle_steps", 0)),
+                gate_on_steps=int(csgo_config.get("loc_aux_gate_on_steps", 0)),
+                gate_start_step=int(csgo_config.get("loc_aux_gate_start_step", 0)),
+                base_alpha=float(csgo_config.get("alpha_loc_aux_loss", 1.0)),
             )
         )
 

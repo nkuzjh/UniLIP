@@ -2807,9 +2807,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
+                    alpha_loc_aux_value = float(getattr(self.model.config, "alpha_loc_aux_loss", 0.0))
+                    run_aux_loc_this_step = (
+                        bool(getattr(self.config, "is_loc_aux_loss", False))
+                        and alpha_loc_aux_value > 0.0
+                        and genbrh_actions is not None
+                    )
                     # bs=8显存占用=6884MiB
                     pred_pixels_input = None
-                    if getattr(self.config, "is_loc_aux_loss", False) or getattr(self.config, "is_loc_repa_loss", False):
+                    need_pred_pixels = run_aux_loc_this_step or bool(getattr(self.config, "is_loc_repa_loss", False))
+                    if need_pred_pixels:
                         pred_pixels_input, _ = self._decode_pred_pixels_input_from_flow(
                             sigmas=sigmas,
                             noisy_latents=noisy_latents,
@@ -2845,7 +2852,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # =========================================================
                     # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
-                    if getattr(self.config, 'is_loc_aux_loss', False) and genbrh_actions is not None and pred_pixels_input is not None:
+                    if run_aux_loc_this_step and pred_pixels_input is not None:
                         # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
                         masked_loc_aux_loss = self.forward_for_aux_loc_loss(
                             sigmas, #torch.Size([16, 1, 1, 1])
@@ -3181,6 +3188,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 ),
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
+                "loc_aux_active": float(alpha_loc_aux_loss.item() > 0),
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()

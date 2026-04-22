@@ -1894,7 +1894,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 **continuous gen**  : step=4000 2000
 ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp17_6_1_dust2_gen_conti.yaml      ```
     **benchmark_csgo.py**
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp17_6_1_dust2_gen_conti/test_20260422_143537/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp17_6_1_dust2_gen_conti/test_20260422_200518/gen_imgs/de_dust2 --all --batch_size 8       ``
     **frames to video**
     ``    python frames_to_video.py --img_dir outputs_eval/exp17_6_1_dust2_gen_conti/test_/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp17_6_1_dust2_gen_conti/test_/gen_compared_videos/de_dust2 --max_duration 10        ``
 
