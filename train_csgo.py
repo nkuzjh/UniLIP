@@ -1954,6 +1954,11 @@ def train(attn_implementation=None):
     model.config.loc_repa_loss_type = csgo_config.get("loc_repa_loss_type", "cosine")
     model.config.loc_repa_use_und_tokens_only = csgo_config.get("loc_repa_use_und_tokens_only", True)
     model.config.loc_repa_timestep_weight = csgo_config.get("loc_repa_timestep_weight", "linear_1m_sigma")
+    model.config.is_noisy_loc_loss = csgo_config.get("is_noisy_loc_loss", False)
+    model.config.noisy_loc_ratio = float(csgo_config.get("noisy_loc_ratio", 0.0))
+    model.config.noisy_loc_image_source = csgo_config.get("noisy_loc_image_source", "latent_space")
+    model.config.noisy_loc_sigma_sampling = csgo_config.get("noisy_loc_sigma_sampling", "gen_matched")
+    model.config.noisy_loc_weight_type = csgo_config.get("noisy_loc_weight_type", "linear_1m_sigma")
     model.config.alpha_loc_loss = csgo_config.get("alpha_loc_loss", 1.0)
     model.config.alpha_loc_schedule_steps = csgo_config.get("alpha_loc_schedule_steps", None)
     model.config.alpha_loc_schedule_values = csgo_config.get("alpha_loc_schedule_values", None)
@@ -2048,6 +2053,16 @@ def train(attn_implementation=None):
             raise ValueError("loc_aux_gate_on_steps must be in [0, loc_aux_gate_cycle_steps].")
         if model.config.loc_aux_gate_start_step < 0:
             raise ValueError("loc_aux_gate_start_step must be >= 0.")
+
+    if model.config.is_noisy_loc_loss:
+        if not (0.0 <= model.config.noisy_loc_ratio <= 1.0):
+            raise ValueError("noisy_loc_ratio must be in [0, 1] when is_noisy_loc_loss=True.")
+        if model.config.noisy_loc_image_source != "latent_space":
+            raise ValueError("Current implementation only supports noisy_loc_image_source='latent_space'.")
+        if model.config.noisy_loc_sigma_sampling != "gen_matched":
+            raise ValueError("Current implementation only supports noisy_loc_sigma_sampling='gen_matched'.")
+        if model.config.noisy_loc_weight_type != "linear_1m_sigma":
+            raise ValueError("Current implementation only supports noisy_loc_weight_type='linear_1m_sigma'.")
 
     if model.config.is_repa_loss:
         if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:

@@ -50,6 +50,7 @@
 | `exp17_2` | `exp17_1` + 动态 `alpha_loc` / 新 loc lr grouping | 当前 unified 主线基线 |
 | `exp17_2_dust2` | `exp17_2` 的 `dust2` 专用版 | 当前 `dust2` 主 baseline |
 | `exp19_dust2` | `exp17_2_dust2` 的 `aux_loc` step-level periodic gate 版本 | 在保留 `alpha_loc_aux` schedule 的同时加入周期 gate，并在 gate 关闭时跳过 aux_loc 前向链路 |
+| `exp20_dust2` | `exp17_2_dust2` 的 noisy-loc distribution matching 版本 | 对 batch 内随机 `30%` loc 子集做 latent-space matched noise，并仅对 noisy 子集覆盖 `1-sigma` loss 权重 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -71,6 +72,7 @@
 |---|---|---|
 | `exp17_2_dust2` | 主 baseline | `gen + loc + aux_loc` |
 | `exp19_dust2` | `aux_loc` 周期 gate baseline | `exp17_2_dust2 + step-level periodic gate for aux_loc` |
+| `exp20_dust2` | noisy-loc matching baseline | `exp17_2_dust2 + latent-space noisy loc subset + per-sample (1-sigma) weighting` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -113,6 +115,68 @@ loc_aux_gate_start_step: 0
     - `csgo_configs/test/exp19_dust2_gen_conti.yaml`
     - `csgo_configs/test/exp19_dust2_loc.yaml`
 
+## Noisy Loc Matching Line
+
+### Design summary
+
+当前代码已经支持 `exp20_dust2` 这类 noisy-loc distribution matching 实验，目标是让定位分支在训练时看到一部分与 `loc_aux_loss` 中 `x0_hat` 更接近的数据分布：
+
+- 基础配置：
+  - 直接基于 `exp17_2_dust2`
+  - 保持 `is_multi_task=True`
+  - 保持 `is_multi_task_balanced=True`
+- noisy loc 子集：
+  - 在每个 batch 的 loc 样本内随机抽样
+  - 当前默认比例为 `0.3`
+- noisy 构造方式：
+  - 先将 loc FPS 图像编码到与生成分支一致的 target latent 空间
+  - 使用与生成分支一致的 timestep / sigma 采样逻辑加噪
+  - 再 decode 回 pixel space，替换 loc 子集对应的干净图像
+- loss 权重：
+  - clean loc 样本保持权重 `1.0`
+  - noisy loc 子集单独覆盖为 `1 - sigma`
+- 当前实现范围：
+  - 只支持 `noisy_loc_image_source=latent_space`
+  - 只支持 `noisy_loc_sigma_sampling=gen_matched`
+  - 只支持 `noisy_loc_weight_type=linear_1m_sigma`
+
+### Implemented configs
+
+- `exp20_dust2`
+  - 基于 `exp17_2_dust2`
+  - 新增：
+    - `is_noisy_loc_loss=True`
+    - `noisy_loc_ratio=0.3`
+    - `noisy_loc_image_source=latent_space`
+    - `noisy_loc_sigma_sampling=gen_matched`
+    - `noisy_loc_weight_type=linear_1m_sigma`
+  - train/test 配置已补齐：
+    - `csgo_configs/exp20_dust2.yaml`
+    - `csgo_configs/test/exp20_dust2_gen.yaml`
+    - `csgo_configs/test/exp20_dust2_gen_conti.yaml`
+    - `csgo_configs/test/exp20_dust2_loc.yaml`
+
+### Current notes
+
+- 该实现直接对 loc 图像单独编码 latent，不复用 `prepare_inputs_labels_for_multimodal()` 返回值，目的是避免在主 prepare 调用之前引入额外的 batch 对齐和中间状态耦合。
+- 当前 loss 权重覆盖仅作用于 noisy loc 子集，clean loc 样本仍保持原始训练目标。
+- 该实现面向 `exp17_2_dust2` 当前主路径，即 `use_pi05_action_dit=True` 的定位头路线。
+
+### Future directions
+
+- `x0_hat` matched noise：
+  - 不再只做 schedule-level matching，而是尝试直接对齐 `loc_aux_loss` 实际使用的 `pred_latents_x0 -> vae.decode` 分布。
+- noisy ratio schedule：
+  - 将 `noisy_loc_ratio` 从固定值扩展为 schedule，先小比例 warmup，再逐步提高。
+- loc weight normalization：
+  - 比较当前直接乘 `1-sigma` 与按 noisy 子集重新归一化后的加权方式，区分“分布匹配”与“总 loc 强度变化”两个因素。
+- clean/noisy consistency：
+  - 对同一样本的 clean/noisy loc feature 或 action prediction 增加一致性约束，减少 noisy augmentation 带来的定位漂移。
+- paired-gen latent reuse ablation：
+  - 如果后续明确要进一步压缩开销，可评估是否直接复用 paired gen 样本的 latent/noise，而不是对 loc 图像单独再编码一遍。
+- migrate best variant to `exp17_5_dust2`：
+  - 如果 noisy-loc matching 在 `exp17_2_dust2` 上成立，再迁移到 loc-aware REPA 主线，检查其与 `loc_repa_loss` 是否互补。
+
 ## Implemented Loc-aware REPA Line
 
 ### Design summary
@@ -136,6 +200,7 @@ loc_aux_gate_start_step: 0
 | 配置 | 目的 | 关键改动 |
 |---|---|---|
 | `exp17_5_dust2` | 在 `exp17_2_dust2` 上加入独立 `loc-aware REPA` | `is_loc_repa_loss=True` |
+| `exp20_dust2` | `exp17_2_dust2` 上加入 noisy-loc distribution matching | `is_noisy_loc_loss=True`; `noisy_loc_ratio=0.3`; `noisy_loc_image_source=latent_space`; `noisy_loc_sigma_sampling=gen_matched`; `noisy_loc_weight_type=linear_1m_sigma` |
 | `exp17_6_dust2` | 在 `exp17_5_dust2` 上再打开 shared LLM tail | `train_shared_llm_tail_only=True` |
 | `exp17_6_1_dust2` | 在 `exp17_6_dust2` 上把 shared LLM tail 从 2 层扩展到 6 层 | `shared_llm_tail_num_layers=6` |
 | `exp17_6_2_dust2` | 在 `exp17_6_dust2` 上启用 12-layer shared tail 的 lora_only 方案 | `shared_llm_tail_num_layers=12`; `shared_llm_tail_lora_enabled=True`; `shared_llm_tail_lora_mode=lora_only` |
@@ -298,19 +363,23 @@ repa_spatial_norm_gamma: 1.0
 推荐按下面顺序推进，不要一开始做全因子展开：
 
 1. `exp17_2_dust2`
-2. `exp17_5_dust2`
-3. `exp17_6_dust2`
-4. `exp17_7_dust2`
-5. `exp17_8_dust2`
-6. `exp17_9_dust2`
-7. `exp17_10_dust2`
-8. `exp17_11_dust2`
-9. `exp17_12_dust2`
-10. `exp17_13_dust2`
+2. `exp17_4_dust2`
+3. `exp19_dust2`
+4. `exp20_dust2`
+5. `exp17_5_dust2`
+6. `exp17_6_dust2`
+7. `exp17_7_dust2`
+8. `exp17_8_dust2`
+9. `exp17_9_dust2`
+10. `exp17_10_dust2`
+11. `exp17_11_dust2`
+12. `exp17_12_dust2`
+13. `exp17_13_dust2`
 
 理由：
 
 - 先固定当前 unified + loc-aware REPA 的锚点。
+- 在引入 REPA 之前，先验证 noisy-loc 分布匹配是否能单独带来收益。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
 - 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
@@ -329,6 +398,8 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp14_dust2_gen.yaml`
 - `csgo_configs/exp14_dust2_loc.yaml`
 - `csgo_configs/exp17_2_dust2.yaml`
+- `csgo_configs/exp19_dust2.yaml`
+- `csgo_configs/exp20_dust2.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

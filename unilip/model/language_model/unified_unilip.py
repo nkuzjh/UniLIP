@@ -2149,6 +2149,70 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
         return pred_pixels_input, pred_pixels_norm
 
+    def _encode_pixels_to_target_latents(
+        self,
+        pixel_values: torch.Tensor,
+        image_sizes: Optional[List[List[int]]] = None,
+    ) -> torch.Tensor:
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        with torch.no_grad():
+            prompt_image_embeds = self.model.get_image_features(
+                pixel_values=pixel_values,
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+                image_sizes=image_sizes,
+            )
+            prompt_image_embeds = self.model.vae_decoder.clip_down(prompt_image_embeds)
+            target_image_embeds = torch.clone(prompt_image_embeds).detach()
+            target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor)
+        return target_image_embeds
+
+    def _decode_pixels_input_from_latents(
+        self,
+        latents: torch.Tensor,
+        target_hw: Tuple[int, int],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        latents_scaled = latents / self.model.config.unilip_factor
+
+        with torch.no_grad():
+            mini_batch_size = 64
+            pred_pixels_list = []
+            for i in range(0, latents_scaled.shape[0], mini_batch_size):
+                batch_latents = latents_scaled[i : i + mini_batch_size]
+                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+                pred_pixels_list.append(batch_pixels)
+            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+
+        pred_pixels_norm = (pred_pixels + 1.0) / 2.0
+        if pred_pixels_norm.shape[-2:] != target_hw:
+            pred_pixels_norm = F.interpolate(
+                pred_pixels_norm,
+                size=target_hw,
+                mode="bilinear",
+                align_corners=False,
+            )
+        pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
+        return pred_pixels_input, pred_pixels_norm
+
+    def _sample_gen_matched_timesteps_and_sigmas(
+        self,
+        batch_size: int,
+        device: torch.device,
+        n_dim: int,
+        dtype: torch.dtype,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        u = compute_density_for_timestep_sampling(
+            weighting_scheme="logit_normal",
+            batch_size=batch_size,
+            logit_mean=0.0,
+            logit_std=1.0,
+        )
+        indices = (u * self.get_model().noise_scheduler.config.num_train_timesteps).long()
+        timesteps = self.get_model().noise_scheduler.timesteps[indices].to(device=device)
+        sigmas = self.get_sigmas(timesteps, device, n_dim=n_dim, dtype=dtype)
+        return timesteps, sigmas
+
     def _pixel_shuffle(self, x, scale_factor=0.5):
         n, w, h, c = x.size()
         x = x.view(n, w, int(h * scale_factor), int(c / scale_factor))
@@ -2621,11 +2685,51 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
         gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
+        effective_und_image = und_image
+        loc_loss_sample_weights = None
+        noisy_loc_count = 0
+        noisy_loc_mean_weight = 1.0
         if getattr(self.config, "use_pi05_action_dit", False):
             actions = torch.cat([
                 actions,
                 torch.full((actions.size(0), 1, self.get_model()._default_pi05_action_dim - actions.size(-1)), 0.0, dtype=torch.bfloat16).to(actions.device)
             ], dim=-1)
+
+        if getattr(self.config, "is_noisy_loc_loss", False) and und_image is not None and loc_indices.numel() > 0:
+            loc_loss_sample_weights = torch.ones(loc_indices.numel(), device=und_image.device, dtype=torch.float32)
+            noisy_loc_ratio = float(getattr(self.config, "noisy_loc_ratio", 0.0))
+            noisy_loc_count = int(loc_indices.numel() * noisy_loc_ratio)
+            if noisy_loc_ratio > 0.0 and noisy_loc_count == 0:
+                noisy_loc_count = 1
+            noisy_loc_count = min(noisy_loc_count, loc_indices.numel())
+
+            if noisy_loc_count > 0:
+                noisy_loc_relative_indices = torch.randperm(loc_indices.numel(), device=loc_indices.device)[:noisy_loc_count]
+                noisy_loc_indices = loc_indices[noisy_loc_relative_indices]
+
+                loc_pixel_values = und_image[noisy_loc_indices]
+                loc_target_latents = self._encode_pixels_to_target_latents(
+                    pixel_values=loc_pixel_values,
+                )
+                _, noisy_loc_sigmas = self._sample_gen_matched_timesteps_and_sigmas(
+                    batch_size=loc_target_latents.shape[0],
+                    device=loc_target_latents.device,
+                    n_dim=loc_target_latents.ndim,
+                    dtype=loc_target_latents.dtype,
+                )
+                noisy_loc_noise = torch.randn_like(loc_target_latents, device=loc_target_latents.device)
+                noisy_loc_latents = (1.0 - noisy_loc_sigmas) * loc_target_latents + noisy_loc_sigmas * noisy_loc_noise
+                noisy_loc_pixels, _ = self._decode_pixels_input_from_latents(
+                    latents=noisy_loc_latents,
+                    target_hw=loc_pixel_values.shape[-2:],
+                )
+
+                effective_und_image = und_image.clone()
+                effective_und_image[noisy_loc_indices] = noisy_loc_pixels.to(dtype=effective_und_image.dtype)
+
+                noisy_loc_weights = (1.0 - noisy_loc_sigmas).clamp(min=0).reshape(-1).to(torch.float32)
+                loc_loss_sample_weights[noisy_loc_relative_indices] = noisy_loc_weights
+                noisy_loc_mean_weight = float(noisy_loc_weights.mean().detach().cpu().item())
 
         # --- A. Input Preparation ---
         # Note: We merge und_image and aux_image logic.
@@ -2636,7 +2740,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if ( (not getattr(self.config, "use_vit_cls_regression_head", False)) and (not getattr(self.config, "use_codex_vit_regression_head", False)) ) \
             or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0) \
             or (getattr(self.config, "use_codex_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
-            combined_und_images = und_image
+            combined_und_images = effective_und_image
             if aux_image is not None:# and aux_image.sum() != 0:
                 if combined_und_images is not None:
                     # Assuming simple concat in batch dimension for processing, then splitting?
@@ -2644,7 +2748,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Given prepare_inputs logic, we rely on input_ids tokens.
                     # If there are two <image> tokens in Loc Prompt, prepare_inputs handles replacement sequentially.
                     # Just need to ensure `und_images` passed to prepare_inputs contains all pixel values.
-                    combined_und_images = torch.cat([und_image, aux_image], dim=0) # Careful with indexing mapping!
+                    combined_und_images = torch.cat([effective_und_image, aux_image], dim=0) # Careful with indexing mapping!
                     # Actually, simpler: The dataset currently provides und_image and aux_image separately.
                     # But input_ids has multiple <image> placeholders.
                     # For simplicity in this adaptation, let's assume `und_image` arg passed to `prepare_inputs`
@@ -2756,7 +2860,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 genbrh_aux_loc_input_ids = aux_loc_input_ids[gen_indices]
                 genbrh_aux_loc_labels = aux_loc_labels[gen_indices]
                 genbrh_aux_loc_attention_mask = aux_loc_attention_mask[gen_indices]
-                genbrh_und_image = und_image[gen_indices]
+                genbrh_und_image = effective_und_image[gen_indices]
                 genbrh_gen_image = gen_image[gen_indices]
                 genbrh_loc_map_image = loc_map_image[gen_indices] if loc_map_image is not None else None
                 genbrh_task_id = task_id[gen_indices]
@@ -2886,7 +2990,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
                 if getattr(self.config, "use_external_loc_model", False):
                     locbrh_actions = actions[loc_indices]
-                    locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else und_image[loc_indices]
+                    locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else effective_und_image[loc_indices]
                     locbrh_map_image = loc_map_image[loc_indices] if loc_map_image is not None else aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_external_loc_model(locbrh_fps_image, locbrh_map_image)
                     if getattr(self.config, "external_loc_use_circular_loss", True):
@@ -2897,7 +3001,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 elif getattr(self.config, "use_codex_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
-                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_und_image = effective_und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_codex_vit_regression_head(
                         locbrh_und_image,
@@ -2911,7 +3015,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 elif getattr(self.config, "use_vit_cls_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
-                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_und_image = effective_und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_vit_regression_head(
                         locbrh_und_image,
@@ -2952,6 +3056,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     locbrh_attention_mask = attention_mask[loc_indices]
                     locbrh_position_ids = position_ids[loc_indices]
                     locbrh_loss_mask = loss_mask[loc_indices]
+                    locbrh_sample_weights = (
+                        loc_loss_sample_weights
+                        if loc_loss_sample_weights is not None
+                        else torch.ones(locbrh_loss_mask.shape[0], device=locbrh_loss_mask.device, dtype=torch.float32)
+                    )
                     # # TODO 这里也一样！如果使用[is_loc_task]过滤actions和其他中间tensor后再进行embed_action_suffix和action_dit，能节约显存，但是由于[is_loc_task]的数目不一定恰好等于2的次方，所以可能会影响cuda加速运算。除非数据集collactor手动设置loc:gen=64:64。
                     # 1. Flow Matching Setup
                     # Sample Noise & Time
@@ -3129,12 +3238,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     loc_loss = loc_loss_full.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
                     # Apply Mask: Only count loss for Loc samples
-                    masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
+                    masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0] * locbrh_sample_weights).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
 
                     # monitor only: valid 5-dim velocity mse, no change to training objective
                     if getattr(self.config, "use_pi05_action_dit", False):
                         loc_loss_valid5 = loc_loss_full[..., :self.model.config.action_dim].mean(dim=[1, 2])  # [BS]
-                        masked_loc_loss_valid5 = (loc_loss_valid5 * locbrh_loss_mask[:, 0]).mean().to(torch.float32)
+                        masked_loc_loss_valid5 = (
+                            loc_loss_valid5 * locbrh_loss_mask[:, 0] * locbrh_sample_weights
+                        ).mean().to(torch.float32)
                     else:
                         # keep same scale for non-pi05 path so logging code can stay uniform
                         masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
@@ -3171,6 +3282,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "other_info": {
                 "loc_indices": len(loc_indices),
                 "gen_indices": len(gen_indices),
+                "is_noisy_loc_loss": float(getattr(self.config, "is_noisy_loc_loss", False)),
+                "noisy_loc_count": int(noisy_loc_count),
+                "noisy_loc_ratio_effective": (
+                    float(noisy_loc_count / len(loc_indices)) if len(loc_indices) > 0 else 0.0
+                ),
+                "noisy_loc_mean_weight": float(noisy_loc_mean_weight),
                 "total_loss": total_loss.detach().cpu().numpy().item(),
                 "loc_loss_valid5": masked_loc_loss_valid5.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_loss_valid5": (masked_loc_loss_valid5 * alpha_loc_loss).detach().cpu().numpy().item(),
