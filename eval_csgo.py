@@ -6,6 +6,7 @@ import numpy as np
 import yaml
 import random
 import datetime
+import gc
 from PIL import Image
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
@@ -329,20 +330,23 @@ def smart_matching_state_dict_keys(state_dict, model):
 # ==========================================
 # 3. 主推理逻辑
 # ==========================================
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--csgo_config", type=str, required=True)
-    args = parser.parse_args()
-
-    with open(args.csgo_config, 'r') as f:
+def run_csgo_generation_from_config(
+    csgo_config_path: str,
+    *,
+    output_dir: Optional[str] = None,
+    seed: int = 42,
+    release_model: bool = False,
+) -> Dict[str, object]:
+    with open(csgo_config_path, 'r') as f:
         csgo_config = yaml.safe_load(f)
     print("csgo_config: ", csgo_config)
 
     # 设置随机种子
-    set_seed()
+    set_seed(seed)
 
-    cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = f"outputs_eval/{args.csgo_config.split('/')[-1][:-5]}/test_{cur_time_str}"
+    if output_dir is None:
+        cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_dir = f"outputs_eval/{csgo_config_path.split('/')[-1][:-5]}/test_{cur_time_str}"
     os.makedirs(output_dir+"/gen_imgs", exist_ok=True)
 
     # 1. 加载模型
@@ -518,6 +522,31 @@ def main():
                 is_vis = False
 
     print(f"✅ Inference finished. Results saved to {output_dir}")
+
+    generated_map_dirs = {
+        map_name: os.path.join(output_dir, "gen_imgs", map_name)
+        for map_name in (csgo_config.get("val_maps") or csgo_config.get("test_maps", []))
+    }
+
+    if release_model:
+        del pipe, model, tokenizer
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+    return {
+        "output_dir": output_dir,
+        "csgo_config": csgo_config,
+        "csgo_config_path": csgo_config_path,
+        "generated_map_dirs": generated_map_dirs,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--csgo_config", type=str, required=True)
+    args = parser.parse_args()
+    run_csgo_generation_from_config(args.csgo_config)
 
 if __name__ == "__main__":
     main()
