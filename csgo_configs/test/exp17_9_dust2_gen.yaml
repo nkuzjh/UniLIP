@@ -11,7 +11,7 @@ alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
 
-# Exp17_7_dust2: exp17_2_dust2 + traditional REPA (DINOv2 teacher, DiT layer 6, patch-wise, MLP projector)
+# Exp17_9_dust2: exp17_2_dust2 + traditional REPA (UniLIP vision teacher, DiT layer 6, patch-wise, MLP projector)
 is_loc_aux_loss: False
 alpha_loc_aux_loss: 0.0
 alpha_loc_aux_schedule_steps: [0, 3000, 4000, 5000, 10000]
@@ -19,10 +19,10 @@ alpha_loc_aux_schedule_values: [0.0, 1.0, 2.0, 5.0, 10.0]
 
 is_repa_loss: True
 alpha_repa_loss: 0.5
-repa_teacher_type: "dinov2"
-repa_teacher_name_or_path: "facebook/dinov2-base"
-repa_teacher_input_size: 224
-repa_teacher_hidden_size: 768
+repa_teacher_type: "unilip_vision"
+repa_teacher_name_or_path: "internal_unilip_vision"
+repa_teacher_input_size: 448
+repa_teacher_hidden_size: 896
 repa_dit_layer_idx: 6
 repa_align_type: "patch_wise"
 repa_expected_num_patches: 256
@@ -58,7 +58,7 @@ is_lora: False
 
 
 ### infer
-ckpt_path: "outputs/csgo_1b/exp17_7_dust2/checkpoint-6000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp17_9_dust2/checkpoint-4000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 

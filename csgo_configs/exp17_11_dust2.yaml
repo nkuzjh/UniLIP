@@ -11,7 +11,7 @@ alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
 
-# Exp17_7_dust2: exp17_2_dust2 + traditional REPA (DINOv2 teacher, DiT layer 6, patch-wise, MLP projector)
+# Exp17_11_dust2: exp17_2_dust2 + iREPA baseline (DINOv2 teacher, DiT layer 6, patch-wise, conv+spatialnorm projector)
 is_loc_aux_loss: False
 alpha_loc_aux_loss: 0.0
 alpha_loc_aux_schedule_steps: [0, 3000, 4000, 5000, 10000]
@@ -26,10 +26,13 @@ repa_teacher_hidden_size: 768
 repa_dit_layer_idx: 6
 repa_align_type: "patch_wise"
 repa_expected_num_patches: 256
-repa_projector_type: "mlp3_silu"
+repa_projector_type: "conv_spatialnorm"
 repa_mlp_num_layers: 3
 repa_mlp_activation: "silu"
 repa_mlp_hidden_ratio: 1.0
+repa_use_spatial_norm: True
+repa_conv_kernel_size: 3
+repa_spatial_norm_gamma: 1.0
 repa_detach_condition: True
 
 is_action_dit_dense_timestep: True
@@ -55,13 +58,3 @@ test_maps: ['de_dust2']
 
 ### lora
 is_lora: False
-
-
-### infer
-ckpt_path: "outputs/csgo_1b/exp17_7_dust2/checkpoint-6000/model.safetensors"
-guidance_scale: 4.5
-batch_size: 1
-
-# 模仿训练时的 model_args
-mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
-action_dim: 5

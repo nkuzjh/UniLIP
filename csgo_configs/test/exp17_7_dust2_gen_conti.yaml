@@ -18,7 +18,7 @@ alpha_loc_aux_schedule_steps: [0, 3000, 4000, 5000, 10000]
 alpha_loc_aux_schedule_values: [0.0, 1.0, 2.0, 5.0, 10.0]
 
 is_repa_loss: True
-alpha_repa_loss: 0.1
+alpha_repa_loss: 0.5
 repa_teacher_type: "dinov2"
 repa_teacher_name_or_path: "facebook/dinov2-base"
 repa_teacher_input_size: 224

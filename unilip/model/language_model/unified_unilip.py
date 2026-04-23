@@ -137,6 +137,74 @@ class REPAMLPProjector(nn.Module):
         return self.net(x)
 
 
+class REPASpatialNorm(nn.Module):
+    def __init__(self, gamma: float = 1.0, eps: float = 1e-6):
+        super().__init__()
+        self.gamma = float(gamma)
+        self.eps = float(eps)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x_float = x.float()
+        mean = x_float.mean(dim=(2, 3), keepdim=True)
+        std = x_float.std(dim=(2, 3), keepdim=True, unbiased=False)
+        x_float = x_float - self.gamma * mean
+        x_float = x_float / (std + self.eps)
+        return x_float.to(dtype=x.dtype)
+
+
+class REPAConvSpatialNormProjector(nn.Module):
+    def __init__(
+        self,
+        in_dim: int,
+        out_dim: int,
+        expected_num_patches: int,
+        kernel_size: int = 3,
+        use_spatial_norm: bool = True,
+        spatial_norm_gamma: float = 1.0,
+    ):
+        super().__init__()
+        if kernel_size != 3:
+            raise ValueError(f"Current REPA conv projector only supports kernel_size=3, got {kernel_size}")
+
+        grid_size = math.isqrt(expected_num_patches)
+        if grid_size * grid_size != expected_num_patches:
+            raise ValueError(
+                f"REPA conv projector requires square patch layout, got expected_num_patches={expected_num_patches}"
+            )
+
+        self.in_dim = int(in_dim)
+        self.out_dim = int(out_dim)
+        self.expected_num_patches = int(expected_num_patches)
+        self.grid_size = int(grid_size)
+        self.use_spatial_norm = bool(use_spatial_norm)
+        self.spatial_norm = REPASpatialNorm(gamma=spatial_norm_gamma) if self.use_spatial_norm else None
+        self.proj = nn.Conv2d(self.in_dim, self.out_dim, kernel_size=kernel_size, padding=kernel_size // 2)
+        nn.init.normal_(self.proj.weight, std=0.02)
+        if self.proj.bias is not None:
+            nn.init.zeros_(self.proj.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.ndim != 3:
+            raise ValueError(f"REPA conv projector expects [B, T, C], got shape={tuple(x.shape)}")
+
+        batch_size, num_tokens, hidden_size = x.shape
+        if num_tokens != self.expected_num_patches:
+            raise RuntimeError(
+                f"Unexpected REPA student token count in conv projector: got {num_tokens}, expected {self.expected_num_patches}."
+            )
+        if hidden_size != self.in_dim:
+            raise RuntimeError(
+                f"Unexpected REPA student hidden size in conv projector: got {hidden_size}, expected {self.in_dim}."
+            )
+
+        x = x.transpose(1, 2).contiguous().view(batch_size, hidden_size, self.grid_size, self.grid_size)
+        if self.spatial_norm is not None:
+            x = self.spatial_norm(x)
+        x = self.proj(x)
+        x = x.flatten(2).transpose(1, 2).contiguous()
+        return x
+
+
 
 class AttentionPooler(nn.Module):
     """
@@ -1782,7 +1850,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             return
 
         projector_type = getattr(self.config, "repa_projector_type", "mlp3_silu")
-        if projector_type != "mlp3_silu":
+        if projector_type not in {"mlp3_silu", "conv_spatialnorm"}:
             raise ValueError(f"Unsupported repa_projector_type for current implementation: {projector_type}")
 
         if hasattr(self.model, "repa_projector"):
@@ -1790,27 +1858,50 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         student_dim = self.get_model().dit.config.num_attention_heads * self.get_model().dit.config.attention_head_dim
         teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
-        if teacher_type != "dinov2":
+        if teacher_type not in {"dinov2", "unilip_vision"}:
             raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
 
         teacher_dim = int(getattr(self.config, "repa_teacher_hidden_size", 768))
-        num_layers = int(getattr(self.config, "repa_mlp_num_layers", 3))
-        hidden_ratio = float(getattr(self.config, "repa_mlp_hidden_ratio", 1.0))
-        self.model.repa_projector = REPAMLPProjector(
-            in_dim=student_dim,
-            out_dim=teacher_dim,
-            num_layers=num_layers,
-            hidden_ratio=hidden_ratio,
-        )
+        if projector_type == "mlp3_silu":
+            num_layers = int(getattr(self.config, "repa_mlp_num_layers", 3))
+            hidden_ratio = float(getattr(self.config, "repa_mlp_hidden_ratio", 1.0))
+            self.model.repa_projector = REPAMLPProjector(
+                in_dim=student_dim,
+                out_dim=teacher_dim,
+                num_layers=num_layers,
+                hidden_ratio=hidden_ratio,
+            )
+            projector_log_kwargs = {
+                "num_layers": num_layers,
+                "hidden_ratio": hidden_ratio,
+            }
+        else:
+            expected_num_patches = int(getattr(self.config, "repa_expected_num_patches", 256))
+            conv_kernel_size = int(getattr(self.config, "repa_conv_kernel_size", 3))
+            use_spatial_norm = bool(getattr(self.config, "repa_use_spatial_norm", True))
+            spatial_norm_gamma = float(getattr(self.config, "repa_spatial_norm_gamma", 1.0))
+            self.model.repa_projector = REPAConvSpatialNormProjector(
+                in_dim=student_dim,
+                out_dim=teacher_dim,
+                expected_num_patches=expected_num_patches,
+                kernel_size=conv_kernel_size,
+                use_spatial_norm=use_spatial_norm,
+                spatial_norm_gamma=spatial_norm_gamma,
+            )
+            projector_log_kwargs = {
+                "expected_num_patches": expected_num_patches,
+                "kernel_size": conv_kernel_size,
+                "use_spatial_norm": use_spatial_norm,
+                "spatial_norm_gamma": spatial_norm_gamma,
+            }
         self.model.repa_projector.to(dtype=self.get_model().projector.weight.dtype)
         self.model.repa_projector.requires_grad_(True)
         logging.info(
-            "Initialized REPA projector: type=%s student_dim=%s teacher_dim=%s num_layers=%s hidden_ratio=%.3f",
+            "Initialized REPA projector: type=%s student_dim=%s teacher_dim=%s extra=%s",
             projector_type,
             student_dim,
             teacher_dim,
-            num_layers,
-            hidden_ratio,
+            projector_log_kwargs,
         )
 
     def set_repa_teacher(self, teacher_bundle: Dict[str, nn.Module]) -> None:
@@ -1824,44 +1915,108 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if teacher_bundle is None:
             return
 
-        teacher_model = teacher_bundle["model"]
-        try:
-            teacher_param = next(teacher_model.parameters())
-            teacher_device = teacher_param.device
-        except StopIteration:
-            teacher_device = device
+        teacher_type = teacher_bundle.get("type", "dinov2")
+        if teacher_type == "dinov2":
+            teacher_model = teacher_bundle["model"]
+            try:
+                teacher_param = next(teacher_model.parameters())
+                teacher_device = teacher_param.device
+            except StopIteration:
+                teacher_device = device
 
-        if teacher_device != device:
-            teacher_model.to(device=device)
+            if teacher_device != device:
+                teacher_model.to(device=device)
+            return
+
+        if teacher_type == "unilip_vision":
+            for module_name in ["vision_tower", "multi_modal_projector"]:
+                teacher_module = teacher_bundle[module_name]
+                ref_module = getattr(self.model, module_name)
+                try:
+                    ref_param = next(ref_module.parameters())
+                    target_dtype = ref_param.dtype
+                except StopIteration:
+                    target_dtype = None
+
+                try:
+                    teacher_param = next(teacher_module.parameters())
+                    teacher_device = teacher_param.device
+                    teacher_dtype = teacher_param.dtype
+                except StopIteration:
+                    teacher_device = device
+                    teacher_dtype = target_dtype
+
+                if teacher_device != device or (target_dtype is not None and teacher_dtype != target_dtype):
+                    if target_dtype is not None:
+                        teacher_module.to(device=device, dtype=target_dtype)
+                    else:
+                        teacher_module.to(device=device)
+            return
+
+        raise ValueError(f"Unsupported repa_teacher_type for device placement: {teacher_type}")
 
     def initialize_repa_teacher(self) -> None:
         teacher_type = getattr(self.config, "repa_teacher_type", "dinov2")
-        if teacher_type != "dinov2":
-            raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
-
         teacher_name = getattr(self.config, "repa_teacher_name_or_path", "facebook/dinov2-base")
-        teacher_model = AutoModel.from_pretrained(
-            teacher_name,
-            low_cpu_mem_usage=True,
-        )
-        teacher_model.eval()
-        teacher_model.requires_grad_(False)
 
-        teacher_hidden_size = int(getattr(teacher_model.config, "hidden_size", 768))
-        self.config.repa_teacher_hidden_size = teacher_hidden_size
-        self.set_repa_teacher(
-            {
-                "type": teacher_type,
-                "name_or_path": teacher_name,
-                "model": teacher_model,
-            }
-        )
-        logging.info(
-            "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
-            teacher_type,
-            teacher_name,
-            teacher_hidden_size,
-        )
+        if teacher_type == "dinov2":
+            teacher_model = AutoModel.from_pretrained(
+                teacher_name,
+                low_cpu_mem_usage=True,
+            )
+            teacher_model.eval()
+            teacher_model.requires_grad_(False)
+
+            teacher_hidden_size = int(getattr(teacher_model.config, "hidden_size", 768))
+            self.config.repa_teacher_hidden_size = teacher_hidden_size
+            self.set_repa_teacher(
+                {
+                    "type": teacher_type,
+                    "name_or_path": teacher_name,
+                    "model": teacher_model,
+                }
+            )
+            logging.info(
+                "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
+                teacher_type,
+                teacher_name,
+                teacher_hidden_size,
+            )
+            return
+
+        if teacher_type == "unilip_vision":
+            vision_tower = copy.deepcopy(self.model.vision_tower)
+            multi_modal_projector = copy.deepcopy(self.model.multi_modal_projector)
+            vision_tower.eval()
+            vision_tower.requires_grad_(False)
+            multi_modal_projector.eval()
+            multi_modal_projector.requires_grad_(False)
+
+            teacher_hidden_size = int(getattr(self.config, "repa_teacher_hidden_size", 0))
+            if teacher_hidden_size <= 0:
+                projector_tail = multi_modal_projector[-1] if isinstance(multi_modal_projector, nn.Sequential) else multi_modal_projector
+                teacher_hidden_size = getattr(projector_tail, "out_features", None)
+            if teacher_hidden_size is None or int(teacher_hidden_size) <= 0:
+                raise ValueError("repa_teacher_hidden_size must be set for repa_teacher_type='unilip_vision'.")
+
+            self.config.repa_teacher_hidden_size = int(teacher_hidden_size)
+            self.set_repa_teacher(
+                {
+                    "type": teacher_type,
+                    "name_or_path": teacher_name,
+                    "vision_tower": vision_tower,
+                    "multi_modal_projector": multi_modal_projector,
+                }
+            )
+            logging.info(
+                "REPA teacher attached (frozen eval): type=%s, name_or_path=%s, hidden_size=%s",
+                teacher_type,
+                teacher_name,
+                teacher_hidden_size,
+            )
+            return
+
+        raise ValueError(f"Unsupported repa_teacher_type for current implementation: {teacher_type}")
 
     def set_external_localization_model(self, external_model: nn.Module) -> None:
         # Keep it out of nn.Module registration to avoid saving/updating in UniLIP checkpoints.
@@ -1994,6 +2149,70 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
         return pred_pixels_input, pred_pixels_norm
 
+    def _encode_pixels_to_target_latents(
+        self,
+        pixel_values: torch.Tensor,
+        image_sizes: Optional[List[List[int]]] = None,
+    ) -> torch.Tensor:
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        with torch.no_grad():
+            prompt_image_embeds = self.model.get_image_features(
+                pixel_values=pixel_values,
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+                image_sizes=image_sizes,
+            )
+            prompt_image_embeds = self.model.vae_decoder.clip_down(prompt_image_embeds)
+            target_image_embeds = torch.clone(prompt_image_embeds).detach()
+            target_image_embeds = target_image_embeds.mul_(self.model.unilip_factor)
+        return target_image_embeds
+
+    def _decode_pixels_input_from_latents(
+        self,
+        latents: torch.Tensor,
+        target_hw: Tuple[int, int],
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        latents_scaled = latents / self.model.config.unilip_factor
+
+        with torch.no_grad():
+            mini_batch_size = 64
+            pred_pixels_list = []
+            for i in range(0, latents_scaled.shape[0], mini_batch_size):
+                batch_latents = latents_scaled[i : i + mini_batch_size]
+                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+                pred_pixels_list.append(batch_pixels)
+            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+
+        pred_pixels_norm = (pred_pixels + 1.0) / 2.0
+        if pred_pixels_norm.shape[-2:] != target_hw:
+            pred_pixels_norm = F.interpolate(
+                pred_pixels_norm,
+                size=target_hw,
+                mode="bilinear",
+                align_corners=False,
+            )
+        pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
+        return pred_pixels_input, pred_pixels_norm
+
+    def _sample_gen_matched_timesteps_and_sigmas(
+        self,
+        batch_size: int,
+        device: torch.device,
+        n_dim: int,
+        dtype: torch.dtype,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        u = compute_density_for_timestep_sampling(
+            weighting_scheme="logit_normal",
+            batch_size=batch_size,
+            logit_mean=0.0,
+            logit_std=1.0,
+        )
+        indices = (u * self.get_model().noise_scheduler.config.num_train_timesteps).long()
+        timesteps = self.get_model().noise_scheduler.timesteps[indices].to(device=device)
+        sigmas = self.get_sigmas(timesteps, device, n_dim=n_dim, dtype=dtype)
+        return timesteps, sigmas
+
     def _pixel_shuffle(self, x, scale_factor=0.5):
         n, w, h, c = x.size()
         x = x.view(n, w, int(h * scale_factor), int(c / scale_factor))
@@ -2054,18 +2273,26 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             raise RuntimeError("REPA teacher is not initialized before teacher feature extraction.")
 
         self._ensure_repa_teacher_on_device(image.device)
-        teacher_model = teacher_bundle["model"]
-        teacher_dtype = next(teacher_model.parameters()).dtype
-        teacher_inputs = self._normalize_for_repa_teacher(image).to(device=image.device, dtype=teacher_dtype)
+        teacher_type = teacher_bundle.get("type", "dinov2")
+        if teacher_type == "dinov2":
+            teacher_model = teacher_bundle["model"]
+            teacher_dtype = next(teacher_model.parameters()).dtype
+            teacher_inputs = self._normalize_for_repa_teacher(image).to(device=image.device, dtype=teacher_dtype)
 
-        with torch.no_grad():
-            teacher_outputs = teacher_model(
-                pixel_values=teacher_inputs,
-                output_hidden_states=False,
-                return_dict=True,
-            )
+            with torch.no_grad():
+                teacher_outputs = teacher_model(
+                    pixel_values=teacher_inputs,
+                    output_hidden_states=False,
+                    return_dict=True,
+                )
 
-        teacher_feat = teacher_outputs.last_hidden_state[:, 1:, :]
+            teacher_feat = teacher_outputs.last_hidden_state[:, 1:, :]
+        elif teacher_type == "unilip_vision":
+            with torch.no_grad():
+                teacher_feat = self._extract_teacher_image_embeds(teacher_bundle, image)
+        else:
+            raise ValueError(f"Unsupported repa_teacher_type for teacher feature extraction: {teacher_type}")
+
         expected_tokens = int(getattr(self.config, "repa_expected_num_patches", 256))
         if teacher_feat.shape[1] != expected_tokens:
             raise RuntimeError(
@@ -2458,11 +2685,51 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         loc_indices = (task_id == 0).nonzero(as_tuple=True)[0]
         gen_indices = (task_id == 1).nonzero(as_tuple=True)[0]
+        effective_und_image = und_image
+        loc_loss_sample_weights = None
+        noisy_loc_count = 0
+        noisy_loc_mean_weight = 1.0
         if getattr(self.config, "use_pi05_action_dit", False):
             actions = torch.cat([
                 actions,
                 torch.full((actions.size(0), 1, self.get_model()._default_pi05_action_dim - actions.size(-1)), 0.0, dtype=torch.bfloat16).to(actions.device)
             ], dim=-1)
+
+        if getattr(self.config, "is_noisy_loc_loss", False) and und_image is not None and loc_indices.numel() > 0:
+            loc_loss_sample_weights = torch.ones(loc_indices.numel(), device=und_image.device, dtype=torch.float32)
+            noisy_loc_ratio = float(getattr(self.config, "noisy_loc_ratio", 0.0))
+            noisy_loc_count = int(loc_indices.numel() * noisy_loc_ratio)
+            if noisy_loc_ratio > 0.0 and noisy_loc_count == 0:
+                noisy_loc_count = 1
+            noisy_loc_count = min(noisy_loc_count, loc_indices.numel())
+
+            if noisy_loc_count > 0:
+                noisy_loc_relative_indices = torch.randperm(loc_indices.numel(), device=loc_indices.device)[:noisy_loc_count]
+                noisy_loc_indices = loc_indices[noisy_loc_relative_indices]
+
+                loc_pixel_values = und_image[noisy_loc_indices]
+                loc_target_latents = self._encode_pixels_to_target_latents(
+                    pixel_values=loc_pixel_values,
+                )
+                _, noisy_loc_sigmas = self._sample_gen_matched_timesteps_and_sigmas(
+                    batch_size=loc_target_latents.shape[0],
+                    device=loc_target_latents.device,
+                    n_dim=loc_target_latents.ndim,
+                    dtype=loc_target_latents.dtype,
+                )
+                noisy_loc_noise = torch.randn_like(loc_target_latents, device=loc_target_latents.device)
+                noisy_loc_latents = (1.0 - noisy_loc_sigmas) * loc_target_latents + noisy_loc_sigmas * noisy_loc_noise
+                noisy_loc_pixels, _ = self._decode_pixels_input_from_latents(
+                    latents=noisy_loc_latents,
+                    target_hw=loc_pixel_values.shape[-2:],
+                )
+
+                effective_und_image = und_image.clone()
+                effective_und_image[noisy_loc_indices] = noisy_loc_pixels.to(dtype=effective_und_image.dtype)
+
+                noisy_loc_weights = (1.0 - noisy_loc_sigmas).clamp(min=0).reshape(-1).to(torch.float32)
+                loc_loss_sample_weights[noisy_loc_relative_indices] = noisy_loc_weights
+                noisy_loc_mean_weight = float(noisy_loc_weights.mean().detach().cpu().item())
 
         # --- A. Input Preparation ---
         # Note: We merge und_image and aux_image logic.
@@ -2473,7 +2740,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if ( (not getattr(self.config, "use_vit_cls_regression_head", False)) and (not getattr(self.config, "use_codex_vit_regression_head", False)) ) \
             or (getattr(self.config, "use_vit_cls_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0) \
             or (getattr(self.config, "use_codex_vit_regression_head", False) and loss_mask[gen_indices][:, 1].sum() > 0):
-            combined_und_images = und_image
+            combined_und_images = effective_und_image
             if aux_image is not None:# and aux_image.sum() != 0:
                 if combined_und_images is not None:
                     # Assuming simple concat in batch dimension for processing, then splitting?
@@ -2481,7 +2748,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # Given prepare_inputs logic, we rely on input_ids tokens.
                     # If there are two <image> tokens in Loc Prompt, prepare_inputs handles replacement sequentially.
                     # Just need to ensure `und_images` passed to prepare_inputs contains all pixel values.
-                    combined_und_images = torch.cat([und_image, aux_image], dim=0) # Careful with indexing mapping!
+                    combined_und_images = torch.cat([effective_und_image, aux_image], dim=0) # Careful with indexing mapping!
                     # Actually, simpler: The dataset currently provides und_image and aux_image separately.
                     # But input_ids has multiple <image> placeholders.
                     # For simplicity in this adaptation, let's assume `und_image` arg passed to `prepare_inputs`
@@ -2593,7 +2860,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 genbrh_aux_loc_input_ids = aux_loc_input_ids[gen_indices]
                 genbrh_aux_loc_labels = aux_loc_labels[gen_indices]
                 genbrh_aux_loc_attention_mask = aux_loc_attention_mask[gen_indices]
-                genbrh_und_image = und_image[gen_indices]
+                genbrh_und_image = effective_und_image[gen_indices]
                 genbrh_gen_image = gen_image[gen_indices]
                 genbrh_loc_map_image = loc_map_image[gen_indices] if loc_map_image is not None else None
                 genbrh_task_id = task_id[gen_indices]
@@ -2644,9 +2911,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
+                    alpha_loc_aux_value = float(getattr(self.model.config, "alpha_loc_aux_loss", 0.0))
+                    run_aux_loc_this_step = (
+                        bool(getattr(self.config, "is_loc_aux_loss", False))
+                        and alpha_loc_aux_value > 0.0
+                        and genbrh_actions is not None
+                    )
                     # bs=8显存占用=6884MiB
                     pred_pixels_input = None
-                    if getattr(self.config, "is_loc_aux_loss", False) or getattr(self.config, "is_loc_repa_loss", False):
+                    need_pred_pixels = run_aux_loc_this_step or bool(getattr(self.config, "is_loc_repa_loss", False))
+                    if need_pred_pixels:
                         pred_pixels_input, _ = self._decode_pred_pixels_input_from_flow(
                             sigmas=sigmas,
                             noisy_latents=noisy_latents,
@@ -2682,7 +2956,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # =========================================================
                     # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
-                    if getattr(self.config, 'is_loc_aux_loss', False) and genbrh_actions is not None and pred_pixels_input is not None:
+                    if run_aux_loc_this_step and pred_pixels_input is not None:
                         # actions [BS, 1, 5] 即使是 Gen 任务，Dataset 也应该把 pose 传进来
                         masked_loc_aux_loss = self.forward_for_aux_loc_loss(
                             sigmas, #torch.Size([16, 1, 1, 1])
@@ -2716,7 +2990,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
                 if getattr(self.config, "use_external_loc_model", False):
                     locbrh_actions = actions[loc_indices]
-                    locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else und_image[loc_indices]
+                    locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else effective_und_image[loc_indices]
                     locbrh_map_image = loc_map_image[loc_indices] if loc_map_image is not None else aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_external_loc_model(locbrh_fps_image, locbrh_map_image)
                     if getattr(self.config, "external_loc_use_circular_loss", True):
@@ -2727,7 +3001,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 elif getattr(self.config, "use_codex_vit_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
-                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_und_image = effective_und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_codex_vit_regression_head(
                         locbrh_und_image,
@@ -2741,7 +3015,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 elif getattr(self.config, "use_vit_cls_regression_head", False):
                     locbrh_actions = actions[loc_indices]#torch.Size([128, 5])
-                    locbrh_und_image = und_image[loc_indices]
+                    locbrh_und_image = effective_und_image[loc_indices]
                     locbrh_aux_image = aux_image[loc_indices]
                     locbrh_actions_pred = self._forward_vit_regression_head(
                         locbrh_und_image,
@@ -2782,6 +3056,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     locbrh_attention_mask = attention_mask[loc_indices]
                     locbrh_position_ids = position_ids[loc_indices]
                     locbrh_loss_mask = loss_mask[loc_indices]
+                    locbrh_sample_weights = (
+                        loc_loss_sample_weights
+                        if loc_loss_sample_weights is not None
+                        else torch.ones(locbrh_loss_mask.shape[0], device=locbrh_loss_mask.device, dtype=torch.float32)
+                    )
                     # # TODO 这里也一样！如果使用[is_loc_task]过滤actions和其他中间tensor后再进行embed_action_suffix和action_dit，能节约显存，但是由于[is_loc_task]的数目不一定恰好等于2的次方，所以可能会影响cuda加速运算。除非数据集collactor手动设置loc:gen=64:64。
                     # 1. Flow Matching Setup
                     # Sample Noise & Time
@@ -2959,12 +3238,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     loc_loss = loc_loss_full.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
                     # Apply Mask: Only count loss for Loc samples
-                    masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0]).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
+                    masked_loc_loss = (loc_loss * locbrh_loss_mask[:, 0] * locbrh_sample_weights).mean()#loss_mask[:, 0].sum()=tensor(57., device='cuda:0', dtype=torch.bfloat16)
 
                     # monitor only: valid 5-dim velocity mse, no change to training objective
                     if getattr(self.config, "use_pi05_action_dit", False):
                         loc_loss_valid5 = loc_loss_full[..., :self.model.config.action_dim].mean(dim=[1, 2])  # [BS]
-                        masked_loc_loss_valid5 = (loc_loss_valid5 * locbrh_loss_mask[:, 0]).mean().to(torch.float32)
+                        masked_loc_loss_valid5 = (
+                            loc_loss_valid5 * locbrh_loss_mask[:, 0] * locbrh_sample_weights
+                        ).mean().to(torch.float32)
                     else:
                         # keep same scale for non-pi05 path so logging code can stay uniform
                         masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
@@ -3001,6 +3282,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "other_info": {
                 "loc_indices": len(loc_indices),
                 "gen_indices": len(gen_indices),
+                "is_noisy_loc_loss": float(getattr(self.config, "is_noisy_loc_loss", False)),
+                "noisy_loc_count": int(noisy_loc_count),
+                "noisy_loc_ratio_effective": (
+                    float(noisy_loc_count / len(loc_indices)) if len(loc_indices) > 0 else 0.0
+                ),
+                "noisy_loc_mean_weight": float(noisy_loc_mean_weight),
                 "total_loss": total_loss.detach().cpu().numpy().item(),
                 "loc_loss_valid5": masked_loc_loss_valid5.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_loss_valid5": (masked_loc_loss_valid5 * alpha_loc_loss).detach().cpu().numpy().item(),
@@ -3018,6 +3305,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 ),
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
+                "loc_aux_active": float(alpha_loc_aux_loss.item() > 0),
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
