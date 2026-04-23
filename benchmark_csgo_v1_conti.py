@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -16,6 +17,10 @@ from tqdm import tqdm
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
+
+_FVD_REPO_ROOT = Path(__file__).resolve().parent / "third_party" / "PyTorch-Frechet-Video-Distance"
+if str(_FVD_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_FVD_REPO_ROOT))
 from fvd_metric import compute_fvd as compute_fvd_metric
 
 from benchmark_csgo_v1 import (
@@ -401,7 +406,7 @@ def compute_fvd_for_tracks(
     fvd_score = compute_fvd_metric(
         gt_clips,
         pred_clips,
-        num_samples=len(clips),
+        max_items=len(clips),
         device=device,
         batch_size=fvd_batch_size,
     )
