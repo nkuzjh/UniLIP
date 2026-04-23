@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-from torchmetrics.video import FrechetVideoDistance
+from fvd_metric import compute_fvd as compute_fvd_metric
 
 from benchmark_csgo_v1 import (
     collect_coverage,
@@ -382,20 +382,32 @@ def compute_fvd_for_tracks(
     if len(clips) == 0:
         return None, 0
 
-    fvd = FrechetVideoDistance(feature_extractor="i3d400", reset_real_features=False, reset_fake_features=False).to(device)
     fvd_batch_size = max(1, batch_size // 4)
     gt_dataset = VideoClipDataset(gt_dir, clips, size=size)
     pred_dataset = VideoClipDataset(pred_dir, clips, size=size)
     gt_loader = DataLoader(gt_dataset, batch_size=fvd_batch_size, num_workers=4)
     pred_loader = DataLoader(pred_dataset, batch_size=fvd_batch_size, num_workers=4)
 
+    gt_clips = []
+    pred_clips = []
     with torch.no_grad():
         for batch in tqdm(gt_loader, desc="FVD (GT clips)"):
-            fvd.update(batch.to(device), real=True)
+            gt_clips.append(batch.cpu())
         for batch in tqdm(pred_loader, desc="FVD (Pred clips)"):
-            fvd.update(batch.to(device), real=False)
+            pred_clips.append(batch.cpu())
 
-    return fvd.compute().item(), len(clips)
+    gt_clips = torch.cat(gt_clips, dim=0)
+    pred_clips = torch.cat(pred_clips, dim=0)
+    fvd_score = compute_fvd_metric(
+        gt_clips,
+        pred_clips,
+        num_samples=len(clips),
+        device=device,
+        batch_size=fvd_batch_size,
+    )
+    if isinstance(fvd_score, torch.Tensor):
+        fvd_score = fvd_score.item()
+    return float(fvd_score), len(clips)
 
 
 def ordered_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
