@@ -2213,6 +2213,408 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         sigmas = self.get_sigmas(timesteps, device, n_dim=n_dim, dtype=dtype)
         return timesteps, sigmas
 
+    def debug_build_aux_loc_pred_pixels(
+        self,
+        *,
+        input_ids: torch.Tensor,
+        attention_mask: torch.Tensor,
+        labels: torch.Tensor,
+        gen_image: torch.Tensor,
+        und_image: torch.Tensor,
+        aux_image: torch.Tensor,
+        task_id: Optional[torch.Tensor] = None,
+        grid_thw: Optional[torch.Tensor] = None,
+        i_s_pos: Optional[list] = None,
+        image_sizes: Optional[List[List[int]]] = None,
+        return_dict: Optional[bool] = None,
+        timesteps_override: Optional[torch.Tensor] = None,
+        noise_override: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        if task_id is None:
+            task_id = torch.ones(input_ids.shape[0], device=input_ids.device, dtype=torch.long)
+        if aux_image is None:
+            aux_image = torch.zeros_like(und_image)
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        combined_und_images = torch.cat([und_image, aux_image], dim=0)
+        (
+            _,
+            position_ids,
+            attention_mask,
+            _,
+            inputs_embeds,
+            labels,
+            target_image_embeds,
+            combined_img_idx,
+            combined_image_embeds,
+            bidr_attention_mask,
+        ) = self.prepare_inputs_labels_for_multimodal(
+            input_ids,
+            None,
+            attention_mask,
+            None,
+            labels.clone(),
+            gen_image,
+            combined_und_images,
+            grid_thw,
+            i_s_pos,
+            image_sizes,
+            task_id,
+        )
+
+        if target_image_embeds is None:
+            raise RuntimeError("debug_build_aux_loc_pred_pixels requires non-empty gen_image target latents.")
+
+        und_img_idx = combined_img_idx[:combined_img_idx.size(0) // 2, ...]
+        aux_img_idx = combined_img_idx[combined_img_idx.size(0) // 2 :, ...]
+        und_image_embeds = combined_image_embeds[: combined_image_embeds.size(0) // 2, ...]
+        aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0) // 2 :, ...]
+
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
+
+        outputs = self.model.language_model(
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            inputs_embeds=inputs_embeds,
+            output_hidden_states=True,
+            return_dict=return_dict,
+            use_cache=False,
+        )
+        hidden_states = outputs.hidden_states[-1]
+
+        if und_image_embeds is not None and und_img_idx is not None:
+            hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+        is_loc_task = task_id == 0
+        if aux_image_embeds is not None and aux_img_idx is not None:
+            hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0, 1)
+
+        img_hidden_states = self.model.llm_connector(
+            attention_mask=bidr_attention_mask,
+            position_ids=position_ids,
+            inputs_embeds=hidden_states,
+            output_hidden_states=True,
+            return_dict=return_dict,
+            use_cache=False,
+        ).hidden_states[-1]
+        img_hidden_states = self.get_model().projector(img_hidden_states)
+
+        latents = target_image_embeds
+        if timesteps_override is None:
+            timesteps, sigmas = self._sample_gen_matched_timesteps_and_sigmas(
+                batch_size=latents.shape[0],
+                device=latents.device,
+                n_dim=latents.ndim,
+                dtype=latents.dtype,
+            )
+        else:
+            timesteps = timesteps_override.to(device=latents.device)
+            sigmas = self.get_sigmas(timesteps, latents.device, n_dim=latents.ndim, dtype=latents.dtype)
+
+        if noise_override is None:
+            noise = torch.randn_like(latents, device=latents.device)
+        else:
+            noise = noise_override.to(device=latents.device, dtype=latents.dtype)
+
+        noisy_latents = (1.0 - sigmas) * latents + sigmas * noise
+        noise_pred, _ = self._forward_dit_with_repa_hidden(
+            noisy_latents=noisy_latents,
+            timesteps=timesteps,
+            encoder_hidden_states=img_hidden_states,
+            encoder_attention_mask=attention_mask,
+            detach_condition=False,
+        )
+        pred_pixels_input, pred_pixels_norm = self._decode_pred_pixels_input_from_flow(
+            sigmas=sigmas,
+            noisy_latents=noisy_latents,
+            noise_pred=noise_pred,
+            und_image_map=und_image,
+        )
+        pred_latents_x0 = noisy_latents - sigmas * noise_pred
+        target = noise - latents
+        gen_loss_per_sample = F.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=[1, 2, 3])
+
+        return {
+            "pred_pixels_input": pred_pixels_input,
+            "pred_pixels_norm": pred_pixels_norm,
+            "timesteps_gen": timesteps,
+            "sigmas_gen": sigmas,
+            "noise_gen": noise,
+            "noisy_latents": noisy_latents,
+            "noise_pred": noise_pred,
+            "pred_latents_x0": pred_latents_x0,
+            "target_image_embeds": target_image_embeds,
+            "gen_loss_per_sample": gen_loss_per_sample,
+        }
+
+    def debug_forward_single_step_loc_metrics(
+        self,
+        *,
+        fps_image_input: torch.Tensor,
+        map_image_input: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        aux_loc_attention_mask: torch.Tensor,
+        actions: torch.Tensor,
+        gen_sigma_for_weight: torch.Tensor,
+        gen_image: Optional[torch.Tensor] = None,
+        task_id: Optional[torch.Tensor] = None,
+        return_dict: Optional[bool] = None,
+        loc_time_override: Optional[torch.Tensor] = None,
+        loc_noise_override: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        if getattr(self.config, "use_external_loc_model", False):
+            raise RuntimeError("Single-step aux-loc debug currently only supports the internal flow-matching loc branch.")
+        if getattr(self.config, "use_vit_regression_head", False) or getattr(self.config, "use_vit_cls_regression_head", False):
+            raise RuntimeError("Single-step aux-loc debug currently only supports the action-DiT loc branch.")
+        if getattr(self.config, "use_codex_vit_regression_head", False):
+            raise RuntimeError("Single-step aux-loc debug currently only supports the action-DiT loc branch.")
+
+        if task_id is None:
+            task_id = torch.zeros(aux_loc_input_ids.shape[0], device=aux_loc_input_ids.device, dtype=torch.long)
+        if gen_image is None:
+            gen_image = torch.zeros_like(fps_image_input)
+        return_dict = return_dict if return_dict is not None else self.config.use_return_dict
+
+        combined_und_images = torch.cat([fps_image_input, map_image_input], dim=0)
+        (
+            _,
+            position_ids,
+            attention_mask,
+            _,
+            inputs_embeds,
+            _,
+            _,
+            combined_img_idx,
+            combined_image_embeds,
+            _,
+        ) = self.prepare_inputs_labels_for_multimodal(
+            aux_loc_input_ids,
+            None,
+            aux_loc_attention_mask,
+            None,
+            aux_loc_labels.clone(),
+            gen_image,
+            combined_und_images,
+            None,
+            None,
+            None,
+            task_id,
+        )
+
+        und_img_idx = combined_img_idx[: combined_img_idx.size(0) // 2, ...]
+        aux_img_idx = combined_img_idx[combined_img_idx.size(0) // 2 :, ...]
+        und_image_embeds = combined_image_embeds[: combined_image_embeds.size(0) // 2, ...]
+        aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0) // 2 :, ...]
+
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
+        outputs = self.model.language_model(
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            inputs_embeds=inputs_embeds,
+            output_hidden_states=True,
+            return_dict=return_dict,
+            use_cache=False,
+        )
+        hidden_states = outputs.hidden_states[-1]
+
+        if und_image_embeds is not None and und_img_idx is not None:
+            hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+        is_loc_task = task_id == 0
+        if aux_image_embeds is not None and aux_img_idx is not None:
+            hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0, 1)
+
+        actions_for_loc = actions.to(device=hidden_states.device)
+        if actions_for_loc.ndim == 2:
+            actions_for_loc = actions_for_loc.unsqueeze(1)
+        elif actions_for_loc.ndim != 3:
+            raise ValueError(
+                f"debug_forward_single_step_loc_metrics expects actions with ndim 2 or 3, got shape={tuple(actions_for_loc.shape)}"
+            )
+        if getattr(self.config, "use_pi05_action_dit", False):
+            target_dim = self.get_model()._default_pi05_action_dim
+            if actions_for_loc.size(-1) < target_dim:
+                pad_dim = target_dim - actions_for_loc.size(-1)
+                actions_for_loc = torch.cat(
+                    [
+                        actions_for_loc,
+                        torch.zeros(
+                            actions_for_loc.size(0),
+                            actions_for_loc.size(1),
+                            pad_dim,
+                            device=actions_for_loc.device,
+                            dtype=actions_for_loc.dtype,
+                        ),
+                    ],
+                    dim=-1,
+                )
+
+        if loc_noise_override is None:
+            noise = self.sample_noise(actions_for_loc.shape, hidden_states.device)
+        else:
+            noise = loc_noise_override.to(device=hidden_states.device, dtype=torch.bfloat16)
+        if loc_time_override is None:
+            time = self.sample_time(actions_for_loc.shape[0], hidden_states.device)
+        else:
+            time = loc_time_override.to(device=hidden_states.device, dtype=torch.bfloat16)
+
+        time_expanded = time[:, None, None].to(actions_for_loc.dtype)
+        x_t = time_expanded * noise + (1 - time_expanded) * actions_for_loc
+        u_t = noise - actions_for_loc
+
+        suffix_emb, adarms_cond = self.embed_action_suffix(
+            x_t,
+            time,
+            llm_hidden_size=1024 if getattr(self.config, "use_pi05_action_dit", False) else self.model.config.text_config.hidden_size,
+            device=hidden_states.device,
+            dtype=hidden_states.dtype,
+        )
+        if getattr(self.config, "use_pi05_action_dit", False):
+            hidden_states = self.get_model().action_dit_connector(hidden_states)
+        hidden_states = self.get_model().action_dit_norm(hidden_states)
+
+        bs, _, hidden_dim = hidden_states.shape
+        valid_lens = attention_mask.sum(dim=1).long()
+
+        action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
+        target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)
+        action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
+
+        action_dit_att_mask = torch.cat(
+            [attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)], dim=1
+        )
+        mask_indices = valid_lens.view(-1, 1)
+        action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
+
+        action_dit_pos_ids = torch.cat(
+            [position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)], dim=1
+        )
+        action_pos_ids = valid_lens.view(-1, 1)
+        current_seq_len = action_dit_pos_ids.shape[1]
+        range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0)
+        mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+        action_dit_pos_ids = torch.where(mask_after_valid, action_pos_ids, action_dit_pos_ids)
+
+        if getattr(self.config, "is_action_dit_projector", False):
+            action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
+
+        if getattr(self.config, "use_pi05_action_dit", False):
+            suffix_output = self.get_model().action_dit(
+                inputs_embeds=action_dit_inputs,
+                attention_mask=self._prepare_attention_masks_4d_from_attn_masks_1d(action_dit_att_mask),
+                position_ids=action_dit_pos_ids,
+                use_cache=False,
+                adarms_cond=adarms_cond,
+            )
+            action_hidden = suffix_output.last_hidden_state
+        else:
+            if getattr(self.config, "is_action_dit_dense_timestep", False):
+                action_hidden = self.action_dit_forward_with_adarmscond(
+                    hidden_states=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    adarms_cond=adarms_cond,
+                )
+            else:
+                action_outputs = self.model.action_dit(
+                    inputs_embeds=action_dit_inputs,
+                    attention_mask=action_dit_att_mask,
+                    position_ids=action_dit_pos_ids,
+                    output_hidden_states=True,
+                    return_dict=return_dict,
+                    use_cache=False,
+                )
+                action_hidden = action_outputs.hidden_states[-1]
+
+        gather_indices = valid_lens.view(-1, 1, 1).expand(-1, -1, hidden_dim)
+        action_hidden = action_hidden.gather(1, gather_indices)
+        v_t_pred = self.get_model().action_out_proj(action_hidden)
+
+        loc_error = v_t_pred.float() - u_t.float()
+        raw_mse = loc_error.square().mean(dim=[1, 2])
+        raw_l1 = loc_error.abs().mean(dim=[1, 2])
+        weight = (1.0 - gen_sigma_for_weight).clamp(min=0).reshape(-1).to(torch.float32)
+        weighted_mse = raw_mse * weight
+        weighted_l1 = raw_l1 * weight
+
+        return {
+            "v_t_pred": v_t_pred,
+            "u_t": u_t,
+            "x_t": x_t,
+            "time_loc": time,
+            "loc_noise": noise,
+            "raw_mse": raw_mse,
+            "raw_l1": raw_l1,
+            "weighted_mse": weighted_mse,
+            "weighted_l1": weighted_l1,
+            "weight_from_gen_sigma": weight,
+        }
+
+    def debug_compare_clean_vs_aux_single_step_loc(
+        self,
+        *,
+        clean_fps_input: torch.Tensor,
+        aux_fps_input: torch.Tensor,
+        map_image_input: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        aux_loc_attention_mask: torch.Tensor,
+        actions: torch.Tensor,
+        gen_sigma_for_weight: torch.Tensor,
+        gen_image: Optional[torch.Tensor] = None,
+        task_id: Optional[torch.Tensor] = None,
+        return_dict: Optional[bool] = None,
+    ) -> Dict[str, object]:
+        loc_time = self.sample_time(actions.shape[0], clean_fps_input.device)
+        if actions.ndim == 2:
+            noise_shape = (actions.shape[0], 1, actions.shape[1])
+        elif actions.ndim == 3:
+            noise_shape = tuple(actions.shape)
+        else:
+            raise ValueError(
+                f"debug_compare_clean_vs_aux_single_step_loc expects actions with ndim 2 or 3, got shape={tuple(actions.shape)}"
+            )
+        if getattr(self.config, "use_pi05_action_dit", False):
+            target_dim = self.get_model()._default_pi05_action_dim
+            noise_shape = (noise_shape[0], noise_shape[1], target_dim)
+        loc_noise = self.sample_noise(noise_shape, clean_fps_input.device)
+
+        clean_metrics = self.debug_forward_single_step_loc_metrics(
+            fps_image_input=clean_fps_input,
+            map_image_input=map_image_input,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            aux_loc_attention_mask=aux_loc_attention_mask,
+            actions=actions,
+            gen_sigma_for_weight=gen_sigma_for_weight,
+            gen_image=gen_image,
+            task_id=task_id,
+            return_dict=return_dict,
+            loc_time_override=loc_time,
+            loc_noise_override=loc_noise,
+        )
+        aux_metrics = self.debug_forward_single_step_loc_metrics(
+            fps_image_input=aux_fps_input,
+            map_image_input=map_image_input,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            aux_loc_attention_mask=aux_loc_attention_mask,
+            actions=actions,
+            gen_sigma_for_weight=gen_sigma_for_weight,
+            gen_image=gen_image,
+            task_id=task_id,
+            return_dict=return_dict,
+            loc_time_override=loc_time,
+            loc_noise_override=loc_noise,
+        )
+        return {
+            "clean_metrics": clean_metrics,
+            "aux_metrics": aux_metrics,
+            "shared_loc_time": loc_time,
+            "shared_loc_noise": loc_noise,
+        }
+
     def _pixel_shuffle(self, x, scale_factor=0.5):
         n, w, h, c = x.size()
         x = x.view(n, w, int(h * scale_factor), int(c / scale_factor))

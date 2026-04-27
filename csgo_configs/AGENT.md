@@ -177,6 +177,201 @@ loc_aux_gate_start_step: 0
 - migrate best variant to `exp17_5_dust2`：
   - 如果 noisy-loc matching 在 `exp17_2_dust2` 上成立，再迁移到 loc-aware REPA 主线，检查其与 `loc_repa_loss` 是否互补。
 
+## EM-style Interpretation of Aux-Loc
+
+这一节不是在声称当前实现“就是标准 EM”，而是提供一个后续做算法设计时可复用的解释框架。当前代码更接近 `stochastic generalized EM / amortized latent inference`，不是严格的 closed-form EM。
+
+### 1. EM 的数学定义与核心思想
+
+给定观测变量 `y`、latent 变量 `z`、参数 `theta`，EM 试图最大化：
+
+```text
+log p_theta(y) = log sum_z p_theta(y, z)
+```
+
+引入任意分布 `q(z)` 后，可写成：
+
+```text
+log p_theta(y)
+= E_q[log p_theta(y, z)] + H(q) + KL(q(z) || p_theta(z | y))
+```
+
+等价地，也常写作：
+
+```text
+log p_theta(y) = F(q, theta) + KL(q(z) || p_theta(z | y))
+```
+
+其中：
+
+- `E-step`
+  - 固定 `theta_old`
+  - 令 `q(z) = p_{theta_old}(z | y)`
+  - 即：用当前模型估计 latent 的 posterior / expectation
+- `M-step`
+  - 固定 `q`
+  - 更新 `theta` 去最大化 `E_q[log p_theta(y, z)]`
+  - 即：把 latent 当作“当前最可信的隐变量解释”，再优化参数
+
+更宽松的 `generalized / stochastic EM` 允许：
+
+- 不精确计算 posterior
+- 不精确做 expectation
+- 用 Monte-Carlo sample 近似 expectation
+- 每次只做一步或少量梯度更新，而不是把 M-step 优化到收敛
+
+### 2. 当前 aux-loc 训练链条的代码事实
+
+以下内容是当前实现里已经确认的训练链条：
+
+1. 生成分支对每个 gen 样本采样 `timestep / sigma`
+   - 见 `unified_unilip.py::_sample_gen_matched_timesteps_and_sigmas()`
+2. 生成分支在 latent 空间预测 `noise_pred`
+3. 用
+
+```text
+pred_latents_x0 = noisy_latents - sigmas * noise_pred
+```
+
+构造当前 timestep 下的单步 `x0` 估计
+   - 见 `unified_unilip.py::_decode_pred_pixels_input_from_flow()`
+4. 将 `pred_latents_x0` decode 成 `pred_pixels_input`
+   - 这就是送入 `loc_head` 计算 `aux_loc_loss` 的图像
+   - 它不是完整采样后的最终图像，而是“当前 timestep 下的单步 clean estimate / x0_hat”
+5. `forward_for_aux_loc_loss()` 把
+   - `pred_pixels_input` 作为 FPS 输入
+   - `und_image_map` 作为 map 输入
+   - `aux_loc_input_ids` 作为 loc prompt
+   再走一遍定位分支
+6. 在这条 aux 路径中，loc head 会重新采样 loc-side 的 `time / noise`
+   - 形成自己的 `x_t` 和 `u_t`
+   - 再计算单步 velocity MSE
+7. 当前 aux 路径里，loc head 参数会被临时冻结
+   - 因此 `aux_loc_loss` 的梯度主要回流到生成侧图像预测链条
+8. 这条 loss 还会乘 `1 - sigma_gen`
+   - 即生成侧当前 `sigma` 越小，aux 权重越大
+9. `exp20_dust2` 额外对 loc 样本中的一个随机子集做 latent-space matched noise
+   - 目的是让 loc 主训练支路看到更接近 `pred_pixels_input` 分布的输入
+
+把当前实现抽象成一个更紧凑的目标，可写成：
+
+```text
+L_aux_loc(theta_gen)
+≈ E_(m,a,x) E_(t,eps) [
+    l_loc( F_loc( x0_hat_theta_gen(t, eps; m, a), m ), a )
+]
+```
+
+其中：
+
+- `m` = map / loc prompt 条件
+- `a` = GT pose
+- `x` = GT FPS
+- `x0_hat_theta_gen` = 当前 gen head 在单个 sampled timestep 下给出的 `pred_pixels_input`
+- `F_loc` = 当前 loc evaluator
+
+需要注意：这里的 expectation 目前是通过“每步只采样一个 `t, eps`”来做 Monte-Carlo 近似的。
+
+### 3. 将当前思路与 EM 逐项对应
+
+下面的对应关系是“用于思考的 EM 类比”，不是说代码里显式实现了这些概率对象。
+
+| 当前 unified aux-loc 中的对象 | 可对应的 EM 视角 |
+|---|---|
+| map、loc prompt、GT pose、GT FPS | 观测变量 / 条件变量 |
+| “对定位最有用的 clean FPS 表示” | 想象中的 latent 变量 |
+| `pred_latents_x0` / `pred_pixels_input` | 当前模型对 latent clean view 的 posterior point estimate / expectation-like surrogate |
+| 随机采样的 `timestep / sigma / noise` | 对 latent expectation 的 Monte-Carlo 近似来源 |
+| 单步 `x0_hat` 而不是完整采样图 | 当前 E-like 步骤里得到的 latent 代理，只是部分去噪下的估计值 |
+| 冻结 loc evaluator 后计算 `aux_loc_loss` | 固定 latent 解释后，对生成参数做 M-like 更新 |
+| `exp20_dust2` 的 noisy-loc matching | 让 loc evaluator 的训练输入分布更接近 E-like 步骤实际产生的 latent surrogate |
+
+更具体地说，可以把当前 `aux_loc` 看成：
+
+- `E-like step`
+  - 用当前 gen head 和当前 sampled `(t, sigma, noise)` 推断一个 `x0_hat`
+  - 这个 `x0_hat` 可以理解为“当前模型认为，对该样本最合理的 latent clean view 代理”
+- `M-like step`
+  - 固定 loc evaluator
+  - 让生成参数朝着“产生更利于定位的 `x0_hat`”的方向更新
+
+因此，`aux_loc_loss` 的核心含义不是“直接让生成结果更像 GT 图”，而是：
+
+- 让 gen head 输出一个对 loc evaluator 更敏感、更可定位的 latent clean estimate
+
+### 4. 当前方案与标准 EM 的差异
+
+当前实现和标准 EM 仍有几个本质差异，后续讨论时应明确区分：
+
+1. 没有显式的 posterior `q(z | y)`
+   - 当前只有 `pred_pixels_input` 这个 point estimate
+   - 不是完整分布
+2. 没有精确 expectation
+   - 每个样本每步只采一个 `t, eps`
+   - 属于单样本 Monte-Carlo 近似
+3. 没有单独收敛的 E-step / M-step
+   - 当前是 minibatch 内交织进行的
+   - 更接近 online / stochastic generalized EM
+4. 当前 aux 目标是 discriminative loc loss
+   - 不是严格的 complete-data log-likelihood
+5. loc head 只在 aux 路径里冻结
+   - 但在 loc 主分支里它仍然继续训练
+   - 因此“latent evaluator”本身不是完全静态的
+
+所以，当前最准确的描述是：
+
+- `aux_loc` 可以被解释为一种 `EM-inspired latent expectation surrogate`
+- 但实现层面更接近 `stochastic generalized EM with a discriminative frozen evaluator`
+
+### 5. 为什么 exp20_dust2 可以从 EM 角度理解
+
+如果采用上面的 EM 类比，当前主问题就会变得很清晰：
+
+- `E-like` 步骤给 loc evaluator 的输入不是干净 FPS
+- 而是带单步去噪误差的 `pred_pixels_input`
+- 但 loc 主训练分支默认主要在干净 FPS 上学习
+
+这就形成了一个典型的“posterior-sample / evaluator-training distribution mismatch”：
+
+- E-like 步骤产生的是 noisy surrogate
+- M-like 更新依赖的 loc evaluator 却更多在 clean 分布上被训练
+
+`exp20_dust2` 正是在修这个 mismatch：
+
+- 它没有改变 `x0_hat` 的生成方式
+- 也没有改变 `aux_loc_loss` 的基本定义
+- 它做的是让 loc 主训练分支看到一部分与 `x0_hat` 更接近的 noisy 输入
+
+因此，`exp20_dust2` 可以理解为：
+
+- 不是直接改 E-like estimator
+- 而是在提升 M-like evaluator 对 E-like latent surrogate 的适配性
+
+### 6. 用于后续算法设计的 EM 风格拆解
+
+以后如果继续围绕 `aux_loc` 设计新算法，可以按下面这个拆解来思考：
+
+1. `E-like inference quality`
+   - `x0_hat` 是否足够稳定
+   - 是否需要 multi-sample `t/eps`
+   - 是否需要更稳定的 gen EMA / teacher 来提供 latent estimate
+2. `Evaluator distribution match`
+   - loc head 是否见过足够多的 noisy `x0_hat`-like 输入
+   - `exp20_dust2` 就属于这一类
+3. `Expectation weighting`
+   - 当前只用 `1 - sigma`
+   - 后续可考虑 uncertainty-aware weighting / confidence calibration
+4. `Alternating optimization`
+   - 如果要更接近 EM，可以考虑阶段性冻结一侧、更新另一侧
+   - 而不是始终 fully online joint training
+5. `Latent representation choice`
+   - 当前 latent surrogate 是 `pred_latents_x0 -> vae.decode -> pred_pixels_input`
+   - 后续也可以比较：
+     - decode 后 pixel-space aux
+     - latent-space aux
+     - multi-step denoised aux
+     - expectation over multiple `t`
+
 ## Implemented Loc-aware REPA Line
 
 ### Design summary
