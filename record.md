@@ -1778,7 +1778,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
     **continuous gen**
     ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp19_dust2_gen_conti.yaml      ```
     **benchmark_csgo.py** step=4000 8000
-    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp19_dust2_gen_conti/test_20260427_180632/gen_imgs/de_dust2 --all --batch_size 8       ``
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp19_dust2_gen_conti/test_20260428_231638/gen_imgs/de_dust2 --all --batch_size 8       ``
     **benchmark_csgo_v1_conti.py after eval_csgo.py** 8000 test_20260428_231638
     ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp19_dust2_gen_conti/test_20260428_231638/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224       ``
     **frames to video**
