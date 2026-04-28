@@ -616,7 +616,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="CSGO simulator continuous image benchmark v1")
     parser.add_argument("--gt", "--gt_dir", dest="gt", type=str, required=True, help="Path to ground-truth image dir.")
     parser.add_argument("--pred", "--pred_dir", dest="pred", type=str, required=True, help="Path to generated image dir.")
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--paired_size", type=int, default=448)
     parser.add_argument("--edge_quantile", type=float, default=0.85)
