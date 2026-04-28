@@ -1936,6 +1936,13 @@ def train(attn_implementation=None):
     model.config.aux_loc_em_candidate_tau = float(csgo_config.get("aux_loc_em_candidate_tau", 1.0))
     model.config.aux_loc_em_backward_mode = csgo_config.get("aux_loc_em_backward_mode", "weighted_all")
     model.config.aux_loc_em_share_loc_noise = csgo_config.get("aux_loc_em_share_loc_noise", True)
+    model.config.is_aux_loc_uncertainty_loss = csgo_config.get("is_aux_loc_uncertainty_loss", False)
+    model.config.aux_loc_unc_num_samples = int(csgo_config.get("aux_loc_unc_num_samples", 2))
+    model.config.aux_loc_unc_metric = csgo_config.get("aux_loc_unc_metric", "residual_l1_normed")
+    model.config.aux_loc_unc_tau = float(csgo_config.get("aux_loc_unc_tau", 1.0))
+    model.config.aux_loc_unc_min_weight = float(csgo_config.get("aux_loc_unc_min_weight", 0.05))
+    model.config.aux_loc_unc_share_loc_noise = csgo_config.get("aux_loc_unc_share_loc_noise", True)
+    model.config.aux_loc_unc_eps = float(csgo_config.get("aux_loc_unc_eps", 1e-6))
     model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
     model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
     model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")
@@ -2071,6 +2078,8 @@ def train(attn_implementation=None):
             raise ValueError("Current implementation only supports noisy_loc_weight_type='linear_1m_sigma'.")
 
     if model.config.is_aux_loc_em_loss:
+        if model.config.is_aux_loc_uncertainty_loss:
+            raise ValueError("is_aux_loc_em_loss=True and is_aux_loc_uncertainty_loss=True are mutually exclusive.")
         if not model.config.is_loc_aux_loss:
             raise ValueError("is_aux_loc_em_loss=True requires is_loc_aux_loss=True.")
         if model.config.aux_loc_em_num_samples < 1:
@@ -2089,6 +2098,30 @@ def train(attn_implementation=None):
             or model.config.use_codex_vit_regression_head
         ):
             raise ValueError("is_aux_loc_em_loss=True currently supports only the action-DiT loc branch.")
+
+    if model.config.is_aux_loc_uncertainty_loss:
+        if not model.config.is_loc_aux_loss:
+            raise ValueError("is_aux_loc_uncertainty_loss=True requires is_loc_aux_loss=True.")
+        if model.config.aux_loc_unc_num_samples != 2:
+            raise ValueError("Current implementation requires aux_loc_unc_num_samples=2.")
+        if model.config.aux_loc_unc_metric != "residual_l1_normed":
+            raise ValueError("Current implementation only supports aux_loc_unc_metric='residual_l1_normed'.")
+        if model.config.aux_loc_unc_tau <= 0.0:
+            raise ValueError("aux_loc_unc_tau must be > 0 when is_aux_loc_uncertainty_loss=True.")
+        if not (0.0 <= model.config.aux_loc_unc_min_weight <= 1.0):
+            raise ValueError("aux_loc_unc_min_weight must be in [0, 1].")
+        if not model.config.aux_loc_unc_share_loc_noise:
+            raise ValueError("Current implementation requires aux_loc_unc_share_loc_noise=True.")
+        if model.config.aux_loc_unc_eps <= 0.0:
+            raise ValueError("aux_loc_unc_eps must be > 0 when is_aux_loc_uncertainty_loss=True.")
+        if model.config.use_external_loc_model:
+            raise ValueError("is_aux_loc_uncertainty_loss=True currently supports only the internal action-DiT loc branch.")
+        if (
+            model.config.use_vit_regression_head
+            or model.config.use_vit_cls_regression_head
+            or model.config.use_codex_vit_regression_head
+        ):
+            raise ValueError("is_aux_loc_uncertainty_loss=True currently supports only the action-DiT loc branch.")
 
     if model.config.is_repa_loss:
         if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:

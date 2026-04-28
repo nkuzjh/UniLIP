@@ -2631,6 +2631,72 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 modules.append(module)
         return modules
 
+    def _validate_aux_loc_multisample_branch(self, branch_name: str) -> None:
+        if getattr(self.config, "use_external_loc_model", False):
+            raise RuntimeError(f"{branch_name} currently only supports the internal action-DiT loc branch.")
+        if getattr(self.config, "use_vit_regression_head", False) or getattr(self.config, "use_vit_cls_regression_head", False):
+            raise RuntimeError(f"{branch_name} currently only supports the action-DiT loc branch.")
+        if getattr(self.config, "use_codex_vit_regression_head", False):
+            raise RuntimeError(f"{branch_name} currently only supports the action-DiT loc branch.")
+
+    def _freeze_aux_loc_head_modules(self) -> List[Tuple[nn.Module, bool, List[bool]]]:
+        modules = self._aux_loc_head_modules_for_freeze()
+        module_states = [
+            (
+                module,
+                module.training,
+                [param.requires_grad for param in module.parameters()],
+            )
+            for module in modules
+        ]
+        for module in modules:
+            module.requires_grad_(False)
+            module.eval()
+        return module_states
+
+    @staticmethod
+    def _restore_aux_loc_head_modules(module_states: List[Tuple[nn.Module, bool, List[bool]]]) -> None:
+        for module, was_training, grad_flags in module_states:
+            for param, grad_flag in zip(module.parameters(), grad_flags):
+                param.requires_grad_(grad_flag)
+            module.train(was_training)
+
+    def _forward_aux_loc_single_step_metrics(
+        self,
+        *,
+        pred_pixels_input: torch.Tensor,
+        sigmas: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        task_id: torch.Tensor,
+        return_dict: bool,
+        actions: torch.Tensor,
+        loss_mask: torch.Tensor,
+        loc_time_override: Optional[torch.Tensor] = None,
+        loc_noise_override: Optional[torch.Tensor] = None,
+    ) -> Dict[str, torch.Tensor]:
+        metrics = self.debug_forward_single_step_loc_metrics(
+            fps_image_input=pred_pixels_input,
+            map_image_input=und_image_map,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            aux_loc_attention_mask=attention_mask,
+            actions=actions,
+            gen_sigma_for_weight=sigmas,
+            gen_image=None,
+            task_id=task_id,
+            return_dict=return_dict,
+            loc_time_override=loc_time_override,
+            loc_noise_override=loc_noise_override,
+        )
+        sample_mask = loss_mask[:, 1].to(device=metrics["weighted_mse"].device, dtype=torch.float32)
+        metrics["weighted_mse"] = metrics["weighted_mse"] * sample_mask
+        metrics["weighted_l1"] = metrics["weighted_l1"] * sample_mask
+        metrics["residual"] = metrics["v_t_pred"].float() - metrics["u_t"].float()
+        return metrics
+
     def _forward_aux_loc_single_step_per_sample(
         self,
         *,
@@ -2647,49 +2713,26 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loc_time_override: Optional[torch.Tensor] = None,
         loc_noise_override: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
-        if getattr(self.config, "use_external_loc_model", False):
-            raise RuntimeError("aux_loc_em currently only supports the internal action-DiT loc branch.")
-        if getattr(self.config, "use_vit_regression_head", False) or getattr(self.config, "use_vit_cls_regression_head", False):
-            raise RuntimeError("aux_loc_em currently only supports the action-DiT loc branch.")
-        if getattr(self.config, "use_codex_vit_regression_head", False):
-            raise RuntimeError("aux_loc_em currently only supports the action-DiT loc branch.")
-
-        modules = self._aux_loc_head_modules_for_freeze()
-        module_states = [
-            (
-                module,
-                module.training,
-                [param.requires_grad for param in module.parameters()],
-            )
-            for module in modules
-        ]
-        for module in modules:
-            module.requires_grad_(False)
-            module.eval()
-
+        self._validate_aux_loc_multisample_branch("aux_loc_multisample")
+        module_states = self._freeze_aux_loc_head_modules()
         try:
-            metrics = self.debug_forward_single_step_loc_metrics(
-                fps_image_input=pred_pixels_input,
-                map_image_input=und_image_map,
+            metrics = self._forward_aux_loc_single_step_metrics(
+                pred_pixels_input=pred_pixels_input,
+                sigmas=sigmas,
                 aux_loc_input_ids=aux_loc_input_ids,
                 aux_loc_labels=aux_loc_labels,
-                aux_loc_attention_mask=attention_mask,
-                actions=actions,
-                gen_sigma_for_weight=sigmas,
-                gen_image=None,
+                attention_mask=attention_mask,
+                und_image_map=und_image_map,
                 task_id=task_id,
                 return_dict=return_dict,
+                actions=actions,
+                loss_mask=loss_mask,
                 loc_time_override=loc_time_override,
                 loc_noise_override=loc_noise_override,
             )
         finally:
-            for module, was_training, grad_flags in module_states:
-                for param, grad_flag in zip(module.parameters(), grad_flags):
-                    param.requires_grad_(grad_flag)
-                module.train(was_training)
-
-        sample_mask = loss_mask[:, 1].to(device=metrics["weighted_mse"].device, dtype=torch.float32)
-        return metrics["weighted_mse"] * sample_mask
+            self._restore_aux_loc_head_modules(module_states)
+        return metrics["weighted_mse"]
 
     def _build_aux_loc_candidate_from_flow(
         self,
@@ -2727,6 +2770,125 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         )
         return pred_pixels_input, sigmas
 
+    def _collect_aux_loc_candidate_metrics(
+        self,
+        *,
+        num_samples: int,
+        share_loc_noise: bool,
+        branch_name: str,
+        latents: torch.Tensor,
+        img_hidden_states: torch.Tensor,
+        gen_attention_mask: torch.Tensor,
+        base_sigmas: torch.Tensor,
+        base_noisy_latents: torch.Tensor,
+        base_noise_pred: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        task_id: torch.Tensor,
+        return_dict: bool,
+        actions: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        if num_samples < 1:
+            raise ValueError(f"{branch_name}_num_samples must be >= 1.")
+        self._validate_aux_loc_multisample_branch(branch_name)
+
+        shared_loc_time = None
+        shared_loc_noise = None
+        if share_loc_noise:
+            shared_loc_time = self.sample_time(actions.shape[0], actions.device)
+            shared_loc_noise = self.sample_noise(tuple(actions.shape), actions.device)
+
+        candidate_metrics: Dict[str, List[torch.Tensor]] = {
+            "weighted_mse": [],
+            "weighted_l1": [],
+            "raw_mse": [],
+            "raw_l1": [],
+            "residual": [],
+            "weight_from_gen_sigma": [],
+        }
+        module_states = self._freeze_aux_loc_head_modules()
+        try:
+            for sample_idx in range(num_samples):
+                if sample_idx == 0:
+                    pred_pixels_input, sigmas = self._build_aux_loc_candidate_from_flow(
+                        latents=latents,
+                        img_hidden_states=img_hidden_states,
+                        attention_mask=gen_attention_mask,
+                        und_image_map=und_image_map,
+                        sigmas=base_sigmas,
+                        noisy_latents=base_noisy_latents,
+                        noise_pred=base_noise_pred,
+                    )
+                else:
+                    pred_pixels_input, sigmas = self._build_aux_loc_candidate_from_flow(
+                        latents=latents,
+                        img_hidden_states=img_hidden_states,
+                        attention_mask=gen_attention_mask,
+                        und_image_map=und_image_map,
+                    )
+
+                metrics = self._forward_aux_loc_single_step_metrics(
+                    pred_pixels_input=pred_pixels_input,
+                    sigmas=sigmas,
+                    aux_loc_input_ids=aux_loc_input_ids,
+                    aux_loc_labels=aux_loc_labels,
+                    attention_mask=attention_mask,
+                    und_image_map=und_image_map,
+                    task_id=task_id,
+                    return_dict=return_dict,
+                    actions=actions,
+                    loss_mask=loss_mask,
+                    loc_time_override=shared_loc_time,
+                    loc_noise_override=shared_loc_noise,
+                )
+                for key in candidate_metrics:
+                    candidate_metrics[key].append(metrics[key])
+        finally:
+            self._restore_aux_loc_head_modules(module_states)
+
+        return {
+            key: torch.stack(values, dim=1)
+            for key, values in candidate_metrics.items()
+        }
+
+    @staticmethod
+    def _compute_aux_loc_em_responsibility(losses: torch.Tensor, tau: float) -> torch.Tensor:
+        return torch.softmax(-losses.detach() / tau, dim=1)
+
+    @staticmethod
+    def _compute_aux_loc_uncertainty_weight(
+        residuals: torch.Tensor,
+        *,
+        tau: float,
+        min_weight: float,
+        eps: float,
+        metric: str,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        if metric != "residual_l1_normed":
+            raise ValueError("Current implementation only supports aux_loc_unc_metric='residual_l1_normed'.")
+        if residuals.shape[1] != 2:
+            raise ValueError("Current uncertainty aux-loc implementation requires exactly 2 candidates.")
+
+        residual_0 = residuals[:, 0].float()
+        residual_1 = residuals[:, 1].float()
+        reduce_dims = tuple(range(1, residual_0.ndim))
+        disagreement = (residual_0 - residual_1).abs().mean(dim=reduce_dims)
+        scale = 0.5 * (
+            residual_0.abs().mean(dim=reduce_dims)
+            + residual_1.abs().mean(dim=reduce_dims)
+        ) + eps
+        d_norm = disagreement / scale
+        weight = torch.exp(-d_norm.detach() / tau)
+        weight = torch.clamp(weight, min=min_weight, max=1.0)
+        return weight, {
+            "disagreement": disagreement.detach().to(torch.float32),
+            "scale": scale.detach().to(torch.float32),
+            "d_norm": d_norm.detach().to(torch.float32),
+        }
+
     def forward_for_aux_loc_em_loss(
         self,
         *,
@@ -2761,51 +2923,27 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if tau <= 0.0:
             raise ValueError("aux_loc_em_candidate_tau must be > 0.")
 
-        shared_loc_time = None
-        shared_loc_noise = None
-        if bool(getattr(self.config, "aux_loc_em_share_loc_noise", True)):
-            shared_loc_time = self.sample_time(actions.shape[0], actions.device)
-            shared_noise_shape = tuple(actions.shape)
-            shared_loc_noise = self.sample_noise(shared_noise_shape, actions.device)
-
-        candidate_losses = []
-        for sample_idx in range(num_samples):
-            if sample_idx == 0:
-                pred_pixels_input, sigmas = self._build_aux_loc_candidate_from_flow(
-                    latents=latents,
-                    img_hidden_states=img_hidden_states,
-                    attention_mask=gen_attention_mask,
-                    und_image_map=und_image_map,
-                    sigmas=base_sigmas,
-                    noisy_latents=base_noisy_latents,
-                    noise_pred=base_noise_pred,
-                )
-            else:
-                pred_pixels_input, sigmas = self._build_aux_loc_candidate_from_flow(
-                    latents=latents,
-                    img_hidden_states=img_hidden_states,
-                    attention_mask=gen_attention_mask,
-                    und_image_map=und_image_map,
-                )
-
-            per_sample_loss = self._forward_aux_loc_single_step_per_sample(
-                pred_pixels_input=pred_pixels_input,
-                sigmas=sigmas,
-                aux_loc_input_ids=aux_loc_input_ids,
-                aux_loc_labels=aux_loc_labels,
-                attention_mask=attention_mask,
-                und_image_map=und_image_map,
-                task_id=task_id,
-                return_dict=return_dict,
-                actions=actions,
-                loss_mask=loss_mask,
-                loc_time_override=shared_loc_time,
-                loc_noise_override=shared_loc_noise,
-            )
-            candidate_losses.append(per_sample_loss)
-
-        losses = torch.stack(candidate_losses, dim=1)
-        responsibilities = torch.softmax(-losses.detach() / tau, dim=1)
+        candidate_metrics = self._collect_aux_loc_candidate_metrics(
+            num_samples=num_samples,
+            share_loc_noise=bool(getattr(self.config, "aux_loc_em_share_loc_noise", True)),
+            branch_name="aux_loc_em",
+            latents=latents,
+            img_hidden_states=img_hidden_states,
+            gen_attention_mask=gen_attention_mask,
+            base_sigmas=base_sigmas,
+            base_noisy_latents=base_noisy_latents,
+            base_noise_pred=base_noise_pred,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            und_image_map=und_image_map,
+            task_id=task_id,
+            return_dict=return_dict,
+            actions=actions,
+            loss_mask=loss_mask,
+        )
+        losses = candidate_metrics["weighted_mse"]
+        responsibilities = self._compute_aux_loc_em_responsibility(losses, tau)
         per_sample_loss = (responsibilities * losses).sum(dim=1)
         loss = per_sample_loss.mean().to(torch.float32)
 
@@ -2818,6 +2956,86 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "aux_loc_em_loss_mean": losses.detach().mean().to(torch.float32),
             "aux_loc_em_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
             "aux_loc_em_num_samples": torch.tensor(float(num_samples), device=loss.device, dtype=torch.float32),
+        }
+        return loss, stats
+
+    def forward_for_aux_loc_uncertainty_loss(
+        self,
+        *,
+        latents: torch.Tensor,
+        img_hidden_states: torch.Tensor,
+        gen_attention_mask: torch.Tensor,
+        base_sigmas: torch.Tensor,
+        base_noisy_latents: torch.Tensor,
+        base_noise_pred: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        task_id: torch.Tensor,
+        return_dict: bool,
+        actions: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        num_samples = int(getattr(self.config, "aux_loc_unc_num_samples", 2))
+        if num_samples != 2:
+            raise ValueError("Current uncertainty aux-loc implementation requires aux_loc_unc_num_samples=2.")
+
+        metric = getattr(self.config, "aux_loc_unc_metric", "residual_l1_normed")
+        tau = float(getattr(self.config, "aux_loc_unc_tau", 1.0))
+        if tau <= 0.0:
+            raise ValueError("aux_loc_unc_tau must be > 0.")
+
+        min_weight = float(getattr(self.config, "aux_loc_unc_min_weight", 0.05))
+        if not (0.0 <= min_weight <= 1.0):
+            raise ValueError("aux_loc_unc_min_weight must be in [0, 1].")
+
+        eps = float(getattr(self.config, "aux_loc_unc_eps", 1e-6))
+        if eps <= 0.0:
+            raise ValueError("aux_loc_unc_eps must be > 0.")
+
+        candidate_metrics = self._collect_aux_loc_candidate_metrics(
+            num_samples=num_samples,
+            share_loc_noise=bool(getattr(self.config, "aux_loc_unc_share_loc_noise", True)),
+            branch_name="aux_loc_unc",
+            latents=latents,
+            img_hidden_states=img_hidden_states,
+            gen_attention_mask=gen_attention_mask,
+            base_sigmas=base_sigmas,
+            base_noisy_latents=base_noisy_latents,
+            base_noise_pred=base_noise_pred,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            und_image_map=und_image_map,
+            task_id=task_id,
+            return_dict=return_dict,
+            actions=actions,
+            loss_mask=loss_mask,
+        )
+        losses = candidate_metrics["weighted_mse"]
+        uncertainty_weight, uncertainty_stats = self._compute_aux_loc_uncertainty_weight(
+            candidate_metrics["residual"],
+            tau=tau,
+            min_weight=min_weight,
+            eps=eps,
+            metric=metric,
+        )
+        per_sample_loss = uncertainty_weight * losses.mean(dim=1)
+        loss = per_sample_loss.mean().to(torch.float32)
+
+        stats = {
+            "aux_loc_unc_active": torch.ones((), device=loss.device, dtype=torch.float32),
+            "aux_loc_unc_num_samples": torch.tensor(float(num_samples), device=loss.device, dtype=torch.float32),
+            "aux_loc_unc_weight_mean": uncertainty_weight.detach().mean().to(torch.float32),
+            "aux_loc_unc_weight_min": uncertainty_weight.detach().min().to(torch.float32),
+            "aux_loc_unc_weight_max": uncertainty_weight.detach().max().to(torch.float32),
+            "aux_loc_unc_d_norm_mean": uncertainty_stats["d_norm"].mean().to(torch.float32),
+            "aux_loc_unc_disagreement_mean": uncertainty_stats["disagreement"].mean().to(torch.float32),
+            "aux_loc_unc_scale_mean": uncertainty_stats["scale"].mean().to(torch.float32),
+            "aux_loc_unc_candidate_loss_mean": losses.detach().mean().to(torch.float32),
+            "aux_loc_unc_candidate_loss_min_mean": losses.min(dim=1).values.detach().mean().to(torch.float32),
+            "aux_loc_unc_candidate_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
         }
         return loss, stats
 
@@ -3445,6 +3663,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # --- C. Task Branching based on Loss Mask ---
         # loss_mask: [BS, 2] -> [Loc, Gen]
         aux_loc_em_stats = {}
+        aux_loc_unc_stats = {}
         if loss_mask is None:
             # loss_mask = torch.ones(hidden_states.shape[0], 2).to(hidden_states.device) # Default all on
             total_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
@@ -3530,10 +3749,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         run_aux_loc_this_step
                         and bool(getattr(self.config, "is_aux_loc_em_loss", False))
                     )
+                    run_aux_loc_unc_this_step = (
+                        run_aux_loc_this_step
+                        and bool(getattr(self.config, "is_aux_loc_uncertainty_loss", False))
+                    )
+                    run_aux_loc_multi_this_step = run_aux_loc_em_this_step or run_aux_loc_unc_this_step
                     # bs=8显存占用=6884MiB
                     pred_pixels_input = None
                     need_pred_pixels = (
-                        (run_aux_loc_this_step and not run_aux_loc_em_this_step)
+                        (run_aux_loc_this_step and not run_aux_loc_multi_this_step)
                         or bool(getattr(self.config, "is_loc_repa_loss", False))
                     )
                     if need_pred_pixels:
@@ -3574,6 +3798,23 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
                     if run_aux_loc_em_this_step:
                         masked_loc_aux_loss, aux_loc_em_stats = self.forward_for_aux_loc_em_loss(
+                            latents=latents,
+                            img_hidden_states=img_hidden_states,
+                            gen_attention_mask=genbrh_attention_mask,
+                            base_sigmas=sigmas,
+                            base_noisy_latents=noisy_latents,
+                            base_noise_pred=noise_pred,
+                            aux_loc_input_ids=genbrh_aux_loc_input_ids,
+                            aux_loc_labels=genbrh_aux_loc_labels,
+                            attention_mask=genbrh_aux_loc_attention_mask,
+                            und_image_map=genbrh_und_image,
+                            task_id=torch.zeros_like(genbrh_task_id),
+                            return_dict=return_dict,
+                            actions=genbrh_actions,
+                            loss_mask=genbrh_loss_mask,
+                        )
+                    elif run_aux_loc_unc_this_step:
+                        masked_loc_aux_loss, aux_loc_unc_stats = self.forward_for_aux_loc_uncertainty_loss(
                             latents=latents,
                             img_hidden_states=img_hidden_states,
                             gen_attention_mask=genbrh_attention_mask,
@@ -3904,6 +4145,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 return float(value.detach().cpu().item())
             return float(value)
 
+        def _aux_loc_unc_stat(name: str) -> float:
+            value = aux_loc_unc_stats.get(name, 0.0)
+            if torch.is_tensor(value):
+                return float(value.detach().cpu().item())
+            return float(value)
+
         # logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
         # 224 + lora=64
         # bs=8显存占用=13316MiB
@@ -3953,6 +4200,17 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "aux_loc_em_loss_mean": _aux_loc_em_stat("aux_loc_em_loss_mean"),
                 "aux_loc_em_loss_max_mean": _aux_loc_em_stat("aux_loc_em_loss_max_mean"),
                 "aux_loc_em_num_samples": _aux_loc_em_stat("aux_loc_em_num_samples"),
+                "aux_loc_unc_active": _aux_loc_unc_stat("aux_loc_unc_active"),
+                "aux_loc_unc_num_samples": _aux_loc_unc_stat("aux_loc_unc_num_samples"),
+                "aux_loc_unc_weight_mean": _aux_loc_unc_stat("aux_loc_unc_weight_mean"),
+                "aux_loc_unc_weight_min": _aux_loc_unc_stat("aux_loc_unc_weight_min"),
+                "aux_loc_unc_weight_max": _aux_loc_unc_stat("aux_loc_unc_weight_max"),
+                "aux_loc_unc_d_norm_mean": _aux_loc_unc_stat("aux_loc_unc_d_norm_mean"),
+                "aux_loc_unc_disagreement_mean": _aux_loc_unc_stat("aux_loc_unc_disagreement_mean"),
+                "aux_loc_unc_scale_mean": _aux_loc_unc_stat("aux_loc_unc_scale_mean"),
+                "aux_loc_unc_candidate_loss_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_mean"),
+                "aux_loc_unc_candidate_loss_min_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_min_mean"),
+                "aux_loc_unc_candidate_loss_max_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_max_mean"),
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
