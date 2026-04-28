@@ -23,7 +23,7 @@ repa_teacher_type: "dinov2"
 repa_teacher_name_or_path: "facebook/dinov2-base"
 repa_teacher_input_size: 224
 repa_teacher_hidden_size: 768
-repa_dit_layer_idx: 6
+repa_dit_layer_idx: 8
 repa_align_type: "patch_wise"
 repa_expected_num_patches: 256
 repa_projector_type: "conv_spatialnorm"

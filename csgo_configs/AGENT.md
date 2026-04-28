@@ -51,6 +51,9 @@
 | `exp17_2_dust2` | `exp17_2` 的 `dust2` 专用版 | 当前 `dust2` 主 baseline |
 | `exp19_dust2` | `exp17_2_dust2` 的 `aux_loc` step-level periodic gate 版本 | 在保留 `alpha_loc_aux` schedule 的同时加入周期 gate，并在 gate 关闭时跳过 aux_loc 前向链路 |
 | `exp20_dust2` | `exp17_2_dust2` 的 noisy-loc distribution matching 版本 | 对 batch 内随机 `30%` loc 子集做 latent-space matched noise，并仅对 noisy 子集覆盖 `1-sigma` loss 权重 |
+| `exp21_dust2` | `exp17_2_dust2` 的 stochastic generalized EM-inspired aux-loc 已实现配置 | 对同一样本采样多个 `x0_hat` candidate，用 loc consistency 估计 latent responsibility，再加权更新生成侧 |
+| `exp22_dust2` | `exp17_2_dust2` 的 uncertainty-weighted residual consistency aux-loc 计划版本 | 对同一样本采样两个 `x0_hat` candidate，用 loc velocity residual disagreement 作为样本级 aux 权重 |
+| `exp23_dust2` | `exp17_2_dust2` 的 combined EM-responsibility + uncertainty-gated aux-loc 计划版本 | 同时使用 candidate-level responsibility 和 sample-level residual consistency 权重 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -73,6 +76,9 @@
 | `exp17_2_dust2` | 主 baseline | `gen + loc + aux_loc` |
 | `exp19_dust2` | `aux_loc` 周期 gate baseline | `exp17_2_dust2 + step-level periodic gate for aux_loc` |
 | `exp20_dust2` | noisy-loc matching baseline | `exp17_2_dust2 + latent-space noisy loc subset + per-sample (1-sigma) weighting` |
+| `exp21_dust2` | EM-inspired aux-loc 已实现配置 | `exp17_2_dust2 + multi-sample x0_hat candidates + detached responsibility-weighted aux_loc` |
+| `exp22_dust2` | uncertainty-weighted aux-loc 计划实验 | `exp17_2_dust2 + two-sample x0_hat residual-disagreement sample weighting` |
+| `exp23_dust2` | combined EM + uncertainty aux-loc 计划实验 | `exp17_2_dust2 + candidate responsibility + residual-consistency sample gating` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -177,200 +183,284 @@ loc_aux_gate_start_step: 0
 - migrate best variant to `exp17_5_dust2`：
   - 如果 noisy-loc matching 在 `exp17_2_dust2` 上成立，再迁移到 loc-aware REPA 主线，检查其与 `loc_repa_loss` 是否互补。
 
-## EM-style Interpretation of Aux-Loc
+## Stochastic Generalized EM-inspired Aux-Loc Line
 
-这一节不是在声称当前实现“就是标准 EM”，而是提供一个后续做算法设计时可复用的解释框架。当前代码更接近 `stochastic generalized EM / amortized latent inference`，不是严格的 closed-form EM。
+### Design summary
 
-### 1. EM 的数学定义与核心思想
+`exp21_dust2` 把当前单个 `x0_hat` 的 `aux_loc_loss` 扩展成 multi-sample latent expectation 近似。它不是标准 closed-form EM，而是更接近 stochastic generalized EM：
 
-给定观测变量 `y`、latent 变量 `z`、参数 `theta`，EM 试图最大化：
+- latent candidate:
+  - 对同一个 gen 样本采样 `K` 个 `(timestep, noise)`
+  - 分别得到 `K` 个 `x0_hat_k = vae.decode(pred_latents_x0_k)`
+- E-like step:
+  - 冻结 loc evaluator
+  - 对每个 `x0_hat_k` 计算 `loc_loss_k`
+  - 用 detached `loc_loss_k` 估计 candidate responsibility
 
 ```text
-log p_theta(y) = log sum_z p_theta(y, z)
+q_k = softmax(- stopgrad(loc_loss_k) / tau_candidate)
 ```
 
-引入任意分布 `q(z)` 后，可写成：
+- M-like step:
+  - 固定 `q_k`
+  - 用加权 aux loss 更新生成侧
 
 ```text
-log p_theta(y)
-= E_q[log p_theta(y, z)] + H(q) + KL(q(z) || p_theta(z | y))
+L_aux_em = sum_k q_k * loc_loss_k
 ```
 
-等价地，也常写作：
+- 梯度路由:
+  - loc head 在 aux 路径中冻结
+  - `q_k` detach
+  - 梯度只通过 `loc_loss_k` 回到 `x0_hat_k -> gen_head`
+
+### Implemented experiment
+
+| 配置 | 基础配置 | 主要改动 | 目的 |
+|---|---|---|---|
+| `exp21_dust2` | `exp17_2_dust2` | `aux_loc` 从单个 `x0_hat` 改为 `K` 个 candidate 的 detached responsibility-weighted expectation | 验证 multi-sample latent expectation 是否比单步 `aux_loc_loss` 更稳定 |
+
+建议第一版最小设置：
+
+```yaml
+is_loc_aux_loss: True
+is_aux_loc_em_loss: True
+aux_loc_em_num_samples: 2
+aux_loc_em_weight_mode: softmax_loss
+aux_loc_em_candidate_tau: 1.0
+aux_loc_em_backward_mode: weighted_all
+aux_loc_em_share_loc_noise: True
+```
+
+### Current status
+
+- `exp21_dust2` 已实现训练配置和 test 配置。
+- 配置文件：
+  - `csgo_configs/exp21_dust2.yaml`
+  - `csgo_configs/test/exp21_dust2_gen.yaml`
+  - `csgo_configs/test/exp21_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp21_dust2_loc.yaml`
+- 第一版只实现 `weighted_all`，不包含 hard top1。
+- 该方案应优先在 `exp17_2_dust2` 上验证，再决定是否迁移到 `exp20_dust2` 或 loc-aware REPA 主线。
+
+### Key distinction from exp20_dust2
+
+- `exp20_dust2`:
+  - 主要修正 loc 主分支的输入分布
+  - 让 loc head 见到更接近 `x0_hat` 的 noisy FPS
+- `exp21_dust2`:
+  - 主要修正 aux 分支的 latent expectation 近似
+  - 用多个 `x0_hat_k` candidate 估计哪个 clean-view surrogate 更可信
+
+## Uncertainty-weighted Residual Consistency Aux-Loc Line
+
+### Design summary
+
+`exp22_dust2` 是一个计划实验，目标是把 aux-loc 的多次采样不确定性作为样本级权重，而不是区分“大家一起对”和“大家一起错”。核心假设是：
+
+- `loc_loss` 本身负责判断对错并提供纠错梯度
+- uncertainty weight 只负责识别多次 `x0_hat` 采样给出的 loc 训练信号是否一致
+- 如果多次采样的 velocity residual 一致，则保留较高 aux 权重
+- 如果多次采样的 velocity residual 分歧大，则降低该样本的 aux 权重
+
+第一版建议只使用两个 gen-side samples：
 
 ```text
-log p_theta(y) = F(q, theta) + KL(q(z) || p_theta(z | y))
+x0_hat_1, x0_hat_2
+```
+
+并强制共享 loc-side 随机量：
+
+```text
+same loc_time
+same loc_noise
+same x_t
+same velocity target u_t
+```
+
+否则 uncertainty 会混入定位分支自身的 flow-matching 随机性。
+
+### Weight definition
+
+对同一样本的两个 `x0_hat` candidate，冻结 loc evaluator 后得到：
+
+```text
+v_1 = F_loc(x0_hat_1, map, x_t, loc_time)
+v_2 = F_loc(x0_hat_2, map, x_t, loc_time)
+u   = velocity target
+```
+
+定义 residual：
+
+```text
+r_1 = v_1 - u
+r_2 = v_2 - u
+```
+
+使用 residual disagreement 作为 uncertainty：
+
+```text
+d = mean(abs(r_1 - r_2))
+scale = 0.5 * (mean(abs(r_1)) + mean(abs(r_2))) + eps
+d_norm = d / scale
+w_unc = exp(- stopgrad(d_norm) / tau_unc)
+```
+
+最终 aux loss：
+
+```text
+L_aux_unc = stopgrad(w_unc) * 0.5 * (MSE(v_1, u) + MSE(v_2, u))
+```
+
+这个权重不直接判断 loss 大小：
+
+- 两次都错但 residual 一致：
+  - `d_norm` 小，`w_unc` 高
+  - loss 大，模型仍会收到强纠错梯度
+- 两次都对：
+  - `d_norm` 小，`w_unc` 高
+  - loss 小，不会产生过强更新
+- 有对有错或方向不一致：
+  - `d_norm` 大，`w_unc` 低
+  - 降低不稳定 aux 信号的影响
+
+### Planned experiment
+
+| 配置 | 基础配置 | 主要改动 | 目的 |
+|---|---|---|---|
+| `exp22_dust2` | `exp17_2_dust2` | 用两个 `x0_hat` candidate 的 loc velocity residual disagreement 计算样本级 uncertainty weight | 验证只抑制“不一致采样”是否比 EM-style candidate responsibility 更稳 |
+
+建议第一版最小设置：
+
+```yaml
+is_loc_aux_loss: True
+is_aux_loc_uncertainty_loss: True
+aux_loc_unc_num_samples: 2
+aux_loc_unc_metric: residual_l1_normed
+aux_loc_unc_tau: 1.0
+aux_loc_unc_min_weight: 0.05
+aux_loc_unc_share_loc_noise: True
+```
+
+### Current status
+
+- `exp22_dust2` 当前只是算法设计记录。
+- 训练代码和 yaml 尚未实现。
+- 该方案应优先独立对比 `exp17_2_dust2` 和 `exp21_dust2`，不要一开始叠加 `exp20_dust2` 的 noisy-loc matching。
+
+### Comparison with exp21_dust2
+
+| 维度 | `exp21_dust2` | `exp22_dust2` |
+|---|---|---|
+| 核心思想 | multi-sample latent expectation / EM-inspired responsibility | sample-level uncertainty gating |
+| 权重对象 | candidate-level `q_k` | sample-level `w_unc` |
+| 权重依据 | `loc_loss_k` 越小，candidate 越可信 | residual disagreement 越小，样本越稳定 |
+| 是否区分一起对/一起错 | 会偏向 loss 小的 candidate | 不直接区分，对错由 loss 自身负责 |
+| 主要抑制对象 | 低质量 candidate | 多次采样训练信号不一致的样本 |
+| 推荐关系 | 更接近 EM-style posterior responsibility | 更接近 uncertainty-weighted consistency training |
+
+## Combined EM-responsibility and Uncertainty-gated Aux-Loc Line
+
+### Design summary
+
+`exp23_dust2` 是一个计划实验，目标是把 `exp21_dust2` 的 candidate-level responsibility 和 `exp22_dust2` 的 sample-level uncertainty gating 组合起来：
+
+- `q_k` 负责回答：
+  - 在同一样本的多个 `x0_hat_k` candidate 里，哪个 candidate 更可信
+- `w_unc` 负责回答：
+  - 这个样本的多次采样 loc 训练信号是否稳定，是否应该强更新
+
+组合后的 aux objective：
+
+```text
+L_aux_combined = stopgrad(w_unc) * sum_k stopgrad(q_k) * loc_loss_k
 ```
 
 其中：
 
-- `E-step`
-  - 固定 `theta_old`
-  - 令 `q(z) = p_{theta_old}(z | y)`
-  - 即：用当前模型估计 latent 的 posterior / expectation
-- `M-step`
-  - 固定 `q`
-  - 更新 `theta` 去最大化 `E_q[log p_theta(y, z)]`
-  - 即：把 latent 当作“当前最可信的隐变量解释”，再优化参数
-
-更宽松的 `generalized / stochastic EM` 允许：
-
-- 不精确计算 posterior
-- 不精确做 expectation
-- 用 Monte-Carlo sample 近似 expectation
-- 每次只做一步或少量梯度更新，而不是把 M-step 优化到收敛
-
-### 2. 当前 aux-loc 训练链条的代码事实
-
-以下内容是当前实现里已经确认的训练链条：
-
-1. 生成分支对每个 gen 样本采样 `timestep / sigma`
-   - 见 `unified_unilip.py::_sample_gen_matched_timesteps_and_sigmas()`
-2. 生成分支在 latent 空间预测 `noise_pred`
-3. 用
-
 ```text
-pred_latents_x0 = noisy_latents - sigmas * noise_pred
+q_k = softmax(- stopgrad(loc_loss_k) / tau_candidate)
 ```
 
-构造当前 timestep 下的单步 `x0` 估计
-   - 见 `unified_unilip.py::_decode_pred_pixels_input_from_flow()`
-4. 将 `pred_latents_x0` decode 成 `pred_pixels_input`
-   - 这就是送入 `loc_head` 计算 `aux_loc_loss` 的图像
-   - 它不是完整采样后的最终图像，而是“当前 timestep 下的单步 clean estimate / x0_hat”
-5. `forward_for_aux_loc_loss()` 把
-   - `pred_pixels_input` 作为 FPS 输入
-   - `und_image_map` 作为 map 输入
-   - `aux_loc_input_ids` 作为 loc prompt
-   再走一遍定位分支
-6. 在这条 aux 路径中，loc head 会重新采样 loc-side 的 `time / noise`
-   - 形成自己的 `x_t` 和 `u_t`
-   - 再计算单步 velocity MSE
-7. 当前 aux 路径里，loc head 参数会被临时冻结
-   - 因此 `aux_loc_loss` 的梯度主要回流到生成侧图像预测链条
-8. 这条 loss 还会乘 `1 - sigma_gen`
-   - 即生成侧当前 `sigma` 越小，aux 权重越大
-9. `exp20_dust2` 额外对 loc 样本中的一个随机子集做 latent-space matched noise
-   - 目的是让 loc 主训练支路看到更接近 `pred_pixels_input` 分布的输入
-
-把当前实现抽象成一个更紧凑的目标，可写成：
+对于第一版 `K=2` 的情况，使用两个 candidate 的 velocity residual disagreement 计算样本级 uncertainty：
 
 ```text
-L_aux_loc(theta_gen)
-≈ E_(m,a,x) E_(t,eps) [
-    l_loc( F_loc( x0_hat_theta_gen(t, eps; m, a), m ), a )
-]
+r_1 = v_1 - u
+r_2 = v_2 - u
+d = mean(abs(r_1 - r_2))
+scale = 0.5 * (mean(abs(r_1)) + mean(abs(r_2))) + eps
+d_norm = d / scale
+w_unc = exp(- stopgrad(d_norm) / tau_unc)
 ```
 
-其中：
+这里仍然要求两个 candidate 共享 loc-side 随机量：
 
-- `m` = map / loc prompt 条件
-- `a` = GT pose
-- `x` = GT FPS
-- `x0_hat_theta_gen` = 当前 gen head 在单个 sampled timestep 下给出的 `pred_pixels_input`
-- `F_loc` = 当前 loc evaluator
+```text
+same loc_time
+same loc_noise
+same x_t
+same velocity target u_t
+```
 
-需要注意：这里的 expectation 目前是通过“每步只采样一个 `t, eps`”来做 Monte-Carlo 近似的。
+否则 `w_unc` 会混入 loc 分支自身采样造成的不确定性。
 
-### 3. 将当前思路与 EM 逐项对应
+### Interpretation
 
-下面的对应关系是“用于思考的 EM 类比”，不是说代码里显式实现了这些概率对象。
+`exp23_dust2` 可以理解为两级权重：
 
-| 当前 unified aux-loc 中的对象 | 可对应的 EM 视角 |
-|---|---|
-| map、loc prompt、GT pose、GT FPS | 观测变量 / 条件变量 |
-| “对定位最有用的 clean FPS 表示” | 想象中的 latent 变量 |
-| `pred_latents_x0` / `pred_pixels_input` | 当前模型对 latent clean view 的 posterior point estimate / expectation-like surrogate |
-| 随机采样的 `timestep / sigma / noise` | 对 latent expectation 的 Monte-Carlo 近似来源 |
-| 单步 `x0_hat` 而不是完整采样图 | 当前 E-like 步骤里得到的 latent 代理，只是部分去噪下的估计值 |
-| 冻结 loc evaluator 后计算 `aux_loc_loss` | 固定 latent 解释后，对生成参数做 M-like 更新 |
-| `exp20_dust2` 的 noisy-loc matching | 让 loc evaluator 的训练输入分布更接近 E-like 步骤实际产生的 latent surrogate |
+| 权重 | 层级 | 作用 |
+|---|---|---|
+| `q_k` | candidate-level | 偏向 loc loss 更小、更像 clean-view surrogate 的 `x0_hat_k` |
+| `w_unc` | sample-level | 降低多次采样 residual 不一致样本的整体 aux 强度 |
 
-更具体地说，可以把当前 `aux_loc` 看成：
+因此三类情况的行为为：
 
-- `E-like step`
-  - 用当前 gen head 和当前 sampled `(t, sigma, noise)` 推断一个 `x0_hat`
-  - 这个 `x0_hat` 可以理解为“当前模型认为，对该样本最合理的 latent clean view 代理”
-- `M-like step`
-  - 固定 loc evaluator
-  - 让生成参数朝着“产生更利于定位的 `x0_hat`”的方向更新
+- 两次都对：
+  - `loc_loss_k` 小
+  - residual disagreement 小
+  - `w_unc` 高，但总 loss 小
+- 两次都错但方向一致：
+  - `loc_loss_k` 大
+  - residual disagreement 小
+  - `w_unc` 高，模型收到稳定纠错梯度
+- 有对有错或方向不一致：
+  - `q_k` 会偏向较好的 candidate
+  - `w_unc` 会降低整体样本权重
+  - 该样本不会对生成侧产生过强、不稳定的 aux 更新
 
-因此，`aux_loc_loss` 的核心含义不是“直接让生成结果更像 GT 图”，而是：
+### Planned experiment
 
-- 让 gen head 输出一个对 loc evaluator 更敏感、更可定位的 latent clean estimate
+| 配置 | 基础配置 | 主要改动 | 目的 |
+|---|---|---|---|
+| `exp23_dust2` | `exp17_2_dust2` | 同时启用 detached `q_k` 和 detached `w_unc` | 验证 candidate selection 与 sample reliability gating 是否互补 |
 
-### 4. 当前方案与标准 EM 的差异
+建议第一版最小设置：
 
-当前实现和标准 EM 仍有几个本质差异，后续讨论时应明确区分：
+```yaml
+is_loc_aux_loss: True
+is_aux_loc_combined_em_unc_loss: True
+aux_loc_combined_num_samples: 2
+aux_loc_combined_candidate_tau: 1.0
+aux_loc_combined_unc_tau: 1.0
+aux_loc_combined_unc_min_weight: 0.05
+aux_loc_combined_share_loc_noise: True
+```
 
-1. 没有显式的 posterior `q(z | y)`
-   - 当前只有 `pred_pixels_input` 这个 point estimate
-   - 不是完整分布
-2. 没有精确 expectation
-   - 每个样本每步只采一个 `t, eps`
-   - 属于单样本 Monte-Carlo 近似
-3. 没有单独收敛的 E-step / M-step
-   - 当前是 minibatch 内交织进行的
-   - 更接近 online / stochastic generalized EM
-4. 当前 aux 目标是 discriminative loc loss
-   - 不是严格的 complete-data log-likelihood
-5. loc head 只在 aux 路径里冻结
-   - 但在 loc 主分支里它仍然继续训练
-   - 因此“latent evaluator”本身不是完全静态的
+### Current status
 
-所以，当前最准确的描述是：
+- `exp23_dust2` 当前只是算法设计记录。
+- 训练代码和 yaml 尚未实现。
+- 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
 
-- `aux_loc` 可以被解释为一种 `EM-inspired latent expectation surrogate`
-- 但实现层面更接近 `stochastic generalized EM with a discriminative frozen evaluator`
+### Comparison with exp21_dust2 and exp22_dust2
 
-### 5. 为什么 exp20_dust2 可以从 EM 角度理解
-
-如果采用上面的 EM 类比，当前主问题就会变得很清晰：
-
-- `E-like` 步骤给 loc evaluator 的输入不是干净 FPS
-- 而是带单步去噪误差的 `pred_pixels_input`
-- 但 loc 主训练分支默认主要在干净 FPS 上学习
-
-这就形成了一个典型的“posterior-sample / evaluator-training distribution mismatch”：
-
-- E-like 步骤产生的是 noisy surrogate
-- M-like 更新依赖的 loc evaluator 却更多在 clean 分布上被训练
-
-`exp20_dust2` 正是在修这个 mismatch：
-
-- 它没有改变 `x0_hat` 的生成方式
-- 也没有改变 `aux_loc_loss` 的基本定义
-- 它做的是让 loc 主训练分支看到一部分与 `x0_hat` 更接近的 noisy 输入
-
-因此，`exp20_dust2` 可以理解为：
-
-- 不是直接改 E-like estimator
-- 而是在提升 M-like evaluator 对 E-like latent surrogate 的适配性
-
-### 6. 用于后续算法设计的 EM 风格拆解
-
-以后如果继续围绕 `aux_loc` 设计新算法，可以按下面这个拆解来思考：
-
-1. `E-like inference quality`
-   - `x0_hat` 是否足够稳定
-   - 是否需要 multi-sample `t/eps`
-   - 是否需要更稳定的 gen EMA / teacher 来提供 latent estimate
-2. `Evaluator distribution match`
-   - loc head 是否见过足够多的 noisy `x0_hat`-like 输入
-   - `exp20_dust2` 就属于这一类
-3. `Expectation weighting`
-   - 当前只用 `1 - sigma`
-   - 后续可考虑 uncertainty-aware weighting / confidence calibration
-4. `Alternating optimization`
-   - 如果要更接近 EM，可以考虑阶段性冻结一侧、更新另一侧
-   - 而不是始终 fully online joint training
-5. `Latent representation choice`
-   - 当前 latent surrogate 是 `pred_latents_x0 -> vae.decode -> pred_pixels_input`
-   - 后续也可以比较：
-     - decode 后 pixel-space aux
-     - latent-space aux
-     - multi-step denoised aux
-     - expectation over multiple `t`
+| 维度 | `exp21_dust2` | `exp22_dust2` | `exp23_dust2` |
+|---|---|---|---|
+| 权重形式 | `sum_k q_k * loss_k` | `w_unc * mean_k(loss_k)` | `w_unc * sum_k q_k * loss_k` |
+| 权重层级 | candidate-level | sample-level | candidate-level + sample-level |
+| 主要目的 | 选择更可信的 `x0_hat_k` | 抑制采样不一致样本 | 同时选择可信 candidate 并抑制不稳定样本 |
+| 风险 | 可能过度偏向当前 loc loss 小的 candidate | 不区分 candidate 质量 | 计算最重，且需要同时调 `tau_candidate` 和 `tau_unc` |
+| 推荐定位 | EM-inspired ablation | uncertainty-gated ablation | 两者都有效后再验证的组合实验 |
 
 ## Implemented Loc-aware REPA Line
 
@@ -479,10 +569,10 @@ x = x / (x.std(dim=1, keepdim=True) + 1e-6)
 | 3 | `exp17_6_dust2` | `exp17_5_dust2` | 加 shared LLM tail | 验证 loc-aware REPA 在 shared tail 下是否进一步受益 |
 | 4 | `exp17_7_dust2` | `exp17_2_dust2` | 传统 REPA, `teacher=DINOv2`, `layer=6`, `align=patch_wise`, `projector=mlp3_silu`, `aux_loc=off` | 验证标准 REPA 主方案本身是否有效 |
 | 5 | `exp17_8_dust2` | `exp17_7_dust2` | 打开 `aux_loc` | 验证标准 REPA 与 `aux_loc` 是否互补 |
-| 6 | `exp17_9_dust2` | `exp17_2_dust2` | 传统 REPA, `teacher=UniLIP vision`, `layer=6`, `align=patch_wise`, `projector=mlp3_silu`, `aux_loc=off` | 验证 domain-specific teacher 是否优于 DINOv2 |
+| 6 | `exp17_9_dust2` | `exp17_2_dust2` | 传统 REPA, `teacher=UniLIP vision`, `layer=8`, `align=patch_wise`, `projector=mlp3_silu`, `aux_loc=off` | 验证 domain-specific teacher 是否优于 DINOv2 |
 | 7 | `exp17_10_dust2` | `exp17_9_dust2` | 打开 `aux_loc` | 验证 UniLIP vision teacher 与 `aux_loc` 联合时的效果 |
-| 8 | `exp17_11_dust2` | `exp17_2_dust2` | iREPA, `teacher=DINOv2`, `layer=6`, `align=patch_wise`, `projector=conv_spatialnorm`, `aux_loc=off` | 验证 iREPA 是否可直接作为主方法替代经典 REPA |
-| 9 | `exp17_12_dust2` | `exp17_11_dust2` | 打开 `aux_loc` 或改 `layer=8` | 在 iREPA 主方法基础上继续做组合或层位扩展 |
+| 8 | `exp17_11_dust2` | `exp17_2_dust2` | iREPA, `teacher=DINOv2`, `layer=8`, `align=patch_wise`, `projector=conv_spatialnorm`, `aux_loc=off` | 验证 iREPA 是否可直接作为主方法替代经典 REPA |
+| 9 | `exp17_12_dust2` | `exp17_11_dust2` | 打开 `aux_loc` | 在 iREPA 主方法基础上继续做组合或层位扩展 |
 | 10 | `exp17_13_dust2` | `exp17_11_dust2` 或 `exp17_12_dust2` | 打开 shared LLM tail | 验证 shared tail 是否也能增强 iREPA 主方法 |
 
 ## REPA Config Diff Table
@@ -561,20 +651,26 @@ repa_spatial_norm_gamma: 1.0
 2. `exp17_4_dust2`
 3. `exp19_dust2`
 4. `exp20_dust2`
-5. `exp17_5_dust2`
-6. `exp17_6_dust2`
-7. `exp17_7_dust2`
-8. `exp17_8_dust2`
-9. `exp17_9_dust2`
-10. `exp17_10_dust2`
-11. `exp17_11_dust2`
-12. `exp17_12_dust2`
-13. `exp17_13_dust2`
+5. `exp21_dust2`
+6. `exp22_dust2`
+7. `exp23_dust2`
+8. `exp17_5_dust2`
+9. `exp17_6_dust2`
+10. `exp17_7_dust2`
+11. `exp17_8_dust2`
+12. `exp17_9_dust2`
+13. `exp17_10_dust2`
+14. `exp17_11_dust2`
+15. `exp17_12_dust2`
+16. `exp17_13_dust2`
 
 理由：
 
 - 先固定当前 unified + loc-aware REPA 的锚点。
 - 在引入 REPA 之前，先验证 noisy-loc 分布匹配是否能单独带来收益。
+- 再验证 multi-sample EM-inspired aux-loc 是否能改善单个 `x0_hat` 的高方差问题。
+- 再验证 uncertainty-weighted residual consistency 是否能用更简单的样本级 gating 抑制不稳定 aux 信号。
+- 如果 `exp21_dust2` 和 `exp22_dust2` 任一有效，再验证二者组合是否互补。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
 - 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
@@ -595,6 +691,7 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp17_2_dust2.yaml`
 - `csgo_configs/exp19_dust2.yaml`
 - `csgo_configs/exp20_dust2.yaml`
+- `csgo_configs/exp21_dust2.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

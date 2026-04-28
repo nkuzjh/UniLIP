@@ -23,7 +23,7 @@ repa_teacher_type: "unilip_vision"
 repa_teacher_name_or_path: "internal_unilip_vision"
 repa_teacher_input_size: 448
 repa_teacher_hidden_size: 896
-repa_dit_layer_idx: 6
+repa_dit_layer_idx: 8
 repa_align_type: "patch_wise"
 repa_expected_num_patches: 256
 repa_projector_type: "mlp3_silu"
