@@ -1907,6 +1907,50 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
     **frames to video**
     ``    python frames_to_video.py --img_dir outputs_eval/exp22_dust2_gen_conti/test_<timestamp>/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp22_dust2_gen_conti/test_<timestamp>/gen_compared_videos/de_dust2 --max_duration 10        ``
 
+### exp23_dust2
+- exp17_2_dust2 + combined EM-responsibility and uncertainty-gated aux-loc
+- base: `exp17_2_dust2`
+- is_loc_aux_loss: True
+- is_aux_loc_combined_em_unc_loss: True
+- aux_loc_combined_num_samples: 2
+- aux_loc_combined_candidate_tau: 1.0
+- aux_loc_combined_unc_metric: `residual_l1_normed`
+- aux_loc_combined_unc_tau: 1.0
+- aux_loc_combined_unc_min_weight: 0.05
+- aux_loc_combined_share_loc_noise: True
+- aux_loc_combined_unc_eps: 1.0e-6
+- design:
+  - 对同一个 gen 样本构造 K=2 个 `x0_hat` candidate
+  - 两个 candidate 共享 loc-side `loc_time/loc_noise/x_t/u_t`
+  - 使用 `softmax(- stopgrad(loc_loss_k) / tau_candidate)` 得到 candidate-level `q_k`
+  - 使用 residual disagreement 得到 sample-level `w_unc`
+  - 最终 aux loss 为 `stopgrad(w_unc) * sum_k(stopgrad(q_k) * loc_loss_k)`
+- purpose: 验证 candidate-level responsibility 与 sample-level uncertainty gating 是否互补
+- dust2
+
+**train_csgo.py**
+```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29536 train_csgo.py --csgo_config csgo_configs/exp23_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp23_dust2 --num_train_epochs 100 --per_device_train_batch_size 8 --per_device_eval_batch_size 8 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True       ```
+**eval_csgo_loc.py** : step=
+```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp23_dust2_loc.yaml      ```
+**eval_csgo_v1.py** : step=
+```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_v1.py --csgo_config csgo_configs/test/exp23_dust2_gen.yaml      ```
+    **eval_csgo.py** :
+    ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp23_dust2_gen.yaml      ```
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp23_dust2_gen/test_<timestamp>/gen_imgs/de_dust2 --all --batch_size 8       ``
+    **benchmark_csgo_v1.py after eval_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp23_dust2_gen/test_<timestamp>/gen_imgs/de_dust2 --batch_size 8 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2       ``
+**eval_csgo_v1_conti.py** : step=
+```    CUDA_VISIBLE_DEVICES=0 python eval_csgo_v1_conti.py --csgo_config csgo_configs/test/exp23_dust2_gen_conti.yaml      ```
+    **continuous gen**
+    ```    CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp23_dust2_gen_conti.yaml      ```
+    **benchmark_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp23_dust2_gen_conti/test_<timestamp>/gen_imgs/de_dust2 --all --batch_size 8       ``
+    **benchmark_csgo_v1_conti.py after eval_csgo.py**
+    ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp23_dust2_gen_conti/test_<timestamp>/gen_imgs/de_dust2 --batch_size 8 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224       ``
+    **frames to video**
+    ``    python frames_to_video.py --img_dir outputs_eval/exp23_dust2_gen_conti/test_<timestamp>/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp23_dust2_gen_conti/test_<timestamp>/gen_compared_videos/de_dust2 --max_duration 10        ``
+
 ### exp17_3
 - exp17_2
 

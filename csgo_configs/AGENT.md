@@ -53,7 +53,7 @@
 | `exp20_dust2` | `exp17_2_dust2` 的 noisy-loc distribution matching 版本 | 对 batch 内随机 `30%` loc 子集做 latent-space matched noise，并仅对 noisy 子集覆盖 `1-sigma` loss 权重 |
 | `exp21_dust2` | `exp17_2_dust2` 的 stochastic generalized EM-inspired aux-loc 已实现配置 | 对同一样本采样多个 `x0_hat` candidate，用 loc consistency 估计 latent responsibility，再加权更新生成侧 |
 | `exp22_dust2` | `exp17_2_dust2` 的 uncertainty-weighted residual consistency aux-loc 已实现配置 | 对同一样本采样两个 `x0_hat` candidate，用 loc velocity residual disagreement 作为样本级 aux 权重 |
-| `exp23_dust2` | `exp17_2_dust2` 的 combined EM-responsibility + uncertainty-gated aux-loc 计划版本 | 同时使用 candidate-level responsibility 和 sample-level residual consistency 权重 |
+| `exp23_dust2` | `exp17_2_dust2` 的 combined EM-responsibility + uncertainty-gated aux-loc 已实现配置 | 同时使用 candidate-level responsibility 和 sample-level residual consistency 权重 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -78,7 +78,7 @@
 | `exp20_dust2` | noisy-loc matching baseline | `exp17_2_dust2 + latent-space noisy loc subset + per-sample (1-sigma) weighting` |
 | `exp21_dust2` | EM-inspired aux-loc 已实现配置 | `exp17_2_dust2 + multi-sample x0_hat candidates + detached responsibility-weighted aux_loc` |
 | `exp22_dust2` | uncertainty-weighted aux-loc 已实现配置 | `exp17_2_dust2 + two-sample x0_hat residual-disagreement sample weighting` |
-| `exp23_dust2` | combined EM + uncertainty aux-loc 计划实验 | `exp17_2_dust2 + candidate responsibility + residual-consistency sample gating` |
+| `exp23_dust2` | combined EM + uncertainty aux-loc 已实现配置 | `exp17_2_dust2 + candidate responsibility + residual-consistency sample gating` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -370,7 +370,7 @@ aux_loc_unc_eps: 1.0e-6
 
 ### Design summary
 
-`exp23_dust2` 是一个计划实验，目标是把 `exp21_dust2` 的 candidate-level responsibility 和 `exp22_dust2` 的 sample-level uncertainty gating 组合起来：
+`exp23_dust2` 是一个已实现实验，目标是把 `exp21_dust2` 的 candidate-level responsibility 和 `exp22_dust2` 的 sample-level uncertainty gating 组合起来：
 
 - `q_k` 负责回答：
   - 在同一样本的多个 `x0_hat_k` candidate 里，哪个 candidate 更可信
@@ -435,7 +435,7 @@ same velocity target u_t
   - `w_unc` 会降低整体样本权重
   - 该样本不会对生成侧产生过强、不稳定的 aux 更新
 
-### Planned experiment
+### Implemented experiment
 
 | 配置 | 基础配置 | 主要改动 | 目的 |
 |---|---|---|---|
@@ -448,15 +448,23 @@ is_loc_aux_loss: True
 is_aux_loc_combined_em_unc_loss: True
 aux_loc_combined_num_samples: 2
 aux_loc_combined_candidate_tau: 1.0
+aux_loc_combined_unc_metric: residual_l1_normed
 aux_loc_combined_unc_tau: 1.0
 aux_loc_combined_unc_min_weight: 0.05
 aux_loc_combined_share_loc_noise: True
+aux_loc_combined_unc_eps: 1.0e-6
 ```
 
 ### Current status
 
-- `exp23_dust2` 当前只是算法设计记录。
-- 训练代码和 yaml 尚未实现。
+- `exp23_dust2` 已实现训练配置和 test 配置。
+- 配置文件：
+  - `csgo_configs/exp23_dust2.yaml`
+  - `csgo_configs/test/exp23_dust2_gen.yaml`
+  - `csgo_configs/test/exp23_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp23_dust2_loc.yaml`
+- 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
+- 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
 
 ### Comparison with exp21_dust2 and exp22_dust2
@@ -700,6 +708,7 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp20_dust2.yaml`
 - `csgo_configs/exp21_dust2.yaml`
 - `csgo_configs/exp22_dust2.yaml`
+- `csgo_configs/exp23_dust2.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

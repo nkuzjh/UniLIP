@@ -3039,6 +3039,95 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         }
         return loss, stats
 
+    def forward_for_aux_loc_combined_em_unc_loss(
+        self,
+        *,
+        latents: torch.Tensor,
+        img_hidden_states: torch.Tensor,
+        gen_attention_mask: torch.Tensor,
+        base_sigmas: torch.Tensor,
+        base_noisy_latents: torch.Tensor,
+        base_noise_pred: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        task_id: torch.Tensor,
+        return_dict: bool,
+        actions: torch.Tensor,
+        loss_mask: torch.Tensor,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        num_samples = int(getattr(self.config, "aux_loc_combined_num_samples", 2))
+        if num_samples != 2:
+            raise ValueError("Current combined aux-loc implementation requires aux_loc_combined_num_samples=2.")
+
+        candidate_tau = float(getattr(self.config, "aux_loc_combined_candidate_tau", 1.0))
+        if candidate_tau <= 0.0:
+            raise ValueError("aux_loc_combined_candidate_tau must be > 0.")
+
+        unc_metric = getattr(self.config, "aux_loc_combined_unc_metric", "residual_l1_normed")
+        unc_tau = float(getattr(self.config, "aux_loc_combined_unc_tau", 1.0))
+        if unc_tau <= 0.0:
+            raise ValueError("aux_loc_combined_unc_tau must be > 0.")
+
+        unc_min_weight = float(getattr(self.config, "aux_loc_combined_unc_min_weight", 0.05))
+        if not (0.0 <= unc_min_weight <= 1.0):
+            raise ValueError("aux_loc_combined_unc_min_weight must be in [0, 1].")
+
+        unc_eps = float(getattr(self.config, "aux_loc_combined_unc_eps", 1e-6))
+        if unc_eps <= 0.0:
+            raise ValueError("aux_loc_combined_unc_eps must be > 0.")
+
+        candidate_metrics = self._collect_aux_loc_candidate_metrics(
+            num_samples=num_samples,
+            share_loc_noise=bool(getattr(self.config, "aux_loc_combined_share_loc_noise", True)),
+            branch_name="aux_loc_combined",
+            latents=latents,
+            img_hidden_states=img_hidden_states,
+            gen_attention_mask=gen_attention_mask,
+            base_sigmas=base_sigmas,
+            base_noisy_latents=base_noisy_latents,
+            base_noise_pred=base_noise_pred,
+            aux_loc_input_ids=aux_loc_input_ids,
+            aux_loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            und_image_map=und_image_map,
+            task_id=task_id,
+            return_dict=return_dict,
+            actions=actions,
+            loss_mask=loss_mask,
+        )
+        losses = candidate_metrics["weighted_mse"]
+        responsibilities = self._compute_aux_loc_em_responsibility(losses, candidate_tau)
+        uncertainty_weight, uncertainty_stats = self._compute_aux_loc_uncertainty_weight(
+            candidate_metrics["residual"],
+            tau=unc_tau,
+            min_weight=unc_min_weight,
+            eps=unc_eps,
+            metric=unc_metric,
+        )
+
+        per_sample_loss = uncertainty_weight * (responsibilities * losses).sum(dim=1)
+        loss = per_sample_loss.mean().to(torch.float32)
+
+        q_entropy = -(responsibilities * (responsibilities.clamp_min(1e-8)).log()).sum(dim=1)
+        stats = {
+            "aux_loc_combined_active": torch.ones((), device=loss.device, dtype=torch.float32),
+            "aux_loc_combined_num_samples": torch.tensor(float(num_samples), device=loss.device, dtype=torch.float32),
+            "aux_loc_combined_q_max_mean": responsibilities.max(dim=1).values.mean().detach().to(torch.float32),
+            "aux_loc_combined_q_entropy_mean": q_entropy.mean().detach().to(torch.float32),
+            "aux_loc_combined_unc_weight_mean": uncertainty_weight.detach().mean().to(torch.float32),
+            "aux_loc_combined_unc_weight_min": uncertainty_weight.detach().min().to(torch.float32),
+            "aux_loc_combined_unc_weight_max": uncertainty_weight.detach().max().to(torch.float32),
+            "aux_loc_combined_unc_d_norm_mean": uncertainty_stats["d_norm"].mean().to(torch.float32),
+            "aux_loc_combined_unc_disagreement_mean": uncertainty_stats["disagreement"].mean().to(torch.float32),
+            "aux_loc_combined_unc_scale_mean": uncertainty_stats["scale"].mean().to(torch.float32),
+            "aux_loc_combined_candidate_loss_mean": losses.detach().mean().to(torch.float32),
+            "aux_loc_combined_candidate_loss_min_mean": losses.min(dim=1).values.detach().mean().to(torch.float32),
+            "aux_loc_combined_candidate_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
+        }
+        return loss, stats
+
     def _pixel_shuffle(self, x, scale_factor=0.5):
         n, w, h, c = x.size()
         x = x.view(n, w, int(h * scale_factor), int(c / scale_factor))
@@ -3664,6 +3753,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # loss_mask: [BS, 2] -> [Loc, Gen]
         aux_loc_em_stats = {}
         aux_loc_unc_stats = {}
+        aux_loc_combined_stats = {}
         if loss_mask is None:
             # loss_mask = torch.ones(hidden_states.shape[0], 2).to(hidden_states.device) # Default all on
             total_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
@@ -3753,7 +3843,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         run_aux_loc_this_step
                         and bool(getattr(self.config, "is_aux_loc_uncertainty_loss", False))
                     )
-                    run_aux_loc_multi_this_step = run_aux_loc_em_this_step or run_aux_loc_unc_this_step
+                    run_aux_loc_combined_this_step = (
+                        run_aux_loc_this_step
+                        and bool(getattr(self.config, "is_aux_loc_combined_em_unc_loss", False))
+                    )
+                    run_aux_loc_multi_this_step = (
+                        run_aux_loc_em_this_step
+                        or run_aux_loc_unc_this_step
+                        or run_aux_loc_combined_this_step
+                    )
                     # bs=8显存占用=6884MiB
                     pred_pixels_input = None
                     need_pred_pixels = (
@@ -3796,7 +3894,24 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     # =========================================================
                     # 仅当训练生成任务，且 actions (GT Pose) 存在时计算
                     # 并且为了显存安全，可能只对部分样本计算，或者需要 gradient checkpointing
-                    if run_aux_loc_em_this_step:
+                    if run_aux_loc_combined_this_step:
+                        masked_loc_aux_loss, aux_loc_combined_stats = self.forward_for_aux_loc_combined_em_unc_loss(
+                            latents=latents,
+                            img_hidden_states=img_hidden_states,
+                            gen_attention_mask=genbrh_attention_mask,
+                            base_sigmas=sigmas,
+                            base_noisy_latents=noisy_latents,
+                            base_noise_pred=noise_pred,
+                            aux_loc_input_ids=genbrh_aux_loc_input_ids,
+                            aux_loc_labels=genbrh_aux_loc_labels,
+                            attention_mask=genbrh_aux_loc_attention_mask,
+                            und_image_map=genbrh_und_image,
+                            task_id=torch.zeros_like(genbrh_task_id),
+                            return_dict=return_dict,
+                            actions=genbrh_actions,
+                            loss_mask=genbrh_loss_mask,
+                        )
+                    elif run_aux_loc_em_this_step:
                         masked_loc_aux_loss, aux_loc_em_stats = self.forward_for_aux_loc_em_loss(
                             latents=latents,
                             img_hidden_states=img_hidden_states,
@@ -4151,6 +4266,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 return float(value.detach().cpu().item())
             return float(value)
 
+        def _aux_loc_combined_stat(name: str) -> float:
+            value = aux_loc_combined_stats.get(name, 0.0)
+            if torch.is_tensor(value):
+                return float(value.detach().cpu().item())
+            return float(value)
+
         # logging.info(f"total_loss: {total_loss.detach().cpu().numpy().item():6f}, masked_loc_loss: {masked_loc_loss.detach().cpu().numpy().item():6f}, alpha_loc_loss: {alpha_loc_loss.detach().cpu().numpy().item():6f}, masked_gen_loss: {masked_gen_loss.detach().cpu().numpy().item():6f}, masked_loc_aux_loss: {masked_loc_aux_loss.detach().cpu().numpy().item():6f}, alpha_loc_aux_loss: {alpha_loc_aux_loss.detach().cpu().numpy().item():6f}")
         # 224 + lora=64
         # bs=8显存占用=13316MiB
@@ -4211,6 +4332,19 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "aux_loc_unc_candidate_loss_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_mean"),
                 "aux_loc_unc_candidate_loss_min_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_min_mean"),
                 "aux_loc_unc_candidate_loss_max_mean": _aux_loc_unc_stat("aux_loc_unc_candidate_loss_max_mean"),
+                "aux_loc_combined_active": _aux_loc_combined_stat("aux_loc_combined_active"),
+                "aux_loc_combined_num_samples": _aux_loc_combined_stat("aux_loc_combined_num_samples"),
+                "aux_loc_combined_q_max_mean": _aux_loc_combined_stat("aux_loc_combined_q_max_mean"),
+                "aux_loc_combined_q_entropy_mean": _aux_loc_combined_stat("aux_loc_combined_q_entropy_mean"),
+                "aux_loc_combined_unc_weight_mean": _aux_loc_combined_stat("aux_loc_combined_unc_weight_mean"),
+                "aux_loc_combined_unc_weight_min": _aux_loc_combined_stat("aux_loc_combined_unc_weight_min"),
+                "aux_loc_combined_unc_weight_max": _aux_loc_combined_stat("aux_loc_combined_unc_weight_max"),
+                "aux_loc_combined_unc_d_norm_mean": _aux_loc_combined_stat("aux_loc_combined_unc_d_norm_mean"),
+                "aux_loc_combined_unc_disagreement_mean": _aux_loc_combined_stat("aux_loc_combined_unc_disagreement_mean"),
+                "aux_loc_combined_unc_scale_mean": _aux_loc_combined_stat("aux_loc_combined_unc_scale_mean"),
+                "aux_loc_combined_candidate_loss_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_mean"),
+                "aux_loc_combined_candidate_loss_min_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_min_mean"),
+                "aux_loc_combined_candidate_loss_max_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_max_mean"),
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
