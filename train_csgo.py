@@ -1930,6 +1930,12 @@ def train(attn_implementation=None):
     model.config.loc_aux_gate_cycle_steps = int(csgo_config.get("loc_aux_gate_cycle_steps", 0))
     model.config.loc_aux_gate_on_steps = int(csgo_config.get("loc_aux_gate_on_steps", 0))
     model.config.loc_aux_gate_start_step = int(csgo_config.get("loc_aux_gate_start_step", 0))
+    model.config.is_aux_loc_em_loss = csgo_config.get("is_aux_loc_em_loss", False)
+    model.config.aux_loc_em_num_samples = int(csgo_config.get("aux_loc_em_num_samples", 1))
+    model.config.aux_loc_em_weight_mode = csgo_config.get("aux_loc_em_weight_mode", "softmax_loss")
+    model.config.aux_loc_em_candidate_tau = float(csgo_config.get("aux_loc_em_candidate_tau", 1.0))
+    model.config.aux_loc_em_backward_mode = csgo_config.get("aux_loc_em_backward_mode", "weighted_all")
+    model.config.aux_loc_em_share_loc_noise = csgo_config.get("aux_loc_em_share_loc_noise", True)
     model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
     model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
     model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")
@@ -2063,6 +2069,26 @@ def train(attn_implementation=None):
             raise ValueError("Current implementation only supports noisy_loc_sigma_sampling='gen_matched'.")
         if model.config.noisy_loc_weight_type != "linear_1m_sigma":
             raise ValueError("Current implementation only supports noisy_loc_weight_type='linear_1m_sigma'.")
+
+    if model.config.is_aux_loc_em_loss:
+        if not model.config.is_loc_aux_loss:
+            raise ValueError("is_aux_loc_em_loss=True requires is_loc_aux_loss=True.")
+        if model.config.aux_loc_em_num_samples < 1:
+            raise ValueError("aux_loc_em_num_samples must be >= 1 when is_aux_loc_em_loss=True.")
+        if model.config.aux_loc_em_weight_mode != "softmax_loss":
+            raise ValueError("Current implementation only supports aux_loc_em_weight_mode='softmax_loss'.")
+        if model.config.aux_loc_em_candidate_tau <= 0.0:
+            raise ValueError("aux_loc_em_candidate_tau must be > 0 when is_aux_loc_em_loss=True.")
+        if model.config.aux_loc_em_backward_mode != "weighted_all":
+            raise ValueError("Current implementation only supports aux_loc_em_backward_mode='weighted_all'.")
+        if model.config.use_external_loc_model:
+            raise ValueError("is_aux_loc_em_loss=True currently supports only the internal action-DiT loc branch.")
+        if (
+            model.config.use_vit_regression_head
+            or model.config.use_vit_cls_regression_head
+            or model.config.use_codex_vit_regression_head
+        ):
+            raise ValueError("is_aux_loc_em_loss=True currently supports only the action-DiT loc branch.")
 
     if model.config.is_repa_loss:
         if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:
