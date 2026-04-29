@@ -647,12 +647,27 @@ class DataCollatorForLoc(object):
 
 
 def unnormalize_pose(pred_tensor, z_range):
-    x_norm, y_norm, z_norm, v_norm, h_norm = pred_tensor.cpu().numpy()
+    x_norm, y_norm, z_norm, v_norm, h_norm = [float(v) for v in pred_tensor.cpu().numpy()]
+    min_z = float(z_range['min_z'])
+    max_z = float(z_range['max_z'])
     return {
         'x': x_norm * 1024.0, 'y': y_norm * 1024.0,
-        'z': z_norm * (z_range['max_z'] - z_range['min_z'] + 1e-6) + z_range['min_z'],
+        'z': z_norm * (max_z - min_z + 1e-6) + min_z,
         'angle_v': v_norm * 360.0, 'angle_h': h_norm * 360.0
     }
+
+def json_safe(obj):
+    if isinstance(obj, dict):
+        return {key: json_safe(value) for key, value in obj.items()}
+    if isinstance(obj, list):
+        return [json_safe(value) for value in obj]
+    if isinstance(obj, tuple):
+        return [json_safe(value) for value in obj]
+    if isinstance(obj, np.ndarray):
+        return json_safe(obj.tolist())
+    if isinstance(obj, np.generic):
+        return obj.item()
+    return obj
 
 def smart_tokenizer_and_embedding_resize(special_tokens_dict, tokenizer, model):
     num_new_tokens = tokenizer.add_special_tokens(special_tokens_dict)
@@ -913,9 +928,9 @@ def main():
 
     # Save Metrics & Results
     with open(os.path.join(output_dir, "loc_metrics.json"), "w") as f:
-        json.dump(metrics, f, indent=4)
+        json.dump(json_safe(metrics), f, indent=4)
     with open(os.path.join(output_dir, "loc_results.json"), "w") as f:
-        json.dump(results_json, f, indent=4)
+        json.dump(json_safe(results_json), f, indent=4)
 
 
     print(f"✅ Finished. Results at: {output_dir}")
