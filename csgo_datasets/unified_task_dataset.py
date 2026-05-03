@@ -116,7 +116,17 @@ def to_external_loc_tensor(pil_img: Image.Image) -> torch.Tensor:
 # ==========================================
 # B.2 Prompt 构建函数
 # ==========================================
-def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min):
+def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False):
+    if use_short_instruction:
+        return (
+            f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
+            f"x={pose_5d['x']:.1f}, y={pose_5d['y']:.1f}, z={pose_5d['z']:.3f}, "
+            f"pitch={pose_5d['angle_v']:.1f}, yaw={pose_5d['angle_h']:.1f}. "
+            "Coordinates use 1024x1024 map pixels; yaw 0=east clockwise; "
+            f"pitch 0=down, 180=up; z range [{z_min:.2f}, {z_max:.2f}].\n"
+            "<image>"
+        )
+
     definition_text = (
         f"Task: Generate a First-Person View (FPV) image of CS2 map '{map_name}' based on the Radar Map and Camera Pose.\n"
         "Coordinate System Definition:\n"
@@ -519,7 +529,14 @@ id_to_map_dict = {k: i for i, k in enumerate(map_to_id_dict.keys())}
 # ==========================================
 # A.1 提示词模板 (Prompt Templates)
 # ==========================================
-def get_loc_prompt(map_name):
+def get_loc_prompt(map_name, use_short_instruction=False):
+    if use_short_instruction:
+        return (
+            f"Estimate the CS2 camera pose on map '{map_name}' from the FPV image and radar map. "
+            "Predict 5D pose: x, y, z, pitch, yaw.\n"
+            "<image>\n<image>"
+        )
+
     LOC_PROMPT_TEMPLATE = (
         f"Task: The following visual data of CS2 map '{map_name}' has been fused and inserted into this sequence:\n"
         "1. First-Person View (FPV) Features.\n"
@@ -533,10 +550,10 @@ def get_loc_prompt(map_name):
 
 
 # GPT优化
-def _build_loc_prompt_cache(map_names, tokenizer, img_size):
+def _build_loc_prompt_cache(map_names, tokenizer, img_size, use_short_instruction=False):
     cache = {}
     for map_name in map_names:
-        user_text_loc = get_loc_prompt(map_name)
+        user_text_loc = get_loc_prompt(map_name, use_short_instruction=use_short_instruction)
         sources_loc = {
             "conversations": [
                 {"from": "human", "value": user_text_loc},
@@ -617,6 +634,7 @@ class UniLIPMultiTaskDataset(Dataset):
         self.img_size = config.get("img_size", 448)
         self.is_resize_224 = self.img_size == 224
         self.cfg_drop_prob = config.get("cfg_drop_prob", 0.1)
+        self.use_short_instruction = config.get("use_short_instruction", False)
 
         self.data_entries = []
         self.map_z_range = {}
@@ -697,6 +715,7 @@ class UniLIPMultiTaskDataset(Dataset):
             self.map_z_range.keys(),
             self.tokenizer,
             self.img_size,
+            use_short_instruction=self.use_short_instruction,
         )
         # GPT优化
         self._fps_dropout_transform = transforms.Compose([
@@ -832,11 +851,17 @@ class UniLIPMultiTaskDataset(Dataset):
             if random.random() > self.cfg_drop_prob:
                 # Positive Prompt
                 # user_text = build_sft_instruction_custom(pose_dict, map_name, z_info['max_z'], z_info['min_z'])
-                user_text = build_sft_instruction_custom(pose_dict, map_name, data['z_max'], data['z_min'])
+                user_text = build_sft_instruction_custom(
+                    pose_dict,
+                    map_name,
+                    data['z_max'],
+                    data['z_min'],
+                    use_short_instruction=self.use_short_instruction,
+                )
             else:
                 # CFG Negative/Generic Prompt
                 # 注意：必须包含 <image> 且位置要和 Positive Prompt 里的位置一致(这里都在最后)
-                user_text = "Generate the view.\n<image>"
+                user_text = "Generate a CS2 FPV image.\n<image>" if self.use_short_instruction else "Generate the view.\n<image>"
 
             # 构建 UniLIP 标准对话格式
             sources = {
@@ -1162,6 +1187,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         self.img_size = config.get("img_size", 448)
         self.is_resize_224 = self.img_size == 224
         self.cfg_drop_prob = config.get("cfg_drop_prob", 0.1)
+        self.use_short_instruction = config.get("use_short_instruction", False)
 
         self.data_entries = []
         self.map_z_range = {}
@@ -1223,6 +1249,7 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             self.map_z_range.keys(),
             self.tokenizer,
             self.img_size,
+            use_short_instruction=self.use_short_instruction,
         )
 
         self._fps_dropout_transform = transforms.Compose([
@@ -1305,9 +1332,15 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         # 模拟 Classifier-Free Guidance (CFG) 训练
         # 10% 概率给空 Prompt ("Generate...")，90% 概率给完整 Prompt
         if random.random() > self.cfg_drop_prob:
-            user_text_gen = build_sft_instruction_custom(pose_dict, map_name, data['z_max'], data['z_min'])
+            user_text_gen = build_sft_instruction_custom(
+                pose_dict,
+                map_name,
+                data['z_max'],
+                data['z_min'],
+                use_short_instruction=self.use_short_instruction,
+            )
         else:
-            user_text_gen = "Generate the view.\n<image>"
+            user_text_gen = "Generate a CS2 FPV image.\n<image>" if self.use_short_instruction else "Generate the view.\n<image>"
         sources_gen = {
             "conversations": [
                 {"from": "human", "value": user_text_gen},
