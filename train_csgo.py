@@ -1703,6 +1703,96 @@ class AlphaLocAuxControlCallback(TrainerCallback):
         return control
 
 
+class AlternatingAuxLossControlCallback(TrainerCallback):
+    def __init__(
+        self,
+        loc_steps=None,
+        loc_values=None,
+        gen_steps=None,
+        gen_values=None,
+        base_loc_alpha=1.0,
+        base_gen_alpha=1.0,
+        use_alternating=True,
+        cycle_steps=2,
+        loc_active_phase=0,
+        gen_active_phase=1,
+        start_step=0,
+    ):
+        self.loc_steps = [int(x) for x in loc_steps] if loc_steps is not None else None
+        self.loc_values = [float(x) for x in loc_values] if loc_values is not None else None
+        self.gen_steps = [int(x) for x in gen_steps] if gen_steps is not None else None
+        self.gen_values = [float(x) for x in gen_values] if gen_values is not None else None
+        self.base_loc_alpha = float(base_loc_alpha)
+        self.base_gen_alpha = float(base_gen_alpha)
+        self.use_alternating = bool(use_alternating)
+        self.cycle_steps = int(cycle_steps)
+        self.loc_active_phase = int(loc_active_phase)
+        self.gen_active_phase = int(gen_active_phase)
+        self.start_step = int(start_step)
+
+        for name, steps, values in [
+            ("alpha_loc_aux", self.loc_steps, self.loc_values),
+            ("alpha_gen_aux", self.gen_steps, self.gen_values),
+        ]:
+            if steps is None:
+                continue
+            if values is None or len(steps) != len(values) or len(steps) == 0:
+                raise ValueError(f"{name} schedule steps/values must have the same non-zero length")
+            if any(steps[idx] < steps[idx - 1] for idx in range(1, len(steps))):
+                raise ValueError(f"{name} schedule steps must be non-decreasing")
+
+        if self.use_alternating:
+            if self.cycle_steps <= 0:
+                raise ValueError("aux_loss_alternate_cycle_steps must be > 0.")
+            if self.start_step < 0:
+                raise ValueError("aux_loss_alternate_start_step must be >= 0.")
+            if not (0 <= self.loc_active_phase < self.cycle_steps):
+                raise ValueError("aux_loc_active_phase must be in [0, aux_loss_alternate_cycle_steps).")
+            if not (0 <= self.gen_active_phase < self.cycle_steps):
+                raise ValueError("aux_gen_active_phase must be in [0, aux_loss_alternate_cycle_steps).")
+
+    def _scheduled_value(self, step, steps, values, base_alpha):
+        if steps is None:
+            return float(base_alpha)
+        return _piecewise_linear_value(step, steps, values)
+
+    def _compute_alphas(self, step):
+        loc_alpha = self._scheduled_value(step, self.loc_steps, self.loc_values, self.base_loc_alpha)
+        gen_alpha = self._scheduled_value(step, self.gen_steps, self.gen_values, self.base_gen_alpha)
+
+        if self.use_alternating and step >= self.start_step:
+            phase = (step - self.start_step) % self.cycle_steps
+            loc_alpha = loc_alpha if phase == self.loc_active_phase else 0.0
+            gen_alpha = gen_alpha if phase == self.gen_active_phase else 0.0
+        return float(loc_alpha), float(gen_alpha)
+
+    def _set_alphas(self, model, step):
+        loc_alpha, gen_alpha = self._compute_alphas(step)
+
+        candidates = [model]
+        if hasattr(model, "module"):
+            candidates.append(model.module)
+        if hasattr(model, "model"):
+            candidates.append(model.model)
+        if hasattr(model, "module") and hasattr(model.module, "model"):
+            candidates.append(model.module.model)
+
+        for candidate in candidates:
+            if hasattr(candidate, "config"):
+                candidate.config.alpha_loc_aux_loss = loc_alpha
+                candidate.config.alpha_gen_aux_loss = gen_alpha
+
+    def on_train_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alphas(model, 0)
+        return control
+
+    def on_step_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alphas(model, state.global_step)
+        return control
+
+
 class AlphaLocScheduleCallback(TrainerCallback):
     def __init__(self, steps, values):
         self.steps = [int(x) for x in steps]
@@ -1951,6 +2041,22 @@ def train(attn_implementation=None):
     model.config.aux_loc_combined_unc_min_weight = float(csgo_config.get("aux_loc_combined_unc_min_weight", 0.05))
     model.config.aux_loc_combined_share_loc_noise = csgo_config.get("aux_loc_combined_share_loc_noise", True)
     model.config.aux_loc_combined_unc_eps = float(csgo_config.get("aux_loc_combined_unc_eps", 1e-6))
+    model.config.is_gen_aux_loss = csgo_config.get("is_gen_aux_loss", False)
+    model.config.alpha_gen_aux_loss = csgo_config.get("alpha_gen_aux_loss", 0.0)
+    model.config.alpha_gen_aux_schedule_steps = csgo_config.get("alpha_gen_aux_schedule_steps", None)
+    model.config.alpha_gen_aux_schedule_values = csgo_config.get("alpha_gen_aux_schedule_values", None)
+    model.config.is_aux_loss_alternating = csgo_config.get("is_aux_loss_alternating", False)
+    model.config.aux_loss_alternate_cycle_steps = int(csgo_config.get("aux_loss_alternate_cycle_steps", 2))
+    model.config.aux_loc_active_phase = int(csgo_config.get("aux_loc_active_phase", 0))
+    model.config.aux_gen_active_phase = int(csgo_config.get("aux_gen_active_phase", 1))
+    model.config.aux_loss_alternate_start_step = int(csgo_config.get("aux_loss_alternate_start_step", 0))
+    model.config.aux_gen_pose_condition_type = csgo_config.get("aux_gen_pose_condition_type", "pose_token_mlp")
+    model.config.aux_gen_pose_condition_mode = csgo_config.get("aux_gen_pose_condition_mode", "delta_from_gt")
+    model.config.aux_gen_freeze_gen_head = csgo_config.get("aux_gen_freeze_gen_head", True)
+    model.config.aux_gen_update_scope = csgo_config.get("aux_gen_update_scope", "loc_head_only")
+    model.config.aux_gen_use_loc_samples = csgo_config.get("aux_gen_use_loc_samples", True)
+    model.config.aux_gen_pose_projector_trainable = csgo_config.get("aux_gen_pose_projector_trainable", False)
+    model.config.aux_gen_pose_injection_scale = float(csgo_config.get("aux_gen_pose_injection_scale", 1.0))
     model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
     model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
     model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")
@@ -2166,6 +2272,37 @@ def train(attn_implementation=None):
         ):
             raise ValueError("is_aux_loc_combined_em_unc_loss=True currently supports only the action-DiT loc branch.")
 
+    if model.config.is_gen_aux_loss:
+        if not model.config.is_loc_aux_loss:
+            raise ValueError("is_gen_aux_loss=True expects is_loc_aux_loss=True for the paired aux-loss experiment.")
+        if model.config.aux_gen_pose_condition_type != "pose_token_mlp":
+            raise ValueError("Current implementation only supports aux_gen_pose_condition_type='pose_token_mlp'.")
+        if model.config.aux_gen_pose_condition_mode not in {"delta_from_gt", "absolute"}:
+            raise ValueError("aux_gen_pose_condition_mode must be one of {'delta_from_gt', 'absolute'}.")
+        if model.config.aux_gen_update_scope != "loc_head_only":
+            raise ValueError("Current implementation only supports aux_gen_update_scope='loc_head_only'.")
+        if not model.config.aux_gen_use_loc_samples:
+            raise ValueError("Current implementation requires aux_gen_use_loc_samples=True.")
+        if model.config.use_external_loc_model:
+            raise ValueError("is_gen_aux_loss=True currently supports only the internal action-DiT loc branch.")
+        if (
+            model.config.use_vit_regression_head
+            or model.config.use_vit_cls_regression_head
+            or model.config.use_codex_vit_regression_head
+        ):
+            raise ValueError("is_gen_aux_loss=True currently supports only the action-DiT loc branch.")
+        if model.config.aux_gen_pose_injection_scale <= 0.0:
+            raise ValueError("aux_gen_pose_injection_scale must be > 0.")
+        if model.config.is_aux_loss_alternating:
+            if model.config.aux_loss_alternate_cycle_steps <= 0:
+                raise ValueError("aux_loss_alternate_cycle_steps must be > 0.")
+            if not (0 <= model.config.aux_loc_active_phase < model.config.aux_loss_alternate_cycle_steps):
+                raise ValueError("aux_loc_active_phase must be in [0, aux_loss_alternate_cycle_steps).")
+            if not (0 <= model.config.aux_gen_active_phase < model.config.aux_loss_alternate_cycle_steps):
+                raise ValueError("aux_gen_active_phase must be in [0, aux_loss_alternate_cycle_steps).")
+            if model.config.aux_loss_alternate_start_step < 0:
+                raise ValueError("aux_loss_alternate_start_step must be >= 0.")
+
     if model.config.is_repa_loss:
         if model.config.repa_teacher_type not in {"dinov2", "unilip_vision"}:
             raise ValueError("Current implementation only supports repa_teacher_type in {'dinov2', 'unilip_vision'}.")
@@ -2201,6 +2338,8 @@ def train(attn_implementation=None):
 
     if getattr(model, "initialize_repa_modules_from_config", None) is not None:
         model.initialize_repa_modules_from_config()
+    if getattr(model, "initialize_aux_gen_modules_from_config", None) is not None:
+        model.initialize_aux_gen_modules_from_config()
 
     model.to(torch.bfloat16)
 
@@ -2447,11 +2586,33 @@ def train(attn_implementation=None):
 
     alpha_loc_aux_schedule_steps = csgo_config.get("alpha_loc_aux_schedule_steps", None)
     alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
+    alpha_gen_aux_schedule_steps = csgo_config.get("alpha_gen_aux_schedule_steps", None)
+    alpha_gen_aux_schedule_values = csgo_config.get("alpha_gen_aux_schedule_values", None)
     is_loc_aux_step_gate = bool(csgo_config.get("is_loc_aux_step_gate", False))
+    is_aux_loss_alternating = bool(csgo_config.get("is_aux_loss_alternating", False))
     if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None:
         if alpha_loc_aux_schedule_steps is None or alpha_loc_aux_schedule_values is None:
             raise ValueError("alpha_loc_aux schedule requires both alpha_loc_aux_schedule_steps and alpha_loc_aux_schedule_values")
-    if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None or is_loc_aux_step_gate:
+    if alpha_gen_aux_schedule_steps is not None or alpha_gen_aux_schedule_values is not None:
+        if alpha_gen_aux_schedule_steps is None or alpha_gen_aux_schedule_values is None:
+            raise ValueError("alpha_gen_aux schedule requires both alpha_gen_aux_schedule_steps and alpha_gen_aux_schedule_values")
+    if is_aux_loss_alternating:
+        callbacks.append(
+            AlternatingAuxLossControlCallback(
+                loc_steps=alpha_loc_aux_schedule_steps,
+                loc_values=alpha_loc_aux_schedule_values,
+                gen_steps=alpha_gen_aux_schedule_steps,
+                gen_values=alpha_gen_aux_schedule_values,
+                base_loc_alpha=float(csgo_config.get("alpha_loc_aux_loss", 1.0)),
+                base_gen_alpha=float(csgo_config.get("alpha_gen_aux_loss", 0.0)),
+                use_alternating=True,
+                cycle_steps=int(csgo_config.get("aux_loss_alternate_cycle_steps", 2)),
+                loc_active_phase=int(csgo_config.get("aux_loc_active_phase", 0)),
+                gen_active_phase=int(csgo_config.get("aux_gen_active_phase", 1)),
+                start_step=int(csgo_config.get("aux_loss_alternate_start_step", 0)),
+            )
+        )
+    elif alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None or is_loc_aux_step_gate:
         callbacks.append(
             AlphaLocAuxControlCallback(
                 steps=alpha_loc_aux_schedule_steps,

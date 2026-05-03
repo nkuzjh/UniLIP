@@ -2405,3 +2405,74 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
     **benchmark_csgo.py**
     ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp18_1_dust2_gen_conti/test_20260426_155111/gen_imgs/de_dust2 --all --batch_size 8       ``
     **frames to video**
+
+### exp24_dust2
+- exp17_7_dust2 checkpoint-8000 warm-start
+- 224 input + short instruction
+- traditional REPA retained from exp17_7_dust2
+- teacher: DINOv2 base on clean target image
+- teacher input size: 224
+- teacher hidden size: 768
+- student feature: Sana DiT block index 6 hidden states
+- align type: patch_wise
+- repa projector: three-layer MLP with SiLU
+- repa_detach_condition: True
+- is_repa_loss: True
+- alpha_repa_loss: 0.5
+- combined aux_loc from exp23_dust2
+- is_aux_loc_combined_em_unc_loss: True
+- aux_loc_combined_num_samples: 2
+- aux_loc_combined_candidate_tau: 1.0
+- aux_loc_combined_unc_tau: 1.0
+- aux_loc_combined_unc_min_weight: 0.05
+- is_loc_aux_loss: True
+- alpha_loc_aux schedule steps: [0, 3000, 4000, 5000, 10000]
+- alpha_loc_aux schedule values: [0.0, 1.0, 2.0, 5.0, 10.0]
+- alpha_loc schedule steps: [0, 10000, 18000, 28000]
+- alpha_loc schedule values: [2.0, 5.0, 10.0, 20.0]
+- img_size: 224
+- use_short_instruction: True
+- resume_ckpt_path: outputs/csgo_1b/exp17_7_dust2/checkpoint-8000/model.safetensors
+- purpose: continue the traditional REPA mainline with 224 inputs, short prompts, and exp23 combined aux_loc
+- dust2
+
+**train_csgo.py**
+```     CUDA_VISIBLE_DEVICES=0,2 torchrun --nproc_per_node=2 --master_port=29532 train_csgo.py --csgo_config csgo_configs/exp24_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp24_dust2 --num_train_epochs 100 --per_device_train_batch_size 8 --per_device_eval_batch_size 8 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True       ```
+**eval_csgo_loc.py** : step=todo
+```    todo: add csgo_configs/test/exp24_dust2_loc.yaml, then run eval_csgo_loc.py      ```
+**eval_csgo.py** : step=todo
+```    todo: add csgo_configs/test/exp24_dust2_gen.yaml, then run eval_csgo.py      ```
+**continuous gen** : step=todo
+```    todo: add csgo_configs/test/exp24_dust2_gen_conti.yaml, then run eval_csgo.py      ```
+
+### exp25_dust2
+- exp24_dust2 + bidirectional alternating auxiliary consistency
+- keep all exp24_dust2 losses and REPA settings
+- keep combined aux_loc from exp23_dust2
+- new aux_gen_loss:
+  - loc branch predicts loc_x0_hat pose
+  - loc_x0_hat is injected into gen condition through a differentiable pose_token_mlp
+  - gen head computes a generation flow loss
+  - gen head is frozen on this path, so aux_gen_loss updates only loc head
+- alternating auxiliary schedule:
+  - even step: aux_loc on, aux_gen off
+  - odd step: aux_loc off, aux_gen on
+- alpha_gen_aux schedule steps: [0, 3000, 4000, 5000, 10000]
+- alpha_gen_aux schedule values: [0.0, 1.0, 2.0, 5.0, 10.0]
+- aux_gen_pose_condition_type: pose_token_mlp
+- aux_gen_pose_condition_mode: delta_from_gt
+- aux_gen_freeze_gen_head: True
+- aux_gen_update_scope: loc_head_only
+- aux_gen_pose_projector_trainable: False
+- aux_gen_pose_injection_scale: 1.0
+- purpose: test whether loc->gen reverse auxiliary supervision improves localization-side learning while alternating with gen->loc aux_loc to avoid same-step auxiliary conflict
+- dust2
+
+**train_csgo.py**
+```     CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29533 train_csgo.py --csgo_config csgo_configs/exp25_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp25_dust2 --num_train_epochs 100 --per_device_train_batch_size 8 --per_device_eval_batch_size 8 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True       ```
+**eval_csgo_loc.py** : step=todo
+```    todo: add csgo_configs/test/exp25_dust2_loc.yaml, then run eval_csgo_loc.py      ```
+**eval_csgo.py** : step=todo
+```    todo: add csgo_configs/test/exp25_dust2_gen.yaml, then run eval_csgo.py      ```
+**continuous gen** : step=todo
+```    todo: add csgo_configs/test/exp25_dust2_gen_conti.yaml, then run eval_csgo.py      ```

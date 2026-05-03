@@ -55,6 +55,7 @@
 | `exp22_dust2` | `exp17_2_dust2` 的 uncertainty-weighted residual consistency aux-loc 已实现配置 | 对同一样本采样两个 `x0_hat` candidate，用 loc velocity residual disagreement 作为样本级 aux 权重 |
 | `exp23_dust2` | `exp17_2_dust2` 的 combined EM-responsibility + uncertainty-gated aux-loc 已实现配置 | 同时使用 candidate-level responsibility 和 sample-level residual consistency 权重 |
 | `exp24_dust2` | `exp17_7_dust2@8000` 的 224 输入 + 短 instruction + combined aux-loc 继续训练配置 | 保留 DINOv2 standard REPA，启用 `img_size=224`、`use_short_instruction=True` 和 `exp23` 的 combined aux-loc |
+| `exp25_dust2` | `exp24_dust2` 的双向 auxiliary consistency 版本 | 新增 `aux_gen_loss`，与 `aux_loc_loss` 按 iteration 交替；`aux_loc` 更新生成侧，`aux_gen` 冻结生成侧并通过可微 pose token 让 gen loss 更新定位侧 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -81,6 +82,7 @@
 | `exp22_dust2` | uncertainty-weighted aux-loc 已实现配置 | `exp17_2_dust2 + two-sample x0_hat residual-disagreement sample weighting` |
 | `exp23_dust2` | combined EM + uncertainty aux-loc 已实现配置 | `exp17_2_dust2 + candidate responsibility + residual-consistency sample gating` |
 | `exp24_dust2` | 224 + short-instruction REPA/aux-loc warm-start | `exp17_7_dust2@8000 + img_size=224 + use_short_instruction=True + exp23 combined aux_loc` |
+| `exp25_dust2` | 双向 alternating aux consistency | `exp24_dust2 + aux_gen_loss；even step 跑 aux_loc，odd step 跑 aux_gen` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |

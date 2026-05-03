@@ -1904,6 +1904,38 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             projector_log_kwargs,
         )
 
+    def initialize_aux_gen_modules_from_config(self) -> None:
+        if not getattr(self.config, "is_gen_aux_loss", False):
+            return
+        if getattr(self.config, "aux_gen_pose_condition_type", "pose_token_mlp") != "pose_token_mlp":
+            raise ValueError("Current implementation only supports aux_gen_pose_condition_type='pose_token_mlp'.")
+        if hasattr(self.model, "aux_gen_pose_projector"):
+            return
+
+        pose_dim = int(getattr(self.model.config, "action_dim", 5))
+        cond_dim = self.get_model().dit.config.caption_channels
+        hidden_dim = int(getattr(self.config, "aux_gen_pose_projector_hidden_dim", cond_dim))
+        self.model.aux_gen_pose_projector = nn.Sequential(
+            nn.Linear(pose_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, cond_dim),
+        )
+        for module in self.model.aux_gen_pose_projector.modules():
+            if isinstance(module, nn.Linear):
+                nn.init.normal_(module.weight, std=0.02)
+                if module.bias is not None:
+                    nn.init.zeros_(module.bias)
+
+        trainable = bool(getattr(self.config, "aux_gen_pose_projector_trainable", False))
+        self.model.aux_gen_pose_projector.to(dtype=self.get_model().projector.weight.dtype)
+        self.model.aux_gen_pose_projector.requires_grad_(trainable)
+        logging.info(
+            "Initialized aux_gen pose projector: pose_dim=%s cond_dim=%s trainable=%s",
+            pose_dim,
+            cond_dim,
+            trainable,
+        )
+
     def set_repa_teacher(self, teacher_bundle: Dict[str, nn.Module]) -> None:
         self.__dict__["_repa_teacher"] = teacher_bundle
 
@@ -2661,6 +2693,37 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 param.requires_grad_(grad_flag)
             module.train(was_training)
 
+    def _aux_gen_head_modules_for_freeze(self) -> List[nn.Module]:
+        module_names = [
+            "llm_connector",
+            "projector",
+            "dit",
+            "vae_decoder",
+            "aux_gen_pose_projector",
+        ]
+        modules = []
+        model = self.get_model()
+        for module_name in module_names:
+            module = getattr(model, module_name, None)
+            if module is not None:
+                modules.append(module)
+        return modules
+
+    def _freeze_aux_gen_head_modules(self) -> List[Tuple[nn.Module, bool, List[bool]]]:
+        modules = self._aux_gen_head_modules_for_freeze()
+        module_states = [
+            (
+                module,
+                module.training,
+                [param.requires_grad for param in module.parameters()],
+            )
+            for module in modules
+        ]
+        for module in modules:
+            module.requires_grad_(False)
+            module.eval()
+        return module_states
+
     def _forward_aux_loc_single_step_metrics(
         self,
         *,
@@ -2888,6 +2951,142 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "scale": scale.detach().to(torch.float32),
             "d_norm": d_norm.detach().to(torch.float32),
         }
+
+    def forward_for_aux_gen_loss(
+        self,
+        *,
+        loc_x0_hat: torch.Tensor,
+        pose_reference: torch.Tensor,
+        aux_gen_input_ids: torch.Tensor,
+        aux_gen_labels: torch.Tensor,
+        aux_gen_attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        gen_image: torch.Tensor,
+        loss_mask: torch.Tensor,
+        return_dict: bool,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor]]:
+        if not hasattr(self.get_model(), "aux_gen_pose_projector"):
+            raise RuntimeError("aux_gen_pose_projector is not initialized before aux_gen forward.")
+
+        if getattr(self.config, "aux_gen_pose_condition_type", "pose_token_mlp") != "pose_token_mlp":
+            raise ValueError("Current implementation only supports aux_gen_pose_condition_type='pose_token_mlp'.")
+
+        pose_dim = int(getattr(self.model.config, "action_dim", 5))
+        pose_x0 = loc_x0_hat[..., :pose_dim].squeeze(1).to(torch.float32)
+        pose_ref = pose_reference[..., :pose_dim].squeeze(1).detach().to(torch.float32)
+        condition_mode = getattr(self.config, "aux_gen_pose_condition_mode", "delta_from_gt")
+        if condition_mode == "delta_from_gt":
+            pose_condition = pose_x0 - pose_ref
+        elif condition_mode == "absolute":
+            pose_condition = pose_x0
+        else:
+            raise ValueError(f"Unsupported aux_gen_pose_condition_mode: {condition_mode}")
+
+        module_states = self._freeze_aux_gen_head_modules() if getattr(self.config, "aux_gen_freeze_gen_head", True) else []
+        try:
+            with torch.no_grad():
+                aux_task_id = torch.ones(
+                    aux_gen_input_ids.shape[0],
+                    device=aux_gen_input_ids.device,
+                    dtype=torch.long,
+                )
+                combined_und_images = torch.cat([und_image_map, torch.zeros_like(und_image_map)], dim=0)
+                (
+                    _,
+                    position_ids,
+                    attention_mask,
+                    _,
+                    inputs_embeds,
+                    _,
+                    target_image_embeds,
+                    combined_img_idx,
+                    combined_image_embeds,
+                    bidr_attention_mask,
+                ) = self.prepare_inputs_labels_for_multimodal(
+                    aux_gen_input_ids,
+                    None,
+                    aux_gen_attention_mask,
+                    None,
+                    aux_gen_labels,
+                    gen_image,
+                    combined_und_images,
+                    None,
+                    None,
+                    None,
+                    aux_task_id,
+                )
+                if target_image_embeds is None:
+                    raise RuntimeError("aux_gen_loss requires non-empty gen_image target latents.")
+
+                und_img_idx = combined_img_idx[: combined_img_idx.size(0) // 2, ...]
+                und_image_embeds = combined_image_embeds[: combined_image_embeds.size(0) // 2, ...]
+
+                position_ids = torch.cumsum(attention_mask, dim=1) - 1
+                position_ids[position_ids < 0] = 0
+                outputs = self.model.language_model(
+                    attention_mask=attention_mask,
+                    position_ids=position_ids,
+                    inputs_embeds=inputs_embeds,
+                    output_hidden_states=True,
+                    return_dict=return_dict,
+                    use_cache=False,
+                )
+                hidden_states = outputs.hidden_states[-1]
+                if und_image_embeds is not None and und_img_idx is not None:
+                    hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+
+                img_hidden_states = self.model.llm_connector(
+                    attention_mask=bidr_attention_mask,
+                    position_ids=position_ids,
+                    inputs_embeds=hidden_states,
+                    output_hidden_states=True,
+                    return_dict=return_dict,
+                    use_cache=False,
+                ).hidden_states[-1]
+                img_hidden_states = self.get_model().projector(img_hidden_states)
+                latents = target_image_embeds
+
+            pose_condition = pose_condition.to(
+                device=img_hidden_states.device,
+                dtype=self.get_model().aux_gen_pose_projector[0].weight.dtype,
+            )
+            pose_embed = self.get_model().aux_gen_pose_projector(pose_condition)
+            pose_embed = pose_embed.to(dtype=img_hidden_states.dtype).unsqueeze(1)
+            pose_embed = pose_embed * float(getattr(self.config, "aux_gen_pose_injection_scale", 1.0))
+            pose_delta = torch.zeros_like(img_hidden_states)
+            pose_delta[:, :1, :] = pose_embed
+            img_hidden_states = img_hidden_states + pose_delta
+
+            timesteps, sigmas = self._sample_gen_matched_timesteps_and_sigmas(
+                batch_size=latents.shape[0],
+                device=latents.device,
+                n_dim=latents.ndim,
+                dtype=latents.dtype,
+            )
+            noise = torch.randn_like(latents, device=latents.device)
+            noisy_latents = (1.0 - sigmas) * latents + sigmas * noise
+            noise_pred, _ = self._forward_dit_with_repa_hidden(
+                noisy_latents=noisy_latents,
+                timesteps=timesteps,
+                encoder_hidden_states=img_hidden_states,
+                encoder_attention_mask=attention_mask,
+                detach_condition=False,
+            )
+            target = noise - latents
+            gen_loss = F.mse_loss(noise_pred.float(), target.float(), reduction="none").mean(dim=[1, 2, 3])
+            sample_mask = loss_mask[:, 0].to(device=gen_loss.device, dtype=torch.float32)
+            masked_gen_loss = (gen_loss * sample_mask).mean().to(torch.float32)
+
+            stats = {
+                "aux_gen_active": torch.ones((), device=masked_gen_loss.device, dtype=torch.float32),
+                "aux_gen_pose_abs_mean": pose_x0.detach().abs().mean().to(torch.float32),
+                "aux_gen_pose_delta_abs_mean": (pose_x0 - pose_ref).detach().abs().mean().to(torch.float32),
+                "aux_gen_sigma_mean": sigmas.detach().mean().to(torch.float32),
+            }
+            return masked_gen_loss, stats
+        finally:
+            if module_states:
+                self._restore_aux_loc_head_modules(module_states)
 
     def forward_for_aux_loc_em_loss(
         self,
@@ -3583,6 +3782,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         aux_loc_input_ids: torch.LongTensor = None,
         aux_loc_labels: Optional[torch.LongTensor] = None,
         aux_loc_attention_mask: Optional[torch.Tensor] = None,
+        aux_gen_input_ids: torch.LongTensor = None,
+        aux_gen_labels: Optional[torch.LongTensor] = None,
+        aux_gen_attention_mask: Optional[torch.Tensor] = None,
 
         # Others
         grid_thw: Optional[torch.FloatTensor] = None, # None
@@ -3754,6 +3956,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         aux_loc_em_stats = {}
         aux_loc_unc_stats = {}
         aux_loc_combined_stats = {}
+        aux_gen_stats = {}
         if loss_mask is None:
             # loss_mask = torch.ones(hidden_states.shape[0], 2).to(hidden_states.device) # Default all on
             total_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach()))
@@ -3762,6 +3965,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # 按索引拆分生成/定位样本
             # ==========================================
             # logging.info(f"loc_indices: {len(loc_indices)}, gen_indices: {len(gen_indices)}")
+            zero_loss = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+            masked_gen_loss = zero_loss
+            masked_repa_loss = zero_loss
+            masked_loc_aux_loss = zero_loss
+            masked_loc_repa_loss = zero_loss
+            masked_gen_aux_loss = zero_loss
+            masked_loc_loss = zero_loss
+            masked_loc_loss_valid5 = zero_loss
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -3829,6 +4040,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
+                    masked_gen_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     alpha_loc_aux_value = float(getattr(self.model.config, "alpha_loc_aux_loss", 0.0))
                     run_aux_loc_this_step = (
                         bool(getattr(self.config, "is_loc_aux_loss", False))
@@ -3972,6 +4184,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 masked_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_gen_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
             # ==========================================
             # Branch 2: LOCALIZATION (Flow Matching Path)
@@ -4238,11 +4451,35 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     else:
                         # keep same scale for non-pi05 path so logging code can stay uniform
                         masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
+
+                    alpha_gen_aux_value = float(getattr(self.model.config, "alpha_gen_aux_loss", 0.0))
+                    run_aux_gen_this_step = (
+                        bool(getattr(self.config, "is_gen_aux_loss", False))
+                        and alpha_gen_aux_value > 0.0
+                        and aux_gen_input_ids is not None
+                        and aux_gen_labels is not None
+                        and aux_gen_attention_mask is not None
+                        and gen_image is not None
+                    )
+                    if run_aux_gen_this_step:
+                        loc_x0_hat = x_t - time_expanded * v_t_pred
+                        masked_gen_aux_loss, aux_gen_stats = self.forward_for_aux_gen_loss(
+                            loc_x0_hat=loc_x0_hat,
+                            pose_reference=locbrh_actions,
+                            aux_gen_input_ids=aux_gen_input_ids[loc_indices],
+                            aux_gen_labels=aux_gen_labels[loc_indices],
+                            aux_gen_attention_mask=aux_gen_attention_mask[loc_indices],
+                            und_image_map=aux_image[loc_indices],
+                            gen_image=gen_image[loc_indices],
+                            loss_mask=locbrh_loss_mask,
+                            return_dict=return_dict,
+                        )
             else:
                 masked_loc_loss = torch.nn.MSELoss()(hidden_states, torch.clone(hidden_states.detach())).to(torch.float32)
                 masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
         alpha_loc_aux_loss = torch.tensor(self.model.config.alpha_loc_aux_loss).to(torch.float32)
+        alpha_gen_aux_loss = torch.tensor(getattr(self.model.config, "alpha_gen_aux_loss", 0.0)).to(torch.float32)
         alpha_repa_loss = torch.tensor(getattr(self.model.config, "alpha_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_repa_loss = torch.tensor(getattr(self.model.config, "alpha_loc_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
@@ -4252,6 +4489,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             + masked_loc_loss * alpha_loc_loss
             + masked_loc_repa_loss * alpha_loc_repa_loss
             + masked_loc_aux_loss * alpha_loc_aux_loss
+            + masked_gen_aux_loss * alpha_gen_aux_loss
         )
 
         def _aux_loc_em_stat(name: str) -> float:
@@ -4268,6 +4506,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         def _aux_loc_combined_stat(name: str) -> float:
             value = aux_loc_combined_stats.get(name, 0.0)
+            if torch.is_tensor(value):
+                return float(value.detach().cpu().item())
+            return float(value)
+
+        def _aux_gen_stat(name: str) -> float:
+            value = aux_gen_stats.get(name, 0.0)
             if torch.is_tensor(value):
                 return float(value.detach().cpu().item())
             return float(value)
@@ -4314,6 +4558,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
                 "loc_aux_active": float(alpha_loc_aux_loss.item() > 0),
+                "gen_aux_loss": masked_gen_aux_loss.detach().cpu().numpy().item(),
+                "alpha_gen_aux": alpha_gen_aux_loss.detach().cpu().numpy().item(),
+                "gen_aux_active": float(alpha_gen_aux_loss.item() > 0),
+                "aux_gen_active": _aux_gen_stat("aux_gen_active"),
+                "aux_gen_pose_abs_mean": _aux_gen_stat("aux_gen_pose_abs_mean"),
+                "aux_gen_pose_delta_abs_mean": _aux_gen_stat("aux_gen_pose_delta_abs_mean"),
+                "aux_gen_sigma_mean": _aux_gen_stat("aux_gen_sigma_mean"),
                 "aux_loc_em_active": _aux_loc_em_stat("aux_loc_em_active"),
                 "aux_loc_em_q_max_mean": _aux_loc_em_stat("aux_loc_em_q_max_mean"),
                 "aux_loc_em_q_entropy_mean": _aux_loc_em_stat("aux_loc_em_q_entropy_mean"),
@@ -4348,6 +4599,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_aux_loss_over_gen_loss": (
                     (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+                "alpha_weighted_gen_aux_loss": (masked_gen_aux_loss * alpha_gen_aux_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_gen_aux_loss_over_gen_loss": (
+                    (masked_gen_aux_loss * alpha_gen_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
                     if masked_gen_loss.item() > 0 else None
                 ),
                 "repa_loss": masked_repa_loss.detach().cpu().numpy().item(),
