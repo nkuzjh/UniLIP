@@ -2057,6 +2057,7 @@ def train(attn_implementation=None):
     model.config.aux_gen_use_loc_samples = csgo_config.get("aux_gen_use_loc_samples", True)
     model.config.aux_gen_pose_projector_trainable = csgo_config.get("aux_gen_pose_projector_trainable", False)
     model.config.aux_gen_pose_injection_scale = float(csgo_config.get("aux_gen_pose_injection_scale", 1.0))
+    model.config.aux_gen_disable_dit_checkpointing = csgo_config.get("aux_gen_disable_dit_checkpointing", True)
     model.config.is_repa_loss = csgo_config.get("is_repa_loss", False)
     model.config.alpha_repa_loss = csgo_config.get("alpha_repa_loss", 0.0)
     model.config.repa_teacher_type = csgo_config.get("repa_teacher_type", "dinov2")

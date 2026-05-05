@@ -34,6 +34,7 @@ aux_gen_update_scope: "loc_head_only"
 aux_gen_use_loc_samples: True
 aux_gen_pose_projector_trainable: False
 aux_gen_pose_injection_scale: 1.0
+aux_gen_disable_dit_checkpointing: True
 
 is_aux_loc_combined_em_unc_loss: True
 aux_loc_combined_num_samples: 2

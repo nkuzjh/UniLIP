@@ -2724,6 +2724,32 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             module.eval()
         return module_states
 
+    def _disable_aux_gen_dit_checkpointing(self) -> List[Tuple[nn.Module, bool]]:
+        dit_model = getattr(self.get_model(), "dit", None)
+        if dit_model is None:
+            return []
+
+        checkpoint_states = []
+        for module in dit_model.modules():
+            if hasattr(module, "gradient_checkpointing"):
+                checkpoint_states.append((module, bool(getattr(module, "gradient_checkpointing"))))
+
+        if not any(was_enabled for _, was_enabled in checkpoint_states):
+            return checkpoint_states
+
+        if hasattr(dit_model, "disable_gradient_checkpointing"):
+            dit_model.disable_gradient_checkpointing()
+        else:
+            for module, _ in checkpoint_states:
+                module.gradient_checkpointing = False
+        return checkpoint_states
+
+    @staticmethod
+    def _restore_aux_gen_dit_checkpointing(checkpoint_states: List[Tuple[nn.Module, bool]]) -> None:
+        for module, was_enabled in checkpoint_states:
+            if hasattr(module, "gradient_checkpointing"):
+                module.gradient_checkpointing = was_enabled
+
     def _forward_aux_loc_single_step_metrics(
         self,
         *,
@@ -2982,6 +3008,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         else:
             raise ValueError(f"Unsupported aux_gen_pose_condition_mode: {condition_mode}")
 
+        checkpoint_states = (
+            self._disable_aux_gen_dit_checkpointing()
+            if getattr(self.config, "aux_gen_disable_dit_checkpointing", True)
+            else []
+        )
         module_states = self._freeze_aux_gen_head_modules() if getattr(self.config, "aux_gen_freeze_gen_head", True) else []
         try:
             with torch.no_grad():
@@ -3087,6 +3118,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         finally:
             if module_states:
                 self._restore_aux_loc_head_modules(module_states)
+            if checkpoint_states:
+                self._restore_aux_gen_dit_checkpointing(checkpoint_states)
 
     def forward_for_aux_loc_em_loss(
         self,
