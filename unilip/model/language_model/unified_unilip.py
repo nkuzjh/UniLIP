@@ -4567,19 +4567,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "other_info": {
                 "loc_indices": len(loc_indices),
                 "gen_indices": len(gen_indices),
-                "is_noisy_loc_loss": float(getattr(self.config, "is_noisy_loc_loss", False)),
-                "noisy_loc_count": int(noisy_loc_count),
-                "noisy_loc_ratio_effective": (
-                    float(noisy_loc_count / len(loc_indices)) if len(loc_indices) > 0 else 0.0
-                ),
-                "noisy_loc_mean_weight": float(noisy_loc_mean_weight),
                 "total_loss": total_loss.detach().cpu().numpy().item(),
-                "loc_loss_valid5": masked_loc_loss_valid5.detach().cpu().numpy().item(),
-                "alpha_weighted_loc_loss_valid5": (masked_loc_loss_valid5 * alpha_loc_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_loc_loss_valid5_over_gen_loss": (
-                    (masked_loc_loss_valid5 * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
-                    if masked_gen_loss.item() > 0 else None
-                ),
+
                 "loc_loss": masked_loc_loss.detach().cpu().numpy().item(),
                 "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
@@ -4588,6 +4577,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     (masked_loc_loss * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
                     if masked_gen_loss.item() > 0 else None
                 ),
+
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
                 "loc_aux_active": float(alpha_loc_aux_loss.item() > 0),
@@ -4595,6 +4585,48 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "alpha_gen_aux": alpha_gen_aux_loss.detach().cpu().numpy().item(),
                 "gen_aux_active": float(alpha_gen_aux_loss.item() > 0),
                 "aux_gen_active": _aux_gen_stat("aux_gen_active"),
+
+                "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_aux_loss_over_gen_loss": (
+                    (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+                "alpha_weighted_gen_aux_loss": (masked_gen_aux_loss * alpha_gen_aux_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_gen_aux_loss_over_gen_loss": (
+                    (masked_gen_aux_loss * alpha_gen_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+
+                "repa_loss": masked_repa_loss.detach().cpu().numpy().item(),
+                "alpha_repa": alpha_repa_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_repa_loss": (masked_repa_loss * alpha_repa_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_repa_loss_over_gen_loss": (
+                    (masked_repa_loss * alpha_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+
+                "loc_loss_valid5": masked_loc_loss_valid5.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss_valid5": (masked_loc_loss_valid5 * alpha_loc_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_loss_valid5_over_gen_loss": (
+                    (masked_loc_loss_valid5 * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+
+                "loc_repa_loss": masked_loc_repa_loss.detach().cpu().numpy().item(),
+                "alpha_loc_repa": alpha_loc_repa_loss.detach().cpu().numpy().item(),
+                "alpha_weighted_loc_repa_loss": (masked_loc_repa_loss * alpha_loc_repa_loss).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_repa_loss_over_gen_loss": (
+                    (masked_loc_repa_loss * alpha_loc_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+
+                "is_noisy_loc_loss": float(getattr(self.config, "is_noisy_loc_loss", False)),
+                "noisy_loc_count": int(noisy_loc_count),
+                "noisy_loc_ratio_effective": (
+                    float(noisy_loc_count / len(loc_indices)) if len(loc_indices) > 0 else 0.0
+                ),
+                "noisy_loc_mean_weight": float(noisy_loc_mean_weight),
+
                 "aux_gen_pose_abs_mean": _aux_gen_stat("aux_gen_pose_abs_mean"),
                 "aux_gen_pose_delta_abs_mean": _aux_gen_stat("aux_gen_pose_delta_abs_mean"),
                 "aux_gen_sigma_mean": _aux_gen_stat("aux_gen_sigma_mean"),
@@ -4629,30 +4661,6 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "aux_loc_combined_candidate_loss_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_mean"),
                 "aux_loc_combined_candidate_loss_min_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_min_mean"),
                 "aux_loc_combined_candidate_loss_max_mean": _aux_loc_combined_stat("aux_loc_combined_candidate_loss_max_mean"),
-                "alpha_weighted_loc_aux_loss": (masked_loc_aux_loss * alpha_loc_aux_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_loc_aux_loss_over_gen_loss": (
-                    (masked_loc_aux_loss * alpha_loc_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
-                    if masked_gen_loss.item() > 0 else None
-                ),
-                "alpha_weighted_gen_aux_loss": (masked_gen_aux_loss * alpha_gen_aux_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_gen_aux_loss_over_gen_loss": (
-                    (masked_gen_aux_loss * alpha_gen_aux_loss / masked_gen_loss).detach().cpu().numpy().item()
-                    if masked_gen_loss.item() > 0 else None
-                ),
-                "repa_loss": masked_repa_loss.detach().cpu().numpy().item(),
-                "alpha_repa": alpha_repa_loss.detach().cpu().numpy().item(),
-                "alpha_weighted_repa_loss": (masked_repa_loss * alpha_repa_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_repa_loss_over_gen_loss": (
-                    (masked_repa_loss * alpha_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
-                    if masked_gen_loss.item() > 0 else None
-                ),
-                "loc_repa_loss": masked_loc_repa_loss.detach().cpu().numpy().item(),
-                "alpha_loc_repa": alpha_loc_repa_loss.detach().cpu().numpy().item(),
-                "alpha_weighted_loc_repa_loss": (masked_loc_repa_loss * alpha_loc_repa_loss).detach().cpu().numpy().item(),
-                "alpha_weighted_loc_repa_loss_over_gen_loss": (
-                    (masked_loc_repa_loss * alpha_loc_repa_loss / masked_gen_loss).detach().cpu().numpy().item()
-                    if masked_gen_loss.item() > 0 else None
-                ),
             }
         }
 
