@@ -3825,6 +3825,25 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         sample_mask = loss_mask[:, 1].to(device=sample_loss.device, dtype=torch.float32)
         return (sample_loss * sample_mask).mean().to(torch.float32)
 
+    def _extract_loc_perception_vision_tower_features(
+        self,
+        image: torch.Tensor,
+        enable_grad: bool = True,
+    ) -> torch.Tensor:
+        if image is None:
+            raise ValueError("loc perception vision_tower feature extraction requires an input image.")
+
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        grad_context = torch.enable_grad() if enable_grad else torch.no_grad()
+        with grad_context:
+            return self.model.get_image_features(
+                pixel_values=image,
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+                image_sizes=None,
+            )
+
     def _forward_action_dit_with_attention_trace(
         self,
         hidden_states: torch.Tensor,
@@ -4089,31 +4108,46 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             raise ValueError("Current implementation only supports loc_perception_teacher_type='current_loc_head'.")
         if getattr(self.config, "loc_perception_use_ema_teacher", False):
             raise NotImplementedError("loc_perception_use_ema_teacher is reserved for a future experiment.")
-        if getattr(self.config, "loc_perception_feature_source", "action_dit_projector") != "action_dit_projector":
-            raise ValueError("Current implementation only supports loc_perception_feature_source='action_dit_projector'.")
+        feature_source = getattr(self.config, "loc_perception_feature_source", "action_dit_projector")
+        if feature_source not in {"action_dit_projector", "vision_tower"}:
+            raise ValueError(
+                "Current implementation only supports "
+                "loc_perception_feature_source in {'action_dit_projector', 'vision_tower'}."
+            )
         if not getattr(self.config, "loc_perception_use_und_tokens_only", True):
             raise ValueError("Current implementation requires loc_perception_use_und_tokens_only=True.")
 
-        student_feat = self._extract_loc_repa_prefix_features(
-            fps_image=pred_pixels_input,
-            map_image=und_image_map,
-            loc_input_ids=aux_loc_input_ids,
-            loc_labels=aux_loc_labels,
-            attention_mask=attention_mask,
-            task_id=task_id,
-            use_teacher=False,
-            enable_grad=True,
-        )
-        teacher_feat = self._extract_loc_repa_prefix_features(
-            fps_image=gen_image,
-            map_image=und_image_map,
-            loc_input_ids=aux_loc_input_ids,
-            loc_labels=aux_loc_labels,
-            attention_mask=attention_mask,
-            task_id=task_id,
-            use_teacher=False,
-            enable_grad=not getattr(self.config, "loc_perception_teacher_detach", True),
-        )
+        if feature_source == "action_dit_projector":
+            student_feat = self._extract_loc_repa_prefix_features(
+                fps_image=pred_pixels_input,
+                map_image=und_image_map,
+                loc_input_ids=aux_loc_input_ids,
+                loc_labels=aux_loc_labels,
+                attention_mask=attention_mask,
+                task_id=task_id,
+                use_teacher=False,
+                enable_grad=True,
+            )
+            teacher_feat = self._extract_loc_repa_prefix_features(
+                fps_image=gen_image,
+                map_image=und_image_map,
+                loc_input_ids=aux_loc_input_ids,
+                loc_labels=aux_loc_labels,
+                attention_mask=attention_mask,
+                task_id=task_id,
+                use_teacher=False,
+                enable_grad=not getattr(self.config, "loc_perception_teacher_detach", True),
+            )
+        else:
+            student_feat = self._extract_loc_perception_vision_tower_features(
+                image=pred_pixels_input,
+                enable_grad=True,
+            )
+            teacher_feat = self._extract_loc_perception_vision_tower_features(
+                image=gen_image,
+                enable_grad=not getattr(self.config, "loc_perception_teacher_detach", True),
+            )
+
         attention_weights = None
         if getattr(self.config, "loc_perception_use_attention_weight", False):
             if actions is None:

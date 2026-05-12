@@ -10,6 +10,80 @@
 2. 这种提升是否来自 `aux_loc_loss`，还是仅仅来自 joint multitask。
 3. 在 unified 框架下，进一步引入表征对齐类监督时，哪种 teacher / 哪种表征挂点更有效。
 
+## UniLIP-1B Optimization Defaults
+
+本节记录 `UniLIP-1B` 当前 CS:GO unified 训练的推荐优化超参。基础模型是 `InternVL3-1B` 风格的 MLLM，因此不要把所有大模块都放进同一个 `learning_rate=1e-4` 参数组：full finetune 时 LLM / ViT 类 backbone 应使用 `1e-6 ~ 1e-5` 量级，`1e-4 ~ 5e-4` 更适合 projector / head / LoRA adapter。
+
+| 模块 | Full Finetune LR | LoRA LR | LoRA 配置 | 备注 |
+|---|---:|---:|---|---|
+| `language_model` | `1e-5` | `1e-4` | `r=16`, `alpha=32`, `dropout=0.05`; target: `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` | InternVL3-1B full LLM 官方脚本使用 `1e-5`；LoRA 时用 `llm_lora_lr` 单独控制 |
+| `vision_tower` | `1e-6 ~ 3e-6` | `5e-5` | `r=8~16`, `alpha=2r`, `dropout=0.05`; target: `qkv,proj,fc1,fc2` | 默认建议 freeze；若解冻必须低 LR，避免破坏视觉表征 |
+| `multi_modal_projector` | `1e-4` | full train `1e-4` | 不建议 LoRA | 小对齐层，直接 full train |
+| `llm_connector` | `1e-5 ~ 2e-5` | `1e-4` | `r=16`, `alpha=32`, `dropout=0.05`; target 同 LLM | 它是 LLM slice，full 时按 LLM 类模块处理 |
+| `projector` / `latent_queries` | `1e-4` | full train `1e-4` | 不建议 LoRA | connector 到生成分支的对齐层 |
+| `dit` | `2e-5 ~ 5e-5` | `5e-5 ~ 1e-4` | `r=16`, `alpha=16~32`, `dropout=0.05`; target: `to_q,to_k,to_v,to_out.0,linear_1,linear_2` | 生成分支主干，LoRA 可从 `5e-5` 起 |
+| `action_dit` | `5e-5 ~ 1e-4` | `5e-5 ~ 1e-4` | `r=16`, `alpha=16~32`, `dropout=0.05`; target: `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` | Pi0.5 初始化建议 `5e-5`；新训 loc 分支可试 `1e-4` |
+| `action_dit_connector` | `1e-4` | full train `1e-4` | 不建议 LoRA | 小连接层，保持 full train |
+| `action_dit_norm` | `5e-4` | full train `5e-4` | 不建议 LoRA | norm / head 类参数量小 |
+| `action_dit_projector` | `5e-4` | full train `5e-4` | 不建议 LoRA | 当前项目已有 `action_dit_projector_lr` |
+| `action_in_proj` / `action_out_proj` | `1e-4 ~ 5e-4` | full train `1e-4 ~ 5e-4` | 不建议 LoRA | action 输入输出头 |
+| `time_mlp_in` / `time_mlp_out` | `1e-4 ~ 5e-4` | full train `1e-4 ~ 5e-4` | 不建议 LoRA | timestep 小 MLP |
+| `regression_loc_head` | `5e-4` | full train `5e-4` | 不建议 LoRA | 定位回归头 |
+| `cross_view_fusion` | `5e-4` | full train `5e-4` | 不建议 LoRA | `use_vit_regression_head=True` |
+| `vit_loc_fusion` | `5e-4` | full train `5e-4` | 不建议 LoRA | `use_codex_vit_regression_head=True` |
+| `loc_learnable_query` | `5e-4` | full train `5e-4` | 不建议 LoRA | 当前项目已有 `loc_learnable_query_lr` |
+| `vae_decoder` | freeze；必须训则 `1e-6` | freeze | 不建议 LoRA | 不建议和主干一起训练 |
+
+推荐 full finetune 起点：
+
+```yaml
+llm_train_mode: full
+llm_lr: 1.0e-5
+learning_rate: 5.0e-5
+mm_projector_lr: 1.0e-4
+action_dit_lr: 5.0e-5
+action_dit_projector_lr: 5.0e-4
+weight_decay: 0.05
+warmup_ratio: 0.03
+lr_scheduler_type: cosine
+```
+
+推荐 LoRA 起点：
+
+```yaml
+is_lora: True
+llm_train_mode: lora
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+llm_lora_lr: 1.0e-4
+learning_rate: 1.0e-4
+mm_projector_lr: 1.0e-4
+action_dit_lr: 5.0e-5
+action_dit_projector_lr: 5.0e-4
+weight_decay: 0.01
+warmup_ratio: 0.03
+lr_scheduler_type: cosine
+```
+
+使用原则：
+
+- Full finetune 优先单独给 `language_model`、`vision_tower`、`llm_connector`、`dit/action_dit`、heads/projectors 分组；不要让 LLM 或 ViT 默认落入 `learning_rate=1e-4`。
+- LoRA 主要节省显存和 optimizer state，不保证单 step 更快；forward 仍要跑完整 base，并额外增加 LoRA adapter matmul。
+- 如果 aux-loc / action loss 抖动，优先把 `action_dit_lr` 降到 `5e-5`，或把 `lora_alpha` 从 `32` 降到 `16`；不要一开始降低 rank。
+- 如果显存允许且数据量足够，`r=32, alpha=64` 可作为第二组 LoRA 实验；默认仍从 `r=16, alpha=32` 起。
+- `vision_tower` 默认 freeze。若必须训练，需要独立低 LR 参数组，推荐 `1e-6 ~ 3e-6`。
+
+参考依据：
+
+- InternVL3 finetune 文档：`InternVL3-1B` full / LoRA finetune 资源说明，并默认 freeze visual encoder。<https://internvl.readthedocs.io/en/latest/internvl3.0/finetune.html>
+- OpenGVLab InternVL3-1B full finetune 脚本：`freeze_llm=False`, `freeze_mlp=False`, `freeze_backbone=True`, `learning_rate=1e-5`, `weight_decay=0.05`, `warmup_ratio=0.03`, cosine。<https://raw.githubusercontent.com/OpenGVLab/InternVL/main/internvl_chat/shell/internvl3.0/2nd_finetune/internvl3_1b_dynamic_res_2nd_finetune_full.sh>
+- OpenGVLab InternVL LoRA 实现：vision LoRA target 为 `attn.qkv/attn.proj/mlp.fc1/mlp.fc2`，Qwen/LLaMA LLM target 为 `q/k/v/o + gate/down/up`，默认 `alpha=2*r`。<https://raw.githubusercontent.com/OpenGVLab/InternVL/main/internvl_chat/internvl/model/internvl_chat/modeling_internvl_chat.py>
+- OpenGVLab InternVL2.5-1B LoRA 脚本：`use_llm_lora=16`, `learning_rate=4e-5`, `weight_decay=0.01`, `warmup_ratio=0.03`，可作为更保守 LoRA 起点参考。<https://raw.githubusercontent.com/OpenGVLab/InternVL/main/internvl_chat/shell/internvl2.5/2nd_finetune/internvl2_5_1b_dynamic_res_2nd_finetune_lora.sh>
+- LoRA 原论文：冻结 base、训练低秩 adapter，可显著减少可训练参数和 optimizer/显存压力。<https://arxiv.org/abs/2106.09685>
+- QLoRA / PEFT 实践：大模型 LoRA 常对所有 linear 层注入 adapter，以更接近 full finetune 能力。<https://arxiv.org/abs/2305.14314>, <https://huggingface.co/docs/peft/main/developer_guides/lora>
+- LoRA+ / LoRA-GA：LoRA 学习率、初始化和 A/B 矩阵优化策略会显著影响收敛速度。<https://arxiv.org/abs/2402.12354>, <https://arxiv.org/abs/2407.05000>
+
 ## Existing Experiment Families
 
 ### Single-task teachers and warm-start sources
@@ -59,6 +133,8 @@
 | `exp26_dust2` | `exp17_2_2_dust2` 的 224 + 短 instruction + combined aux-loc 干净起点对照 | 从原始 `UniLIP-1B` 起训，不使用 warm-start / REPA / aux_gen，用于隔离分辨率、短 prompt 和 combined aux-loc 的影响 |
 | `exp27_dust2` | `exp26_dust2` 去掉 aux-loc 后加入 current-loc-head perceptual loss | 只用当前 loc head 的 action_dit_projector patch feature 对齐生成侧和定位侧特征；前 2000 step 关闭，之后 `alpha=0.1`；attention weighting 留给 `exp27_1_dust2` |
 | `exp27_1_dust2` | `exp27_dust2` + attention-weighted current-loc-head perceptual loss | 最终固定方案：`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；用 wrapper 从 action_dit 最后一层取 action token 到 und patch tokens 的 attention，不用 hook |
+| `exp27_2_dust2` | `exp27_dust2` 的浅层 vision_tower perceptual loss 对照 | 不使用 attention weighting，直接对齐 `pred_pixels_input` 和 `gen_image` 的 FPS vision patch features，`smooth_l1`，特征维度 `[B, 256, D_llm]` |
+| `exp27_3_dust2` | `exp27_2_dust2` + teacher_gt action_dit attention weighting | perception feature 仍是 `vision_tower` FPS patch features；attention 权重复用 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled` wrapper，不用 hook |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -89,6 +165,8 @@
 | `exp26_dust2` | 224 + short-instruction combined aux-loc scratch 对照 | `exp17_2_2_dust2 + exp23 combined aux_loc + img_size=224 + use_short_instruction=True`，原始 `UniLIP-1B` 起训 |
 | `exp27_dust2` | current-loc-head perceptual alignment 对照 | `exp26_dust2 - aux_loc_loss + current loc feature smooth_l1`，仅验证 feature-level perceptual alignment |
 | `exp27_1_dust2` | attention-weighted current-loc-head perceptual alignment | `exp27_dust2 + action_dit attention-weighted loc perception loss`，attention source 固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
+| `exp27_2_dust2` | shallow vision_tower perceptual alignment 对照 | `exp27_dust2` 的更浅对齐版本，`loc_perception_feature_source=vision_tower`，无 attention weighting |
+| `exp27_3_dust2` | attention-weighted shallow vision_tower perceptual alignment | `exp27_2_dust2 + teacher_gt action_dit attention weighting`，权重方案固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -453,6 +531,8 @@ same velocity target u_t
 | `exp26_dust2` | `exp17_2_2_dust2` | 加入 `exp23` combined aux-loc，改为 `img_size=224` 和 `use_short_instruction=True`，不使用 warm-start / REPA / aux_gen | 在原始 `UniLIP-1B` 起训条件下隔离验证 224 输入、短 prompt 与 combined aux-loc 的组合效果 |
 | `exp27_dust2` | `exp26_dust2` | 关闭 `aux_loc_loss` / combined aux-loc，加入 current-loc-head perceptual loss，`smooth_l1` 对齐 action_dit_projector patch features；step < 2000 时 alpha=0，step >= 2000 时 alpha=0.1 | 验证不依赖外部 teacher 和 pose-level aux 的 feature-level 对齐是否能单独提供生成侧定位感知监督 |
 | `exp27_1_dust2` | `exp27_dust2` | 在 patch-level `smooth_l1` loc perception loss 上加入 action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现使用轻量 wrapper，不用 hook | 验证 action token 对 und patch tokens 的注意力能否提供更聚焦且量级可比的生成侧定位感知监督 |
+| `exp27_2_dust2` | `exp27_dust2` | 将 loc perception feature source 从 `action_dit_projector` 改为 `vision_tower`，直接对齐 `pred_pixels_input` 与 `gen_image` 的 FPS vision patch features；`smooth_l1`；无 attention weighting | 验证更浅的视觉 encoder patch feature 对齐是否足以提供生成侧定位感知监督 |
+| `exp27_3_dust2` | `exp27_2_dust2` | 在 vision_tower patch-level `smooth_l1` loc perception loss 上加入 teacher_gt action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；复用轻量 wrapper，不用 hook | 验证 loc/action_dit 注意力能否让浅层 vision_tower feature 对齐更聚焦 |
 
 建议第一版最小设置：
 
@@ -488,6 +568,14 @@ aux_loc_combined_unc_eps: 1.0e-6
   - `csgo_configs/test/exp27_1_dust2_gen.yaml`
   - `csgo_configs/test/exp27_1_dust2_gen_conti.yaml`
   - `csgo_configs/test/exp27_1_dust2_loc.yaml`
+  - `csgo_configs/exp27_2_dust2.yaml`
+  - `csgo_configs/test/exp27_2_dust2_gen.yaml`
+  - `csgo_configs/test/exp27_2_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp27_2_dust2_loc.yaml`
+  - `csgo_configs/exp27_3_dust2.yaml`
+  - `csgo_configs/test/exp27_3_dust2_gen.yaml`
+  - `csgo_configs/test/exp27_3_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp27_3_dust2_loc.yaml`
 - 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
 - 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
@@ -697,15 +785,17 @@ repa_spatial_norm_gamma: 1.0
 8. `exp26_dust2`
 9. `exp27_dust2`
 10. `exp27_1_dust2`
-11. `exp17_5_dust2`
-12. `exp17_6_dust2`
-13. `exp17_7_dust2`
-14. `exp17_8_dust2`
-15. `exp17_9_dust2`
-16. `exp17_10_dust2`
-17. `exp17_11_dust2`
-18. `exp17_12_dust2`
-19. `exp17_13_dust2`
+11. `exp27_2_dust2`
+12. `exp27_3_dust2`
+13. `exp17_5_dust2`
+14. `exp17_6_dust2`
+15. `exp17_7_dust2`
+16. `exp17_8_dust2`
+17. `exp17_9_dust2`
+18. `exp17_10_dust2`
+19. `exp17_11_dust2`
+20. `exp17_12_dust2`
+21. `exp17_13_dust2`
 
 理由：
 
@@ -717,6 +807,8 @@ repa_spatial_norm_gamma: 1.0
 - `exp26_dust2` 用原始 `UniLIP-1B` 起点补上 224 + short prompt + combined aux-loc 的干净对照，避免把 `exp24_dust2` 的收益误归因于 warm-start 或 REPA。
 - `exp27_dust2` 在 `exp26_dust2` 基础上关闭 pose-level aux-loc，只保留 current-loc-head perceptual alignment，用来判断 feature-level 监督本身是否成立。
 - `exp27_1_dust2` 在 `exp27_dust2` 基础上加入 action_dit attention weighting，固定 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现选型为轻量 wrapper，便于后续扩展 action token 构造、attention source 和 layer/head 聚合方式，不使用 hook。
+- `exp27_2_dust2` 在 `exp27_dust2` 基础上把 perception feature source 前移到 `vision_tower`，无 attention weighting，用来隔离浅层视觉 patch 对齐本身的效果。
+- `exp27_3_dust2` 在 `exp27_2_dust2` 基础上加入 teacher_gt action_dit attention weighting，检验浅层 vision_tower 对齐是否也能从 loc/action attention 聚焦中获益。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
 - 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
@@ -744,6 +836,8 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp26_dust2.yaml`
 - `csgo_configs/exp27_dust2.yaml`
 - `csgo_configs/exp27_1_dust2.yaml`
+- `csgo_configs/exp27_2_dust2.yaml`
+- `csgo_configs/exp27_3_dust2.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

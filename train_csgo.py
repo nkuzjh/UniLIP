@@ -2441,8 +2441,11 @@ def train(attn_implementation=None):
             raise ValueError("Current implementation only supports loc_perception_teacher_type='current_loc_head'.")
         if model.config.loc_perception_use_ema_teacher:
             raise ValueError("loc_perception_use_ema_teacher is reserved for a future experiment and is not implemented.")
-        if model.config.loc_perception_feature_source != "action_dit_projector":
-            raise ValueError("Current implementation only supports loc_perception_feature_source='action_dit_projector'.")
+        if model.config.loc_perception_feature_source not in {"action_dit_projector", "vision_tower"}:
+            raise ValueError(
+                "Current implementation only supports "
+                "loc_perception_feature_source in {'action_dit_projector', 'vision_tower'}."
+            )
         if model.config.loc_perception_loss_type not in {"smooth_l1", "mse"}:
             raise ValueError("Current implementation only supports loc_perception_loss_type in {'smooth_l1', 'mse'}.")
         if model.config.loc_perception_timestep_weight != "linear_1m_sigma":
