@@ -238,6 +238,9 @@ class TrainingArguments(transformers.TrainingArguments):
     shared_llm_tail_lora_alpha: int = 32
     shared_llm_tail_lora_dropout: float = 0.05
     shared_llm_tail_lora_lr: Optional[float] = None
+    llm_train_mode: str = "frozen"
+    llm_lr: float = 1e-5
+    llm_lora_lr: float = 1e-4
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
     pretrain_path : str = "none"
@@ -1828,6 +1831,49 @@ class AlphaLocScheduleCallback(TrainerCallback):
             self._set_alpha(model, state.global_step)
         return control
 
+
+class AlphaLocPerceptionControlCallback(TrainerCallback):
+    def __init__(self, steps=None, values=None, base_alpha=0.0):
+        self.steps = [int(x) for x in steps] if steps is not None else None
+        self.values = [float(x) for x in values] if values is not None else None
+        self.base_alpha = float(base_alpha)
+
+        if self.steps is not None:
+            if self.values is None or len(self.steps) != len(self.values) or len(self.steps) == 0:
+                raise ValueError("alpha_loc_perception schedule steps/values must have the same non-zero length")
+            if any(self.steps[idx] < self.steps[idx - 1] for idx in range(1, len(self.steps))):
+                raise ValueError("alpha_loc_perception schedule steps must be non-decreasing")
+
+    def _compute_alpha(self, step):
+        if self.steps is None:
+            return self.base_alpha
+        return _piecewise_linear_value(step, self.steps, self.values)
+
+    def _set_alpha(self, model, step):
+        alpha = self._compute_alpha(step)
+
+        candidates = [model]
+        if hasattr(model, "module"):
+            candidates.append(model.module)
+        if hasattr(model, "model"):
+            candidates.append(model.model)
+        if hasattr(model, "module") and hasattr(model.module, "model"):
+            candidates.append(model.module.model)
+
+        for candidate in candidates:
+            if hasattr(candidate, "config"):
+                candidate.config.alpha_loc_perception_loss = alpha
+
+    def on_train_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, 0)
+        return control
+
+    def on_step_begin(self, args, state, control, model=None, **kwargs):
+        if model is not None:
+            self._set_alpha(model, state.global_step)
+        return control
+
 def smart_matching_state_dict_keys(state_dict, model):
     new_state_dict = {}
     for k, v in state_dict.items():
@@ -2082,6 +2128,26 @@ def train(attn_implementation=None):
     model.config.loc_repa_loss_type = csgo_config.get("loc_repa_loss_type", "cosine")
     model.config.loc_repa_use_und_tokens_only = csgo_config.get("loc_repa_use_und_tokens_only", True)
     model.config.loc_repa_timestep_weight = csgo_config.get("loc_repa_timestep_weight", "linear_1m_sigma")
+    model.config.is_loc_perception_loss = csgo_config.get("is_loc_perception_loss", False)
+    model.config.alpha_loc_perception_loss = csgo_config.get("alpha_loc_perception_loss", 0.0)
+    model.config.alpha_loc_perception_schedule_steps = csgo_config.get("alpha_loc_perception_schedule_steps", None)
+    model.config.alpha_loc_perception_schedule_values = csgo_config.get("alpha_loc_perception_schedule_values", None)
+    model.config.loc_perception_teacher_type = csgo_config.get("loc_perception_teacher_type", "current_loc_head")
+    model.config.loc_perception_use_ema_teacher = csgo_config.get("loc_perception_use_ema_teacher", False)
+    model.config.loc_perception_ema_decay = float(csgo_config.get("loc_perception_ema_decay", 0.999))
+    model.config.loc_perception_feature_source = csgo_config.get("loc_perception_feature_source", "action_dit_projector")
+    model.config.loc_perception_loss_type = csgo_config.get("loc_perception_loss_type", "smooth_l1")
+    model.config.loc_perception_use_attention_weight = csgo_config.get("loc_perception_use_attention_weight", False)
+    model.config.loc_perception_timestep_weight = csgo_config.get("loc_perception_timestep_weight", "linear_1m_sigma")
+    model.config.loc_perception_use_und_tokens_only = csgo_config.get("loc_perception_use_und_tokens_only", True)
+    model.config.loc_perception_teacher_detach = csgo_config.get("loc_perception_teacher_detach", True)
+    model.config.loc_perception_attention_source = csgo_config.get("loc_perception_attention_source", "teacher_gt")
+    model.config.loc_perception_attention_layer = csgo_config.get("loc_perception_attention_layer", "last")
+    model.config.loc_perception_attention_head_reduce = csgo_config.get("loc_perception_attention_head_reduce", "mean")
+    model.config.loc_perception_attention_normalize = csgo_config.get("loc_perception_attention_normalize", "mean_one")
+    model.config.loc_perception_attention_detach = csgo_config.get("loc_perception_attention_detach", True)
+    model.config.loc_perception_attention_action_time = csgo_config.get("loc_perception_attention_action_time", "loc_sampled")
+    model.config.loc_perception_attention_eps = float(csgo_config.get("loc_perception_attention_eps", 1e-6))
     model.config.is_noisy_loc_loss = csgo_config.get("is_noisy_loc_loss", False)
     model.config.noisy_loc_ratio = float(csgo_config.get("noisy_loc_ratio", 0.0))
     model.config.noisy_loc_image_source = csgo_config.get("noisy_loc_image_source", "latent_space")
@@ -2156,6 +2222,59 @@ def train(attn_implementation=None):
         "shared_llm_tail_lora_lr",
         training_args.shared_llm_tail_lora_lr,
     )
+    model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", training_args.is_lora)
+    explicit_llm_train_mode = "llm_train_mode" in csgo_config
+    if explicit_llm_train_mode:
+        llm_train_mode = str(csgo_config["llm_train_mode"])
+    elif model_args.train_shared_llm_tail_only and model_args.shared_llm_tail_lora_enabled:
+        llm_train_mode = "shared_tail_lora"
+    elif model_args.train_shared_llm_tail_only:
+        llm_train_mode = "shared_tail_full"
+    elif model_args.fix_llm:
+        llm_train_mode = "frozen"
+    elif training_args.is_lora:
+        llm_train_mode = "lora"
+    else:
+        llm_train_mode = "full"
+
+    valid_llm_train_modes = {"frozen", "full", "lora", "shared_tail_full", "shared_tail_lora"}
+    if llm_train_mode not in valid_llm_train_modes:
+        raise ValueError(f"Unsupported llm_train_mode={llm_train_mode!r}; expected one of {sorted(valid_llm_train_modes)}.")
+    if explicit_llm_train_mode:
+        if llm_train_mode in {"shared_tail_full", "shared_tail_lora"} and not model_args.fix_llm:
+            raise ValueError(f"llm_train_mode='{llm_train_mode}' is incompatible with fix_llm=False.")
+        model_args.fix_llm = llm_train_mode not in {"full", "lora"}
+        model_args.train_shared_llm_tail_only = llm_train_mode in {"shared_tail_full", "shared_tail_lora"}
+        model_args.shared_llm_tail_lora_enabled = llm_train_mode == "shared_tail_lora"
+
+    if llm_train_mode == "lora" and not training_args.is_lora:
+        raise ValueError("llm_train_mode='lora' requires is_lora=True.")
+    if llm_train_mode == "full" and training_args.is_lora:
+        raise ValueError("llm_train_mode='full' requires is_lora=False.")
+    if llm_train_mode in {"shared_tail_full", "shared_tail_lora"} and not model_args.fix_llm:
+        raise ValueError(f"llm_train_mode='{llm_train_mode}' is incompatible with fix_llm=False.")
+    if llm_train_mode == "shared_tail_full" and model_args.shared_llm_tail_lora_enabled:
+        raise ValueError("llm_train_mode='shared_tail_full' requires shared_llm_tail_lora_enabled=False.")
+    if llm_train_mode in {"full", "lora"} and (
+        model_args.train_shared_llm_tail_only or model_args.shared_llm_tail_lora_enabled
+    ):
+        raise ValueError(f"llm_train_mode='{llm_train_mode}' is incompatible with shared-tail LLM training.")
+    if llm_train_mode == "frozen" and (
+        (not model_args.fix_llm)
+        or model_args.train_shared_llm_tail_only
+        or model_args.shared_llm_tail_lora_enabled
+    ):
+        raise ValueError("llm_train_mode='frozen' requires fix_llm=True and shared-tail LLM training disabled.")
+
+    model_args.fix_llm = llm_train_mode not in {"full", "lora"}
+    model_args.train_shared_llm_tail_only = llm_train_mode in {"shared_tail_full", "shared_tail_lora"}
+    model_args.shared_llm_tail_lora_enabled = llm_train_mode == "shared_tail_lora"
+    model.config.fix_llm = model_args.fix_llm
+    model.config.train_shared_llm_tail_only = model_args.train_shared_llm_tail_only
+    model.config.shared_llm_tail_lora_enabled = model_args.shared_llm_tail_lora_enabled
+    model.config.llm_train_mode = training_args.llm_train_mode = llm_train_mode
+    model.config.llm_lr = training_args.llm_lr = float(csgo_config.get("llm_lr", training_args.llm_lr))
+    model.config.llm_lora_lr = training_args.llm_lora_lr = float(csgo_config.get("llm_lora_lr", training_args.llm_lora_lr))
 
     if model_args.shared_llm_tail_lora_enabled:
         if not model_args.train_shared_llm_tail_only:
@@ -2170,7 +2289,6 @@ def train(attn_implementation=None):
             raise ValueError("shared_llm_tail_lora_enabled=True is incompatible with fix_llm=False (whole-LLM finetuning/LoRA).")
     model.config.is_loc_learnable_query =  training_args.is_loc_learnable_query = csgo_config.get("is_loc_learnable_query", False)
     model.config.loc_learnable_query_lr =  training_args.loc_learnable_query_lr = csgo_config.get("loc_learnable_query_lr", 5e-4)
-    model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", False)
 
     model_args.gradient_checkpointing = training_args.gradient_checkpointing
 
@@ -2317,6 +2435,37 @@ def train(attn_implementation=None):
         if model.config.repa_projector_type == "conv_spatialnorm":
             if model.config.repa_conv_kernel_size != 3:
                 raise ValueError("Current implementation only supports repa_conv_kernel_size=3 for conv_spatialnorm.")
+
+    if model.config.is_loc_perception_loss:
+        if model.config.loc_perception_teacher_type != "current_loc_head":
+            raise ValueError("Current implementation only supports loc_perception_teacher_type='current_loc_head'.")
+        if model.config.loc_perception_use_ema_teacher:
+            raise ValueError("loc_perception_use_ema_teacher is reserved for a future experiment and is not implemented.")
+        if model.config.loc_perception_feature_source != "action_dit_projector":
+            raise ValueError("Current implementation only supports loc_perception_feature_source='action_dit_projector'.")
+        if model.config.loc_perception_loss_type not in {"smooth_l1", "mse"}:
+            raise ValueError("Current implementation only supports loc_perception_loss_type in {'smooth_l1', 'mse'}.")
+        if model.config.loc_perception_timestep_weight != "linear_1m_sigma":
+            raise ValueError("Current implementation only supports loc_perception_timestep_weight='linear_1m_sigma'.")
+        if not model.config.loc_perception_use_und_tokens_only:
+            raise ValueError("Current implementation requires loc_perception_use_und_tokens_only=True.")
+        if model.config.loc_perception_use_attention_weight:
+            if not model.config.use_pi05_action_dit:
+                raise ValueError("loc_perception attention weighting currently requires use_pi05_action_dit=True.")
+            if model.config.loc_perception_attention_source != "teacher_gt":
+                raise ValueError("Current implementation only supports loc_perception_attention_source='teacher_gt'.")
+            if model.config.loc_perception_attention_layer != "last":
+                raise ValueError("Current implementation only supports loc_perception_attention_layer='last'.")
+            if model.config.loc_perception_attention_head_reduce != "mean":
+                raise ValueError("Current implementation only supports loc_perception_attention_head_reduce='mean'.")
+            if model.config.loc_perception_attention_normalize != "mean_one":
+                raise ValueError("Current implementation only supports loc_perception_attention_normalize='mean_one'.")
+            if not model.config.loc_perception_attention_detach:
+                raise ValueError("Current implementation requires loc_perception_attention_detach=True.")
+            if model.config.loc_perception_attention_action_time != "loc_sampled":
+                raise ValueError("Current implementation only supports loc_perception_attention_action_time='loc_sampled'.")
+            if model.config.loc_perception_attention_eps <= 0.0:
+                raise ValueError("loc_perception_attention_eps must be > 0.")
 
     model.get_model().initialize_vision_modules(model_args=model_args, fsdp=training_args.fsdp)
     # fix connect False
@@ -2589,6 +2738,8 @@ def train(attn_implementation=None):
     alpha_loc_aux_schedule_values = csgo_config.get("alpha_loc_aux_schedule_values", None)
     alpha_gen_aux_schedule_steps = csgo_config.get("alpha_gen_aux_schedule_steps", None)
     alpha_gen_aux_schedule_values = csgo_config.get("alpha_gen_aux_schedule_values", None)
+    alpha_loc_perception_schedule_steps = csgo_config.get("alpha_loc_perception_schedule_steps", None)
+    alpha_loc_perception_schedule_values = csgo_config.get("alpha_loc_perception_schedule_values", None)
     is_loc_aux_step_gate = bool(csgo_config.get("is_loc_aux_step_gate", False))
     is_aux_loss_alternating = bool(csgo_config.get("is_aux_loss_alternating", False))
     if alpha_loc_aux_schedule_steps is not None or alpha_loc_aux_schedule_values is not None:
@@ -2597,6 +2748,9 @@ def train(attn_implementation=None):
     if alpha_gen_aux_schedule_steps is not None or alpha_gen_aux_schedule_values is not None:
         if alpha_gen_aux_schedule_steps is None or alpha_gen_aux_schedule_values is None:
             raise ValueError("alpha_gen_aux schedule requires both alpha_gen_aux_schedule_steps and alpha_gen_aux_schedule_values")
+    if alpha_loc_perception_schedule_steps is not None or alpha_loc_perception_schedule_values is not None:
+        if alpha_loc_perception_schedule_steps is None or alpha_loc_perception_schedule_values is None:
+            raise ValueError("alpha_loc_perception schedule requires both alpha_loc_perception_schedule_steps and alpha_loc_perception_schedule_values")
     if is_aux_loss_alternating:
         callbacks.append(
             AlternatingAuxLossControlCallback(
@@ -2623,6 +2777,14 @@ def train(attn_implementation=None):
                 gate_on_steps=int(csgo_config.get("loc_aux_gate_on_steps", 0)),
                 gate_start_step=int(csgo_config.get("loc_aux_gate_start_step", 0)),
                 base_alpha=float(csgo_config.get("alpha_loc_aux_loss", 1.0)),
+            )
+        )
+    if alpha_loc_perception_schedule_steps is not None or alpha_loc_perception_schedule_values is not None:
+        callbacks.append(
+            AlphaLocPerceptionControlCallback(
+                steps=alpha_loc_perception_schedule_steps,
+                values=alpha_loc_perception_schedule_values,
+                base_alpha=float(csgo_config.get("alpha_loc_perception_loss", 0.0)),
             )
         )
 

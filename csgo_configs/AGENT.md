@@ -56,6 +56,9 @@
 | `exp23_dust2` | `exp17_2_dust2` 的 combined EM-responsibility + uncertainty-gated aux-loc 已实现配置 | 同时使用 candidate-level responsibility 和 sample-level residual consistency 权重 |
 | `exp24_dust2` | `exp17_7_dust2@8000` 的 224 输入 + 短 instruction + combined aux-loc 继续训练配置 | 保留 DINOv2 standard REPA，启用 `img_size=224`、`use_short_instruction=True` 和 `exp23` 的 combined aux-loc |
 | `exp25_dust2` | `exp24_dust2` 的双向 auxiliary consistency 版本 | 新增 `aux_gen_loss`，与 `aux_loc_loss` 按 iteration 交替；`aux_loc` 更新生成侧，`aux_gen` 冻结生成侧并通过可微 pose token 让 gen loss 更新定位侧 |
+| `exp26_dust2` | `exp17_2_2_dust2` 的 224 + 短 instruction + combined aux-loc 干净起点对照 | 从原始 `UniLIP-1B` 起训，不使用 warm-start / REPA / aux_gen，用于隔离分辨率、短 prompt 和 combined aux-loc 的影响 |
+| `exp27_dust2` | `exp26_dust2` 去掉 aux-loc 后加入 current-loc-head perceptual loss | 只用当前 loc head 的 action_dit_projector patch feature 对齐生成侧和定位侧特征；前 2000 step 关闭，之后 `alpha=0.1`；attention weighting 留给 `exp27_1_dust2` |
+| `exp27_1_dust2` | `exp27_dust2` + attention-weighted current-loc-head perceptual loss | 最终固定方案：`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；用 wrapper 从 action_dit 最后一层取 action token 到 und patch tokens 的 attention，不用 hook |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -83,6 +86,9 @@
 | `exp23_dust2` | combined EM + uncertainty aux-loc 已实现配置 | `exp17_2_dust2 + candidate responsibility + residual-consistency sample gating` |
 | `exp24_dust2` | 224 + short-instruction REPA/aux-loc warm-start | `exp17_7_dust2@8000 + img_size=224 + use_short_instruction=True + exp23 combined aux_loc` |
 | `exp25_dust2` | 双向 alternating aux consistency | `exp24_dust2 + aux_gen_loss；even step 跑 aux_loc，odd step 跑 aux_gen` |
+| `exp26_dust2` | 224 + short-instruction combined aux-loc scratch 对照 | `exp17_2_2_dust2 + exp23 combined aux_loc + img_size=224 + use_short_instruction=True`，原始 `UniLIP-1B` 起训 |
+| `exp27_dust2` | current-loc-head perceptual alignment 对照 | `exp26_dust2 - aux_loc_loss + current loc feature smooth_l1`，仅验证 feature-level perceptual alignment |
+| `exp27_1_dust2` | attention-weighted current-loc-head perceptual alignment | `exp27_dust2 + action_dit attention-weighted loc perception loss`，attention source 固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -444,6 +450,9 @@ same velocity target u_t
 | 配置 | 基础配置 | 主要改动 | 目的 |
 |---|---|---|---|
 | `exp23_dust2` | `exp17_2_dust2` | 同时启用 detached `q_k` 和 detached `w_unc` | 验证 candidate selection 与 sample reliability gating 是否互补 |
+| `exp26_dust2` | `exp17_2_2_dust2` | 加入 `exp23` combined aux-loc，改为 `img_size=224` 和 `use_short_instruction=True`，不使用 warm-start / REPA / aux_gen | 在原始 `UniLIP-1B` 起训条件下隔离验证 224 输入、短 prompt 与 combined aux-loc 的组合效果 |
+| `exp27_dust2` | `exp26_dust2` | 关闭 `aux_loc_loss` / combined aux-loc，加入 current-loc-head perceptual loss，`smooth_l1` 对齐 action_dit_projector patch features；step < 2000 时 alpha=0，step >= 2000 时 alpha=0.1 | 验证不依赖外部 teacher 和 pose-level aux 的 feature-level 对齐是否能单独提供生成侧定位感知监督 |
+| `exp27_1_dust2` | `exp27_dust2` | 在 patch-level `smooth_l1` loc perception loss 上加入 action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现使用轻量 wrapper，不用 hook | 验证 action token 对 und patch tokens 的注意力能否提供更聚焦且量级可比的生成侧定位感知监督 |
 
 建议第一版最小设置：
 
@@ -467,6 +476,18 @@ aux_loc_combined_unc_eps: 1.0e-6
   - `csgo_configs/test/exp23_dust2_gen.yaml`
   - `csgo_configs/test/exp23_dust2_gen_conti.yaml`
   - `csgo_configs/test/exp23_dust2_loc.yaml`
+  - `csgo_configs/exp26_dust2.yaml`
+  - `csgo_configs/test/exp26_dust2_gen.yaml`
+  - `csgo_configs/test/exp26_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp26_dust2_loc.yaml`
+  - `csgo_configs/exp27_dust2.yaml`
+  - `csgo_configs/test/exp27_dust2_gen.yaml`
+  - `csgo_configs/test/exp27_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp27_dust2_loc.yaml`
+  - `csgo_configs/exp27_1_dust2.yaml`
+  - `csgo_configs/test/exp27_1_dust2_gen.yaml`
+  - `csgo_configs/test/exp27_1_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp27_1_dust2_loc.yaml`
 - 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
 - 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
@@ -673,15 +694,18 @@ repa_spatial_norm_gamma: 1.0
 5. `exp21_dust2`
 6. `exp22_dust2`
 7. `exp23_dust2`
-8. `exp17_5_dust2`
-9. `exp17_6_dust2`
-10. `exp17_7_dust2`
-11. `exp17_8_dust2`
-12. `exp17_9_dust2`
-13. `exp17_10_dust2`
-14. `exp17_11_dust2`
-15. `exp17_12_dust2`
-16. `exp17_13_dust2`
+8. `exp26_dust2`
+9. `exp27_dust2`
+10. `exp27_1_dust2`
+11. `exp17_5_dust2`
+12. `exp17_6_dust2`
+13. `exp17_7_dust2`
+14. `exp17_8_dust2`
+15. `exp17_9_dust2`
+16. `exp17_10_dust2`
+17. `exp17_11_dust2`
+18. `exp17_12_dust2`
+19. `exp17_13_dust2`
 
 理由：
 
@@ -690,6 +714,9 @@ repa_spatial_norm_gamma: 1.0
 - 再验证 multi-sample EM-inspired aux-loc 是否能改善单个 `x0_hat` 的高方差问题。
 - 再验证 uncertainty-weighted residual consistency 是否能用更简单的样本级 gating 抑制不稳定 aux 信号。
 - 如果 `exp21_dust2` 和 `exp22_dust2` 任一有效，再验证二者组合是否互补。
+- `exp26_dust2` 用原始 `UniLIP-1B` 起点补上 224 + short prompt + combined aux-loc 的干净对照，避免把 `exp24_dust2` 的收益误归因于 warm-start 或 REPA。
+- `exp27_dust2` 在 `exp26_dust2` 基础上关闭 pose-level aux-loc，只保留 current-loc-head perceptual alignment，用来判断 feature-level 监督本身是否成立。
+- `exp27_1_dust2` 在 `exp27_dust2` 基础上加入 action_dit attention weighting，固定 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现选型为轻量 wrapper，便于后续扩展 action token 构造、attention source 和 layer/head 聚合方式，不使用 hook。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
 - 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
@@ -714,6 +741,9 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp22_dust2.yaml`
 - `csgo_configs/exp23_dust2.yaml`
 - `csgo_configs/exp24_dust2.yaml`
+- `csgo_configs/exp26_dust2.yaml`
+- `csgo_configs/exp27_dust2.yaml`
+- `csgo_configs/exp27_1_dust2.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

@@ -1,4 +1,5 @@
 import os
+import random
 import time
 import torch
 import torch.nn as nn
@@ -8,6 +9,7 @@ from torch.utils.data import Sampler
 from transformers import Trainer
 from transformers.trainer import (
     OptimizerNames,
+    ParallelMode,
     is_torch_hpu_available,
     is_torch_mlu_available,
     is_torch_mps_available,
@@ -17,6 +19,7 @@ from transformers.trainer import (
     is_sagemaker_mp_enabled,
     get_parameter_names,
     has_length,
+    set_rng_state_for_device,
     # ALL_LAYERNORM_LAYERS,
     logger,
 )
@@ -361,6 +364,52 @@ class NonMixTrainer(Trainer):
         self._step_timing = self._new_step_timing()
         return metrics
 
+    def _load_rng_state(self, checkpoint):
+        # PyTorch >= 2.6 defaults torch.load(weights_only=True), which cannot
+        # deserialize older Trainer rng_state*.pth files containing NumPy state.
+        if checkpoint is None:
+            return
+
+        if self.args.world_size > 1:
+            process_index = self.args.process_index
+            rng_file = os.path.join(checkpoint, f"rng_state_{process_index}.pth")
+            if not os.path.isfile(rng_file):
+                logger.info(
+                    f"Didn't find an RNG file for process {process_index}, if you are resuming a training that "
+                    "wasn't launched in a distributed fashion, reproducibility is not guaranteed."
+                )
+                return
+        else:
+            rng_file = os.path.join(checkpoint, "rng_state.pth")
+            if not os.path.isfile(rng_file):
+                logger.info(
+                    "Didn't find an RNG file, if you are resuming a training that was launched in a distributed "
+                    "fashion, reproducibility is not guaranteed."
+                )
+                return
+
+        try:
+            checkpoint_rng_state = torch.load(rng_file, weights_only=False)
+        except TypeError:
+            checkpoint_rng_state = torch.load(rng_file)
+
+        random.setstate(checkpoint_rng_state["python"])
+        np.random.set_state(checkpoint_rng_state["numpy"])
+        torch.random.set_rng_state(checkpoint_rng_state["cpu"])
+        if is_torch_xla_available():
+            xm.set_rng_state(checkpoint_rng_state["xla"])
+
+        is_distributed = self.args.parallel_mode == ParallelMode.DISTRIBUTED
+        if torch.cuda.is_available():
+            set_rng_state_for_device("CUDA", torch.cuda, checkpoint_rng_state, is_distributed)
+        if is_torch_npu_available():
+            set_rng_state_for_device("NPU", torch.npu, checkpoint_rng_state, is_distributed)
+        if is_torch_hpu_available():
+            set_rng_state_for_device("HPU", torch.hpu, checkpoint_rng_state, is_distributed)
+        if is_torch_mlu_available():
+            set_rng_state_for_device("MLU", torch.mlu, checkpoint_rng_state, is_distributed)
+        if is_torch_musa_available():
+            set_rng_state_for_device("MUSA", torch.musa, checkpoint_rng_state, is_distributed)
 
     def get_train_dataloader(self):
         """
@@ -522,6 +571,30 @@ class NonMixTrainer(Trainer):
                     name for name, _ in opt_model.named_parameters()
                     if name in shared_tail_parameters and "lora_" in name
                 ]
+
+            def get_language_model_parameter_names():
+                llm_train_mode = getattr(opt_model.config, "llm_train_mode", "frozen")
+                if llm_train_mode not in {"full", "lora"}:
+                    return []
+
+                parameter_names = []
+                for name, _ in opt_model.named_parameters():
+                    if "language_model." not in name:
+                        continue
+                    if llm_train_mode == "lora":
+                        if "lora_" in name:
+                            parameter_names.append(name)
+                    elif "lora_" not in name:
+                        parameter_names.append(name)
+                return parameter_names
+
+            def get_language_model_lr():
+                llm_train_mode = getattr(opt_model.config, "llm_train_mode", "frozen")
+                if llm_train_mode == "full":
+                    return getattr(self.args, "llm_lr", None)
+                if llm_train_mode == "lora":
+                    return getattr(self.args, "llm_lora_lr", None)
+                return None
 
             def is_mm_projector_parameter(name):
                 return "mm_projector" in name or "multi_modal_projector" in name
@@ -843,6 +916,40 @@ class NonMixTrainer(Trainer):
                         ],
                         "weight_decay": 0.0,
                         "lr": self.args.shared_llm_tail_lora_lr,
+                    },
+                ])
+
+            language_model_parameters = get_language_model_parameter_names()
+            language_model_lr = get_language_model_lr()
+            if len(language_model_parameters) > 0 and language_model_lr is not None:
+                language_model_param_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in language_model_parameters and p.requires_grad
+                }
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in language_model_param_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in language_model_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": language_model_lr,
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in language_model_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": language_model_lr,
                     },
                 ])
 

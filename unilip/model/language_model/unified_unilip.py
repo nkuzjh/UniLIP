@@ -2161,13 +2161,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         pred_latents_scaled = pred_latents_x0 / self.model.config.unilip_factor
 
         with torch.enable_grad():
-            mini_batch_size = 64
-            pred_pixels_list = []
-            for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
-                batch_latents = pred_latents_scaled[i : i + mini_batch_size]
-                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
-                pred_pixels_list.append(batch_pixels)
-            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+            pred_pixels = self.model.vae_decoder.vae_decode(pred_latents_scaled)
+
+            # Fallback: chunked decode if full-batch VAE decode hits cuDNN/workspace issues.
+            # mini_batch_size = 64
+            # pred_pixels_list = []
+            # for i in range(0, pred_latents_scaled.shape[0], mini_batch_size):
+            #     batch_latents = pred_latents_scaled[i : i + mini_batch_size]
+            #     batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+            #     pred_pixels_list.append(batch_pixels)
+            # pred_pixels = torch.cat(pred_pixels_list, dim=0)
 
         pred_pixels_norm = (pred_pixels + 1.0) / 2.0
         target_hw = und_image_map.shape[-2:]
@@ -2208,13 +2211,16 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         latents_scaled = latents / self.model.config.unilip_factor
 
         with torch.no_grad():
-            mini_batch_size = 64
-            pred_pixels_list = []
-            for i in range(0, latents_scaled.shape[0], mini_batch_size):
-                batch_latents = latents_scaled[i : i + mini_batch_size]
-                batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
-                pred_pixels_list.append(batch_pixels)
-            pred_pixels = torch.cat(pred_pixels_list, dim=0)
+            pred_pixels = self.model.vae_decoder.vae_decode(latents_scaled)
+
+            # Fallback: chunked decode if full-batch VAE decode hits cuDNN/workspace issues.
+            # mini_batch_size = 64
+            # pred_pixels_list = []
+            # for i in range(0, latents_scaled.shape[0], mini_batch_size):
+            #     batch_latents = latents_scaled[i : i + mini_batch_size]
+            #     batch_pixels = self.model.vae_decoder.vae_decode(batch_latents)
+            #     pred_pixels_list.append(batch_pixels)
+            # pred_pixels = torch.cat(pred_pixels_list, dim=0)
 
         pred_pixels_norm = (pred_pixels + 1.0) / 2.0
         if pred_pixels_norm.shape[-2:] != target_hw:
@@ -2648,19 +2654,25 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         }
 
     def _aux_loc_head_modules_for_freeze(self) -> List[nn.Module]:
-        module_names = []
-        if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
-            module_names.append("action_dit_connector")
+        module_names = ["action_dit_connector"]
         if getattr(self.config, "is_action_dit_projector", False):
             module_names.extend(["action_dit_norm", "action_dit_projector"])
         module_names.extend(["action_dit", "action_in_proj", "action_out_proj", "time_mlp_in", "time_mlp_out"])
+        if getattr(self.config, "use_vit_regression_head", False):
+            module_names.extend(["cross_view_fusion", "regression_loc_head"])
+        elif getattr(self.config, "use_vit_cls_regression_head", False):
+            module_names.append("regression_loc_head")
+        elif getattr(self.config, "use_codex_vit_regression_head", False):
+            module_names.extend(["vit_loc_fusion", "regression_loc_head"])
 
         modules = []
+        seen_module_ids = set()
         model = self.get_model()
         for module_name in module_names:
             module = getattr(model, module_name, None)
-            if module is not None:
+            if module is not None and id(module) not in seen_module_ids:
                 modules.append(module)
+                seen_module_ids.add(id(module))
         return modules
 
     def _validate_aux_loc_multisample_branch(self, branch_name: str) -> None:
@@ -2671,23 +2683,38 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if getattr(self.config, "use_codex_vit_regression_head", False):
             raise RuntimeError(f"{branch_name} currently only supports the action-DiT loc branch.")
 
-    def _freeze_aux_loc_head_modules(self) -> List[Tuple[nn.Module, bool, List[bool]]]:
+    def _freeze_aux_loc_head_modules(self) -> Dict[str, Dict[int, Dict[str, object]]]:
         modules = self._aux_loc_head_modules_for_freeze()
-        module_states = [
-            (
-                module,
-                module.training,
-                [param.requires_grad for param in module.parameters()],
-            )
-            for module in modules
-        ]
+        module_states: Dict[str, Dict[int, Dict[str, object]]] = {
+            "modules": {},
+            "params": {},
+        }
         for module in modules:
+            module_states["modules"][id(module)] = {
+                "module": module,
+                "training": module.training,
+            }
+            for param in module.parameters():
+                module_states["params"].setdefault(
+                    id(param),
+                    {
+                        "param": param,
+                        "requires_grad": param.requires_grad,
+                    },
+                )
             module.requires_grad_(False)
             module.eval()
         return module_states
 
     @staticmethod
-    def _restore_aux_loc_head_modules(module_states: List[Tuple[nn.Module, bool, List[bool]]]) -> None:
+    def _restore_module_states(module_states) -> None:
+        if isinstance(module_states, dict):
+            for param_state in module_states.get("params", {}).values():
+                param_state["param"].requires_grad_(param_state["requires_grad"])
+            for module_state in module_states.get("modules", {}).values():
+                module_state["module"].train(module_state["training"])
+            return
+
         for module, was_training, grad_flags in module_states:
             for param, grad_flag in zip(module.parameters(), grad_flags):
                 param.requires_grad_(grad_flag)
@@ -2709,17 +2736,25 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 modules.append(module)
         return modules
 
-    def _freeze_aux_gen_head_modules(self) -> List[Tuple[nn.Module, bool, List[bool]]]:
+    def _freeze_aux_gen_head_modules(self) -> Dict[str, Dict[int, Dict[str, object]]]:
         modules = self._aux_gen_head_modules_for_freeze()
-        module_states = [
-            (
-                module,
-                module.training,
-                [param.requires_grad for param in module.parameters()],
-            )
-            for module in modules
-        ]
+        module_states: Dict[str, Dict[int, Dict[str, object]]] = {
+            "modules": {},
+            "params": {},
+        }
         for module in modules:
+            module_states["modules"][id(module)] = {
+                "module": module,
+                "training": module.training,
+            }
+            for param in module.parameters():
+                module_states["params"].setdefault(
+                    id(param),
+                    {
+                        "param": param,
+                        "requires_grad": param.requires_grad,
+                    },
+                )
             module.requires_grad_(False)
             module.eval()
         return module_states
@@ -2820,7 +2855,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 loc_noise_override=loc_noise_override,
             )
         finally:
-            self._restore_aux_loc_head_modules(module_states)
+            self._restore_module_states(module_states)
         return metrics["weighted_mse"]
 
     def _build_aux_loc_candidate_from_flow(
@@ -2936,7 +2971,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 for key in candidate_metrics:
                     candidate_metrics[key].append(metrics[key])
         finally:
-            self._restore_aux_loc_head_modules(module_states)
+            self._restore_module_states(module_states)
 
         return {
             key: torch.stack(values, dim=1)
@@ -3117,7 +3152,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             return masked_gen_loss, stats
         finally:
             if module_states:
-                self._restore_aux_loc_head_modules(module_states)
+                self._restore_module_states(module_states)
             if checkpoint_states:
                 self._restore_aux_gen_dit_checkpointing(checkpoint_states)
 
@@ -3542,6 +3577,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         attention_mask: torch.Tensor,
         task_id: torch.Tensor,
         use_teacher: bool = False,
+        enable_grad: bool = True,
     ) -> torch.Tensor:
         if not getattr(self.config, "use_pi05_action_dit", False):
             raise ValueError("loc_repa feature extraction currently only supports use_pi05_action_dit=True.")
@@ -3622,7 +3658,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             module.eval()
 
         try:
-            with torch.enable_grad():
+            grad_context = torch.enable_grad() if enable_grad else torch.no_grad()
+            with grad_context:
                 (
                     _,
                     position_ids,
@@ -3748,6 +3785,361 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             use_teacher=True,
         )
         return self._compute_loc_repa_loss(student_feat, teacher_feat, sigmas, loss_mask)
+
+    def _compute_loc_perception_loss(
+        self,
+        student_feat: torch.Tensor,
+        teacher_feat: torch.Tensor,
+        sigmas: torch.Tensor,
+        loss_mask: torch.Tensor,
+        attention_weights: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        loss_type = getattr(self.config, "loc_perception_loss_type", "smooth_l1")
+        teacher_feat = teacher_feat.detach() if getattr(self.config, "loc_perception_teacher_detach", True) else teacher_feat
+        student_feat = student_feat.float()
+        teacher_feat = teacher_feat.float()
+
+        if loss_type == "smooth_l1":
+            token_loss = F.smooth_l1_loss(student_feat, teacher_feat, reduction="none").mean(dim=-1)
+        elif loss_type == "mse":
+            token_loss = F.mse_loss(student_feat, teacher_feat, reduction="none").mean(dim=-1)
+        else:
+            raise ValueError(f"Unsupported loc_perception_loss_type: {loss_type}")
+
+        if attention_weights is not None:
+            if attention_weights.shape != token_loss.shape:
+                raise RuntimeError(
+                    "loc perception attention weight shape mismatch: "
+                    f"weights={tuple(attention_weights.shape)}, token_loss={tuple(token_loss.shape)}"
+                )
+            token_loss = token_loss * attention_weights.to(device=token_loss.device, dtype=token_loss.dtype)
+
+        sample_loss = token_loss.mean(dim=-1)
+        timestep_weight_type = getattr(self.config, "loc_perception_timestep_weight", "linear_1m_sigma")
+        if timestep_weight_type == "linear_1m_sigma":
+            weight = (1.0 - sigmas).clamp(min=0).squeeze()
+        else:
+            raise ValueError(f"Unsupported loc_perception_timestep_weight: {timestep_weight_type}")
+
+        sample_loss = sample_loss * weight
+        sample_mask = loss_mask[:, 1].to(device=sample_loss.device, dtype=torch.float32)
+        return (sample_loss * sample_mask).mean().to(torch.float32)
+
+    def _forward_action_dit_with_attention_trace(
+        self,
+        hidden_states: torch.Tensor,
+        attention_mask: torch.Tensor,
+        position_ids: torch.Tensor,
+        actions: torch.Tensor,
+        und_patch_token_mask: torch.Tensor,
+    ) -> Dict[str, torch.Tensor]:
+        if not getattr(self.config, "use_pi05_action_dit", False):
+            raise ValueError("loc perception attention tracing currently requires use_pi05_action_dit=True.")
+        if not getattr(self.config, "is_action_dit_projector", False):
+            raise ValueError("loc perception attention tracing requires is_action_dit_projector=True.")
+        if getattr(self.config, "loc_perception_attention_action_time", "loc_sampled") != "loc_sampled":
+            raise ValueError("loc perception attention tracing currently only supports action_time='loc_sampled'.")
+
+        actions_for_trace = actions.to(device=hidden_states.device)
+        if actions_for_trace.ndim == 2:
+            actions_for_trace = actions_for_trace.unsqueeze(1)
+        elif actions_for_trace.ndim != 3:
+            raise ValueError(
+                "loc perception attention tracing expects actions with ndim 2 or 3, "
+                f"got shape={tuple(actions_for_trace.shape)}"
+            )
+
+        target_dim = self.get_model()._default_pi05_action_dim
+        if actions_for_trace.size(-1) < target_dim:
+            pad_dim = target_dim - actions_for_trace.size(-1)
+            actions_for_trace = torch.cat(
+                [
+                    actions_for_trace,
+                    torch.zeros(
+                        actions_for_trace.size(0),
+                        actions_for_trace.size(1),
+                        pad_dim,
+                        device=actions_for_trace.device,
+                        dtype=actions_for_trace.dtype,
+                    ),
+                ],
+                dim=-1,
+            )
+
+        noise = self.sample_noise(actions_for_trace.shape, actions_for_trace.device)
+        time = self.sample_time(actions_for_trace.shape[0], actions_for_trace.device)
+        time_expanded = time[:, None, None].to(actions_for_trace.dtype)
+        x_t = time_expanded * noise + (1 - time_expanded) * actions_for_trace
+
+        suffix_emb, adarms_cond = self.embed_action_suffix(
+            x_t,
+            time,
+            llm_hidden_size=1024,
+            device=hidden_states.device,
+            dtype=hidden_states.dtype,
+        )
+
+        hidden_states = self.get_model().action_dit_connector(hidden_states)
+        hidden_states = self.get_model().action_dit_norm(hidden_states)
+
+        bs, _, hidden_dim = hidden_states.shape
+        valid_lens = attention_mask.sum(dim=1).long()
+
+        action_dit_inputs = torch.cat([hidden_states, torch.zeros_like(suffix_emb)], dim=1)
+        target_indices = valid_lens.view(-1, 1, 1).expand(-1, 1, hidden_dim)
+        action_dit_inputs = action_dit_inputs.scatter(1, target_indices, suffix_emb)
+
+        action_dit_att_mask = torch.cat(
+            [attention_mask, torch.zeros((bs, 1), device=attention_mask.device, dtype=attention_mask.dtype)],
+            dim=1,
+        )
+        mask_indices = valid_lens.view(-1, 1)
+        action_dit_att_mask = action_dit_att_mask.scatter(1, mask_indices, 1)
+
+        action_dit_pos_ids = torch.cat(
+            [position_ids, torch.zeros((bs, 1), device=position_ids.device, dtype=position_ids.dtype)],
+            dim=1,
+        )
+        action_pos_ids = valid_lens.view(-1, 1)
+        current_seq_len = action_dit_pos_ids.shape[1]
+        range_ids = torch.arange(current_seq_len, device=position_ids.device).unsqueeze(0)
+        mask_after_valid = range_ids >= valid_lens.view(-1, 1)
+        action_dit_pos_ids = torch.where(mask_after_valid, action_pos_ids, action_dit_pos_ids)
+
+        action_dit_inputs = self.get_model().action_dit_projector(action_dit_inputs)
+        action_dit_att_mask_4d = self._prepare_attention_masks_4d_from_attn_masks_1d(action_dit_att_mask)
+
+        action_dit = self.get_model().action_dit
+        hidden_states = action_dit_inputs
+        position_embeddings = action_dit.rotary_emb(hidden_states, action_dit_pos_ids)
+        last_layer_attn = None
+        original_attn_impl = getattr(action_dit.config, "_attn_implementation", None)
+        if original_attn_impl is not None:
+            action_dit.config._attn_implementation = "eager"
+        try:
+            for layer_idx, layer in enumerate(action_dit.layers):
+                residual = hidden_states
+                hidden_states, gate_attn = layer.input_layernorm(hidden_states, cond=adarms_cond)
+                attn_output, attn_weights = layer.self_attn(
+                    hidden_states=hidden_states,
+                    attention_mask=action_dit_att_mask_4d,
+                    position_ids=action_dit_pos_ids,
+                    position_embeddings=position_embeddings,
+                    past_key_values=None,
+                    output_attentions=True,
+                    use_cache=False,
+                )
+                hidden_states = residual + (gate_attn * attn_output if gate_attn is not None else attn_output)
+
+                residual = hidden_states
+                hidden_states, gate_mlp = layer.post_attention_layernorm(hidden_states, cond=adarms_cond)
+                hidden_states = layer.mlp(hidden_states)
+                hidden_states = residual + (gate_mlp * hidden_states if gate_mlp is not None else hidden_states)
+
+                if layer_idx == len(action_dit.layers) - 1:
+                    last_layer_attn = attn_weights
+        finally:
+            if original_attn_impl is not None:
+                action_dit.config._attn_implementation = original_attn_impl
+
+        hidden_states, _ = action_dit.norm(hidden_states, cond=adarms_cond)
+        if last_layer_attn is None:
+            raise RuntimeError("Failed to capture last-layer action_dit attention weights.")
+        action_hidden_dim = hidden_states.shape[-1]
+        action_hidden = hidden_states.gather(
+            1,
+            valid_lens.view(-1, 1, 1).expand(-1, 1, action_hidden_dim),
+        )
+
+        token_counts = und_patch_token_mask.sum(dim=1)
+        if not torch.all(token_counts == token_counts[0]):
+            raise RuntimeError(
+                f"Inconsistent und token counts for loc perception attention tracing: {token_counts.tolist()}"
+            )
+        und_patch_token_indices = und_patch_token_mask.nonzero(as_tuple=False)[:, 1].reshape(bs, int(token_counts[0].item()))
+
+        return {
+            "action_hidden": action_hidden,
+            "last_layer_attn": last_layer_attn,
+            "action_token_index": valid_lens,
+            "und_patch_token_indices": und_patch_token_indices,
+        }
+
+    def _extract_loc_perception_attention_weights(
+        self,
+        last_layer_attn: torch.Tensor,
+        action_token_index: torch.Tensor,
+        und_patch_token_indices: torch.Tensor,
+    ) -> torch.Tensor:
+        if getattr(self.config, "loc_perception_attention_layer", "last") != "last":
+            raise ValueError("Current implementation only supports loc_perception_attention_layer='last'.")
+        if getattr(self.config, "loc_perception_attention_head_reduce", "mean") != "mean":
+            raise ValueError("Current implementation only supports loc_perception_attention_head_reduce='mean'.")
+        if getattr(self.config, "loc_perception_attention_normalize", "mean_one") != "mean_one":
+            raise ValueError("Current implementation only supports loc_perception_attention_normalize='mean_one'.")
+
+        if last_layer_attn.ndim != 4:
+            raise RuntimeError(f"Expected last_layer_attn to be [B, H, Q, K], got {tuple(last_layer_attn.shape)}")
+
+        bs, num_heads, _, kv_len = last_layer_attn.shape
+        query_indices = action_token_index.view(bs, 1, 1, 1).expand(bs, num_heads, 1, kv_len)
+        action_to_all = last_layer_attn.gather(dim=2, index=query_indices).squeeze(2)
+        patch_indices = und_patch_token_indices[:, None, :].expand(bs, num_heads, und_patch_token_indices.shape[1])
+        patch_weights = action_to_all.gather(dim=2, index=patch_indices).mean(dim=1)
+
+        eps = float(getattr(self.config, "loc_perception_attention_eps", 1e-6))
+        patch_weights = patch_weights / patch_weights.mean(dim=-1, keepdim=True).clamp_min(eps)
+
+        if getattr(self.config, "loc_perception_attention_detach", True):
+            patch_weights = patch_weights.detach()
+        return patch_weights
+
+    def _extract_teacher_gt_loc_perception_attention_weights(
+        self,
+        fps_image: torch.Tensor,
+        map_image: torch.Tensor,
+        loc_input_ids: torch.Tensor,
+        loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        task_id: torch.Tensor,
+        actions: torch.Tensor,
+    ) -> torch.Tensor:
+        if getattr(self.config, "loc_perception_attention_source", "teacher_gt") != "teacher_gt":
+            raise ValueError("Current implementation only supports loc_perception_attention_source='teacher_gt'.")
+
+        combined_und_images = torch.cat([fps_image, map_image], dim=0)
+        loc_task_id = torch.zeros_like(task_id)
+
+        (
+            _,
+            position_ids,
+            attention_mask,
+            _,
+            inputs_embeds,
+            _,
+            _,
+            combined_img_idx,
+            combined_image_embeds,
+            _,
+        ) = self.prepare_inputs_labels_for_multimodal(
+            loc_input_ids,
+            None,
+            attention_mask,
+            None,
+            loc_labels,
+            None,
+            combined_und_images,
+            None,
+            None,
+            None,
+            loc_task_id,
+        )
+
+        und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...]
+        aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]
+        und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]
+        aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]
+
+        position_ids = torch.cumsum(attention_mask, dim=1) - 1
+        position_ids[position_ids < 0] = 0
+
+        outputs = self.model.language_model(
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            inputs_embeds=inputs_embeds,
+            output_hidden_states=True,
+            return_dict=True,
+            use_cache=False,
+        )
+        hidden_states = outputs.hidden_states[-1]
+
+        if und_image_embeds is not None and und_img_idx is not None:
+            hidden_states[und_img_idx] = und_image_embeds.to(hidden_states.device).flatten(0, 1)
+        if aux_image_embeds is not None and aux_img_idx is not None:
+            hidden_states[aux_img_idx] = aux_image_embeds.to(hidden_states.device).flatten(0, 1)
+
+        trace = self._forward_action_dit_with_attention_trace(
+            hidden_states=hidden_states,
+            attention_mask=attention_mask,
+            position_ids=position_ids,
+            actions=actions,
+            und_patch_token_mask=und_img_idx,
+        )
+        return self._extract_loc_perception_attention_weights(
+            last_layer_attn=trace["last_layer_attn"],
+            action_token_index=trace["action_token_index"],
+            und_patch_token_indices=trace["und_patch_token_indices"],
+        )
+
+    def forward_for_loc_perception_loss(
+        self,
+        sigmas: torch.Tensor,
+        pred_pixels_input: torch.Tensor,
+        aux_loc_input_ids: torch.Tensor,
+        aux_loc_labels: torch.Tensor,
+        attention_mask: torch.Tensor,
+        und_image_map: torch.Tensor,
+        gen_image: torch.Tensor,
+        task_id: torch.Tensor,
+        loss_mask: torch.Tensor,
+        actions: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        teacher_type = getattr(self.config, "loc_perception_teacher_type", "current_loc_head")
+        if teacher_type != "current_loc_head":
+            raise ValueError("Current implementation only supports loc_perception_teacher_type='current_loc_head'.")
+        if getattr(self.config, "loc_perception_use_ema_teacher", False):
+            raise NotImplementedError("loc_perception_use_ema_teacher is reserved for a future experiment.")
+        if getattr(self.config, "loc_perception_feature_source", "action_dit_projector") != "action_dit_projector":
+            raise ValueError("Current implementation only supports loc_perception_feature_source='action_dit_projector'.")
+        if not getattr(self.config, "loc_perception_use_und_tokens_only", True):
+            raise ValueError("Current implementation requires loc_perception_use_und_tokens_only=True.")
+
+        student_feat = self._extract_loc_repa_prefix_features(
+            fps_image=pred_pixels_input,
+            map_image=und_image_map,
+            loc_input_ids=aux_loc_input_ids,
+            loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            task_id=task_id,
+            use_teacher=False,
+            enable_grad=True,
+        )
+        teacher_feat = self._extract_loc_repa_prefix_features(
+            fps_image=gen_image,
+            map_image=und_image_map,
+            loc_input_ids=aux_loc_input_ids,
+            loc_labels=aux_loc_labels,
+            attention_mask=attention_mask,
+            task_id=task_id,
+            use_teacher=False,
+            enable_grad=not getattr(self.config, "loc_perception_teacher_detach", True),
+        )
+        attention_weights = None
+        if getattr(self.config, "loc_perception_use_attention_weight", False):
+            if actions is None:
+                raise ValueError("loc perception attention weighting requires gt actions for loc_sampled action tokens.")
+            attention_context = (
+                torch.no_grad()
+                if getattr(self.config, "loc_perception_attention_detach", True)
+                else torch.enable_grad()
+            )
+            with attention_context:
+                attention_weights = self._extract_teacher_gt_loc_perception_attention_weights(
+                    fps_image=gen_image,
+                    map_image=und_image_map,
+                    loc_input_ids=aux_loc_input_ids,
+                    loc_labels=aux_loc_labels,
+                    attention_mask=attention_mask,
+                    task_id=task_id,
+                    actions=actions,
+                )
+        return self._compute_loc_perception_loss(
+            student_feat,
+            teacher_feat,
+            sigmas,
+            loss_mask,
+            attention_weights=attention_weights,
+        )
 
     def _normalize_for_external_loc_model(self, image_01: torch.Tensor) -> torch.Tensor:
         target_size = int(getattr(self.config, "external_loc_input_size", 224))
@@ -4003,6 +4395,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             masked_repa_loss = zero_loss
             masked_loc_aux_loss = zero_loss
             masked_loc_repa_loss = zero_loss
+            masked_loc_perception_loss = zero_loss
             masked_gen_aux_loss = zero_loss
             masked_loc_loss = zero_loss
             masked_loc_loss_valid5 = zero_loss
@@ -4072,13 +4465,20 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_gen_loss = (gen_loss * genbrh_loss_mask[:, 1]).mean()
                     masked_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_repa_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
+                    masked_loc_perception_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_loc_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     masked_gen_aux_loss = torch.zeros((), device=masked_gen_loss.device, dtype=torch.float32)
                     alpha_loc_aux_value = float(getattr(self.model.config, "alpha_loc_aux_loss", 0.0))
+                    alpha_loc_perception_value = float(getattr(self.model.config, "alpha_loc_perception_loss", 0.0))
                     run_aux_loc_this_step = (
                         bool(getattr(self.config, "is_loc_aux_loss", False))
                         and alpha_loc_aux_value > 0.0
                         and genbrh_actions is not None
+                    )
+                    run_loc_perception_this_step = (
+                        bool(getattr(self.config, "is_loc_perception_loss", False))
+                        and alpha_loc_perception_value > 0.0
+                        and genbrh_gen_image is not None
                     )
                     run_aux_loc_em_this_step = (
                         run_aux_loc_this_step
@@ -4102,6 +4502,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     need_pred_pixels = (
                         (run_aux_loc_this_step and not run_aux_loc_multi_this_step)
                         or bool(getattr(self.config, "is_loc_repa_loss", False))
+                        or run_loc_perception_this_step
                     )
                     if need_pred_pixels:
                         pred_pixels_input, _ = self._decode_pred_pixels_input_from_flow(
@@ -4122,6 +4523,20 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                             gen_image=genbrh_gen_image,
                             task_id=torch.zeros_like(genbrh_task_id),
                             loss_mask=genbrh_loss_mask,
+                        )
+
+                    if run_loc_perception_this_step and pred_pixels_input is not None:
+                        masked_loc_perception_loss = self.forward_for_loc_perception_loss(
+                            sigmas=sigmas,
+                            pred_pixels_input=pred_pixels_input,
+                            aux_loc_input_ids=genbrh_aux_loc_input_ids,
+                            aux_loc_labels=genbrh_aux_loc_labels,
+                            attention_mask=genbrh_aux_loc_attention_mask,
+                            und_image_map=genbrh_und_image,
+                            gen_image=genbrh_gen_image,
+                            task_id=torch.zeros_like(genbrh_task_id),
+                            loss_mask=genbrh_loss_mask,
+                            actions=genbrh_actions,
                         )
 
                     if getattr(self.config, "is_repa_loss", False):
@@ -4217,6 +4632,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 masked_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_loc_repa_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
+                masked_loc_perception_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
                 masked_gen_aux_loss = torch.nn.MSELoss()(actions, torch.clone(actions.detach())).to(torch.float32)
             # bs=8显存占用=13316MiB
             # ==========================================
@@ -4515,12 +4931,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         alpha_gen_aux_loss = torch.tensor(getattr(self.model.config, "alpha_gen_aux_loss", 0.0)).to(torch.float32)
         alpha_repa_loss = torch.tensor(getattr(self.model.config, "alpha_repa_loss", 0.0)).to(torch.float32)
         alpha_loc_repa_loss = torch.tensor(getattr(self.model.config, "alpha_loc_repa_loss", 0.0)).to(torch.float32)
+        alpha_loc_perception_loss = torch.tensor(getattr(self.model.config, "alpha_loc_perception_loss", 0.0)).to(torch.float32)
         alpha_loc_loss = torch.tensor(self.model.config.alpha_loc_loss).to(torch.float32)
         total_loss = (
             masked_gen_loss
             + masked_repa_loss * alpha_repa_loss
             + masked_loc_loss * alpha_loc_loss
             + masked_loc_repa_loss * alpha_loc_repa_loss
+            + masked_loc_perception_loss * alpha_loc_perception_loss
             + masked_loc_aux_loss * alpha_loc_aux_loss
             + masked_gen_aux_loss * alpha_gen_aux_loss
         )
@@ -4575,6 +4993,17 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "alpha_weighted_loc_loss": (masked_loc_loss * alpha_loc_loss).detach().cpu().numpy().item(),
                 "alpha_weighted_loc_loss_over_gen_loss": (
                     (masked_loc_loss * alpha_loc_loss / masked_gen_loss).detach().cpu().numpy().item()
+                    if masked_gen_loss.item() > 0 else None
+                ),
+
+                "loc_perception_loss": masked_loc_perception_loss.detach().cpu().numpy().item(),
+                "alpha_loc_perception": alpha_loc_perception_loss.detach().cpu().numpy().item(),
+                "loc_perception_active": float(alpha_loc_perception_loss.item() > 0),
+                "alpha_weighted_loc_perception_loss": (
+                    masked_loc_perception_loss * alpha_loc_perception_loss
+                ).detach().cpu().numpy().item(),
+                "alpha_weighted_loc_perception_loss_over_gen_loss": (
+                    (masked_loc_perception_loss * alpha_loc_perception_loss / masked_gen_loss).detach().cpu().numpy().item()
                     if masked_gen_loss.item() > 0 else None
                 ),
 
@@ -4746,21 +5175,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             else:
                 masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
         elif getattr(self.config, "use_codex_vit_regression_head", False):
-            # 临时冻结 Action Dit
-            self.model.vit_loc_fusion.requires_grad_(False)
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.requires_grad_(False)
-                self.model.action_dit_projector.requires_grad_(False)
-            self.model.regression_loc_head.requires_grad_(False)
-
-            self.model.vit_loc_fusion.eval()
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.eval()
-                self.model.action_dit_projector.eval()
-            self.model.regression_loc_head.eval()
-
-            # with torch.no_grad():
-            if 1:
+            module_states = self._freeze_aux_loc_head_modules()
+            try:
                 actions_pred = self._forward_codex_vit_regression_head(
                     pred_pixels_input,
                     und_image_map,
@@ -4769,32 +5185,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
                 else:
                     masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
-
-            self.model.vit_loc_fusion.requires_grad_(True)
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.requires_grad_(True)
-                self.model.action_dit_projector.requires_grad_(True)
-            self.model.regression_loc_head.requires_grad_(True)
-
-            self.model.vit_loc_fusion.train()
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.train()
-                self.model.action_dit_projector.train()
-            self.model.regression_loc_head.train()
+            finally:
+                self._restore_module_states(module_states)
         elif getattr(self.config, "use_vit_cls_regression_head", False):
-            # 临时冻结 Action Dit
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.requires_grad_(False)
-                self.model.action_dit_projector.requires_grad_(False)
-            self.model.regression_loc_head.requires_grad_(False)
-
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.eval()
-                self.model.action_dit_projector.eval()
-            self.model.regression_loc_head.eval()
-
-            # with torch.no_grad():
-            if 1:
+            module_states = self._freeze_aux_loc_head_modules()
+            try:
                 actions_pred = self._forward_vit_regression_head(
                     pred_pixels_input,
                     und_image_map,
@@ -4803,16 +5198,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
                 else:
                     masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
-
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.requires_grad_(True)
-                self.model.action_dit_projector.requires_grad_(True)
-            self.model.regression_loc_head.requires_grad_(True)
-
-            if getattr(self.config, "is_action_dit_projector", False):
-                self.model.action_dit_norm.train()
-                self.model.action_dit_projector.train()
-            self.model.regression_loc_head.train()
+            finally:
+                self._restore_module_states(module_states)
         else:
             # 获取 Gen 任务原本的 Map 输入 (在 prepare_inputs 里它是 und_image)
             combined_und_images = torch.cat([pred_pixels_input, und_image_map], dim=0)
@@ -4848,19 +5235,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             aux_image_embeds = combined_image_embeds[combined_image_embeds.size(0)//2:, ...]#torch.Size([128, 256, 896])
 
             if getattr(self.config, "use_vit_regression_head", False):
-                # 临时冻结 Action Dit
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.requires_grad_(False)
-                    self.model.action_dit_projector.requires_grad_(False)
-                self.model.regression_loc_head.requires_grad_(False)
-
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.eval()
-                    self.model.action_dit_projector.eval()
-                self.model.regression_loc_head.eval()
-
-                # with torch.no_grad():
-                if 1:
+                module_states = self._freeze_aux_loc_head_modules()
+                try:
                     # und_feature = self.get_model().img_pooler(und_image_embeds)
                     # aux_feature = self.get_model().img_pooler(aux_image_embeds)
                     # und_feature = und_image_embeds[:, 0, :]
@@ -4875,17 +5251,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         masked_loc_loss = self._compute_codex_loc_regression_loss(actions_pred, actions).to(torch.float32)
                     else:
                         masked_loc_loss = torch.nn.MSELoss()(actions_pred, actions).to(torch.float32)
-
-                # 恢复训练 Action Dit
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.requires_grad_(True)
-                    self.model.action_dit_projector.requires_grad_(True)
-                self.model.regression_loc_head.requires_grad_(True)
-
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.train()
-                    self.model.action_dit_projector.train()
-                self.model.regression_loc_head.train()
+                finally:
+                    self._restore_module_states(module_states)
 
             else:
                 # --- B. Main LLM Forward (Understanding) ---
@@ -4916,31 +5283,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 if aux_image_embeds is not None and und_img_idx is not None: #aux_img_idx.sum()/128 = 57
                     hidden_states[aux_img_idx] = aux_image_embeds[is_loc_task].to(hidden_states.device).flatten(0,1)#hidden_states[aux_img_idx].shape=torch.Size([14592, 896]) #aux_image_embeds[is_loc_task].shape=torch.Size([2, 256, 896])
 
-                # 临时冻结 Action Dit
-                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_connector.requires_grad_(False)
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.requires_grad_(False)
-                    self.model.action_dit_projector.requires_grad_(False)
-                self.model.action_dit.requires_grad_(False)
-                self.model.action_in_proj.requires_grad_(False)
-                self.model.action_out_proj.requires_grad_(False)
-                self.model.time_mlp_in.requires_grad_(False)
-                self.model.time_mlp_out.requires_grad_(False)
-                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_connector.eval()
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.eval()
-                    self.model.action_dit_projector.eval()
-                self.model.action_dit.eval()
-                self.model.action_in_proj.eval()
-                self.model.action_out_proj.eval()
-                self.model.time_mlp_in.eval()
-                self.model.time_mlp_out.eval()
+                module_states = self._freeze_aux_loc_head_modules()
                 # bs=8显存占用=13314MiB
                 # 5. Original LOCALIZATION Branch (Flow Matching Path)
                 # with torch.no_grad():
-                if 1:
+                try:
                     actions = actions#torch.Size([128, 5])
                     noise = self.sample_noise(actions.shape, actions.device)#torch.Size([128, 5])
                     time = self.sample_time(actions.shape[0], actions.device)#torch.Size([128])
@@ -5032,28 +5379,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                     # Apply Mask: Only count aux loc loss for Gen samples
                     masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
-
-                # 恢复训练 Action Dit
-                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_connector.requires_grad_(True)
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.requires_grad_(True)
-                    self.model.action_dit_projector.requires_grad_(True)
-                self.model.action_dit.requires_grad_(True)
-                self.model.action_in_proj.requires_grad_(True)
-                self.model.action_out_proj.requires_grad_(True)
-                self.model.time_mlp_in.requires_grad_(True)
-                self.model.time_mlp_out.requires_grad_(True)
-                if getattr(self.config, "use_pi05_action_dit", False) and getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_connector.train()
-                if getattr(self.config, "is_action_dit_projector", False):
-                    self.model.action_dit_norm.train()
-                    self.model.action_dit_projector.train()
-                self.model.action_dit.train()
-                self.model.action_in_proj.train()
-                self.model.action_out_proj.train()
-                self.model.time_mlp_in.train()
-                self.model.time_mlp_out.train()
+                finally:
+                    self._restore_module_states(module_states)
 
         # # =================================================================
         # # [修复结束] 无论如何，恢复 Gradient Checkpointing 的原始状态
