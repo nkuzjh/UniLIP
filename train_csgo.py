@@ -32,6 +32,7 @@ from unilip.conversation import Conversation, SeparatorStyle
 from tqdm import tqdm
 from copy import deepcopy
 from transformers import TrainerCallback, PrinterCallback, ProgressCallback
+from transformers.trainer_callback import TrainerState
 
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 
@@ -653,6 +654,25 @@ def _get_current_train_batch_unit(training_args) -> int:
     return max(1, int(training_args.per_device_train_batch_size))
 
 
+def _sanitize_trainer_state_for_resume(trainer_state: Dict, trainer_state_path: str) -> bool:
+    valid_trainer_state_keys = set(getattr(TrainerState, "__dataclass_fields__", {}).keys())
+    if not valid_trainer_state_keys:
+        return False
+
+    invalid_keys = sorted(key for key in trainer_state.keys() if key not in valid_trainer_state_keys)
+    if not invalid_keys:
+        return False
+
+    for key in invalid_keys:
+        trainer_state.pop(key, None)
+    logging.warning(
+        "Removed unsupported keys from resume trainer_state.json at %s: %s",
+        trainer_state_path,
+        invalid_keys,
+    )
+    return True
+
+
 def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[str], csgo_config: Dict) -> Optional[str]:
     if checkpoint_path is None:
         return None
@@ -693,6 +713,7 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
 
     with open(trainer_state_path, "r") as f:
         trainer_state = json.load(f)
+    state_changed = _sanitize_trainer_state_for_resume(trainer_state, trainer_state_path)
 
     checkpoint_training_args = _load_checkpoint_training_args(checkpoint_path)
     logging.warning("Resume checkpoint Loaded:  %s", checkpoint_training_args)
@@ -772,27 +793,22 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
 
     if rewrite_state_batch:
         new_state_batch_size = int(training_args.per_device_train_batch_size)
-        state_changed = False
         if trainer_state.get("train_batch_size", None) != new_state_batch_size:
             trainer_state["train_batch_size"] = new_state_batch_size
             state_changed = True
-        if trainer_state.get("per_device_train_batch_size", None) != new_state_batch_size:
-            trainer_state["per_device_train_batch_size"] = new_state_batch_size
-            state_changed = True
-        if trainer_state.get("gradient_accumulation_steps", None) != int(training_args.gradient_accumulation_steps):
-            trainer_state["gradient_accumulation_steps"] = int(training_args.gradient_accumulation_steps)
-            state_changed = True
-        if state_changed:
-            tmp_path = f"{trainer_state_path}.{os.getpid()}.tmp"
-            with open(tmp_path, "w") as f:
-                json.dump(trainer_state, f, indent=2)
-            os.replace(tmp_path, trainer_state_path)
-            logging.info(
-                "Rewrote resume trainer_state batch fields in %s: train_batch_size=%s, gradient_accumulation_steps=%s.",
-                trainer_state_path,
-                new_state_batch_size,
-                training_args.gradient_accumulation_steps,
-            )
+
+    if state_changed:
+        tmp_path = f"{trainer_state_path}.{os.getpid()}.tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(trainer_state, f, indent=2)
+        os.replace(tmp_path, trainer_state_path)
+        logging.info(
+            "Rewrote resume trainer_state in %s: train_batch_size=%s. "
+            "Current gradient_accumulation_steps=%s is kept in TrainingArguments.",
+            trainer_state_path,
+            trainer_state.get("train_batch_size", None),
+            training_args.gradient_accumulation_steps,
+        )
 
     return checkpoint_path
 
