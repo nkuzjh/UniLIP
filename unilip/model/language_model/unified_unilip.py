@@ -2184,6 +2184,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         pred_pixels_input = (pred_pixels_norm - 0.5) / 0.5
         return pred_pixels_input, pred_pixels_norm
 
+    def _resize_image_to_match(self, image: Optional[torch.Tensor], reference: Optional[torch.Tensor]) -> Optional[torch.Tensor]:
+        if image is None or reference is None:
+            return image
+        target_hw = reference.shape[-2:]
+        if image.shape[-2:] == target_hw:
+            return image
+        return F.interpolate(image, size=target_hw, mode="bilinear", align_corners=False)
+
     def _encode_pixels_to_target_latents(
         self,
         pixel_values: torch.Tensor,
@@ -3766,6 +3774,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if self.get_loc_repa_teacher() is None:
             raise RuntimeError("loc_repa teacher is not initialized before forward.")
 
+        gen_image = self._resize_image_to_match(gen_image, pred_pixels_input)
+        und_image_map = self._resize_image_to_match(und_image_map, pred_pixels_input)
+
         student_feat = self._extract_loc_repa_prefix_features(
             fps_image=pred_pixels_input,
             map_image=und_image_map,
@@ -4116,6 +4127,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             )
         if not getattr(self.config, "loc_perception_use_und_tokens_only", True):
             raise ValueError("Current implementation requires loc_perception_use_und_tokens_only=True.")
+
+        gen_image = self._resize_image_to_match(gen_image, pred_pixels_input)
+        und_image_map = self._resize_image_to_match(und_image_map, pred_pixels_input)
 
         if feature_source == "action_dit_projector":
             student_feat = self._extract_loc_repa_prefix_features(
