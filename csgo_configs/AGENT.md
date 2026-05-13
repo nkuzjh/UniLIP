@@ -10,18 +10,33 @@
 2. 这种提升是否来自 `aux_loc_loss`，还是仅仅来自 joint multitask。
 3. 在 unified 框架下，进一步引入表征对齐类监督时，哪种 teacher / 哪种表征挂点更有效。
 
-## UniLIP-1B Optimization Defaults
+## UniLIP Optimization and LoRA Defaults
 
-本节记录 `UniLIP-1B` 当前 CS:GO unified 训练的推荐优化超参。基础模型是 `InternVL3-1B` 风格的 MLLM，因此不要把所有大模块都放进同一个 `learning_rate=1e-4` 参数组：full finetune 时 LLM / ViT 类 backbone 应使用 `1e-6 ~ 1e-5` 量级，`1e-4 ~ 5e-4` 更适合 projector / head / LoRA adapter。
+本节记录当前 CS:GO unified 训练的学习率和 LoRA 约定。关键前提：原始 UniLIP 的 `learning_rate=1e-4` 是在冻结主 `language_model`、`vision_tower`、`multi_modal_projector`、VAE/decoder 后，用来训练 generation connector 与 DiT 的学习率；不要把它直接理解成全量 LLM / ViT 微调学习率。
 
-| 模块 | Full Finetune LR | LoRA LR | LoRA 配置 | 备注 |
+### Original UniLIP Finetune Baseline
+
+原始 UniLIP 中对外的 `UniLIP-3B` 在代码脚本里对应 `2b` 路线：`InternVL3-2B` + `SANA-1.6B`，README 中按总生成系统规模称为 3B。`UniLIP-1B` 和 `UniLIP-3B` 在 stage2 pretraining 与 stage3 SFT 的微调开关相同，只是基座与 DiT 规模不同。
+
+| 模型 | 脚本 | 基座 / DiT | 微调阶段可学习模块 | 冻结模块 | 原始 LR 配置 |
+|---|---|---|---|---|---|
+| `UniLIP-1B` | `run_unilip_1b_stage2.sh`, `run_unilip_1b_stage3.sh` | `InternVL3-1B(-hf)` + `SANA-0.6B` | `dit`, `llm_connector`, `projector`, `latent_queries` | 主 `language_model`, `vision_tower`, `multi_modal_projector`, `vae_decoder` | `learning_rate=1e-4`, `min_lr=1e-5`, `weight_decay=0`, `warmup_ratio=0.003`, `cosine_with_min_lr` |
+| `UniLIP-3B` | `run_unilip_2b_stage2.sh`, `run_unilip_2b_stage3.sh` | `InternVL3-2B(-hf)` + `SANA-1.6B` | `dit`, `llm_connector`, `projector`, `latent_queries` | 主 `language_model`, `vision_tower`, `multi_modal_projector`, `vae_decoder` | 同 `UniLIP-1B` |
+| stage1 connector training | `run_unilip_1b_stage1.sh`, `run_unilip_2b_stage1.sh` | 同各自模型 | `llm_connector`, `projector`, `latent_queries` | `dit`, 主 `language_model`, `vision_tower`, `multi_modal_projector`, VAE/decoder | 同 `learning_rate=1e-4` |
+
+因此 CS:GO 继续训练的默认基线应保持：generation `dit` 和 connector 类模块可以从 `1e-4` 起；主 LLM / ViT 若仍冻结，不需要单独 LR；若解冻或 LoRA 化，必须独立分组。
+
+### CS:GO Unified LR Groups
+
+| 模块 | Full / Trainable LR | LoRA LR | LoRA 配置 | 备注 |
 |---|---:|---:|---|---|
-| `language_model` | `1e-5` | `1e-4` | `r=16`, `alpha=32`, `dropout=0.05`; target: `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` | InternVL3-1B full LLM 官方脚本使用 `1e-5`；LoRA 时用 `llm_lora_lr` 单独控制 |
-| `vision_tower` | `1e-6 ~ 3e-6` | `5e-5` | `r=8~16`, `alpha=2r`, `dropout=0.05`; target: `qkv,proj,fc1,fc2` | 默认建议 freeze；若解冻必须低 LR，避免破坏视觉表征 |
-| `multi_modal_projector` | `1e-4` | full train `1e-4` | 不建议 LoRA | 小对齐层，直接 full train |
-| `llm_connector` | `1e-5 ~ 2e-5` | `1e-4` | `r=16`, `alpha=32`, `dropout=0.05`; target 同 LLM | 它是 LLM slice，full 时按 LLM 类模块处理 |
-| `projector` / `latent_queries` | `1e-4` | full train `1e-4` | 不建议 LoRA | connector 到生成分支的对齐层 |
-| `dit` | `2e-5 ~ 5e-5` | `5e-5 ~ 1e-4` | `r=16`, `alpha=16~32`, `dropout=0.05`; target: `to_q,to_k,to_v,to_out.0,linear_1,linear_2` | 生成分支主干，LoRA 可从 `5e-5` 起 |
+| 主 `language_model` | freeze；解冻起点 `1e-5` | `1e-4` | `r=16`, `alpha=32`, `dropout=0.05`; target: `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` | 原始 UniLIP stage2/3 冻结主 LLM；只有 `llm_train_mode=full/lora` 时才训练 |
+| shared LLM tail | `1e-5 ~ 2e-5` | `1e-4` | `shared_llm_tail_lora_r=16`, `alpha=32`, `dropout=0.05`; target 同 LLM | 用于 `shared_tail_full/shared_tail_lora`，不要同时打开 whole-LLM 训练 |
+| `vision_tower` | freeze；解冻 `1e-6 ~ 3e-6` | `5e-5` | `r=8~16`, `alpha=2r`, `dropout=0.05`; target: `qkv,proj,fc1,fc2` | 原始 UniLIP 默认冻结；若解冻必须低 LR，避免破坏视觉表征 |
+| `multi_modal_projector` | freeze；仅 `train_mm_projector_only` 时 `1e-4` | full train `1e-4` | 不建议 LoRA | 原始 UniLIP stage2/3 冻结；CS:GO 如需重新对齐再打开 |
+| `llm_connector` | `1e-4` | `1e-4` | `r=8` when global `lora_r=16`, `alpha=32`, `dropout=0.05`; target 同 LLM | 原始 UniLIP 可学习模块；当前实现对 connector LoRA 使用 `lora_r // 2` |
+| `projector` / `latent_queries` | `1e-4` | full train `1e-4` | 不建议 LoRA | 原始 UniLIP 可学习模块；connector 到生成分支的对齐层 |
+| generation `dit` | `1e-4`；不稳时 `5e-5` | `5e-5 ~ 1e-4` | `r=16`, `alpha=16~32`, `dropout=0.05`; target: `to_q,to_k,to_v,to_out.0,linear_1,linear_2` | 原始 UniLIP stage2/3 full train；CS:GO joint loss 抖动时先降到 `5e-5` |
 | `action_dit` | `5e-5 ~ 1e-4` | `5e-5 ~ 1e-4` | `r=16`, `alpha=16~32`, `dropout=0.05`; target: `q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj` | Pi0.5 初始化建议 `5e-5`；新训 loc 分支可试 `1e-4` |
 | `action_dit_connector` | `1e-4` | full train `1e-4` | 不建议 LoRA | 小连接层，保持 full train |
 | `action_dit_norm` | `5e-4` | full train `5e-4` | 不建议 LoRA | norm / head 类参数量小 |
@@ -32,20 +47,22 @@
 | `cross_view_fusion` | `5e-4` | full train `5e-4` | 不建议 LoRA | `use_vit_regression_head=True` |
 | `vit_loc_fusion` | `5e-4` | full train `5e-4` | 不建议 LoRA | `use_codex_vit_regression_head=True` |
 | `loc_learnable_query` | `5e-4` | full train `5e-4` | 不建议 LoRA | 当前项目已有 `loc_learnable_query_lr` |
-| `vae_decoder` | freeze；必须训则 `1e-6` | freeze | 不建议 LoRA | 不建议和主干一起训练 |
+| VAE / decoder | freeze；必须训则 `1e-6` | freeze | 不建议 LoRA | 原始 UniLIP stage2/3 冻结，不建议和主干一起训练 |
 
 推荐 full finetune 起点：
 
 ```yaml
 llm_train_mode: full
 llm_lr: 1.0e-5
-learning_rate: 5.0e-5
+learning_rate: 1.0e-4
 mm_projector_lr: 1.0e-4
 action_dit_lr: 5.0e-5
 action_dit_projector_lr: 5.0e-4
-weight_decay: 0.05
-warmup_ratio: 0.03
-lr_scheduler_type: cosine
+weight_decay: 0.0
+warmup_ratio: 0.003
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr: 1.0e-5
 ```
 
 推荐 LoRA 起点：
@@ -61,21 +78,27 @@ learning_rate: 1.0e-4
 mm_projector_lr: 1.0e-4
 action_dit_lr: 5.0e-5
 action_dit_projector_lr: 5.0e-4
-weight_decay: 0.01
-warmup_ratio: 0.03
-lr_scheduler_type: cosine
+weight_decay: 0.0
+warmup_ratio: 0.003
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr: 1.0e-5
 ```
 
 使用原则：
 
-- Full finetune 优先单独给 `language_model`、`vision_tower`、`llm_connector`、`dit/action_dit`、heads/projectors 分组；不要让 LLM 或 ViT 默认落入 `learning_rate=1e-4`。
+- 原始 UniLIP 风格继续训练：保持 `llm_train_mode=frozen`, `fix_vit=True`, `fix_connect=False`, `fix_dit=False`，让 `learning_rate=1e-4` 只覆盖 generation `dit`、`llm_connector`、`projector`、`latent_queries` 以及 CS:GO 新增可学习模块。
+- Full finetune 时必须单独给主 `language_model`、`vision_tower`、shared tail、`action_dit`、heads/projectors 分组；不要让 LLM 或 ViT 默认落入 `learning_rate=1e-4`。
+- 当前 `inject_lora_to_sub_module` 会在 `is_lora=True` 时按开关给 `vision_tower`、主 `language_model`、`llm_connector`、generation `dit`、`action_dit` 注入 LoRA，并手动保持 heads/projectors full train；原始 UniLIP stage2/3 本身不使用 LoRA。
 - LoRA 主要节省显存和 optimizer state，不保证单 step 更快；forward 仍要跑完整 base，并额外增加 LoRA adapter matmul。
-- 如果 aux-loc / action loss 抖动，优先把 `action_dit_lr` 降到 `5e-5`，或把 `lora_alpha` 从 `32` 降到 `16`；不要一开始降低 rank。
-- 如果显存允许且数据量足够，`r=32, alpha=64` 可作为第二组 LoRA 实验；默认仍从 `r=16, alpha=32` 起。
+- 如果 aux-loc / action loss 抖动，优先把 `action_dit_lr` 或 generation `dit` 的有效 LR 降到 `5e-5`，或把 `lora_alpha` 从 `32` 降到 `16`；不要一开始降低 rank。
+- 如果显存允许且数据量足够，`r=32, alpha=64` 可作为第二组 LoRA 实验；默认仍从 `r=16, alpha=32` 起。注意 `llm_connector` 和 `vision_tower` 在当前实现中使用 `lora_r // 2`。
 - `vision_tower` 默认 freeze。若必须训练，需要独立低 LR 参数组，推荐 `1e-6 ~ 3e-6`。
 
 参考依据：
 
+- 原始 UniLIP stage2 / stage3 脚本：`scripts/run_unilip_1b_stage2.sh`, `scripts/run_unilip_1b_stage3.sh`, `scripts/run_unilip_2b_stage2.sh`, `scripts/run_unilip_2b_stage3.sh` 均使用 `fix_llm=True`, `fix_dit=False`, `fix_connect=False`, `learning_rate=1e-4`, `weight_decay=0`, `warmup_ratio=0.003`, `cosine_with_min_lr(min_lr=1e-5)`。
+- 原始 UniLIP 可学习模块由 `unilip/model/unilip_internvl.py::initialize_vision_modules` 和 `unilip/train/train_stage{2,3}.py` 的 `fix_vit/fix_llm` 逻辑共同决定：stage2/3 冻结主 LLM / ViT / projector / VAE，训练 `dit`、`llm_connector`、`projector`、`latent_queries`。
 - InternVL3 finetune 文档：`InternVL3-1B` full / LoRA finetune 资源说明，并默认 freeze visual encoder。<https://internvl.readthedocs.io/en/latest/internvl3.0/finetune.html>
 - OpenGVLab InternVL3-1B full finetune 脚本：`freeze_llm=False`, `freeze_mlp=False`, `freeze_backbone=True`, `learning_rate=1e-5`, `weight_decay=0.05`, `warmup_ratio=0.03`, cosine。<https://raw.githubusercontent.com/OpenGVLab/InternVL/main/internvl_chat/shell/internvl3.0/2nd_finetune/internvl3_1b_dynamic_res_2nd_finetune_full.sh>
 - OpenGVLab InternVL LoRA 实现：vision LoRA target 为 `attn.qkv/attn.proj/mlp.fc1/mlp.fc2`，Qwen/LLaMA LLM target 为 `q/k/v/o + gate/down/up`，默认 `alpha=2*r`。<https://raw.githubusercontent.com/OpenGVLab/InternVL/main/internvl_chat/internvl/model/internvl_chat/modeling_internvl_chat.py>

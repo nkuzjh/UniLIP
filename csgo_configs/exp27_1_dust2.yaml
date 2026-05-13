@@ -66,3 +66,9 @@ test_maps: ['de_dust2']
 
 ### lora
 is_lora: False
+
+# ### resume batch-size control
+# resume_checkpoint_train_batch_size: 64
+# resume_checkpoint_gradient_accumulation_steps: 1
+# resume_checkpoint_world_size: 2
+# resume_target_effective_batch_size: 128

@@ -256,6 +256,12 @@ class TrainingArguments(transformers.TrainingArguments):
     profile_dir="./profiler_logs", # PyTorch Profiler精确查看训练时间耗费
     enable_step_timing: bool = True
     step_timing_sync_cuda: bool = True
+    resume_preserve_effective_batch_size: bool = True
+    resume_target_effective_batch_size: Optional[int] = None
+    resume_rewrite_trainer_state_batch_size: bool = True
+    resume_checkpoint_train_batch_size: Optional[int] = None
+    resume_checkpoint_gradient_accumulation_steps: Optional[int] = None
+    resume_checkpoint_world_size: Optional[int] = None
 
 
 
@@ -597,6 +603,197 @@ def load_partial_checkpoint(model, ckpt_path: str, prefixes: List[str], tag: str
     if shape_mismatch_keys:
         logging.info("Partial checkpoint shape mismatches for %s (showing up to 10): %s", tag, shape_mismatch_keys[:10])
     logging.info(msg)
+
+
+def get_latest_checkpoint_path(output_dir: str) -> Optional[str]:
+    checkpoint_paths = []
+    for path in pathlib.Path(output_dir).glob("checkpoint-*"):
+        if not path.is_dir():
+            continue
+        try:
+            step = int(path.name.split("-")[-1])
+        except ValueError:
+            continue
+        checkpoint_paths.append((step, str(path)))
+    if len(checkpoint_paths) == 0:
+        return None
+    return max(checkpoint_paths, key=lambda item: item[0])[1]
+
+
+def _load_checkpoint_training_args(checkpoint_path: str):
+    training_args_path = os.path.join(checkpoint_path, "training_args.bin")
+    if not os.path.exists(training_args_path):
+        return None
+    try:
+        return torch.load(training_args_path, map_location="cpu", weights_only=False)
+    except TypeError:
+        return torch.load(training_args_path, map_location="cpu")
+    except Exception as exc:
+        logging.warning("Failed to load checkpoint training_args.bin from %s: %s", training_args_path, exc)
+        return None
+
+
+def _get_current_world_size(training_args) -> int:
+    for env_name in ("WORLD_SIZE", "SLURM_NTASKS"):
+        env_value = os.environ.get(env_name)
+        if env_value:
+            try:
+                return max(1, int(env_value))
+            except ValueError:
+                pass
+    try:
+        return max(1, int(training_args.world_size))
+    except Exception:
+        return 1
+
+
+def _get_current_train_batch_unit(training_args) -> int:
+    # Keep the calculation aligned with the explicit experiment definition:
+    # effective_batch = per_device_train_batch_size * gradient_accumulation_steps * world_size.
+    return max(1, int(training_args.per_device_train_batch_size))
+
+
+def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[str], csgo_config: Dict) -> Optional[str]:
+    if checkpoint_path is None:
+        return None
+
+    preserve_effective_batch = bool(
+        csgo_config.get(
+            "resume_preserve_effective_batch_size",
+            training_args.resume_preserve_effective_batch_size,
+        )
+    )
+    rewrite_state_batch = bool(
+        csgo_config.get(
+            "resume_rewrite_trainer_state_batch_size",
+            training_args.resume_rewrite_trainer_state_batch_size,
+        )
+    )
+    target_effective_batch = csgo_config.get(
+        "resume_target_effective_batch_size",
+        training_args.resume_target_effective_batch_size,
+    )
+    checkpoint_train_batch_override = csgo_config.get(
+        "resume_checkpoint_train_batch_size",
+        training_args.resume_checkpoint_train_batch_size,
+    )
+    checkpoint_grad_accum_override = csgo_config.get(
+        "resume_checkpoint_gradient_accumulation_steps",
+        training_args.resume_checkpoint_gradient_accumulation_steps,
+    )
+    checkpoint_world_size_override = csgo_config.get(
+        "resume_checkpoint_world_size",
+        training_args.resume_checkpoint_world_size,
+    )
+
+    trainer_state_path = os.path.join(checkpoint_path, "trainer_state.json")
+    if not os.path.exists(trainer_state_path):
+        logging.warning("Resume checkpoint has no trainer_state.json: %s", checkpoint_path)
+        return checkpoint_path
+
+    with open(trainer_state_path, "r") as f:
+        trainer_state = json.load(f)
+
+    checkpoint_training_args = _load_checkpoint_training_args(checkpoint_path)
+
+    checkpoint_train_batch_size = checkpoint_train_batch_override
+    if checkpoint_train_batch_size is None and checkpoint_training_args is not None:
+        checkpoint_train_batch_size = getattr(checkpoint_training_args, "per_device_train_batch_size", None)
+    if checkpoint_train_batch_size is None:
+        checkpoint_train_batch_size = trainer_state.get("train_batch_size", None)
+    if checkpoint_train_batch_size is None:
+        logging.warning(
+            "Cannot infer checkpoint train batch size from %s; keep current gradient_accumulation_steps=%s.",
+            trainer_state_path,
+            training_args.gradient_accumulation_steps,
+        )
+        return checkpoint_path
+
+    checkpoint_train_batch_size = int(checkpoint_train_batch_size)
+    checkpoint_grad_accum = checkpoint_grad_accum_override
+    if checkpoint_grad_accum is None and checkpoint_training_args is not None:
+        checkpoint_grad_accum = getattr(checkpoint_training_args, "gradient_accumulation_steps", None)
+    if checkpoint_grad_accum is None:
+        raise ValueError(
+            "Cannot infer checkpoint gradient_accumulation_steps safely. "
+            "Add `resume_checkpoint_gradient_accumulation_steps` to the csgo_config for this resume. "
+            "For your old exp27_1_dust2 checkpoint this should be 1."
+        )
+    checkpoint_grad_accum = int(checkpoint_grad_accum)
+
+    current_world_size = _get_current_world_size(training_args)
+    checkpoint_world_size = checkpoint_world_size_override
+    # if checkpoint_world_size is None:
+    #     checkpoint_world_size = current_world_size
+    if checkpoint_world_size is None:
+        raise ValueError(
+            "Cannot infer checkpoint world_size safely. "
+            "Add `resume_checkpoint_world_size` to the csgo_config for this resume. "
+            "For your old exp27_1_dust2 checkpoint this should be 2."
+        )
+    checkpoint_world_size = int(checkpoint_world_size)
+
+    current_train_batch_unit = _get_current_train_batch_unit(training_args)
+
+    if preserve_effective_batch:
+        if target_effective_batch is None:
+            target_effective_batch = checkpoint_train_batch_size * checkpoint_grad_accum * checkpoint_world_size
+        target_effective_batch = int(target_effective_batch)
+        denom = current_train_batch_unit * current_world_size
+        if target_effective_batch % denom != 0:
+            raise ValueError(
+                "Cannot preserve resume effective batch size exactly: "
+                f"target_effective_batch={target_effective_batch}, "
+                f"current_train_batch_unit={current_train_batch_unit}, "
+                f"world_size={current_world_size}. "
+                "Set resume_target_effective_batch_size to a divisible value or change per_device_train_batch_size."
+            )
+        new_grad_accum = target_effective_batch // denom
+        if new_grad_accum < 1:
+            raise ValueError(
+                f"Computed invalid gradient_accumulation_steps={new_grad_accum} from target_effective_batch={target_effective_batch}."
+            )
+        if int(training_args.gradient_accumulation_steps) != new_grad_accum:
+            logging.info(
+                "Resume batch override: checkpoint_train_batch_size=%s, checkpoint_grad_accum=%s, "
+                "checkpoint_world_size=%s, current_train_batch_unit=%s, current_world_size=%s, target_effective_batch=%s, "
+                "gradient_accumulation_steps %s -> %s.",
+                checkpoint_train_batch_size,
+                checkpoint_grad_accum,
+                checkpoint_world_size,
+                current_train_batch_unit,
+                current_world_size,
+                target_effective_batch,
+                training_args.gradient_accumulation_steps,
+                new_grad_accum,
+            )
+            training_args.gradient_accumulation_steps = new_grad_accum
+
+    if rewrite_state_batch:
+        new_state_batch_size = int(training_args.per_device_train_batch_size)
+        state_changed = False
+        if trainer_state.get("train_batch_size", None) != new_state_batch_size:
+            trainer_state["train_batch_size"] = new_state_batch_size
+            state_changed = True
+        if trainer_state.get("per_device_train_batch_size", None) != new_state_batch_size:
+            trainer_state["per_device_train_batch_size"] = new_state_batch_size
+            state_changed = True
+        if trainer_state.get("gradient_accumulation_steps", None) != int(training_args.gradient_accumulation_steps):
+            trainer_state["gradient_accumulation_steps"] = int(training_args.gradient_accumulation_steps)
+            state_changed = True
+        if state_changed:
+            tmp_path = f"{trainer_state_path}.{os.getpid()}.tmp"
+            with open(tmp_path, "w") as f:
+                json.dump(trainer_state, f, indent=2)
+            os.replace(tmp_path, trainer_state_path)
+            logging.info(
+                "Rewrote resume trainer_state batch fields in %s: train_batch_size=%s, gradient_accumulation_steps=%s.",
+                trainer_state_path,
+                new_state_batch_size,
+                training_args.gradient_accumulation_steps,
+            )
+
+    return checkpoint_path
 
 
 def smart_tokenizer_and_embedding_resize(
@@ -2720,6 +2917,12 @@ def train(attn_implementation=None):
 
         training_args.output_dir = f"{training_args.output_dir}_resume_from_{resume_ckpt_path.split('/')[-2]}"
 
+    auto_resume_checkpoint_path = get_latest_checkpoint_path(training_args.output_dir)
+    auto_resume_checkpoint_path = prepare_resume_batch_size_override(
+        training_args=training_args,
+        checkpoint_path=auto_resume_checkpoint_path,
+        csgo_config=csgo_config,
+    )
 
 
     unilip_log_callback = UniLIPLogCallback()
@@ -2844,8 +3047,8 @@ def train(attn_implementation=None):
     # trainer.add_callback(ProfilerCallback(profile_dir="./profiler_logs"))
 
 
-    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-        trainer.train(resume_from_checkpoint=True)
+    if auto_resume_checkpoint_path is not None:
+        trainer.train(resume_from_checkpoint=auto_resume_checkpoint_path)
     else:
         trainer.train()
 
