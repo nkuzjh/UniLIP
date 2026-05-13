@@ -695,6 +695,7 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
         trainer_state = json.load(f)
 
     checkpoint_training_args = _load_checkpoint_training_args(checkpoint_path)
+    logging.warning("Resume checkpoint Loaded:  %s", checkpoint_training_args)
 
     checkpoint_train_batch_size = checkpoint_train_batch_override
     if checkpoint_train_batch_size is None and checkpoint_training_args is not None:
