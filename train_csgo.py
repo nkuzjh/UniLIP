@@ -2301,6 +2301,10 @@ def train(attn_implementation=None):
     model.config.aux_loc_combined_unc_min_weight = float(csgo_config.get("aux_loc_combined_unc_min_weight", 0.05))
     model.config.aux_loc_combined_share_loc_noise = csgo_config.get("aux_loc_combined_share_loc_noise", True)
     model.config.aux_loc_combined_unc_eps = float(csgo_config.get("aux_loc_combined_unc_eps", 1e-6))
+    model.config.aux_loc_timestep_weight_type = csgo_config.get("aux_loc_timestep_weight_type", "linear_1m_sigma")
+    model.config.aux_loc_low_noise_sigma_max = float(csgo_config.get("aux_loc_low_noise_sigma_max", 0.45))
+    model.config.aux_loc_exp_weight_lambda = float(csgo_config.get("aux_loc_exp_weight_lambda", 5.0))
+    model.config.aux_loc_timestep_weight_renorm = csgo_config.get("aux_loc_timestep_weight_renorm", "none")
     model.config.is_gen_aux_loss = csgo_config.get("is_gen_aux_loss", False)
     model.config.alpha_gen_aux_loss = csgo_config.get("alpha_gen_aux_loss", 0.0)
     model.config.alpha_gen_aux_schedule_steps = csgo_config.get("alpha_gen_aux_schedule_steps", None)
@@ -2604,6 +2608,17 @@ def train(attn_implementation=None):
             or model.config.use_codex_vit_regression_head
         ):
             raise ValueError("is_aux_loc_combined_em_unc_loss=True currently supports only the action-DiT loc branch.")
+
+    if model.config.aux_loc_timestep_weight_type not in {"linear_1m_sigma", "low_noise_only", "exp_sigma"}:
+        raise ValueError(
+            "aux_loc_timestep_weight_type must be one of {'linear_1m_sigma', 'low_noise_only', 'exp_sigma'}."
+        )
+    if model.config.aux_loc_low_noise_sigma_max <= 0.0 or model.config.aux_loc_low_noise_sigma_max > 1.0:
+        raise ValueError("aux_loc_low_noise_sigma_max must be in (0, 1].")
+    if model.config.aux_loc_exp_weight_lambda <= 0.0:
+        raise ValueError("aux_loc_exp_weight_lambda must be > 0.")
+    if model.config.aux_loc_timestep_weight_renorm not in {"none", "active_mean"}:
+        raise ValueError("aux_loc_timestep_weight_renorm must be one of {'none', 'active_mean'}.")
 
     if model.config.is_gen_aux_loss:
         if not model.config.is_loc_aux_loss:

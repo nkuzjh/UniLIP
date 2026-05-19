@@ -2580,7 +2580,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loc_error = v_t_pred.float() - u_t.float()
         raw_mse = loc_error.square().mean(dim=[1, 2])
         raw_l1 = loc_error.abs().mean(dim=[1, 2])
-        weight = (1.0 - gen_sigma_for_weight).clamp(min=0).reshape(-1).to(torch.float32)
+        weight, timestep_active_mask = self._compute_aux_loc_timestep_weight(gen_sigma_for_weight)
+        weight = weight.to(device=raw_mse.device, dtype=torch.float32)
+        timestep_active_mask = timestep_active_mask.to(device=raw_mse.device, dtype=torch.float32)
         weighted_mse = raw_mse * weight
         weighted_l1 = raw_l1 * weight
 
@@ -2595,6 +2597,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "weighted_mse": weighted_mse,
             "weighted_l1": weighted_l1,
             "weight_from_gen_sigma": weight,
+            "timestep_weight": weight,
+            "timestep_active_mask": timestep_active_mask,
         }
 
     def debug_compare_clean_vs_aux_single_step_loc(
@@ -2809,6 +2813,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loc_time_override: Optional[torch.Tensor] = None,
         loc_noise_override: Optional[torch.Tensor] = None,
     ) -> Dict[str, torch.Tensor]:
+        # Full single-candidate aux-loc evaluator used by multi-sample aux losses.
+        # Caller owns freezing/restoring loc-head modules; this returns per-sample
+        # losses, residuals, and timestep masks/weights needed by EM/uncertainty logic.
         metrics = self.debug_forward_single_step_loc_metrics(
             fps_image_input=pred_pixels_input,
             map_image_input=und_image_map,
@@ -2826,6 +2833,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         sample_mask = loss_mask[:, 1].to(device=metrics["weighted_mse"].device, dtype=torch.float32)
         metrics["weighted_mse"] = metrics["weighted_mse"] * sample_mask
         metrics["weighted_l1"] = metrics["weighted_l1"] * sample_mask
+        metrics["timestep_active_mask"] = metrics["timestep_active_mask"] * sample_mask
+        metrics["timestep_weight"] = metrics["timestep_weight"] * sample_mask
+        metrics["weight_from_gen_sigma"] = metrics["weight_from_gen_sigma"] * sample_mask
         metrics["residual"] = metrics["v_t_pred"].float() - metrics["u_t"].float()
         return metrics
 
@@ -2845,6 +2855,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loc_time_override: Optional[torch.Tensor] = None,
         loc_noise_override: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        # Legacy convenience wrapper from the early EM aux-loc path. It freezes the
+        # aux loc head and returns only per-sample weighted MSE; use metrics() when
+        # residuals, timestep active masks, or candidate diagnostics are needed.
         self._validate_aux_loc_multisample_branch("aux_loc_multisample")
         module_states = self._freeze_aux_loc_head_modules()
         try:
@@ -2940,6 +2953,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "raw_l1": [],
             "residual": [],
             "weight_from_gen_sigma": [],
+            "timestep_weight": [],
+            "timestep_active_mask": [],
         }
         module_states = self._freeze_aux_loc_head_modules()
         try:
@@ -2987,8 +3002,59 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         }
 
     @staticmethod
-    def _compute_aux_loc_em_responsibility(losses: torch.Tensor, tau: float) -> torch.Tensor:
-        return torch.softmax(-losses.detach() / tau, dim=1)
+    def _compute_aux_loc_em_responsibility(
+        losses: torch.Tensor,
+        tau: float,
+        active_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if active_mask is None:
+            return torch.softmax(-losses.detach() / tau, dim=1)
+
+        active_mask = active_mask.to(device=losses.device, dtype=torch.float32)
+        active_bool = active_mask > 0
+        safe_losses = losses.masked_fill(~active_bool, 1.0e6)
+        responsibilities = torch.softmax(-safe_losses.detach() / tau, dim=1)
+        responsibilities = responsibilities * active_mask
+        responsibilities = responsibilities / responsibilities.sum(dim=1, keepdim=True).clamp_min(1.0e-8)
+        responsibilities = torch.where(
+            active_bool.any(dim=1, keepdim=True),
+            responsibilities,
+            torch.zeros_like(responsibilities),
+        )
+        return responsibilities
+
+    def _compute_aux_loc_timestep_weight(self, sigmas: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        sigma = sigmas.reshape(-1).to(torch.float32)
+        weight_type = getattr(self.config, "aux_loc_timestep_weight_type", "linear_1m_sigma")
+
+        if weight_type == "linear_1m_sigma":
+            weight = (1.0 - sigma).clamp(min=0.0)
+            active_mask = torch.ones_like(weight)
+        elif weight_type == "low_noise_only":
+            sigma_max = float(getattr(self.config, "aux_loc_low_noise_sigma_max", 0.45))
+            active_mask = (sigma <= sigma_max).to(torch.float32)
+            weight = active_mask
+        elif weight_type == "exp_sigma":
+            exp_lambda = float(getattr(self.config, "aux_loc_exp_weight_lambda", 5.0))
+            weight = torch.exp(-exp_lambda * sigma)
+            active_mask = torch.ones_like(weight)
+        else:
+            raise ValueError(f"Unsupported aux_loc_timestep_weight_type: {weight_type}")
+
+        return weight, active_mask
+
+    def _reduce_aux_loc_per_sample_loss(
+        self,
+        per_sample_loss: torch.Tensor,
+        active_mask: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        if (
+            getattr(self.config, "aux_loc_timestep_weight_renorm", "none") == "active_mean"
+            and active_mask is not None
+        ):
+            active_mask = active_mask.to(device=per_sample_loss.device, dtype=torch.float32)
+            return (per_sample_loss * active_mask).sum() / active_mask.sum().clamp_min(1.0)
+        return per_sample_loss.mean()
 
     @staticmethod
     def _compute_aux_loc_uncertainty_weight(
@@ -3218,9 +3284,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             loss_mask=loss_mask,
         )
         losses = candidate_metrics["weighted_mse"]
-        responsibilities = self._compute_aux_loc_em_responsibility(losses, tau)
+        candidate_active_mask = candidate_metrics.get("timestep_active_mask", None)
+        sample_active_mask = (
+            (candidate_active_mask.sum(dim=1) > 0).to(torch.float32)
+            if candidate_active_mask is not None
+            else None
+        )
+        responsibilities = self._compute_aux_loc_em_responsibility(losses, tau, candidate_active_mask)
         per_sample_loss = (responsibilities * losses).sum(dim=1)
-        loss = per_sample_loss.mean().to(torch.float32)
+        loss = self._reduce_aux_loc_per_sample_loss(per_sample_loss, sample_active_mask).to(torch.float32)
 
         q_entropy = -(responsibilities * (responsibilities.clamp_min(1e-8)).log()).sum(dim=1)
         stats = {
@@ -3231,6 +3303,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "aux_loc_em_loss_mean": losses.detach().mean().to(torch.float32),
             "aux_loc_em_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
             "aux_loc_em_num_samples": torch.tensor(float(num_samples), device=loss.device, dtype=torch.float32),
+            "aux_loc_timestep_weight_mean": candidate_metrics["timestep_weight"].detach().mean().to(torch.float32),
+            "aux_loc_timestep_weight_min": candidate_metrics["timestep_weight"].detach().min().to(torch.float32),
+            "aux_loc_timestep_weight_max": candidate_metrics["timestep_weight"].detach().max().to(torch.float32),
+            "aux_loc_low_noise_active_ratio": candidate_metrics["timestep_active_mask"].detach().mean().to(torch.float32),
         }
         return loss, stats
 
@@ -3289,6 +3365,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             loss_mask=loss_mask,
         )
         losses = candidate_metrics["weighted_mse"]
+        candidate_active_mask = candidate_metrics.get("timestep_active_mask", None)
+        if candidate_active_mask is not None:
+            raw_active_count = candidate_active_mask.sum(dim=1)
+            loss_per_sample = (losses * candidate_active_mask).sum(dim=1) / raw_active_count.clamp_min(1.0)
+            sample_active_mask = (raw_active_count > 0).to(torch.float32)
+        else:
+            loss_per_sample = losses.mean(dim=1)
+            sample_active_mask = None
         uncertainty_weight, uncertainty_stats = self._compute_aux_loc_uncertainty_weight(
             candidate_metrics["residual"],
             tau=tau,
@@ -3296,8 +3380,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             eps=eps,
             metric=metric,
         )
-        per_sample_loss = uncertainty_weight * losses.mean(dim=1)
-        loss = per_sample_loss.mean().to(torch.float32)
+        if candidate_active_mask is not None:
+            uncertainty_weight = torch.where(
+                raw_active_count >= 2,
+                uncertainty_weight,
+                torch.ones_like(uncertainty_weight),
+            )
+        per_sample_loss = uncertainty_weight * loss_per_sample
+        loss = self._reduce_aux_loc_per_sample_loss(per_sample_loss, sample_active_mask).to(torch.float32)
 
         stats = {
             "aux_loc_unc_active": torch.ones((), device=loss.device, dtype=torch.float32),
@@ -3311,6 +3401,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "aux_loc_unc_candidate_loss_mean": losses.detach().mean().to(torch.float32),
             "aux_loc_unc_candidate_loss_min_mean": losses.min(dim=1).values.detach().mean().to(torch.float32),
             "aux_loc_unc_candidate_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
+            "aux_loc_timestep_weight_mean": candidate_metrics["timestep_weight"].detach().mean().to(torch.float32),
+            "aux_loc_timestep_weight_min": candidate_metrics["timestep_weight"].detach().min().to(torch.float32),
+            "aux_loc_timestep_weight_max": candidate_metrics["timestep_weight"].detach().max().to(torch.float32),
+            "aux_loc_low_noise_active_ratio": candidate_metrics["timestep_active_mask"].detach().mean().to(torch.float32),
         }
         return loss, stats
 
@@ -3373,7 +3467,14 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             loss_mask=loss_mask,
         )
         losses = candidate_metrics["weighted_mse"]
-        responsibilities = self._compute_aux_loc_em_responsibility(losses, candidate_tau)
+        candidate_active_mask = candidate_metrics.get("timestep_active_mask", None)
+        candidate_active_count = candidate_active_mask.sum(dim=1) if candidate_active_mask is not None else None
+        sample_active_mask = (
+            (candidate_active_count > 0).to(torch.float32)
+            if candidate_active_mask is not None
+            else None
+        )
+        responsibilities = self._compute_aux_loc_em_responsibility(losses, candidate_tau, candidate_active_mask)
         uncertainty_weight, uncertainty_stats = self._compute_aux_loc_uncertainty_weight(
             candidate_metrics["residual"],
             tau=unc_tau,
@@ -3381,9 +3482,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             eps=unc_eps,
             metric=unc_metric,
         )
+        if candidate_active_count is not None:
+            uncertainty_weight = torch.where(
+                candidate_active_count >= 2,
+                uncertainty_weight,
+                torch.ones_like(uncertainty_weight),
+            )
 
         per_sample_loss = uncertainty_weight * (responsibilities * losses).sum(dim=1)
-        loss = per_sample_loss.mean().to(torch.float32)
+        loss = self._reduce_aux_loc_per_sample_loss(per_sample_loss, sample_active_mask).to(torch.float32)
 
         q_entropy = -(responsibilities * (responsibilities.clamp_min(1e-8)).log()).sum(dim=1)
         stats = {
@@ -3400,6 +3507,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             "aux_loc_combined_candidate_loss_mean": losses.detach().mean().to(torch.float32),
             "aux_loc_combined_candidate_loss_min_mean": losses.min(dim=1).values.detach().mean().to(torch.float32),
             "aux_loc_combined_candidate_loss_max_mean": losses.max(dim=1).values.detach().mean().to(torch.float32),
+            "aux_loc_timestep_weight_mean": candidate_metrics["timestep_weight"].detach().mean().to(torch.float32),
+            "aux_loc_timestep_weight_min": candidate_metrics["timestep_weight"].detach().min().to(torch.float32),
+            "aux_loc_timestep_weight_max": candidate_metrics["timestep_weight"].detach().max().to(torch.float32),
+            "aux_loc_low_noise_active_ratio": candidate_metrics["timestep_active_mask"].detach().mean().to(torch.float32),
         }
         return loss, stats
 
@@ -5009,6 +5120,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 return float(value.detach().cpu().item())
             return float(value)
 
+        def _aux_loc_timestep_stat(name: str) -> float:
+            for stats in (aux_loc_combined_stats, aux_loc_em_stats, aux_loc_unc_stats):
+                if name in stats:
+                    value = stats[name]
+                    if torch.is_tensor(value):
+                        return float(value.detach().cpu().item())
+                    return float(value)
+            return 0.0
+
         def _aux_gen_stat(name: str) -> float:
             value = aux_gen_stats.get(name, 0.0)
             if torch.is_tensor(value):
@@ -5058,6 +5178,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "loc_aux_loss": masked_loc_aux_loss.detach().cpu().numpy().item(),
                 "alpha_loc_aux": alpha_loc_aux_loss.detach().cpu().numpy().item(),
                 "loc_aux_active": float(alpha_loc_aux_loss.item() > 0),
+                "aux_loc_timestep_weight_mean": _aux_loc_timestep_stat("aux_loc_timestep_weight_mean"),
+                "aux_loc_timestep_weight_min": _aux_loc_timestep_stat("aux_loc_timestep_weight_min"),
+                "aux_loc_timestep_weight_max": _aux_loc_timestep_stat("aux_loc_timestep_weight_max"),
+                "aux_loc_low_noise_active_ratio": _aux_loc_timestep_stat("aux_loc_low_noise_active_ratio"),
+
                 "gen_aux_loss": masked_gen_aux_loss.detach().cpu().numpy().item(),
                 "alpha_gen_aux": alpha_gen_aux_loss.detach().cpu().numpy().item(),
                 "gen_aux_active": float(alpha_gen_aux_loss.item() > 0),
@@ -5420,13 +5545,18 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     loc_loss = F.mse_loss(v_t_pred.float(), u_t.float(), reduction="none") #torch.Size([128, 1, 5])
                     loc_loss = loc_loss.mean(dim=[1, 2]) # [BS] #torch.Size([128])
 
-                    # 加权：只在 t 小的时候 (生成接近完成) 计算 Loss
-                    # sigmas 越大噪声越大。我们希望 sigma 小的时候权重高。
-                    weight = (1.0 - sigmas).clamp(min=0)
-                    loc_loss = (loc_loss * weight.squeeze())
+                    weight, timestep_active_mask = self._compute_aux_loc_timestep_weight(sigmas)
+                    weight = weight.to(device=loc_loss.device, dtype=torch.float32)
+                    timestep_active_mask = timestep_active_mask.to(device=loc_loss.device, dtype=torch.float32)
+                    loc_loss = loc_loss * weight
 
                     # Apply Mask: Only count aux loc loss for Gen samples
-                    masked_loc_loss = (loc_loss * loss_mask[:, 1]).mean()
+                    sample_mask = loss_mask[:, 1].to(device=loc_loss.device, dtype=torch.float32)
+                    if getattr(self.config, "aux_loc_timestep_weight_renorm", "none") == "active_mean":
+                        active_mask = sample_mask * timestep_active_mask
+                        masked_loc_loss = (loc_loss * sample_mask).sum() / active_mask.sum().clamp_min(1.0)
+                    else:
+                        masked_loc_loss = (loc_loss * sample_mask).mean()
                 finally:
                     self._restore_module_states(module_states)
 
