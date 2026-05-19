@@ -434,6 +434,24 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: st
                         logging.info(f"💾 Saving LoRA adapter for {module_name} to {adapter_save_dir}")
                         sub_module.save_pretrained(adapter_save_dir)
 
+            # Dedicated shared-tail LoRA wraps individual language_model layers instead
+            # of the whole language_model, so save those per-layer adapters too.
+            language_model = getattr(base_model, "language_model", None)
+            if language_model is not None and hasattr(language_model, "layers"):
+                for layer_idx, layer_module in enumerate(language_model.layers):
+                    if isinstance(layer_module, PeftModel):
+                        adapter_save_dir = os.path.join(
+                            output_dir,
+                            "lora_adapters",
+                            "language_model_tail",
+                            f"layer_{layer_idx}",
+                        )
+                        os.makedirs(adapter_save_dir, exist_ok=True)
+                        logging.info(
+                            f"💾 Saving shared-tail LoRA adapter for language_model.layers.{layer_idx} to {adapter_save_dir}"
+                        )
+                        layer_module.save_pretrained(adapter_save_dir)
+
     if trainer.deepspeed:
         torch.cuda.synchronize()
         trainer.save_model(output_dir)
@@ -2793,14 +2811,18 @@ def train(attn_implementation=None):
             base_model.action_dit.gradient_checkpointing_enable()
             logging.info("✅ Enabled gradient checkpointing for Loc DiT")
 
-    if getattr(training_args, 'is_lora', False):
+    should_inject_lora = (
+        getattr(training_args, 'is_lora', False)
+        or getattr(model_args, "shared_llm_tail_lora_enabled", False)
+    )
+    if should_inject_lora:
         model.inject_lora_to_sub_module(model_args, training_args)
 
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        logging.info(f"🚀 After LoRA: Total parameters: {total_params}")
-        logging.info(f"🚀 After LoRA: Trainable parameters: {trainable_params}")
-        logging.info(f"🚀 After LoRA: Trainable percent: {100*trainable_params / total_params:.2f} %")
+        logging.info(f"🚀 After LoRA injection: Total parameters: {total_params}")
+        logging.info(f"🚀 After LoRA injection: Trainable parameters: {trainable_params}")
+        logging.info(f"🚀 After LoRA injection: Trainable percent: {100*trainable_params / total_params:.2f} %")
 
     else:
         # Calculate total parameters and trainable parameters
@@ -3092,7 +3114,10 @@ def train(attn_implementation=None):
         trainer=trainer,
         output_dir=training_args.output_dir,
         vision_tower=model_args.vision_tower,
-        is_lora=getattr(training_args, 'is_lora', False),
+        is_lora=(
+            getattr(training_args, 'is_lora', False)
+            or getattr(model_args, "shared_llm_tail_lora_enabled", False)
+        ),
     )
 
 

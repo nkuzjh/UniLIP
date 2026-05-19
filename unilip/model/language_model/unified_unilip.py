@@ -1699,7 +1699,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         )
 
     def inject_lora_to_sub_module(self, model_args, training_args):
-        if not getattr(training_args, 'is_lora', False) and not getattr(model_args, "shared_llm_tail_lora_enabled", False):
+        use_global_lora = getattr(training_args, 'is_lora', False)
+        use_shared_tail_lora = (
+            getattr(model_args, "train_shared_llm_tail_only", False)
+            and getattr(model_args, "shared_llm_tail_lora_enabled", False)
+        )
+        if not use_global_lora and not use_shared_tail_lora:
             return
 
         logging.info("🌟 Starting Modular LoRA Injection for Unified UniLIP...")
@@ -1708,7 +1713,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 1. Vision Tower (InternVisionModel)
         # =========================================================
         # 结构: attn.qkv, attn.proj, mlp.fc1, mlp.fc2
-        if not model_args.fix_vit and not getattr(model_args, "train_mm_projector_only", False):
+        if use_global_lora and not model_args.fix_vit and not getattr(model_args, "train_mm_projector_only", False):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r // 2,
                 lora_alpha=training_args.lora_alpha,
@@ -1721,7 +1726,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 2. LLM Backbone (Qwen2Model)
         # =========================================================
         # 结构: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
-        if not model_args.fix_llm and not getattr(model_args, "train_shared_llm_tail_only", False):
+        if use_global_lora and not model_args.fix_llm and not getattr(model_args, "train_shared_llm_tail_only", False):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1730,7 +1735,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 # modules_to_save=["lm_head", "embed_tokens"],
                 module_name="language_model"
             )
-        elif getattr(model_args, "train_shared_llm_tail_only", False) and getattr(model_args, "shared_llm_tail_lora_enabled", False):
+        elif use_shared_tail_lora:
             self._apply_lora_to_language_model_tail_layers(model_args, training_args)
             if getattr(model_args, "shared_llm_tail_lora_mode", "lora_only") == "lora_only":
                 self._freeze_language_model_tail_base_keep_lora_only()
@@ -1738,7 +1743,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 3. LLM Connector (Qwen2Model Slice)
         # =========================================================
         # 结构同 LLM
-        if getattr(training_args, 'is_lora', False) and not self.get_model().fix_connect:
+        if use_global_lora and not self.get_model().fix_connect:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r // 2,
                 lora_alpha=training_args.lora_alpha,
@@ -1756,7 +1761,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 注意：Sana 的 GLUMBConv 使用的是 Conv2d，LoRA 默认不转 Conv2d 除非指定。
         # 这里我们主要对 Attention 和 Timestep MLP 做 LoRA。
         # to_q/k/v 匹配 Attention, linear_1/2 匹配 TimestepEmbedder & CaptionProjection
-        if getattr(training_args, 'is_lora', False) and not self.get_model().fix_dit:
+        if use_global_lora and not self.get_model().fix_dit:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1769,7 +1774,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 5. Loc Action DiT (Qwen2Model Slice) or (Pi05 Action DiT)
         # =========================================================
         # 结构同 LLM
-        if getattr(training_args, 'is_lora', False):
+        if use_global_lora:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
