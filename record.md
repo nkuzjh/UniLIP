@@ -2793,15 +2793,13 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
     ``      CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp27_3_dust2_gen_conti/test_20260520_004314/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224       ``
 
 ## exp28_dust2
-- exp26_1_dust2 + exp27_3_dust2
-- keep exp26_1 low-noise-only combined aux-loc
+- exp26_dust2 + exp27_3_dust2
+- keep exp26 default `linear_1m_sigma` combined aux-loc
 - add exp27_3 teacher_gt action_dit attention-weighted vision_tower perceptual alignment
 - combined aux-loc = EM-inspired candidate responsibility + uncertainty-gated residual consistency
 - is_loc_aux_loss: True
 - is_aux_loc_combined_em_unc_loss: True
-- aux_loc_timestep_weight_type: `low_noise_only`
-- aux_loc_low_noise_sigma_max: 0.45
-- aux_loc_timestep_weight_renorm: `active_mean`
+- aux_loc_timestep_weight_type: `linear_1m_sigma`
 - alpha_loc_aux schedule steps: [0, 6000]
 - alpha_loc_aux schedule values: [0.0, 2.0]
 - alpha_loc_aux behavior: linearly warms up from 0 to 2 between step 0 and 6000, then stays at 2
@@ -2829,7 +2827,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - no resume_ckpt_path / base_init_ckpt_path / gen_init_ckpt_path / loc_init_ckpt_path
 - no REPA
 - no aux_gen
-- purpose: test whether low-noise pose-level aux-loc and attention-weighted patch feature alignment are complementary
+- purpose: test whether default `linear_1m_sigma` pose-level aux-loc and attention-weighted patch feature alignment are complementary
 - dust2
 
 **train_csgo.py**

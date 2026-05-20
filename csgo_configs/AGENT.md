@@ -160,7 +160,7 @@ lr_scheduler_kwargs:
 | `exp27_1_dust2` | `exp27_dust2` + attention-weighted current-loc-head perceptual loss | 最终固定方案：`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；用 wrapper 从 action_dit 最后一层取 action token 到 und patch tokens 的 attention，不用 hook |
 | `exp27_2_dust2` | `exp27_dust2` 的浅层 vision_tower perceptual loss 对照 | 不使用 attention weighting，直接对齐 `pred_pixels_input` 和 `gen_image` 的 FPS vision patch features，`smooth_l1`，特征维度 `[B, 256, D_llm]` |
 | `exp27_3_dust2` | `exp27_2_dust2` + teacher_gt action_dit attention weighting | perception feature 仍是 `vision_tower` FPS patch features；attention 权重复用 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled` wrapper，不用 hook |
-| `exp28_dust2` | `exp26_1_dust2` + `exp27_3_dust2` 的组合实验 | low-noise-only combined aux-loc 与 teacher_gt attention-weighted vision_tower perceptual alignment 同时开启，验证 pose-level 与 patch-feature-level 监督是否互补 |
+| `exp28_dust2` | `exp26_dust2` + `exp27_3_dust2` 的组合实验 | 默认 `linear_1m_sigma` combined aux-loc 与 teacher_gt attention-weighted vision_tower perceptual alignment 同时开启，验证 pose-level 与 patch-feature-level 监督是否互补 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -195,7 +195,7 @@ lr_scheduler_kwargs:
 | `exp27_1_dust2` | attention-weighted current-loc-head perceptual alignment | `exp27_dust2 + action_dit attention-weighted loc perception loss`，attention source 固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp27_2_dust2` | shallow vision_tower perceptual alignment 对照 | `exp27_dust2` 的更浅对齐版本，`loc_perception_feature_source=vision_tower`，无 attention weighting |
 | `exp27_3_dust2` | attention-weighted shallow vision_tower perceptual alignment | `exp27_2_dust2 + teacher_gt action_dit attention weighting`，权重方案固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
-| `exp28_dust2` | low-noise aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_1_dust2 + exp27_3_dust2`，同时使用 low-noise-only combined aux-loc 和 teacher_gt action attention-weighted vision_tower feature alignment |
+| `exp28_dust2` | default aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_dust2 + exp27_3_dust2`，同时使用默认 `linear_1m_sigma` combined aux-loc 和 teacher_gt action attention-weighted vision_tower feature alignment |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -564,7 +564,7 @@ same velocity target u_t
 | `exp27_1_dust2` | `exp27_dust2` | 在 patch-level `smooth_l1` loc perception loss 上加入 action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现使用轻量 wrapper，不用 hook | 验证 action token 对 und patch tokens 的注意力能否提供更聚焦且量级可比的生成侧定位感知监督 |
 | `exp27_2_dust2` | `exp27_dust2` | 将 loc perception feature source 从 `action_dit_projector` 改为 `vision_tower`，直接对齐 `pred_pixels_input` 与 `gen_image` 的 FPS vision patch features；`smooth_l1`；无 attention weighting | 验证更浅的视觉 encoder patch feature 对齐是否足以提供生成侧定位感知监督 |
 | `exp27_3_dust2` | `exp27_2_dust2` | 在 vision_tower patch-level `smooth_l1` loc perception loss 上加入 teacher_gt action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；复用轻量 wrapper，不用 hook | 验证 loc/action_dit 注意力能否让浅层 vision_tower feature 对齐更聚焦 |
-| `exp28_dust2` | `exp26_1_dust2` | 保留 low-noise-only combined aux-loc，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；`alpha_loc_aux` 从 step 0 到 6000 线性 warmup 到 2.0，`alpha_loc_perception` 从 step 2000 开始为 0.1 | 验证 pose-level low-noise aux-loc 与 attention-focused patch feature 对齐是否互补 |
+| `exp28_dust2` | `exp26_dust2` | 保留默认 `linear_1m_sigma` combined aux-loc，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；`alpha_loc_aux` 从 step 0 到 6000 线性 warmup 到 2.0，`alpha_loc_perception` 从 step 2000 开始为 0.1 | 验证 pose-level aux-loc 与 attention-focused patch feature 对齐是否互补 |
 
 建议第一版最小设置：
 
@@ -859,7 +859,7 @@ repa_spatial_norm_gamma: 1.0
 - `exp27_1_dust2` 在 `exp27_dust2` 基础上加入 action_dit attention weighting，固定 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；实现选型为轻量 wrapper，便于后续扩展 action token 构造、attention source 和 layer/head 聚合方式，不使用 hook。
 - `exp27_2_dust2` 在 `exp27_dust2` 基础上把 perception feature source 前移到 `vision_tower`，无 attention weighting，用来隔离浅层视觉 patch 对齐本身的效果。
 - `exp27_3_dust2` 在 `exp27_2_dust2` 基础上加入 teacher_gt action_dit attention weighting，检验浅层 vision_tower 对齐是否也能从 loc/action attention 聚焦中获益。
-- `exp28_dust2` 是 `exp26_1_dust2` 和 `exp27_3_dust2` 的组合实验，应在两个分量实验之后再跑，用来判断 low-noise pose-level aux-loc 和 attention-weighted feature-level alignment 是否互补。
+- `exp28_dust2` 是 `exp26_dust2` 和 `exp27_3_dust2` 的组合实验，用默认 `linear_1m_sigma` pose-level aux-loc 判断其与 attention-weighted feature-level alignment 是否互补。
 - `exp29_dust2` 取消所有 internal loc/action-DiT 模块，用 shared `language_model + lm_head` 直接预测 5 个 `<loc_xxx>` bin token；只保留 gen + loc 联合训练，不启用 aux_loc、loc_perception、loc_repa、REPA、aux_gen。LoRA 使用 `r=32, alpha=64, dropout=0.05`，`llm_lora_lr=1e-4`，`loc_token_lr=1e-4`，`mm_projector_lr=1e-4`。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。

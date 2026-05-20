@@ -8,8 +8,8 @@ debug: False
 is_multi_task: True
 is_multi_task_balanced: True
 
-# Exp28_dust2: exp26_1_dust2 + exp27_3_dust2 attention-weighted vision_tower loc perception.
-# Low-noise-only combined aux-loc plus teacher_gt action_dit attention-weighted vision_tower perceptual alignment.
+# Exp28_dust2: exp26_dust2 + exp27_3_dust2 attention-weighted vision_tower loc perception.
+# Default linear_1m_sigma combined aux-loc plus teacher_gt action_dit attention-weighted vision_tower perceptual alignment.
 alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
@@ -27,9 +27,7 @@ aux_loc_combined_unc_tau: 1.0
 aux_loc_combined_unc_min_weight: 0.05
 aux_loc_combined_share_loc_noise: True
 aux_loc_combined_unc_eps: 1.0e-6
-aux_loc_timestep_weight_type: "low_noise_only"
-aux_loc_low_noise_sigma_max: 0.45
-aux_loc_timestep_weight_renorm: "active_mean"
+aux_loc_timestep_weight_type: "linear_1m_sigma"
 
 is_loc_perception_loss: True
 alpha_loc_perception_loss: 0.0
