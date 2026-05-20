@@ -304,8 +304,31 @@ def load_custom_checkpoint(model, ckpt_path):
 class InferenceArgs:
     def __init__(self, config_dict):
         self.__dict__.update(config_dict)
-        self.fix_vit = True
-        self.fix_llm = True
+        self.fix_vit = config_dict.get("fix_vit", True)
+        self.fix_llm = config_dict.get("fix_llm", True)
+        self.fix_connect = config_dict.get("fix_connect", False)
+        self.fix_dit = config_dict.get("fix_dit", False)
+
+
+def build_loc_bin_tokens(loc_bin_num, loc_bin_token_prefix):
+    width = len(str(int(loc_bin_num) - 1))
+    return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
+
+
+def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
+    if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
+        return
+    loc_tokens = build_loc_bin_tokens(
+        csgo_config.get("loc_bin_num", 256),
+        csgo_config.get("loc_bin_token_prefix", "<loc_"),
+    )
+    tokenizer.add_tokens(loc_tokens, special_tokens=False)
+    model.resize_token_embeddings(len(tokenizer))
+    model.text_tokenizer = tokenizer
+    model.config.loc_head_type = "lm_bin_ce"
+    model.config.loc_bin_num = int(csgo_config.get("loc_bin_num", 256))
+    model.config.loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
+    model.config.loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
 
 def smart_matching_state_dict_keys(state_dict, model):
     new_state_dict = {}
@@ -360,6 +383,7 @@ def run_csgo_generation_from_config(
         'UniLIP-1B'
     )
 
+    add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config)
 
 
     # =====================================================================

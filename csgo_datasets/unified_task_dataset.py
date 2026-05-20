@@ -548,6 +548,60 @@ def get_loc_prompt(map_name, use_short_instruction=False):
     return LOC_PROMPT_TEMPLATE
 
 
+def format_loc_bin_token(bin_idx, loc_bin_num=256, loc_bin_token_prefix="<loc_"):
+    width = len(str(int(loc_bin_num) - 1))
+    return f"{loc_bin_token_prefix}{int(bin_idx):0{width}d}>"
+
+
+def pose_to_loc_bin_tokens(actions_norm, loc_bin_num=256, loc_bin_token_prefix="<loc_"):
+    if torch.is_tensor(actions_norm):
+        values = actions_norm.detach().float().reshape(-1).cpu().tolist()
+    else:
+        values = np.asarray(actions_norm, dtype=np.float32).reshape(-1).tolist()
+    if len(values) != 5:
+        raise ValueError(f"Expected 5 normalized pose values, got {len(values)}")
+
+    bins = []
+    for value in values:
+        clipped = min(max(float(value), 0.0), 1.0)
+        bins.append(int(round(clipped * (int(loc_bin_num) - 1))))
+    return " ".join(format_loc_bin_token(bin_idx, loc_bin_num, loc_bin_token_prefix) for bin_idx in bins)
+
+
+def _tokenize_loc_sample(map_name, answer_text, tokenizer, img_size, use_short_instruction=False):
+    user_text_loc = get_loc_prompt(map_name, use_short_instruction=use_short_instruction)
+    sources_loc = {
+        "conversations": [
+            {"from": "human", "value": user_text_loc},
+            {"from": "gpt", "value": answer_text},
+        ]
+    }
+    sources_loc, _ = preprocess_multimodal([copy.deepcopy(sources_loc["conversations"])], img_size)
+    pre_dict_loc = preprocess(sources_loc, tokenizer, has_image=True)
+    return {
+        "raw_prompt": user_text_loc,
+        "input_ids": pre_dict_loc["input_ids"][0].clone(),
+        "labels": pre_dict_loc["labels"][0].clone(),
+    }
+
+
+def _build_loc_tokenized_for_entry(config, tokenizer, data, map_name):
+    if config.get("loc_head_type", None) != "lm_bin_ce":
+        return None
+    answer_text = pose_to_loc_bin_tokens(
+        data["actions"],
+        loc_bin_num=config.get("loc_bin_num", 256),
+        loc_bin_token_prefix=config.get("loc_bin_token_prefix", "<loc_"),
+    )
+    return _tokenize_loc_sample(
+        map_name,
+        answer_text,
+        tokenizer,
+        config.get("img_size", 448),
+        use_short_instruction=config.get("use_short_instruction", False),
+    )
+
+
 
 # GPT优化
 def _build_loc_prompt_cache(map_names, tokenizer, img_size, use_short_instruction=False):
@@ -801,7 +855,9 @@ class UniLIPMultiTaskDataset(Dataset):
             # preprocess_dict = preprocess(sources, self.tokenizer, has_image=True)
             # input_ids = preprocess_dict["input_ids"][0]
             # labels = preprocess_dict["labels"][0] # GPT优化
-            loc_cache = self.loc_prompt_cache[map_name]
+            loc_cache = _build_loc_tokenized_for_entry(self.config, self.tokenizer, data, map_name)
+            if loc_cache is None:
+                loc_cache = self.loc_prompt_cache[map_name]
             user_text = loc_cache["raw_prompt"]
             input_ids = loc_cache["input_ids"]
             labels = loc_cache["labels"]
@@ -926,7 +982,9 @@ class UniLIPMultiTaskDataset(Dataset):
             # aux_loc_preprocess_dict = preprocess(aux_loc_sources, self.tokenizer, has_image=True)
             # aux_loc_input_ids = aux_loc_preprocess_dict["input_ids"][0]
             # aux_loc_labels = aux_loc_preprocess_dict["labels"][0] # GPT优化
-            aux_loc_cache = self.loc_prompt_cache[map_name]
+            aux_loc_cache = _build_loc_tokenized_for_entry(self.config, self.tokenizer, data, map_name)
+            if aux_loc_cache is None:
+                aux_loc_cache = self.loc_prompt_cache[map_name]
             aux_loc_input_ids = aux_loc_cache["input_ids"]
             aux_loc_labels = aux_loc_cache["labels"]
             aux_gen_input_ids = input_ids
@@ -1347,7 +1405,9 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         # =========================================
         task_id_loc = 0
         # Tokenize Loc
-        loc_cache = self.loc_prompt_cache[map_name]
+        loc_cache = _build_loc_tokenized_for_entry(self.config, self.tokenizer, data, map_name)
+        if loc_cache is None:
+            loc_cache = self.loc_prompt_cache[map_name]
         # Text Prompt
         user_text_loc = loc_cache["raw_prompt"]
 

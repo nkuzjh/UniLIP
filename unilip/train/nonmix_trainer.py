@@ -596,6 +596,15 @@ class NonMixTrainer(Trainer):
                     return getattr(self.args, "llm_lora_lr", None)
                 return None
 
+            def get_loc_token_parameter_names():
+                if getattr(self.args, "loc_token_lr", None) is None:
+                    return []
+                return [
+                    name for name, _ in opt_model.named_parameters()
+                    if name.endswith("lm_head.weight")
+                    or ("language_model" in name and name.endswith("embed_tokens.weight"))
+                ]
+
             def is_mm_projector_parameter(name):
                 return "mm_projector" in name or "multi_modal_projector" in name
 
@@ -950,6 +959,39 @@ class NonMixTrainer(Trainer):
                         ],
                         "weight_decay": 0.0,
                         "lr": language_model_lr,
+                    },
+                ])
+
+            loc_token_parameters = get_loc_token_parameter_names()
+            if len(loc_token_parameters) > 0 and getattr(self.args, "loc_token_lr", None) is not None:
+                loc_token_param_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in loc_token_parameters and p.requires_grad
+                }
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in loc_token_param_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in loc_token_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": self.args.loc_token_lr,
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in loc_token_parameters and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": self.args.loc_token_lr,
                     },
                 ])
 

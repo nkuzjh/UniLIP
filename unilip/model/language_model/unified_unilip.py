@@ -1774,7 +1774,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 5. Loc Action DiT (Qwen2Model Slice) or (Pi05 Action DiT)
         # =========================================================
         # 结构同 LLM
-        if use_global_lora:
+        if use_global_lora and hasattr(self.get_model(), "action_dit"):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -4343,6 +4343,44 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         time = time_beta * 0.999 + 0.001
         return time.to(dtype=torch.bfloat16, device=device)
 
+    def _compute_loc_bin_ce_loss(self, hidden_states, labels, loss_mask=None):
+        loc_bin_token_ids = getattr(self.config, "loc_bin_token_ids", None)
+        if loc_bin_token_ids is None:
+            loc_bin_num = int(getattr(self.config, "loc_bin_num", 256))
+            loc_bin_token_prefix = getattr(self.config, "loc_bin_token_prefix", "<loc_")
+            width = len(str(loc_bin_num - 1))
+            tokenizer = getattr(self, "text_tokenizer", None)
+            if tokenizer is None:
+                raise RuntimeError("lm_bin_ce requires text_tokenizer or config.loc_bin_token_ids.")
+            loc_tokens = [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(loc_bin_num)]
+            loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
+
+        loc_bin_token_ids = torch.as_tensor(loc_bin_token_ids, device=labels.device, dtype=labels.dtype)
+        shift_logits = self.lm_head(hidden_states[:, :-1, :]).float()
+        shift_labels = labels[:, 1:].contiguous()
+        loc_label_mask = torch.isin(shift_labels, loc_bin_token_ids)
+        if not loc_label_mask.any():
+            zero = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+            return zero, zero
+
+        ce_labels = shift_labels.masked_fill(~loc_label_mask, -100)
+        token_loss = F.cross_entropy(
+            shift_logits.reshape(-1, shift_logits.shape[-1]),
+            ce_labels.reshape(-1),
+            reduction="none",
+            ignore_index=-100,
+        ).view_as(shift_labels)
+        loc_label_mask_float = loc_label_mask.to(dtype=torch.float32)
+        per_sample_loss = (token_loss * loc_label_mask_float).sum(dim=1) / loc_label_mask_float.sum(dim=1).clamp_min(1.0)
+        active_sample_mask = (loc_label_mask_float.sum(dim=1) > 0).to(dtype=torch.float32)
+        if loss_mask is not None:
+            active_sample_mask = active_sample_mask * loss_mask[:, 0].to(device=active_sample_mask.device, dtype=torch.float32)
+        loss = (per_sample_loss * active_sample_mask).sum() / active_sample_mask.sum().clamp_min(1.0)
+
+        pred_ids = shift_logits.argmax(dim=-1).to(dtype=shift_labels.dtype)
+        acc = ((pred_ids == shift_labels) & loc_label_mask).to(dtype=torch.float32).sum() / loc_label_mask_float.sum().clamp_min(1.0)
+        return loss.to(torch.float32), acc.to(torch.float32)
+
     # ==========================================
     # 3. [NEW] Forward Implementation
     # ==========================================
@@ -4563,6 +4601,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             masked_gen_aux_loss = zero_loss
             masked_loc_loss = zero_loss
             masked_loc_loss_valid5 = zero_loss
+            loc_bin_token_acc = zero_loss
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -4803,7 +4842,18 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # Branch 2: LOCALIZATION (Flow Matching Path)
             # ==========================================
             if loss_mask[loc_indices][:, 0].sum() > 0: # If any sample needs Localization
-                if getattr(self.config, "use_external_loc_model", False):
+                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce":
+                    locbrh_hidden_states = hidden_states[loc_indices]
+                    locbrh_labels = labels[loc_indices]
+                    locbrh_loss_mask = loss_mask[loc_indices]
+                    masked_loc_loss, loc_bin_token_acc = self._compute_loc_bin_ce_loss(
+                        locbrh_hidden_states,
+                        locbrh_labels,
+                        loss_mask=locbrh_loss_mask,
+                    )
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
+
+                elif getattr(self.config, "use_external_loc_model", False):
                     locbrh_actions = actions[loc_indices]
                     locbrh_fps_image = loc_fps_image[loc_indices] if loc_fps_image is not None else effective_und_image[loc_indices]
                     locbrh_map_image = loc_map_image[loc_indices] if loc_map_image is not None else aux_image[loc_indices]
@@ -5161,6 +5211,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "total_loss": total_loss.detach().cpu().numpy().item(),
 
                 "loc_loss": masked_loc_loss.detach().cpu().numpy().item(),
+                "loc_bin_ce_loss": masked_loc_loss.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                "loc_bin_token_acc": loc_bin_token_acc.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
                 "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_loss": (masked_loc_loss * alpha_loc_loss).detach().cpu().numpy().item(),
@@ -5990,6 +6044,82 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
     # ==========================================
     # 4. [NEW] Inference: Generate Action (Flow Matching)
     # ==========================================
+    @torch.no_grad()
+    def generate_loc_bin_tokens(
+        self,
+        input_ids: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        und_image: Optional[torch.Tensor] = None,
+        aux_image: Optional[torch.Tensor] = None,
+        max_new_tokens: int = 5,
+    ):
+        if getattr(self.config, "loc_head_type", None) != "lm_bin_ce":
+            raise RuntimeError("generate_loc_bin_tokens is only valid for loc_head_type='lm_bin_ce'.")
+
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        device = input_ids.device
+
+        und_image_embeds = None
+        if und_image is not None:
+            und_image_embeds = self.model.get_image_features(
+                pixel_values=und_image.to(dtype=vision_dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        aux_image_embeds = None
+        if aux_image is not None:
+            aux_image_embeds = self.model.get_image_features(
+                pixel_values=aux_image.to(dtype=vision_dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        generated_ids = []
+        cur_input_ids = input_ids
+        cur_attention_mask = attention_mask
+        for _ in range(max_new_tokens):
+            text_embeds = self.get_model().language_model.embed_tokens(cur_input_ids)
+            und_image_idx, aux_image_idx = split_image_tokens(cur_input_ids, IMAGE_TOKEN_IDX)
+            if und_image_embeds is not None and und_image_idx.any():
+                cur_und_embeds = und_image_embeds
+                if cur_und_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                    cur_und_embeds = cur_und_embeds.repeat(text_embeds.shape[0], 1, 1)
+                text_embeds[und_image_idx] = cur_und_embeds.flatten(0, 1)
+            if aux_image_embeds is not None and aux_image_idx.any():
+                cur_aux_embeds = aux_image_embeds
+                if cur_aux_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                    cur_aux_embeds = cur_aux_embeds.repeat(text_embeds.shape[0], 1, 1)
+                text_embeds[aux_image_idx] = cur_aux_embeds.flatten(0, 1)
+
+            position_ids = torch.cumsum(cur_attention_mask, dim=1) - 1
+            position_ids[position_ids < 0] = 0
+            outputs = self.model.language_model(
+                inputs_embeds=text_embeds,
+                attention_mask=cur_attention_mask.bool(),
+                position_ids=position_ids,
+                output_hidden_states=True,
+                return_dict=True,
+                use_cache=False,
+            )
+            hidden_states = outputs.hidden_states[-1]
+            last_indices = cur_attention_mask.sum(dim=1).long().clamp_min(1) - 1
+            next_hidden = hidden_states[torch.arange(hidden_states.shape[0], device=device), last_indices]
+            next_token = self.lm_head(next_hidden).argmax(dim=-1)
+            generated_ids.append(next_token)
+            cur_input_ids = torch.cat([cur_input_ids, next_token[:, None]], dim=1)
+            cur_attention_mask = torch.cat(
+                [
+                    cur_attention_mask,
+                    torch.ones((cur_attention_mask.shape[0], 1), device=device, dtype=cur_attention_mask.dtype),
+                ],
+                dim=1,
+            )
+
+        return torch.stack(generated_ids, dim=1)
+
     @torch.no_grad()
     def generate_action2(
         self,

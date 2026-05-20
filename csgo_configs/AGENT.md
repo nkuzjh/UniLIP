@@ -834,15 +834,16 @@ repa_spatial_norm_gamma: 1.0
 13. `exp27_2_dust2`
 14. `exp27_3_dust2`
 15. `exp28_dust2`
-16. `exp17_5_dust2`
-17. `exp17_6_dust2`
-18. `exp17_7_dust2`
-19. `exp17_8_dust2`
-20. `exp17_9_dust2`
-21. `exp17_10_dust2`
-22. `exp17_11_dust2`
-23. `exp17_12_dust2`
-24. `exp17_13_dust2`
+16. `exp29_dust2`
+17. `exp17_5_dust2`
+18. `exp17_6_dust2`
+19. `exp17_7_dust2`
+20. `exp17_8_dust2`
+21. `exp17_9_dust2`
+22. `exp17_10_dust2`
+23. `exp17_11_dust2`
+24. `exp17_12_dust2`
+25. `exp17_13_dust2`
 
 理由：
 
@@ -859,6 +860,7 @@ repa_spatial_norm_gamma: 1.0
 - `exp27_2_dust2` 在 `exp27_dust2` 基础上把 perception feature source 前移到 `vision_tower`，无 attention weighting，用来隔离浅层视觉 patch 对齐本身的效果。
 - `exp27_3_dust2` 在 `exp27_2_dust2` 基础上加入 teacher_gt action_dit attention weighting，检验浅层 vision_tower 对齐是否也能从 loc/action attention 聚焦中获益。
 - `exp28_dust2` 是 `exp26_1_dust2` 和 `exp27_3_dust2` 的组合实验，应在两个分量实验之后再跑，用来判断 low-noise pose-level aux-loc 和 attention-weighted feature-level alignment 是否互补。
+- `exp29_dust2` 取消所有 internal loc/action-DiT 模块，用 shared `language_model + lm_head` 直接预测 5 个 `<loc_xxx>` bin token；只保留 gen + loc 联合训练，不启用 aux_loc、loc_perception、loc_repa、REPA、aux_gen。LoRA 使用 `r=32, alpha=64, dropout=0.05`，`llm_lora_lr=1e-4`，`loc_token_lr=1e-4`，`mm_projector_lr=1e-4`。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
 - 然后直接验证 iREPA 作为主方法是否优于经典 REPA。
@@ -891,6 +893,10 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp27_2_dust2.yaml`
 - `csgo_configs/exp27_3_dust2.yaml`
 - `csgo_configs/exp28_dust2.yaml`
+- `csgo_configs/exp29_dust2.yaml`
+- `csgo_configs/test/exp29_dust2_loc.yaml`
+- `csgo_configs/test/exp29_dust2_gen.yaml`
+- `csgo_configs/test/exp29_dust2_gen_conti.yaml`
 - `csgo_configs/exp17_4_dust2.yaml`
 - `csgo_configs/exp17_4_1_dust2.yaml`
 - `csgo_configs/exp17_5_dust2.yaml`

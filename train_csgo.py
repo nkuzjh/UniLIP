@@ -248,6 +248,7 @@ class TrainingArguments(transformers.TrainingArguments):
 
     action_dit_projector_lr: float = 1e-3
     action_dit_lr: float = 1e-4
+    loc_token_lr: Optional[float] = None
     is_action_dit_projector: bool = False
     loc_learnable_query_lr: float = 5e-4
     is_loc_learnable_query: bool = False
@@ -847,6 +848,72 @@ def smart_tokenizer_and_embedding_resize(
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
 
     model.text_tokenizer = tokenizer
+
+
+def build_loc_bin_tokens(loc_bin_num: int, loc_bin_token_prefix: str) -> List[str]:
+    width = len(str(int(loc_bin_num) - 1))
+    return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
+
+
+def add_loc_bin_tokens_and_resize(
+    tokenizer: transformers.PreTrainedTokenizer,
+    model: transformers.PreTrainedModel,
+    loc_bin_num: int,
+    loc_bin_token_prefix: str,
+    init_std: float,
+):
+    loc_tokens = build_loc_bin_tokens(loc_bin_num, loc_bin_token_prefix)
+    old_vocab_size = len(tokenizer)
+    num_new_tokens = tokenizer.add_tokens(loc_tokens, special_tokens=False)
+    if num_new_tokens > 0:
+        model.resize_token_embeddings(len(tokenizer))
+        with torch.no_grad():
+            input_embeddings = model.get_input_embeddings().weight
+            input_embeddings[old_vocab_size:] = torch.empty_like(input_embeddings[old_vocab_size:]).normal_(
+                mean=0.0,
+                std=float(init_std),
+            )
+            lm_head = getattr(model, "lm_head", None)
+            if lm_head is not None and hasattr(lm_head, "weight") and lm_head.weight.shape[0] >= len(tokenizer):
+                lm_head.weight[old_vocab_size:] = torch.empty_like(lm_head.weight[old_vocab_size:]).normal_(
+                    mean=0.0,
+                    std=float(init_std),
+                )
+    token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
+    if any(token_id == tokenizer.unk_token_id for token_id in token_ids):
+        raise ValueError("Failed to register one or more loc bin tokens in tokenizer.")
+    model.text_tokenizer = tokenizer
+    return loc_tokens, token_ids, num_new_tokens
+
+
+def validate_lm_bin_ce_config(csgo_config: Dict):
+    if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
+        return
+
+    required_false = [
+        "use_pi05_action_dit",
+        "is_action_dit_projector",
+        "use_vit_regression_head",
+        "use_vit_cls_regression_head",
+        "use_codex_vit_regression_head",
+        "is_loc_aux_loss",
+        "is_aux_loc_em_loss",
+        "is_aux_loc_uncertainty_loss",
+        "is_aux_loc_combined_em_unc_loss",
+        "is_loc_perception_loss",
+        "is_loc_repa_loss",
+        "is_repa_loss",
+        "is_gen_aux_loss",
+    ]
+    if not csgo_config.get("skip_internal_loc_modules", False):
+        raise ValueError("loc_head_type='lm_bin_ce' requires skip_internal_loc_modules=True.")
+    for key in required_false:
+        if bool(csgo_config.get(key, False)):
+            raise ValueError(f"loc_head_type='lm_bin_ce' requires {key}=False.")
+    if csgo_config.get("loc_init_ckpt_path", None) is not None:
+        raise ValueError("loc_head_type='lm_bin_ce' forbids loc_init_ckpt_path.")
+    if int(csgo_config.get("loc_bin_num", 0)) <= 1:
+        raise ValueError("loc_head_type='lm_bin_ce' requires loc_bin_num > 1.")
 
 
 def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict:
@@ -2141,6 +2208,26 @@ def train(attn_implementation=None):
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
 
+    validate_lm_bin_ce_config(csgo_config)
+    model_args.fix_dit = csgo_config.get("fix_dit", model_args.fix_dit)
+    model_args.fix_connect = csgo_config.get("fix_connect", model_args.fix_connect)
+    model_args.fix_vit = csgo_config.get("fix_vit", model_args.fix_vit)
+    model_args.fix_llm = csgo_config.get("fix_llm", model_args.fix_llm)
+    training_args.lora_r = int(csgo_config.get("lora_r", training_args.lora_r))
+    training_args.lora_alpha = int(csgo_config.get("lora_alpha", training_args.lora_alpha))
+    training_args.lora_dropout = float(csgo_config.get("lora_dropout", training_args.lora_dropout))
+    if "loc_token_lr" in csgo_config:
+        training_args.loc_token_lr = float(csgo_config["loc_token_lr"])
+    if "learning_rate" in csgo_config:
+        training_args.learning_rate = float(csgo_config["learning_rate"])
+    if "weight_decay" in csgo_config:
+        training_args.weight_decay = float(csgo_config["weight_decay"])
+    if "warmup_ratio" in csgo_config:
+        training_args.warmup_ratio = float(csgo_config["warmup_ratio"])
+    if "lr_scheduler_type" in csgo_config:
+        training_args.lr_scheduler_type = csgo_config["lr_scheduler_type"]
+    if "lr_scheduler_kwargs" in csgo_config:
+        training_args.lr_scheduler_kwargs = csgo_config["lr_scheduler_kwargs"]
 
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = f"{training_args.output_dir.replace('outputs', 'logs')}/train_{cur_time_str}"
@@ -2278,11 +2365,42 @@ def train(attn_implementation=None):
             tokenizer=tokenizer,
             model=model,
         )
+    if csgo_config.get("loc_head_type", None) == "lm_bin_ce":
+        loc_bin_num = int(csgo_config.get("loc_bin_num", 256))
+        loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
+        loc_bin_init_std = float(csgo_config.get("loc_bin_init_std", 1.0e-4))
+        _, loc_bin_token_ids, num_new_loc_tokens = add_loc_bin_tokens_and_resize(
+            tokenizer=tokenizer,
+            model=model,
+            loc_bin_num=loc_bin_num,
+            loc_bin_token_prefix=loc_bin_token_prefix,
+            init_std=loc_bin_init_std,
+        )
+        logging.info(
+            "lm_bin_ce loc tokens ready: loc_bin_num=%d, added=%d, id_range=[%s, %s]",
+            loc_bin_num,
+            num_new_loc_tokens,
+            loc_bin_token_ids[0],
+            loc_bin_token_ids[-1],
+        )
     if model_args.version in conversation_lib.conv_templates:
         conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
     else:
         conversation_lib.default_conversation = conversation_lib.conv_templates["llama3"]
     logging.info(f"Using conversation format: {conversation_lib.default_conversation.version}")
+
+    model.config.loc_head_type = csgo_config.get("loc_head_type", None)
+    model.config.loc_bin_num = int(csgo_config.get("loc_bin_num", 256))
+    model.config.loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
+    model.config.loc_bin_init_std = float(csgo_config.get("loc_bin_init_std", 1.0e-4))
+    model.config.loc_bin_train_full_embeddings = csgo_config.get("loc_bin_train_full_embeddings", False)
+    model.config.loc_token_lr = training_args.loc_token_lr = csgo_config.get(
+        "loc_token_lr",
+        training_args.loc_token_lr,
+    )
+    if model.config.loc_head_type == "lm_bin_ce":
+        loc_tokens = build_loc_bin_tokens(model.config.loc_bin_num, model.config.loc_bin_token_prefix)
+        model.config.loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
 
     model.config.img_size = model_args.img_size = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
@@ -2817,6 +2935,15 @@ def train(attn_implementation=None):
     )
     if should_inject_lora:
         model.inject_lora_to_sub_module(model_args, training_args)
+
+        if (
+            getattr(model.config, "loc_head_type", None) == "lm_bin_ce"
+            and bool(getattr(model.config, "loc_bin_train_full_embeddings", False))
+        ):
+            model.get_input_embeddings().weight.requires_grad = True
+            if getattr(model, "lm_head", None) is not None:
+                model.lm_head.weight.requires_grad = True
+            logging.info("lm_bin_ce: set full input embeddings and lm_head trainable after LoRA injection.")
 
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)

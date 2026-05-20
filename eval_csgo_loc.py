@@ -676,6 +676,38 @@ def smart_tokenizer_and_embedding_resize(special_tokens_dict, tokenizer, model):
         input_embeddings = model.get_input_embeddings().weight.data
         input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
+    model.text_tokenizer = tokenizer
+
+
+def build_loc_bin_tokens(loc_bin_num, loc_bin_token_prefix):
+    width = len(str(int(loc_bin_num) - 1))
+    return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
+
+
+def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
+    if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
+        return []
+    loc_tokens = build_loc_bin_tokens(
+        csgo_config.get("loc_bin_num", 256),
+        csgo_config.get("loc_bin_token_prefix", "<loc_"),
+    )
+    tokenizer.add_tokens(loc_tokens, special_tokens=False)
+    model.resize_token_embeddings(len(tokenizer))
+    model.text_tokenizer = tokenizer
+    return tokenizer.convert_tokens_to_ids(loc_tokens)
+
+
+def parse_loc_bin_tokens(text, loc_bin_num=256, loc_bin_token_prefix="<loc_"):
+    import re
+    pattern = re.escape(loc_bin_token_prefix) + r"(\d+)>"
+    values = [int(match) for match in re.findall(pattern, text)]
+    if len(values) < 5:
+        raise ValueError(f"Expected at least 5 loc bin tokens, got {len(values)} from: {text!r}")
+    denom = max(int(loc_bin_num) - 1, 1)
+    return torch.tensor(
+        [min(max(v, 0), int(loc_bin_num) - 1) / denom for v in values[:5]],
+        dtype=torch.float32,
+    )
 
 map_path_dict = {
     'de_dust2': 'de_dust2_radar_psd.png',
@@ -764,6 +796,7 @@ def main():
             tokenizer=tokenizer,
             model=model,
         )
+    loc_bin_token_ids = add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config)
     from unilip import conversation as conversation_lib
     if inference_args.version in conversation_lib.conv_templates:
         conversation_lib.default_conversation = conversation_lib.conv_templates[inference_args.version]
@@ -772,6 +805,11 @@ def main():
     print(f"Using conversation format: {conversation_lib.default_conversation.version}")
 
     # 3. Init Action Modules
+    model.config.loc_head_type = csgo_config.get("loc_head_type", None)
+    model.config.loc_bin_num = int(csgo_config.get("loc_bin_num", 256))
+    model.config.loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
+    if loc_bin_token_ids:
+        model.config.loc_bin_token_ids = loc_bin_token_ids
     model.config.img_size = getattr(inference_args, "img_size", csgo_config.get("img_size", False))
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", csgo_config.get("is_action_dit_dense_timestep", False))
 
@@ -795,7 +833,10 @@ def main():
     model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", csgo_config.get("is_loc_learnable_query", False))
 
     model.get_model().initialize_vision_modules(model_args=inference_args)
-    model.get_model().initialize_localization_modules(model_args=inference_args)
+    if csgo_config.get("skip_internal_loc_modules", False) or csgo_config.get("loc_head_type", None) == "lm_bin_ce":
+        print("Skip UniLIP internal localization module initialization.")
+    else:
+        model.get_model().initialize_localization_modules(model_args=inference_args)
 
     # =====================================================================
     # [NEW] 3.5 Inject LoRA architecture before loading weights
@@ -876,14 +917,32 @@ def main():
         z_range = batch["z_range"]
 
         with torch.no_grad():
-            pred_norm_loc_tensor = model.generate_action2(
-                input_ids,
-                attention_mask,
-                labels,
-                und_image,
-                aux_image,
-                num_steps=10
-            ).squeeze(1).float().cpu()
+            if csgo_config.get("loc_head_type", None) == "lm_bin_ce":
+                generated_loc_ids = model.generate_loc_bin_tokens(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    und_image=und_image,
+                    aux_image=aux_image,
+                    max_new_tokens=5,
+                )
+                generated_loc_text = tokenizer.batch_decode(generated_loc_ids, skip_special_tokens=False)
+                pred_norm_loc_tensor = torch.stack([
+                    parse_loc_bin_tokens(
+                        text,
+                        loc_bin_num=csgo_config.get("loc_bin_num", 256),
+                        loc_bin_token_prefix=csgo_config.get("loc_bin_token_prefix", "<loc_"),
+                    )
+                    for text in generated_loc_text
+                ], dim=0)
+            else:
+                pred_norm_loc_tensor = model.generate_action2(
+                    input_ids,
+                    attention_mask,
+                    labels,
+                    und_image,
+                    aux_image,
+                    num_steps=10
+                ).squeeze(1).float().cpu()
 
         current_bs = pred_norm_loc_tensor.size(0)
         for sample_idx in range(current_bs):
@@ -903,6 +962,8 @@ def main():
                 "gt_norm": gt_norm.tolist(),   # Save as list
                 "pred": pred_phys,
                 "gt": gt_phys,
+                "generated_loc_tokens": generated_loc_text[sample_idx]
+                if csgo_config.get("loc_head_type", None) == "lm_bin_ce" else None,
             })
 
             current_map = map_name[sample_idx]
