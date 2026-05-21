@@ -4387,7 +4387,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             dtype=torch.long,
         )
         token_to_bin[loc_bin_token_ids.to(device=shift_logits.device, dtype=torch.long)] = torch.arange(
-            loc_bin_token_ids.numel(),
+            loc_bin_token_ids.numel(), #numel()返回张量中的元素数量
             device=shift_logits.device,
             dtype=torch.long,
         )

@@ -363,8 +363,8 @@ def visualize_dataset_samples_paired(dataset, processor, num_samples=5, save_pat
         pose_str = f"x={pose['x']:.1f}, y={pose['y']:.1f}, z={pose['z']:.2f}\npitch={pose['angle_v']:.1f}, yaw={pose['angle_h']:.1f}"
 
         # 截取 Prompt 关键部分
-        prompt_loc_short = text_loc.split("Task:")[-1].split("Predict")[0].strip()[:100] + "..."
-        prompt_gen_short = text_gen.split("Task:")[-1].split("Coordinate")[0].strip()[:100] + "..."
+        prompt_loc_short = text_loc.split("Task:")[-1].split("Predict")[0].strip()#[:100] + "..."
+        prompt_gen_short = text_gen.split("Task:")[-1].split("Coordinate")[0].strip()#[:100] + "..."
 
         info_text = (
             f"Sample Pair Index: {i}\n"
@@ -372,10 +372,10 @@ def visualize_dataset_samples_paired(dataset, processor, num_samples=5, save_pat
             f"Map: {map_name}\n"
             f"GT Pose:\n{pose_str}\n"
             f"--------------------------------\n"
-            f"[Task Loc] Raw Prompt Snippet:\n...{textwrap.fill(prompt_loc_short, 35)}\n"
+            f"[Task Loc] Raw Prompt Snippet:\n...{textwrap.fill(prompt_loc_short, 15)}\n"
             f"Loss Mask: {sample_loc['loss_mask'].tolist()}\n"
             f"--------------------------------\n"
-            f"[Task Gen] Raw Prompt Snippet:\n...{textwrap.fill(prompt_gen_short, 35)}\n"
+            f"[Task Gen] Raw Prompt Snippet:\n...{textwrap.fill(prompt_gen_short, 15)}\n"
             f"Loss Mask: {sample_gen['loss_mask'].tolist()}\n"
         )
 
