@@ -4361,7 +4361,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         loc_label_mask = torch.isin(shift_labels, loc_bin_token_ids)
         if not loc_label_mask.any():
             zero = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
-            return zero, zero
+            return zero, zero, zero, zero
 
         ce_labels = shift_labels.masked_fill(~loc_label_mask, -100)
         token_loss = F.cross_entropy(
@@ -4379,7 +4379,62 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         pred_ids = shift_logits.argmax(dim=-1).to(dtype=shift_labels.dtype)
         acc = ((pred_ids == shift_labels) & loc_label_mask).to(dtype=torch.float32).sum() / loc_label_mask_float.sum().clamp_min(1.0)
-        return loss.to(torch.float32), acc.to(torch.float32)
+
+        token_to_bin = torch.full(
+            (shift_logits.shape[-1],),
+            -1,
+            device=shift_logits.device,
+            dtype=torch.long,
+        )
+        token_to_bin[loc_bin_token_ids.to(device=shift_logits.device, dtype=torch.long)] = torch.arange(
+            loc_bin_token_ids.numel(),
+            device=shift_logits.device,
+            dtype=torch.long,
+        )
+
+        pred_pose_values = []
+        target_pose_values = []
+        pose_weights = []
+        valid_pred_count = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        total_pred_count = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        for batch_idx in range(shift_labels.shape[0]):
+            loc_positions = loc_label_mask[batch_idx].nonzero(as_tuple=False).flatten()
+            if loc_positions.numel() < 5:
+                continue
+            loc_positions = loc_positions[:5]
+            pred_bins = token_to_bin[pred_ids[batch_idx, loc_positions].to(device=shift_logits.device, dtype=torch.long)]
+            target_bins = token_to_bin[shift_labels[batch_idx, loc_positions].to(device=shift_logits.device, dtype=torch.long)]
+            pred_valid = pred_bins >= 0
+            valid_pred_count = valid_pred_count + pred_valid.to(dtype=torch.float32).sum()
+            total_pred_count = total_pred_count + torch.tensor(5.0, device=shift_logits.device)
+            pred_pose_values.append(pred_bins.clamp_min(0).to(dtype=torch.float32) / max(loc_bin_token_ids.numel() - 1, 1))
+            target_pose_values.append(target_bins.to(dtype=torch.float32) / max(loc_bin_token_ids.numel() - 1, 1))
+            if loss_mask is not None:
+                pose_weights.append(loss_mask[batch_idx, 0].to(device=shift_logits.device, dtype=torch.float32))
+            else:
+                pose_weights.append(torch.ones((), device=shift_logits.device, dtype=torch.float32))
+
+        if len(pred_pose_values) > 0:
+            pred_pose = torch.stack(pred_pose_values, dim=0)
+            target_pose = torch.stack(target_pose_values, dim=0)
+            pose_weights = torch.stack(pose_weights, dim=0)
+            xy_loss = F.smooth_l1_loss(pred_pose[..., :2], target_pose[..., :2], reduction="none").mean(dim=-1)
+            z_loss = F.smooth_l1_loss(pred_pose[..., 2:3], target_pose[..., 2:3], reduction="none").mean(dim=-1)
+            if getattr(self.config, "loc_use_circular_loss", True):
+                angle_delta = torch.remainder(pred_pose[..., 3:5] - target_pose[..., 3:5] + 0.5, 1.0) - 0.5
+                angle_loss = F.smooth_l1_loss(angle_delta, torch.zeros_like(angle_delta), reduction="none").mean(dim=-1)
+            else:
+                angle_loss = F.smooth_l1_loss(pred_pose[..., 3:5], target_pose[..., 3:5], reduction="none").mean(dim=-1)
+            smooth_l1_loss = (
+                xy_loss * float(getattr(self.config, "loc_xy_loss_weight", 1.0))
+                + z_loss * float(getattr(self.config, "loc_z_loss_weight", 1.0))
+                + angle_loss * float(getattr(self.config, "loc_angle_loss_weight", 2.0))
+            )
+            smooth_l1_loss = (smooth_l1_loss * pose_weights).sum() / pose_weights.sum().clamp_min(1.0)
+        else:
+            smooth_l1_loss = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        pred_valid_ratio = valid_pred_count / total_pred_count.clamp_min(1.0)
+        return loss.to(torch.float32), acc.to(torch.float32), smooth_l1_loss.to(torch.float32), pred_valid_ratio.to(torch.float32)
 
     # ==========================================
     # 3. [NEW] Forward Implementation
@@ -4602,6 +4657,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             masked_loc_loss = zero_loss
             masked_loc_loss_valid5 = zero_loss
             loc_bin_token_acc = zero_loss
+            loc_bin_smooth_l1_loss = zero_loss
+            loc_bin_pred_valid_ratio = zero_loss
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -4846,7 +4903,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                     locbrh_hidden_states = hidden_states[loc_indices]
                     locbrh_labels = labels[loc_indices]
                     locbrh_loss_mask = loss_mask[loc_indices]
-                    masked_loc_loss, loc_bin_token_acc = self._compute_loc_bin_ce_loss(
+                    (
+                        masked_loc_loss,
+                        loc_bin_token_acc,
+                        loc_bin_smooth_l1_loss,
+                        loc_bin_pred_valid_ratio,
+                    ) = self._compute_loc_bin_ce_loss(
                         locbrh_hidden_states,
                         locbrh_labels,
                         loss_mask=locbrh_loss_mask,
@@ -5214,6 +5276,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 "loc_bin_ce_loss": masked_loc_loss.detach().cpu().numpy().item()
                 if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
                 "loc_bin_token_acc": loc_bin_token_acc.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                "loc_bin_smooth_l1_loss": loc_bin_smooth_l1_loss.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                "loc_bin_pred_valid_ratio": loc_bin_pred_valid_ratio.detach().cpu().numpy().item()
                 if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
                 "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
