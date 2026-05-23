@@ -764,8 +764,8 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
 
     current_world_size = _get_current_world_size(training_args)
     checkpoint_world_size = checkpoint_world_size_override
-    # if checkpoint_world_size is None:
-    #     checkpoint_world_size = current_world_size
+    if checkpoint_world_size is None:
+        checkpoint_world_size = current_world_size
     if checkpoint_world_size is None:
         raise ValueError(
             "Cannot infer checkpoint world_size safely. "
