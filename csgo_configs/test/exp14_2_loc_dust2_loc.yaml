@@ -1,0 +1,54 @@
+###################
+### exp14_2_loc_dust2 loc eval
+###################
+debug: False
+
+is_multi_task: True
+is_multi_task_balanced: False
+task_mix_ratio: 1.0
+alpha_loc_loss: 1.0
+
+is_loc_aux_loss: False
+is_aux_loc_em_loss: False
+is_aux_loc_uncertainty_loss: False
+is_aux_loc_combined_em_unc_loss: False
+is_loc_perception_loss: False
+is_loc_repa_loss: False
+is_repa_loss: False
+is_gen_aux_loss: False
+
+is_action_dit_dense_timestep: True
+is_action_dit_projector: True
+action_dit_projector_lr: 5.0e-4
+action_dit_lr: 1.0e-4
+is_aciton_dit_vae_small_init: False
+use_pi05_action_dit: True
+pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+
+img_size: 224
+use_short_instruction: True
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2']
+val_maps: ['de_dust2']
+test_maps: ['de_dust2']
+
+is_lora: True
+llm_train_mode: "lora"
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+enable_language_model_lora: True
+enable_gen_head_lora: False
+enable_loc_head_lora: True
+freeze_inactive_head: True
+
+fix_vit: True
+fix_llm: False
+fix_connect: True
+fix_dit: True
+
+ckpt_path: "outputs/csgo_1b/exp14_2_loc_dust2/checkpoint-4000/model.safetensors"
+batch_size: 1
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dim: 5

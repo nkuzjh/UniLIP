@@ -2577,6 +2577,34 @@ def train(attn_implementation=None):
         training_args.shared_llm_tail_lora_lr,
     )
     model.config.is_lora = training_args.is_lora = csgo_config.get("is_lora", training_args.is_lora)
+    model_args.enable_language_model_lora = bool(csgo_config.get("enable_language_model_lora", True))
+    model_args.enable_gen_head_lora = bool(csgo_config.get("enable_gen_head_lora", True))
+    model_args.enable_loc_head_lora = bool(csgo_config.get("enable_loc_head_lora", True))
+    model_args.freeze_inactive_head = bool(csgo_config.get("freeze_inactive_head", False))
+    model.config.enable_language_model_lora = model_args.enable_language_model_lora
+    model.config.enable_gen_head_lora = model_args.enable_gen_head_lora
+    model.config.enable_loc_head_lora = model_args.enable_loc_head_lora
+    model.config.freeze_inactive_head = model_args.freeze_inactive_head
+
+    if model.config.is_lora and model_args.freeze_inactive_head:
+        if csgo_config.get("is_multi_task_balanced", False):
+            raise ValueError("freeze_inactive_head=True currently supports only is_multi_task_balanced=False.")
+        task_mix_ratio = float(csgo_config.get("task_mix_ratio", 0.5))
+        if task_mix_ratio == 0.0:
+            if not model_args.enable_gen_head_lora or model_args.enable_loc_head_lora:
+                raise ValueError(
+                    "gen-only freeze_inactive_head=True requires enable_gen_head_lora=True "
+                    "and enable_loc_head_lora=False."
+                )
+        elif task_mix_ratio == 1.0:
+            if model_args.enable_gen_head_lora or not model_args.enable_loc_head_lora:
+                raise ValueError(
+                    "loc-only freeze_inactive_head=True requires enable_gen_head_lora=False "
+                    "and enable_loc_head_lora=True."
+                )
+        else:
+            raise ValueError("freeze_inactive_head=True currently supports only task_mix_ratio 0.0 or 1.0.")
+
     explicit_llm_train_mode = "llm_train_mode" in csgo_config
     if explicit_llm_train_mode:
         llm_train_mode = str(csgo_config["llm_train_mode"])
@@ -2603,6 +2631,8 @@ def train(attn_implementation=None):
 
     if llm_train_mode == "lora" and not training_args.is_lora:
         raise ValueError("llm_train_mode='lora' requires is_lora=True.")
+    if llm_train_mode == "lora" and not model_args.enable_language_model_lora:
+        raise ValueError("llm_train_mode='lora' requires enable_language_model_lora=True.")
     if llm_train_mode == "full" and training_args.is_lora:
         raise ValueError("llm_train_mode='full' requires is_lora=False.")
     if llm_train_mode in {"shared_tail_full", "shared_tail_lora"} and not model_args.fix_llm:
@@ -2629,6 +2659,13 @@ def train(attn_implementation=None):
     model.config.llm_train_mode = training_args.llm_train_mode = llm_train_mode
     model.config.llm_lr = training_args.llm_lr = float(csgo_config.get("llm_lr", training_args.llm_lr))
     model.config.llm_lora_lr = training_args.llm_lora_lr = float(csgo_config.get("llm_lora_lr", training_args.llm_lora_lr))
+    logging.info(
+        "LoRA module gating: language_model=%s, gen_head=%s, loc_head=%s, freeze_inactive_head=%s",
+        model_args.enable_language_model_lora,
+        model_args.enable_gen_head_lora,
+        model_args.enable_loc_head_lora,
+        model_args.freeze_inactive_head,
+    )
 
     if model_args.shared_llm_tail_lora_enabled:
         if not model_args.train_shared_llm_tail_only:

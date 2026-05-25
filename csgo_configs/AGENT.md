@@ -107,6 +107,15 @@ lr_scheduler_kwargs:
 - QLoRA / PEFT 实践：大模型 LoRA 常对所有 linear 层注入 adapter，以更接近 full finetune 能力。<https://arxiv.org/abs/2305.14314>, <https://huggingface.co/docs/peft/main/developer_guides/lora>
 - LoRA+ / LoRA-GA：LoRA 学习率、初始化和 A/B 矩阵优化策略会显著影响收敛速度。<https://arxiv.org/abs/2402.12354>, <https://arxiv.org/abs/2407.05000>
 
+### Modular LoRA Gating
+
+CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head/projector modules by head:
+
+- `enable_language_model_lora`: inject LoRA into shared `language_model`.
+- `enable_gen_head_lora`: inject LoRA into gen-side `llm_connector` and SANA `dit`; allow gen-side small modules such as `projector` and `latent_queries` to train.
+- `enable_loc_head_lora`: inject LoRA into loc-side `action_dit`; allow loc-side small modules such as `action_dit_connector`, `action_dit_projector`, `action_dit_norm`, `action_in_proj`, `action_out_proj`, and `time_mlp_*` to train.
+- `freeze_inactive_head`: after LoRA injection, freeze the inactive head as a final guard. Current supported ablations are `task_mix_ratio=0.0` gen-only with loc head frozen, and `task_mix_ratio=1.0` loc-only with gen head frozen.
+
 ## Existing Experiment Families
 
 ### Single-task teachers and warm-start sources
@@ -118,6 +127,8 @@ lr_scheduler_kwargs:
 | `exp14_dust2_gen` | `dust2` 单任务生成 teacher / warm-start 来源 | 可作为 domain-specific vision teacher 候选 |
 | `exp14_dust2_loc` | `dust2` 单任务定位 teacher / warm-start 来源 | 当前 loc-aware REPA teacher 的主要来源 |
 | `exp14_1_dust2_gen` | `dust2` 生成分支变体 | 保留作参考，不是当前主线 |
+| `exp14_2_gen_dust2` | 当前 224 + short-instruction + LoRA 生成单任务 baseline | 只训练 shared `language_model` LoRA 与 gen head LoRA/小模块；loc head 完全冻结 |
+| `exp14_2_loc_dust2` | 当前 224 + short-instruction + LoRA 定位单任务 baseline | 只训练 shared `language_model` LoRA 与 loc head LoRA/小模块；gen head 完全冻结 |
 
 ### Auxiliary localization line
 
@@ -162,6 +173,8 @@ lr_scheduler_kwargs:
 | `exp27_3_dust2` | `exp27_2_dust2` + teacher_gt action_dit attention weighting | perception feature 仍是 `vision_tower` FPS patch features；attention 权重复用 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled` wrapper，不用 hook |
 | `exp28_dust2` | `exp26_dust2` + `exp27_3_dust2` 的组合实验 | 默认 `linear_1m_sigma` combined aux-loc 与 teacher_gt attention-weighted vision_tower perceptual alignment 同时开启，验证 pose-level 与 patch-feature-level 监督是否互补 |
 | `exp28_1_dust2` | `exp26_2_dust2` + `exp27_3_dust2` 的组合实验 | 将 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，其他 attention-weighted vision_tower perceptual alignment 与训练设置保持一致 |
+| `exp14_2_gen_dust2` | 当前主线配方的 LoRA gen-only 对照 | `task_mix_ratio=0.0`，`language_model + gen head` LoRA，loc head 通过 `freeze_inactive_head=True` 完全冻结 |
+| `exp14_2_loc_dust2` | 当前主线配方的 LoRA loc-only 对照 | `task_mix_ratio=1.0`，`language_model + loc head` LoRA，gen head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -198,6 +211,8 @@ lr_scheduler_kwargs:
 | `exp27_3_dust2` | attention-weighted shallow vision_tower perceptual alignment | `exp27_2_dust2 + teacher_gt action_dit attention weighting`，权重方案固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp28_dust2` | default aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_dust2 + exp27_3_dust2`，同时使用默认 `linear_1m_sigma` combined aux-loc 和 teacher_gt action attention-weighted vision_tower feature alignment |
 | `exp28_1_dust2` | exp-sigma aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_2_dust2 + exp27_3_dust2`，保持 `exp28_dust2` 其他设置不变，仅将 combined aux-loc 权重改为 `exp_sigma, lambda=5.0, renorm=none` |
+| `exp14_2_gen_dust2` | LoRA gen-only current baseline | 224 + short instruction；`task_mix_ratio=0.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=True`; `enable_loc_head_lora=False`; `freeze_inactive_head=True` |
+| `exp14_2_loc_dust2` | LoRA loc-only current baseline | 224 + short instruction；`task_mix_ratio=1.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=False`; `enable_loc_head_lora=True`; `freeze_inactive_head=True` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -568,6 +583,8 @@ same velocity target u_t
 | `exp27_3_dust2` | `exp27_2_dust2` | 在 vision_tower patch-level `smooth_l1` loc perception loss 上加入 teacher_gt action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；复用轻量 wrapper，不用 hook | 验证 loc/action_dit 注意力能否让浅层 vision_tower feature 对齐更聚焦 |
 | `exp28_dust2` | `exp26_dust2` | 保留默认 `linear_1m_sigma` combined aux-loc，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；`alpha_loc_aux` 从 step 0 到 6000 线性 warmup 到 2.0，`alpha_loc_perception` 从 step 2000 开始为 0.1 | 验证 pose-level aux-loc 与 attention-focused patch feature 对齐是否互补 |
 | `exp28_1_dust2` | `exp26_2_dust2` | 保留 `exp26_2_dust2` 的 `exp_sigma` combined aux-loc timestep 权重，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；除 `aux_loc_timestep_weight_type=exp_sigma`, `aux_loc_exp_weight_lambda=5.0`, `aux_loc_timestep_weight_renorm=none` 外，其余与 `exp28_dust2` 一致 | 验证低噪声指数偏置的 pose-level aux-loc 与 attention-focused patch feature 对齐是否比默认 `linear_1m_sigma` 组合更稳定 |
+| `exp14_2_gen_dust2` | `exp14_dust2_gen` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 gen head LoRA/小模块，loc head 完全冻结 | 给当前主线提供严格 gen-only LoRA baseline |
+| `exp14_2_loc_dust2` | `exp14_dust2_loc` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 loc head LoRA/小模块，gen head 完全冻结 | 给当前主线提供严格 loc-only LoRA baseline |
 
 建议第一版最小设置：
 

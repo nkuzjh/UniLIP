@@ -1701,6 +1701,61 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             (tail_layer_indices[-1] + 1) if len(tail_layer_indices) > 0 else 0,
         )
 
+    @staticmethod
+    def _parameter_belongs_to_module(name, module_names):
+        # Match exact module path segments so wrapper prefixes such as
+        # "model." or "module." are harmless, while names like
+        # "action_dit_projector" do not accidentally match "projector".
+        return any(part in module_names for part in name.split("."))
+
+    def _is_gen_head_parameter_name(self, name):
+        return self._parameter_belongs_to_module(
+            name,
+            {
+                "latent_queries",
+                "projector",
+                "llm_connector",
+                "dit",
+            },
+        )
+
+    def _is_loc_head_parameter_name(self, name):
+        return self._parameter_belongs_to_module(
+            name,
+            {
+                "action_dit",
+                "action_dit_connector",
+                "action_dit_projector",
+                "action_dit_norm",
+                "action_in_proj",
+                "action_out_proj",
+                "time_mlp_in",
+                "time_mlp_out",
+                "loc_learnable_query",
+                "regression_loc_head",
+                "vit_regression_head",
+                "vit_cls_regression_head",
+                "cross_view_fusion",
+                "vit_loc_fusion",
+            },
+        )
+
+    def _freeze_gen_head_parameters(self):
+        count = 0
+        for name, param in self.model.named_parameters():
+            if self._is_gen_head_parameter_name(name) and param.requires_grad:
+                param.requires_grad = False
+                count += 1
+        logging.info("🔒 Froze inactive gen head parameters: %d", count)
+
+    def _freeze_loc_head_parameters(self):
+        count = 0
+        for name, param in self.model.named_parameters():
+            if self._is_loc_head_parameter_name(name) and param.requires_grad:
+                param.requires_grad = False
+                count += 1
+        logging.info("🔒 Froze inactive loc head parameters: %d", count)
+
     def inject_lora_to_sub_module(self, model_args, training_args):
         use_global_lora = getattr(training_args, 'is_lora', False)
         use_shared_tail_lora = (
@@ -1711,6 +1766,33 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             return
 
         logging.info("🌟 Starting Modular LoRA Injection for Unified UniLIP...")
+        enable_language_model_lora = bool(getattr(
+            model_args,
+            "enable_language_model_lora",
+            getattr(self.config, "enable_language_model_lora", True),
+        ))
+        enable_gen_head_lora = bool(getattr(
+            model_args,
+            "enable_gen_head_lora",
+            getattr(self.config, "enable_gen_head_lora", True),
+        ))
+        enable_loc_head_lora = bool(getattr(
+            model_args,
+            "enable_loc_head_lora",
+            getattr(self.config, "enable_loc_head_lora", True),
+        ))
+        freeze_inactive_head = bool(getattr(
+            model_args,
+            "freeze_inactive_head",
+            getattr(self.config, "freeze_inactive_head", False),
+        ))
+        logging.info(
+            "LoRA module gating: language_model=%s, gen_head=%s, loc_head=%s, freeze_inactive_head=%s",
+            enable_language_model_lora,
+            enable_gen_head_lora,
+            enable_loc_head_lora,
+            freeze_inactive_head,
+        )
 
         # =========================================================
         # 1. Vision Tower (InternVisionModel)
@@ -1729,7 +1811,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 2. LLM Backbone (Qwen2Model)
         # =========================================================
         # 结构: q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj
-        if use_global_lora and not model_args.fix_llm and not getattr(model_args, "train_shared_llm_tail_only", False):
+        if (
+            use_global_lora
+            and enable_language_model_lora
+            and not model_args.fix_llm
+            and not getattr(model_args, "train_shared_llm_tail_only", False)
+        ):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1746,7 +1833,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 3. LLM Connector (Qwen2Model Slice)
         # =========================================================
         # 结构同 LLM
-        if use_global_lora and not self.get_model().fix_connect:
+        if use_global_lora and enable_gen_head_lora and not self.get_model().fix_connect:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r // 2,
                 lora_alpha=training_args.lora_alpha,
@@ -1764,7 +1851,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 注意：Sana 的 GLUMBConv 使用的是 Conv2d，LoRA 默认不转 Conv2d 除非指定。
         # 这里我们主要对 Attention 和 Timestep MLP 做 LoRA。
         # to_q/k/v 匹配 Attention, linear_1/2 匹配 TimestepEmbedder & CaptionProjection
-        if use_global_lora and not self.get_model().fix_dit:
+        if use_global_lora and enable_gen_head_lora and not self.get_model().fix_dit:
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1777,7 +1864,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         # 5. Loc Action DiT (Qwen2Model Slice) or (Pi05 Action DiT)
         # =========================================================
         # 结构同 LLM
-        if use_global_lora and hasattr(self.get_model(), "action_dit"):
+        if use_global_lora and enable_loc_head_lora and hasattr(self.get_model(), "action_dit"):
             self._apply_lora_to_module(
                 lora_r=training_args.lora_r,
                 lora_alpha=training_args.lora_alpha,
@@ -1795,33 +1882,46 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         logging.info("🔓 Unfreezing Projectors and Heads...")
 
         # 定义需要全量训练的模块关键词
-        modules_to_train_fully = [
-            # "lm_head",                # LLM Output
-            # "embed_tokens",           # LLM Input Embedding (如果 resize 了)
-            # "projector",              # Connector -> DiT
-            "latent_queries",         # Gen Query
+        gen_full_train_modules = {"latent_queries", "projector"}
+        loc_full_train_modules = {
             "action_dit_connector",
-            "action_dit_projector",   # LLM -> Action DiT
-            "action_dit_norm",        # Action DiT Norm (AdaRMS)
-            "action_in_proj",         # Action Input
-            "action_out_proj",        # Action Output
-            "time_mlp_in",            # Timestep MLP
+            "action_dit_projector",
+            "action_dit_norm",
+            "action_in_proj",
+            "action_out_proj",
+            "time_mlp_in",
             "time_mlp_out",
             "loc_learnable_query",
             "vit_regression_head",
             "vit_cls_regression_head",
-        ]
-        if getattr(model_args, "train_mm_projector_only", False):
-            modules_to_train_fully.append("multi_modal_projector")
+            "regression_loc_head",
+            "cross_view_fusion",
+            "vit_loc_fusion",
+        }
+
+        def should_train_fully(name):
+            if getattr(model_args, "train_mm_projector_only", False) and self._parameter_belongs_to_module(name, {"multi_modal_projector"}):
+                return True
+            if enable_gen_head_lora and self._parameter_belongs_to_module(name, gen_full_train_modules):
+                return True
+            if enable_loc_head_lora and self._parameter_belongs_to_module(name, loc_full_train_modules):
+                return True
+            return False
 
         count_unfrozen = 0
         for name, param in self.model.named_parameters():
             # 检查参数名是否包含上述关键词
-            if any(m in name for m in modules_to_train_fully):
+            if should_train_fully(name):
                 if param.requires_grad == False:
                     logging.info(name)
                     param.requires_grad = True
                     count_unfrozen += 1
+
+        if freeze_inactive_head:
+            if not enable_gen_head_lora:
+                self._freeze_gen_head_parameters()
+            if not enable_loc_head_lora:
+                self._freeze_loc_head_parameters()
 
         logging.info(f"✅ LoRA Injection Complete. Manually unfroze {count_unfrozen} parameters for Heads/Projectors.")
 
