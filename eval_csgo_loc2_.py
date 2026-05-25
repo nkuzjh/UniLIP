@@ -189,7 +189,13 @@ def visualize_map_results(vis_data_grouped, output_dir, map_path_dict, data_dir_
 # ==========================================
 # 3. 辅助类与 Dataset
 # ==========================================
-def get_loc_prompt(map_name):
+def get_loc_prompt(map_name, use_short_instruction=False):
+    if use_short_instruction:
+        return (
+            f"Estimate the CS2 camera pose on map '{map_name}' from the FPV image and radar map. "
+            "Predict 5D pose: x, y, z, pitch, yaw.\n"
+            "<image>\n<image>"
+        )
     return f"Task: The following visual data of CS2 map '{map_name}' has been fused... Predict the 5D pose...\n<image>\n<image>"
 
 def add_template_for_loc(prompt_text):
@@ -254,7 +260,12 @@ class CSGOLocInferenceDataset(Dataset):
         }
         return {
             "map_name": map_name, "radar_img": radar_img, "fps_img": fps_img,
-            "final_prompt": add_template_for_loc(get_loc_prompt(map_name)),
+            "final_prompt": add_template_for_loc(
+                get_loc_prompt(
+                    map_name,
+                    use_short_instruction=bool(self.config.get("use_short_instruction", False)),
+                )
+            ),
             "file_frame": data['file_frame'], "gt_pose": pose_dict,
             "z_range": self.map_z_range[map_name]
         }

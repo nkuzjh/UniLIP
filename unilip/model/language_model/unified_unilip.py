@@ -6121,6 +6121,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         und_image: Optional[torch.Tensor] = None,
         aux_image: Optional[torch.Tensor] = None,
         max_new_tokens: int = 5,
+        constrain_to_loc_bins: bool = False,
     ):
         if getattr(self.config, "loc_head_type", None) != "lm_bin_ce":
             raise RuntimeError("generate_loc_bin_tokens is only valid for loc_head_type='lm_bin_ce'.")
@@ -6129,6 +6130,19 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         vision_feature_select_strategy = self.config.vision_feature_select_strategy
         vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
         device = input_ids.device
+        loc_bin_token_ids = None
+        if constrain_to_loc_bins:
+            loc_bin_token_ids = getattr(self.config, "loc_bin_token_ids", None)
+            if loc_bin_token_ids is None:
+                tokenizer = getattr(self, "text_tokenizer", None)
+                if tokenizer is None:
+                    raise RuntimeError("constrain_to_loc_bins=True requires text_tokenizer or config.loc_bin_token_ids.")
+                loc_bin_num = int(getattr(self.config, "loc_bin_num", 256))
+                loc_bin_token_prefix = getattr(self.config, "loc_bin_token_prefix", "<loc_")
+                width = len(str(loc_bin_num - 1))
+                loc_tokens = [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(loc_bin_num)]
+                loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
+            loc_bin_token_ids = torch.as_tensor(loc_bin_token_ids, device=device, dtype=torch.long)
 
         und_image_embeds = None
         if und_image is not None:
@@ -6176,7 +6190,12 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             hidden_states = outputs.hidden_states[-1]
             last_indices = cur_attention_mask.sum(dim=1).long().clamp_min(1) - 1
             next_hidden = hidden_states[torch.arange(hidden_states.shape[0], device=device), last_indices]
-            next_token = self.lm_head(next_hidden).argmax(dim=-1)
+            next_logits = self.lm_head(next_hidden)
+            if loc_bin_token_ids is not None:
+                loc_logits = next_logits.index_select(dim=-1, index=loc_bin_token_ids)
+                next_token = loc_bin_token_ids[loc_logits.argmax(dim=-1)]
+            else:
+                next_token = next_logits.argmax(dim=-1)
             generated_ids.append(next_token)
             cur_input_ids = torch.cat([cur_input_ids, next_token[:, None]], dim=1)
             cur_attention_mask = torch.cat(

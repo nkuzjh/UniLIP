@@ -63,7 +63,17 @@ def expand2square(pil_img, background_color):
         result.paste(pil_img, ((height - width) // 2, 0))
         return result
 
-def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min):
+def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False):
+    if use_short_instruction:
+        return (
+            f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
+            f"x={pose_5d['x']:.1f}, y={pose_5d['y']:.1f}, z={pose_5d['z']:.3f}, "
+            f"pitch={pose_5d['angle_v']:.1f}, yaw={pose_5d['angle_h']:.1f}. "
+            "Coordinates use 1024x1024 map pixels; yaw 0=east clockwise; "
+            f"pitch 0=down, 180=up; z range [{z_min:.2f}, {z_max:.2f}].\n"
+            "<image>"
+        )
+
     # 与训练时完全一致的 Prompt 模板
     definition_text = (
         f"Task: Generate a First-Person View (FPV) image of CS2 map '{map_name}' based on the Radar Map and Camera Pose.\n"
@@ -80,7 +90,7 @@ def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min):
     full_instruction = f"{definition_text}\n\nCurrent Camera Pose: {pose_str}\n<image>"
     return full_instruction
 
-def add_template_for_inference(prompt_text):
+def add_template_for_inference(prompt_text, use_short_instruction=False):
     # 将 SFT 指令包装成对话格式
     instruction = ('<|im_start|>user\n{input}<|im_end|>\n'
                    '<|im_start|>assistant\n<img>')
@@ -90,7 +100,8 @@ def add_template_for_inference(prompt_text):
 
     # Negative/CFG Prompt: 保持训练时的通用指令
     # 注意：这里 <image> 也要包含
-    cfg_prompt = instruction.format(input="Generate the view.\n<image>")
+    cfg_text = "Generate a CS2 FPV image.\n<image>" if use_short_instruction else "Generate the view.\n<image>"
+    cfg_prompt = instruction.format(input=cfg_text)
 
     return [pos_prompt, cfg_prompt]
 
@@ -118,10 +129,13 @@ class CSGOInferenceDataset(Dataset):
             with open(split_path, "r", encoding="utf-8") as f:
                 positions_data = json.load(f)
 
-            # 计算 Z 范围 (必须基于全集或 Train 集的统计，这里简化为当前 Split 的统计，建议最好硬编码或读取 train_split 统计)
-            # 为了严谨，这里应该读取 train_split 来获取 z_min/z_max，防止 test 数据溢出
-            # 这里简化处理：直接遍历 test set (生产环境建议读取 metadata)
-            zs = [d['z'] for d in positions_data]
+            train_split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/train_split.json"
+            if os.path.exists(train_split_path):
+                with open(train_split_path, "r", encoding="utf-8") as f:
+                    z_ref_data = json.load(f)
+            else:
+                z_ref_data = positions_data
+            zs = [d['z'] for d in z_ref_data]
             self.map_z_range[map_name] = {'max_z': max(zs), 'min_z': min(zs)}
 
             for pos_data in positions_data:
@@ -179,7 +193,7 @@ class CSGOInferenceDataset(Dataset):
         z_norm = (data['z'] - z_min) / (z_max - z_min + 1e-6)
 
         # 弧度转角度
-        pitch_deg = (data['angle_v'] / (2 * np.pi)) * 180.0
+        pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
         yaw_deg = (data['angle_h'] / (2 * np.pi)) * 360.0
 
         pose_dict = {
@@ -189,7 +203,13 @@ class CSGOInferenceDataset(Dataset):
 
         # 4. 构建 Prompt
         # 注意：这里 z_max, z_min 传入真实物理值用于定义
-        raw_prompt = build_sft_instruction_custom(pose_dict, map_name, z_max, z_min)
+        raw_prompt = build_sft_instruction_custom(
+            pose_dict,
+            map_name,
+            z_max,
+            z_min,
+            use_short_instruction=bool(self.config.get("use_short_instruction", False)),
+        )
 
         return {
             "map_name": map_name,
@@ -401,8 +421,8 @@ def run_csgo_generation_from_config(
         )
 
         inference_args = InferenceArgs(csgo_config)
-        model.get_model().fix_connect = False
-        model.get_model().fix_dit = False
+        model.get_model().fix_connect = inference_args.fix_connect
+        model.get_model().fix_dit = inference_args.fix_dit
         model.inject_lora_to_sub_module(inference_args, training_args)
 
 
@@ -448,7 +468,10 @@ def run_csgo_generation_from_config(
 
             # 构造 UniLIP 格式的 multimodal prompts
             # [Positive_Prompt, Negative_Prompt, Image]
-            multimodal_prompts = add_template_for_inference(raw_prompt)
+            multimodal_prompts = add_template_for_inference(
+                raw_prompt,
+                use_short_instruction=bool(csgo_config.get("use_short_instruction", False)),
+            )
             multimodal_prompts.append(radar_img) # 必须 append PIL Image 对象
 
             # 执行生成

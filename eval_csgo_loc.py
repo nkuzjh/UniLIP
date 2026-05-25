@@ -436,6 +436,7 @@ class CSGOLocInferenceDataset(Dataset):
             self.map_z_range.keys(),
             self.tokenizer,
             self.img_size,
+            use_short_instruction=bool(config.get("use_short_instruction", False)),
         )
 
         # 仅取前N个做测试，避免跑太久 (可选)
@@ -697,17 +698,66 @@ def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
     return tokenizer.convert_tokens_to_ids(loc_tokens)
 
 
-def parse_loc_bin_tokens(text, loc_bin_num=256, loc_bin_token_prefix="<loc_"):
+def parse_loc_bin_tokens(text, loc_bin_num=256, loc_bin_token_prefix="<loc_", pad_value=0.5):
     import re
     pattern = re.escape(loc_bin_token_prefix) + r"(\d+)>"
     values = [int(match) for match in re.findall(pattern, text)]
-    if len(values) < 5:
-        raise ValueError(f"Expected at least 5 loc bin tokens, got {len(values)} from: {text!r}")
     denom = max(int(loc_bin_num) - 1, 1)
+    clipped_values = [min(max(v, 0), int(loc_bin_num) - 1) / denom for v in values[:5]]
+    if len(clipped_values) < 5:
+        clipped_values.extend([float(pad_value)] * (5 - len(clipped_values)))
     return torch.tensor(
-        [min(max(v, 0), int(loc_bin_num) - 1) / denom for v in values[:5]],
+        clipped_values,
         dtype=torch.float32,
     )
+
+
+def count_loc_bin_tokens(text, loc_bin_token_prefix="<loc_"):
+    import re
+    pattern = re.escape(loc_bin_token_prefix) + r"(\d+)>"
+    return len(re.findall(pattern, text))
+
+
+def loc_bin_ids_to_norm_tensor(token_ids, loc_bin_token_ids):
+    token_ids = token_ids.detach().cpu().long()
+    loc_bin_token_ids = torch.as_tensor(loc_bin_token_ids, dtype=torch.long)
+    token_to_bin = {int(token_id): idx for idx, token_id in enumerate(loc_bin_token_ids.tolist())}
+    denom = max(len(token_to_bin) - 1, 1)
+    rows = []
+    for row in token_ids:
+        bins = [token_to_bin.get(int(token_id), 0) for token_id in row[:5].tolist()]
+        if len(bins) < 5:
+            bins.extend([denom // 2] * (5 - len(bins)))
+        rows.append([float(bin_idx) / float(denom) for bin_idx in bins[:5]])
+    return torch.tensor(rows, dtype=torch.float32)
+
+
+def make_loc_result_entry(
+    ids,
+    map_name,
+    pred_norm,
+    gt_norm,
+    pred_phys,
+    gt_phys,
+    generated_loc_tokens=None,
+    generated_loc_token_count=None,
+    decode_mode=None,
+):
+    entry = {
+        "file_frame": ids,
+        "map": map_name,
+        "pred_norm": pred_norm.tolist(),
+        "gt_norm": gt_norm.tolist(),
+        "pred": pred_phys,
+        "gt": gt_phys,
+    }
+    if generated_loc_tokens is not None:
+        entry["generated_loc_tokens"] = generated_loc_tokens
+    if generated_loc_token_count is not None:
+        entry["generated_loc_token_count"] = generated_loc_token_count
+    if decode_mode is not None:
+        entry["decode_mode"] = decode_mode
+    return entry
 
 map_path_dict = {
     'de_dust2': 'de_dust2_radar_psd.png',
@@ -894,6 +944,7 @@ def main():
 
     # 9. Inference Loop
     results_json = []
+    results_json_constrained = [] if csgo_config.get("loc_head_type", None) == "lm_bin_ce" else None
     vis_data_grouped = defaultdict(list) # 按地图分组存储可视化数据
     vis_data_flag = True
 
@@ -918,22 +969,46 @@ def main():
 
         with torch.no_grad():
             if csgo_config.get("loc_head_type", None) == "lm_bin_ce":
-                generated_loc_ids = model.generate_loc_bin_tokens(
+                generated_loc_ids_full_vocab = model.generate_loc_bin_tokens(
                     input_ids=input_ids,
                     attention_mask=attention_mask,
                     und_image=und_image,
                     aux_image=aux_image,
                     max_new_tokens=5,
+                    constrain_to_loc_bins=False,
                 )
-                generated_loc_text = tokenizer.batch_decode(generated_loc_ids, skip_special_tokens=False)
-                pred_norm_loc_tensor = torch.stack([
+                generated_loc_text_full_vocab = tokenizer.batch_decode(generated_loc_ids_full_vocab, skip_special_tokens=False)
+                generated_loc_token_counts_full_vocab = [
+                    count_loc_bin_tokens(
+                        text,
+                        loc_bin_token_prefix=csgo_config.get("loc_bin_token_prefix", "<loc_"),
+                    )
+                    for text in generated_loc_text_full_vocab
+                ]
+                pred_norm_loc_tensor_full_vocab = torch.stack([
                     parse_loc_bin_tokens(
                         text,
                         loc_bin_num=csgo_config.get("loc_bin_num", 256),
                         loc_bin_token_prefix=csgo_config.get("loc_bin_token_prefix", "<loc_"),
                     )
-                    for text in generated_loc_text
+                    for text in generated_loc_text_full_vocab
                 ], dim=0)
+
+                generated_loc_ids_constrained = model.generate_loc_bin_tokens(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    und_image=und_image,
+                    aux_image=aux_image,
+                    max_new_tokens=5,
+                    constrain_to_loc_bins=True,
+                )
+                generated_loc_text_constrained = tokenizer.batch_decode(generated_loc_ids_constrained, skip_special_tokens=False)
+                pred_norm_loc_tensor_constrained = loc_bin_ids_to_norm_tensor(
+                    generated_loc_ids_constrained,
+                    getattr(model.config, "loc_bin_token_ids", loc_bin_token_ids),
+                )
+                generated_loc_token_counts_constrained = [5] * pred_norm_loc_tensor_constrained.shape[0]
+                pred_norm_loc_tensor = pred_norm_loc_tensor_full_vocab
             else:
                 pred_norm_loc_tensor = model.generate_action2(
                     input_ids,
@@ -943,6 +1018,8 @@ def main():
                     aux_image,
                     num_steps=10
                 ).squeeze(1).float().cpu()
+                generated_loc_text_full_vocab = None
+                generated_loc_token_counts_full_vocab = None
 
         current_bs = pred_norm_loc_tensor.size(0)
         for sample_idx in range(current_bs):
@@ -955,16 +1032,38 @@ def main():
             gt_phys = pose_dict[sample_idx]
 
             # 3. 存储
-            results_json.append({
-                "file_frame": ids[sample_idx],
-                "map": map_name[sample_idx],
-                "pred_norm": pred_norm.tolist(), # Save as list
-                "gt_norm": gt_norm.tolist(),   # Save as list
-                "pred": pred_phys,
-                "gt": gt_phys,
-                "generated_loc_tokens": generated_loc_text[sample_idx]
-                if csgo_config.get("loc_head_type", None) == "lm_bin_ce" else None,
-            })
+            results_json.append(
+                make_loc_result_entry(
+                    ids=ids[sample_idx],
+                    map_name=map_name[sample_idx],
+                    pred_norm=pred_norm,
+                    gt_norm=gt_norm,
+                    pred_phys=pred_phys,
+                    gt_phys=gt_phys,
+                    generated_loc_tokens=generated_loc_text_full_vocab[sample_idx]
+                    if generated_loc_text_full_vocab is not None else None,
+                    generated_loc_token_count=generated_loc_token_counts_full_vocab[sample_idx]
+                    if generated_loc_token_counts_full_vocab is not None else None,
+                    decode_mode="full_vocab_regex_pad05"
+                    if csgo_config.get("loc_head_type", None) == "lm_bin_ce" else None,
+                )
+            )
+            if results_json_constrained is not None:
+                pred_norm_constrained = pred_norm_loc_tensor_constrained[sample_idx]
+                pred_phys_constrained = unnormalize_pose(pred_norm_constrained, z_range[sample_idx])
+                results_json_constrained.append(
+                    make_loc_result_entry(
+                        ids=ids[sample_idx],
+                        map_name=map_name[sample_idx],
+                        pred_norm=pred_norm_constrained,
+                        gt_norm=gt_norm,
+                        pred_phys=pred_phys_constrained,
+                        gt_phys=gt_phys,
+                        generated_loc_tokens=generated_loc_text_constrained[sample_idx],
+                        generated_loc_token_count=generated_loc_token_counts_constrained[sample_idx],
+                        decode_mode="constrained_loc_bin_ids",
+                    )
+                )
 
             current_map = map_name[sample_idx]
             if len(vis_data_grouped[current_map]) < 20:
@@ -985,13 +1084,28 @@ def main():
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
     print("📈 Calculating Metrics...")
     metrics = calculate_metrics(results_json, ckpt_path, csgo_config=csgo_config)
+    print("Full-vocab regex+pad0.5 metrics:")
     print(json.dumps(metrics, indent=4))
+    metrics_constrained = None
+    if results_json_constrained is not None:
+        metrics_constrained = calculate_metrics(results_json_constrained, ckpt_path, csgo_config=csgo_config)
+        print("Constrained loc-bin-id metrics:")
+        print(json.dumps(metrics_constrained, indent=4))
 
     # Save Metrics & Results
     with open(os.path.join(output_dir, "loc_metrics.json"), "w") as f:
         json.dump(json_safe(metrics), f, indent=4)
     with open(os.path.join(output_dir, "loc_results.json"), "w") as f:
         json.dump(json_safe(results_json), f, indent=4)
+    with open(os.path.join(output_dir, "loc_metrics_full_vocab_regex_pad05.json"), "w") as f:
+        json.dump(json_safe(metrics), f, indent=4)
+    with open(os.path.join(output_dir, "loc_results_full_vocab_regex_pad05.json"), "w") as f:
+        json.dump(json_safe(results_json), f, indent=4)
+    if results_json_constrained is not None:
+        with open(os.path.join(output_dir, "loc_metrics_constrained_loc_bins.json"), "w") as f:
+            json.dump(json_safe(metrics_constrained), f, indent=4)
+        with open(os.path.join(output_dir, "loc_results_constrained_loc_bins.json"), "w") as f:
+            json.dump(json_safe(results_json_constrained), f, indent=4)
 
 
     print(f"✅ Finished. Results at: {output_dir}")
