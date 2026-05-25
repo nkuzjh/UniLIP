@@ -161,6 +161,7 @@ lr_scheduler_kwargs:
 | `exp27_2_dust2` | `exp27_dust2` 的浅层 vision_tower perceptual loss 对照 | 不使用 attention weighting，直接对齐 `pred_pixels_input` 和 `gen_image` 的 FPS vision patch features，`smooth_l1`，特征维度 `[B, 256, D_llm]` |
 | `exp27_3_dust2` | `exp27_2_dust2` + teacher_gt action_dit attention weighting | perception feature 仍是 `vision_tower` FPS patch features；attention 权重复用 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled` wrapper，不用 hook |
 | `exp28_dust2` | `exp26_dust2` + `exp27_3_dust2` 的组合实验 | 默认 `linear_1m_sigma` combined aux-loc 与 teacher_gt attention-weighted vision_tower perceptual alignment 同时开启，验证 pose-level 与 patch-feature-level 监督是否互补 |
+| `exp28_1_dust2` | `exp26_2_dust2` + `exp27_3_dust2` 的组合实验 | 将 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，其他 attention-weighted vision_tower perceptual alignment 与训练设置保持一致 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -196,6 +197,7 @@ lr_scheduler_kwargs:
 | `exp27_2_dust2` | shallow vision_tower perceptual alignment 对照 | `exp27_dust2` 的更浅对齐版本，`loc_perception_feature_source=vision_tower`，无 attention weighting |
 | `exp27_3_dust2` | attention-weighted shallow vision_tower perceptual alignment | `exp27_2_dust2 + teacher_gt action_dit attention weighting`，权重方案固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp28_dust2` | default aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_dust2 + exp27_3_dust2`，同时使用默认 `linear_1m_sigma` combined aux-loc 和 teacher_gt action attention-weighted vision_tower feature alignment |
+| `exp28_1_dust2` | exp-sigma aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_2_dust2 + exp27_3_dust2`，保持 `exp28_dust2` 其他设置不变，仅将 combined aux-loc 权重改为 `exp_sigma, lambda=5.0, renorm=none` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
 | `exp17_4_1_dust2` | deeper shared-tail baseline | `exp17_4_dust2 + 6-layer shared LLM tail full finetune` |
 | `exp17_5_dust2` | loc-aware REPA baseline | `exp17_2_dust2 + independent loc-aware REPA` |
@@ -565,6 +567,7 @@ same velocity target u_t
 | `exp27_2_dust2` | `exp27_dust2` | 将 loc perception feature source 从 `action_dit_projector` 改为 `vision_tower`，直接对齐 `pred_pixels_input` 与 `gen_image` 的 FPS vision patch features；`smooth_l1`；无 attention weighting | 验证更浅的视觉 encoder patch feature 对齐是否足以提供生成侧定位感知监督 |
 | `exp27_3_dust2` | `exp27_2_dust2` | 在 vision_tower patch-level `smooth_l1` loc perception loss 上加入 teacher_gt action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；复用轻量 wrapper，不用 hook | 验证 loc/action_dit 注意力能否让浅层 vision_tower feature 对齐更聚焦 |
 | `exp28_dust2` | `exp26_dust2` | 保留默认 `linear_1m_sigma` combined aux-loc，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；`alpha_loc_aux` 从 step 0 到 6000 线性 warmup 到 2.0，`alpha_loc_perception` 从 step 2000 开始为 0.1 | 验证 pose-level aux-loc 与 attention-focused patch feature 对齐是否互补 |
+| `exp28_1_dust2` | `exp26_2_dust2` | 保留 `exp26_2_dust2` 的 `exp_sigma` combined aux-loc timestep 权重，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；除 `aux_loc_timestep_weight_type=exp_sigma`, `aux_loc_exp_weight_lambda=5.0`, `aux_loc_timestep_weight_renorm=none` 外，其余与 `exp28_dust2` 一致 | 验证低噪声指数偏置的 pose-level aux-loc 与 attention-focused patch feature 对齐是否比默认 `linear_1m_sigma` 组合更稳定 |
 
 建议第一版最小设置：
 
@@ -620,6 +623,10 @@ aux_loc_combined_unc_eps: 1.0e-6
   - `csgo_configs/test/exp28_dust2_gen.yaml`
   - `csgo_configs/test/exp28_dust2_gen_conti.yaml`
   - `csgo_configs/test/exp28_dust2_loc.yaml`
+  - `csgo_configs/exp28_1_dust2.yaml`
+  - `csgo_configs/test/exp28_1_dust2_gen.yaml`
+  - `csgo_configs/test/exp28_1_dust2_gen_conti.yaml`
+  - `csgo_configs/test/exp28_1_dust2_loc.yaml`
 - 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
 - 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
@@ -834,16 +841,17 @@ repa_spatial_norm_gamma: 1.0
 13. `exp27_2_dust2`
 14. `exp27_3_dust2`
 15. `exp28_dust2`
-16. `exp29_dust2`
-17. `exp17_5_dust2`
-18. `exp17_6_dust2`
-19. `exp17_7_dust2`
-20. `exp17_8_dust2`
-21. `exp17_9_dust2`
-22. `exp17_10_dust2`
-23. `exp17_11_dust2`
-24. `exp17_12_dust2`
-25. `exp17_13_dust2`
+16. `exp28_1_dust2`
+17. `exp29_dust2`
+18. `exp17_5_dust2`
+19. `exp17_6_dust2`
+20. `exp17_7_dust2`
+21. `exp17_8_dust2`
+22. `exp17_9_dust2`
+23. `exp17_10_dust2`
+24. `exp17_11_dust2`
+25. `exp17_12_dust2`
+26. `exp17_13_dust2`
 
 理由：
 
@@ -860,6 +868,7 @@ repa_spatial_norm_gamma: 1.0
 - `exp27_2_dust2` 在 `exp27_dust2` 基础上把 perception feature source 前移到 `vision_tower`，无 attention weighting，用来隔离浅层视觉 patch 对齐本身的效果。
 - `exp27_3_dust2` 在 `exp27_2_dust2` 基础上加入 teacher_gt action_dit attention weighting，检验浅层 vision_tower 对齐是否也能从 loc/action attention 聚焦中获益。
 - `exp28_dust2` 是 `exp26_dust2` 和 `exp27_3_dust2` 的组合实验，用默认 `linear_1m_sigma` pose-level aux-loc 判断其与 attention-weighted feature-level alignment 是否互补。
+- `exp28_1_dust2` 是 `exp26_2_dust2` 和 `exp27_3_dust2` 的组合实验，只把 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，判断低噪声指数偏置是否更适合与 attention-weighted feature-level alignment 叠加。
 - `exp29_dust2` 取消所有 internal loc/action-DiT 模块，用 shared `language_model + lm_head` 直接预测 5 个 `<loc_xxx>` bin token；只保留 gen + loc 联合训练，不启用 aux_loc、loc_perception、loc_repa、REPA、aux_gen。LoRA 使用 `r=32, alpha=64, dropout=0.05`，`llm_lora_lr=1e-4`，`loc_token_lr=1e-4`，`mm_projector_lr=1e-4`。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
@@ -893,6 +902,7 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp27_2_dust2.yaml`
 - `csgo_configs/exp27_3_dust2.yaml`
 - `csgo_configs/exp28_dust2.yaml`
+- `csgo_configs/exp28_1_dust2.yaml`
 - `csgo_configs/exp29_dust2.yaml`
 - `csgo_configs/test/exp29_dust2_loc.yaml`
 - `csgo_configs/test/exp29_dust2_gen.yaml`
