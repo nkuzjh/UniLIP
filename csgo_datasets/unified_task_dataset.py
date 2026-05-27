@@ -116,7 +116,41 @@ def to_external_loc_tensor(pil_img: Image.Image) -> torch.Tensor:
 # ==========================================
 # B.2 Prompt 构建函数
 # ==========================================
-def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False):
+LOC_ST_DIMS = ("x", "y", "z", "pitch", "yaw")
+
+
+def _as_pose_values(actions_norm):
+    if torch.is_tensor(actions_norm):
+        values = actions_norm.detach().float().reshape(-1).cpu().tolist()
+    else:
+        values = np.asarray(actions_norm, dtype=np.float32).reshape(-1).tolist()
+    if len(values) != 5:
+        raise ValueError(f"Expected 5 normalized pose values, got {len(values)}")
+    return [min(max(float(v), 0.0), 1.0) for v in values]
+
+
+def pose_to_loc_st_placeholder_tokens(actions_norm, io_type="output"):
+    return " ".join(
+        f"<loc_{dim}_{io_type}>"
+        for dim in LOC_ST_DIMS
+    )
+
+
+def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False, pose_tokens=None):
+    if pose_tokens is not None:
+        if use_short_instruction:
+            return (
+                f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
+                f"{pose_tokens}. The pose tokens represent normalized x, y, z, pitch, yaw.\n"
+                "<image>"
+            )
+        definition_text = (
+            f"Task: Generate a First-Person View (FPV) image of CS2 map '{map_name}' based on the Radar Map and Camera Pose.\n"
+            "Coordinate System Definition:\n"
+            "- Pose tokens represent normalized x, y, z, pitch, yaw."
+        )
+        return f"{definition_text}\n\nCurrent Camera Pose: {pose_tokens}\n<image>"
+
     if use_short_instruction:
         return (
             f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
@@ -554,17 +588,10 @@ def format_loc_bin_token(bin_idx, loc_bin_num=256, loc_bin_token_prefix="<loc_")
 
 
 def pose_to_loc_bin_tokens(actions_norm, loc_bin_num=256, loc_bin_token_prefix="<loc_"):
-    if torch.is_tensor(actions_norm):
-        values = actions_norm.detach().float().reshape(-1).cpu().tolist()
-    else:
-        values = np.asarray(actions_norm, dtype=np.float32).reshape(-1).tolist()
-    if len(values) != 5:
-        raise ValueError(f"Expected 5 normalized pose values, got {len(values)}")
-
+    values = _as_pose_values(actions_norm)
     bins = []
     for value in values:
-        clipped = min(max(float(value), 0.0), 1.0)
-        bins.append(int(round(clipped * (int(loc_bin_num) - 1))))
+        bins.append(int(round(value * (int(loc_bin_num) - 1))))
     return " ".join(format_loc_bin_token(bin_idx, loc_bin_num, loc_bin_token_prefix) for bin_idx in bins)
 
 
@@ -586,13 +613,16 @@ def _tokenize_loc_sample(map_name, answer_text, tokenizer, img_size, use_short_i
 
 
 def _build_loc_tokenized_for_entry(config, tokenizer, data, map_name):
-    if config.get("loc_head_type", None) != "lm_bin_ce":
+    if config.get("loc_head_type", None) not in ("lm_bin_ce", "lm_st_ext_vocab"):
         return None
-    answer_text = pose_to_loc_bin_tokens(
-        data["actions"],
-        loc_bin_num=config.get("loc_bin_num", 256),
-        loc_bin_token_prefix=config.get("loc_bin_token_prefix", "<loc_"),
-    )
+    if config.get("loc_head_type", None) == "lm_st_ext_vocab":
+        answer_text = pose_to_loc_st_placeholder_tokens(data["actions"], io_type="output")
+    else:
+        answer_text = pose_to_loc_bin_tokens(
+            data["actions"],
+            loc_bin_num=config.get("loc_bin_num", 256),
+            loc_bin_token_prefix=config.get("loc_bin_token_prefix", "<loc_"),
+        )
     return _tokenize_loc_sample(
         map_name,
         answer_text,
@@ -901,6 +931,8 @@ class UniLIPMultiTaskDataset(Dataset):
                 data['z_max'],
                 data['z_min'],
                 use_short_instruction=self.use_short_instruction,
+                pose_tokens=pose_to_loc_st_placeholder_tokens(loc_coords_norm, io_type="input")
+                if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
             )
             aux_gen_sources = {
                 "conversations": [
@@ -929,6 +961,8 @@ class UniLIPMultiTaskDataset(Dataset):
                     data['z_max'],
                     data['z_min'],
                     use_short_instruction=self.use_short_instruction,
+                    pose_tokens=pose_to_loc_st_placeholder_tokens(loc_coords_norm, io_type="input")
+                    if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
                 )
             else:
                 # CFG Negative/Generic Prompt
@@ -1446,6 +1480,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
                 data['z_max'],
                 data['z_min'],
                 use_short_instruction=self.use_short_instruction,
+                pose_tokens=pose_to_loc_st_placeholder_tokens(loc_coords_norm, io_type="input")
+                if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
             )
         else:
             user_text_gen = "Generate a CS2 FPV image.\n<image>" if self.use_short_instruction else "Generate the view.\n<image>"
@@ -1465,6 +1501,8 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
             data['z_max'],
             data['z_min'],
             use_short_instruction=self.use_short_instruction,
+            pose_tokens=pose_to_loc_st_placeholder_tokens(loc_coords_norm, io_type="input")
+            if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
         )
         aux_gen_sources = {
             "conversations": [

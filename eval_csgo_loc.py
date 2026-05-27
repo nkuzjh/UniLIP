@@ -685,6 +685,26 @@ def build_loc_bin_tokens(loc_bin_num, loc_bin_token_prefix):
     return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
 
 
+LOC_ST_DIMS = ("x", "y", "z", "pitch", "yaw")
+
+
+def build_loc_st_placeholder_tokens():
+    return [
+        f"<loc_{dim}_{io_type}>"
+        for dim in LOC_ST_DIMS
+        for io_type in ("input", "output")
+    ]
+
+
+def build_loc_st_anchor_tokens(loc_bin_num):
+    width = len(str(int(loc_bin_num) - 1))
+    return [
+        f"<loc_{dim}_{idx:0{width}d}>"
+        for dim in LOC_ST_DIMS
+        for idx in range(int(loc_bin_num))
+    ]
+
+
 def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
     if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
         return []
@@ -696,6 +716,32 @@ def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
     model.resize_token_embeddings(len(tokenizer))
     model.text_tokenizer = tokenizer
     return tokenizer.convert_tokens_to_ids(loc_tokens)
+
+
+def add_loc_st_tokens_and_init(tokenizer, model, csgo_config):
+    if csgo_config.get("loc_head_type", None) != "lm_st_ext_vocab":
+        return []
+    loc_bin_num = int(csgo_config.get("loc_bin_num", 100))
+    placeholders = build_loc_st_placeholder_tokens()
+    tokenizer.add_tokens(placeholders, special_tokens=True)
+    model.resize_token_embeddings(len(tokenizer))
+    base_vocab_size = len(tokenizer)
+    anchor_tokens = build_loc_st_anchor_tokens(loc_bin_num)
+    tokenizer.add_tokens(anchor_tokens, special_tokens=True)
+    placeholder_token_ids = tokenizer.convert_tokens_to_ids(placeholders)
+    anchor_token_ids = tokenizer.convert_tokens_to_ids(anchor_tokens)
+    model.initialize_loc_st_ext_vocab_modules(
+        loc_bin_num=loc_bin_num,
+        dim_names=list(LOC_ST_DIMS),
+        placeholder_token_ids=placeholder_token_ids,
+        anchor_token_ids=anchor_token_ids,
+        base_vocab_size=base_vocab_size,
+        init_std=float(csgo_config.get("loc_bin_init_std", 1.0e-4)),
+        reparam_decay=float(csgo_config.get("loc_lape_reparam_decay", 0.5)),
+        circular_dims=csgo_config.get("loc_lape_circular_dims", ["pitch", "yaw"]),
+    )
+    model.text_tokenizer = tokenizer
+    return anchor_token_ids
 
 
 def parse_loc_bin_tokens(text, loc_bin_num=256, loc_bin_token_prefix="<loc_", pad_value=0.5):
@@ -716,6 +762,43 @@ def count_loc_bin_tokens(text, loc_bin_token_prefix="<loc_"):
     import re
     pattern = re.escape(loc_bin_token_prefix) + r"(\d+)>"
     return len(re.findall(pattern, text))
+
+
+def parse_loc_st_tokens(text, loc_bin_num=100, pad_value=0.5):
+    import re
+    denom = max(int(loc_bin_num) - 1, 1)
+    values = []
+    for dim in LOC_ST_DIMS:
+        match = re.search(rf"<loc_{dim}_(\d+)>", text)
+        if match is None:
+            values.append(float(pad_value))
+        else:
+            values.append(min(max(int(match.group(1)), 0), int(loc_bin_num) - 1) / denom)
+    return torch.tensor(values, dtype=torch.float32)
+
+
+def count_loc_st_tokens(text):
+    import re
+    return sum(1 for dim in LOC_ST_DIMS if re.search(rf"<loc_{dim}_(\d+)>", text) is not None)
+
+
+def loc_st_ids_to_norm_tensor(token_ids, loc_st_anchor_token_ids, loc_bin_num=100):
+    token_ids = token_ids.detach().cpu().long()
+    token_to_pair = {}
+    for dim_idx, _dim in enumerate(LOC_ST_DIMS):
+        for bin_idx in range(int(loc_bin_num)):
+            offset = dim_idx * int(loc_bin_num) + bin_idx
+            token_to_pair[int(loc_st_anchor_token_ids[offset])] = (dim_idx, bin_idx)
+    denom = max(int(loc_bin_num) - 1, 1)
+    rows = []
+    for row in token_ids:
+        values = [0.5] * len(LOC_ST_DIMS)
+        for token_id in row.tolist():
+            if int(token_id) in token_to_pair:
+                dim_idx, bin_idx = token_to_pair[int(token_id)]
+                values[dim_idx] = float(bin_idx) / float(denom)
+        rows.append(values)
+    return torch.tensor(rows, dtype=torch.float32)
 
 
 def loc_bin_ids_to_norm_tensor(token_ids, loc_bin_token_ids):
@@ -847,6 +930,7 @@ def main():
             model=model,
         )
     loc_bin_token_ids = add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config)
+    loc_st_anchor_token_ids = add_loc_st_tokens_and_init(tokenizer, model, csgo_config)
     from unilip import conversation as conversation_lib
     if inference_args.version in conversation_lib.conv_templates:
         conversation_lib.default_conversation = conversation_lib.conv_templates[inference_args.version]
@@ -860,6 +944,10 @@ def main():
     model.config.loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
     if loc_bin_token_ids:
         model.config.loc_bin_token_ids = loc_bin_token_ids
+    if loc_st_anchor_token_ids:
+        model.config.loc_st_anchor_token_ids = loc_st_anchor_token_ids
+        model.config.loc_st_placeholder_token_ids = tokenizer.convert_tokens_to_ids(build_loc_st_placeholder_tokens())
+        model.config.loc_st_dim_names = list(LOC_ST_DIMS)
     model.config.img_size = getattr(inference_args, "img_size", csgo_config.get("img_size", False))
     model.config.is_action_dit_dense_timestep = getattr(inference_args, "is_action_dit_dense_timestep", csgo_config.get("is_action_dit_dense_timestep", False))
 
@@ -883,7 +971,7 @@ def main():
     model.config.is_loc_learnable_query = getattr(inference_args, "is_loc_learnable_query", csgo_config.get("is_loc_learnable_query", False))
 
     model.get_model().initialize_vision_modules(model_args=inference_args)
-    if csgo_config.get("skip_internal_loc_modules", False) or csgo_config.get("loc_head_type", None) == "lm_bin_ce":
+    if csgo_config.get("skip_internal_loc_modules", False) or csgo_config.get("loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab"):
         print("Skip UniLIP internal localization module initialization.")
     else:
         model.get_model().initialize_localization_modules(model_args=inference_args)
@@ -1009,6 +1097,22 @@ def main():
                 )
                 generated_loc_token_counts_constrained = [5] * pred_norm_loc_tensor_constrained.shape[0]
                 pred_norm_loc_tensor = pred_norm_loc_tensor_full_vocab
+            elif csgo_config.get("loc_head_type", None) == "lm_st_ext_vocab":
+                generated_loc_ids_full_vocab = model.generate_loc_st_ext_vocab_tokens(
+                    input_ids=input_ids,
+                    attention_mask=attention_mask,
+                    und_image=und_image,
+                    aux_image=aux_image,
+                    max_new_tokens=5,
+                    constrain_to_loc_bins=True,
+                )
+                generated_loc_text_full_vocab = tokenizer.batch_decode(generated_loc_ids_full_vocab, skip_special_tokens=False)
+                generated_loc_token_counts_full_vocab = [count_loc_st_tokens(text) for text in generated_loc_text_full_vocab]
+                pred_norm_loc_tensor = loc_st_ids_to_norm_tensor(
+                    generated_loc_ids_full_vocab,
+                    getattr(model.config, "loc_st_anchor_token_ids", loc_st_anchor_token_ids),
+                    loc_bin_num=csgo_config.get("loc_bin_num", 100),
+                )
             else:
                 pred_norm_loc_tensor = model.generate_action2(
                     input_ids,
@@ -1045,7 +1149,8 @@ def main():
                     generated_loc_token_count=generated_loc_token_counts_full_vocab[sample_idx]
                     if generated_loc_token_counts_full_vocab is not None else None,
                     decode_mode="full_vocab_regex_pad05"
-                    if csgo_config.get("loc_head_type", None) == "lm_bin_ce" else None,
+                    if csgo_config.get("loc_head_type", None) == "lm_bin_ce"
+                    else ("lm_st_ext_vocab_hard_tokens" if csgo_config.get("loc_head_type", None) == "lm_st_ext_vocab" else None),
                 )
             )
             if results_json_constrained is not None:

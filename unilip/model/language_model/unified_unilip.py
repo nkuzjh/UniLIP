@@ -1582,7 +1582,58 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         config.model_type = "unified_unilip"
         self.model = Unified_UniLIP_InternVLModel(config)
         self.lm_head = nn.Linear(config.text_config.hidden_size, config.text_config.vocab_size, bias=False)
+        self.text_tokenizer = None
         self.post_init()
+
+    def initialize_loc_st_ext_vocab_modules(
+        self,
+        loc_bin_num: int,
+        dim_names: List[str],
+        placeholder_token_ids: List[int],
+        anchor_token_ids: List[int],
+        base_vocab_size: int,
+        init_std: float = 1.0e-4,
+        reparam_decay: float = 0.5,
+        circular_dims: Optional[List[str]] = None,
+    ):
+        hidden_size = self.config.text_config.hidden_size
+        circular_dims = set(circular_dims or [])
+        self.loc_st_dim_names = list(dim_names)
+        self.loc_st_input_embeddings = nn.ModuleDict({
+            dim: nn.Embedding(int(loc_bin_num), hidden_size)
+            for dim in self.loc_st_dim_names
+        })
+        self.loc_st_output_embeddings = nn.ModuleDict({
+            dim: nn.Linear(hidden_size, int(loc_bin_num), bias=False)
+            for dim in self.loc_st_dim_names
+        })
+        for module in list(self.loc_st_input_embeddings.values()) + list(self.loc_st_output_embeddings.values()):
+            module.weight.data.normal_(mean=0.0, std=float(init_std))
+            module.weight.requires_grad = True
+
+        self.loc_st_reparam_mats = {}
+        idx = torch.arange(int(loc_bin_num), dtype=torch.float32)
+        for dim in self.loc_st_dim_names:
+            dist = (idx[:, None] - idx[None, :]).abs()
+            if dim in circular_dims:
+                dist = torch.minimum(dist, float(loc_bin_num) - dist)
+            mat = float(reparam_decay) ** dist
+            buffer_name = f"loc_st_reparam_{dim}"
+            self.register_buffer(buffer_name, mat, persistent=False)
+            self.loc_st_reparam_mats[dim] = buffer_name
+
+        input_ids = placeholder_token_ids[0::2]
+        output_ids = placeholder_token_ids[1::2]
+        self.config.loc_head_type = "lm_st_ext_vocab"
+        self.config.loc_bin_num = int(loc_bin_num)
+        self.config.loc_st_dim_names = self.loc_st_dim_names
+        self.config.loc_st_input_placeholder_token_ids = [int(x) for x in input_ids]
+        self.config.loc_st_output_placeholder_token_ids = [int(x) for x in output_ids]
+        self.config.loc_st_placeholder_token_ids = [int(x) for x in placeholder_token_ids]
+        self.config.loc_st_anchor_token_ids = [int(x) for x in anchor_token_ids]
+        self.config.loc_st_base_vocab_size = int(base_vocab_size)
+        self.config.loc_st_reparam_decay = float(reparam_decay)
+        self.config.loc_st_circular_dims = sorted(circular_dims)
 
     # 通用 LoRA 注入函数
     def _apply_lora_to_module(self, lora_r, lora_alpha, lora_dropout, target_modules, modules_to_save=None, module_name="submodule"):
@@ -4446,6 +4497,189 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         time = time_beta * 0.999 + 0.001
         return time.to(dtype=torch.bfloat16, device=device)
 
+    def _loc_st_reparam(self, weight: torch.Tensor, dim: str) -> torch.Tensor:
+        buffer_name = getattr(self, "loc_st_reparam_mats", {}).get(dim)
+        if buffer_name is None:
+            return weight
+        mat = getattr(self, buffer_name).to(device=weight.device, dtype=weight.dtype)
+        reparam_weight = mat @ weight
+        return weight + reparam_weight - reparam_weight.detach()
+
+    def _loc_st_position_transfer(self, values: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        loc_bin_num = int(getattr(self.config, "loc_bin_num", 100))
+        pos = values.clamp(0.0, 1.0) * float(loc_bin_num - 1)
+        floor = torch.floor(pos).long()
+        ceil = torch.ceil(pos).long()
+        ratio = (pos - floor.to(pos.dtype)).to(torch.float32)
+        return floor, ceil, ratio
+
+    def _loc_st_extended_output_weight(self) -> torch.Tensor:
+        base_vocab_size = int(getattr(self.config, "loc_st_base_vocab_size", self.lm_head.weight.shape[0]))
+        weights = [self.lm_head.weight[:base_vocab_size]]
+        for dim in getattr(self.config, "loc_st_dim_names", ["x", "y", "z", "pitch", "yaw"]):
+            weights.append(self._loc_st_reparam(self.loc_st_output_embeddings[dim].weight, dim).to(self.lm_head.weight.device))
+        return torch.cat(weights, dim=0)
+
+    def _replace_loc_st_placeholders(
+        self,
+        input_ids: torch.Tensor,
+        inputs_embeds: torch.Tensor,
+        actions: Optional[torch.Tensor],
+    ) -> torch.Tensor:
+        if getattr(self.config, "loc_head_type", None) != "lm_st_ext_vocab" or actions is None:
+            return inputs_embeds
+        actions = actions.to(device=inputs_embeds.device, dtype=torch.float32).reshape(actions.shape[0], -1)
+        if actions.shape[-1] < len(getattr(self.config, "loc_st_dim_names", [])):
+            return inputs_embeds
+        inputs_embeds = inputs_embeds.clone()
+        all_placeholder_ids = (
+            list(getattr(self.config, "loc_st_input_placeholder_token_ids", []))
+            + list(getattr(self.config, "loc_st_output_placeholder_token_ids", []))
+        )
+        dim_names = list(getattr(self.config, "loc_st_dim_names", ["x", "y", "z", "pitch", "yaw"]))
+        for dim_idx, dim in enumerate(dim_names):
+            values = actions[:, dim_idx].clamp(0.0, 1.0)
+            floor, ceil, ratio = self._loc_st_position_transfer(values)
+            weight = self._loc_st_reparam(self.loc_st_input_embeddings[dim].weight, dim).to(device=inputs_embeds.device)
+            interp = weight[floor] * (1.0 - ratio).to(weight.dtype).unsqueeze(-1) + weight[ceil] * ratio.to(weight.dtype).unsqueeze(-1)
+            for token_id in (all_placeholder_ids[dim_idx], all_placeholder_ids[dim_idx + len(dim_names)]):
+                mask = input_ids == int(token_id)
+                if mask.any():
+                    inputs_embeds[mask] = interp[:, None, :].expand(-1, input_ids.shape[1], -1)[mask].to(inputs_embeds.dtype)
+        return inputs_embeds
+
+    def _embed_loc_st_extended_input_ids(
+        self,
+        input_ids: torch.Tensor,
+        actions: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
+        base_vocab_size = int(getattr(self.config, "loc_st_base_vocab_size", self.get_model().language_model.embed_tokens.weight.shape[0]))
+        safe_input_ids = input_ids.clamp(max=base_vocab_size - 1)
+        embeds = self.get_model().language_model.embed_tokens(safe_input_ids).clone()
+        anchor_token_ids = list(getattr(self.config, "loc_st_anchor_token_ids", []))
+        loc_bin_num = int(getattr(self.config, "loc_bin_num", 100))
+        dim_names = list(getattr(self.config, "loc_st_dim_names", ["x", "y", "z", "pitch", "yaw"]))
+        if anchor_token_ids:
+            for dim_idx, dim in enumerate(dim_names):
+                start = dim_idx * loc_bin_num
+                dim_token_ids = anchor_token_ids[start:start + loc_bin_num]
+                if not dim_token_ids:
+                    continue
+                weight = self._loc_st_reparam(self.loc_st_input_embeddings[dim].weight, dim).to(device=embeds.device)
+                token_to_bin = {int(token_id): bin_idx for bin_idx, token_id in enumerate(dim_token_ids)}
+                for token_id, bin_idx in token_to_bin.items():
+                    mask = input_ids == token_id
+                    if mask.any():
+                        embeds[mask] = weight[bin_idx].to(dtype=embeds.dtype)
+        return self._replace_loc_st_placeholders(input_ids, embeds, actions)
+
+    def _compute_loc_st_ext_vocab_loss(self, hidden_states, labels, actions, loss_mask=None):
+        if actions is None:
+            zero = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+            return zero, zero, zero, zero
+        dim_names = list(getattr(self.config, "loc_st_dim_names", ["x", "y", "z", "pitch", "yaw"]))
+        loc_bin_num = int(getattr(self.config, "loc_bin_num", 100))
+        base_vocab_size = int(getattr(self.config, "loc_st_base_vocab_size", self.lm_head.weight.shape[0]))
+        output_placeholder_ids = torch.as_tensor(
+            getattr(self.config, "loc_st_output_placeholder_token_ids", []),
+            device=labels.device,
+            dtype=labels.dtype,
+        )
+        if output_placeholder_ids.numel() != len(dim_names):
+            zero = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+            return zero, zero, zero, zero
+
+        shift_labels = labels[:, 1:].contiguous()
+        loc_label_mask = torch.isin(shift_labels, output_placeholder_ids)
+        if not loc_label_mask.any():
+            zero = torch.zeros((), device=hidden_states.device, dtype=torch.float32)
+            return zero, zero, zero, zero
+
+        shift_logits = F.linear(hidden_states[:, :-1, :], self._loc_st_extended_output_weight()).float()
+        log_probs = F.log_softmax(shift_logits, dim=-1)
+        actions = actions.to(device=shift_logits.device, dtype=torch.float32).reshape(actions.shape[0], -1)
+
+        token_loss = torch.zeros_like(shift_labels, dtype=torch.float32, device=shift_logits.device)
+        loc_label_mask_float = loc_label_mask.to(dtype=torch.float32, device=shift_logits.device)
+        exact_correct = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        pm1_correct = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        total_tokens = loc_label_mask_float.sum().clamp_min(1.0)
+        pred_pose_values = []
+        target_pose_values = []
+        pose_weights = []
+        for dim_idx, token_id in enumerate(output_placeholder_ids.tolist()):
+            dim_mask = shift_labels == int(token_id)
+            if not dim_mask.any():
+                continue
+            values = actions[:, dim_idx].clamp(0.0, 1.0)
+            floor, ceil, ratio = self._loc_st_position_transfer(values)
+            dim_offset = base_vocab_size + dim_idx * loc_bin_num
+            floor_ext = floor + dim_offset
+            ceil_ext = ceil + dim_offset
+            floor_lp = log_probs.gather(-1, floor_ext[:, None, None].expand(-1, shift_labels.shape[1], 1)).squeeze(-1)
+            ceil_lp = log_probs.gather(-1, ceil_ext[:, None, None].expand(-1, shift_labels.shape[1], 1)).squeeze(-1)
+            dim_loss = -((1.0 - ratio)[:, None] * floor_lp + ratio[:, None] * ceil_lp)
+            token_loss = torch.where(dim_mask, dim_loss, token_loss)
+
+            dim_logits = shift_logits[..., dim_offset:dim_offset + loc_bin_num]
+            pred_bins_all = dim_logits.argmax(dim=-1)
+            target_bins = torch.round(values * float(loc_bin_num - 1)).long()
+            pred_at_dim = pred_bins_all[dim_mask]
+            target_at_dim = target_bins[:, None].expand(-1, shift_labels.shape[1])[dim_mask]
+            exact_correct = exact_correct + (pred_at_dim == target_at_dim).to(torch.float32).sum()
+            if dim_names[dim_idx] in set(getattr(self.config, "loc_st_circular_dims", ["pitch", "yaw"])):
+                dist = (pred_at_dim - target_at_dim).abs()
+                dist = torch.minimum(dist, loc_bin_num - dist)
+            else:
+                dist = (pred_at_dim - target_at_dim).abs()
+            pm1_correct = pm1_correct + (dist <= 1).to(torch.float32).sum()
+
+        per_sample_loss = (token_loss * loc_label_mask_float).sum(dim=1) / loc_label_mask_float.sum(dim=1).clamp_min(1.0)
+        active_sample_mask = (loc_label_mask_float.sum(dim=1) > 0).to(dtype=torch.float32)
+        if loss_mask is not None:
+            active_sample_mask = active_sample_mask * loss_mask[:, 0].to(device=active_sample_mask.device, dtype=torch.float32)
+        loss = (per_sample_loss * active_sample_mask).sum() / active_sample_mask.sum().clamp_min(1.0)
+
+        for batch_idx in range(shift_labels.shape[0]):
+            pose_pred = []
+            pose_target = []
+            for dim_idx, token_id in enumerate(output_placeholder_ids.tolist()):
+                loc_positions = (shift_labels[batch_idx] == int(token_id)).nonzero(as_tuple=False).flatten()
+                if loc_positions.numel() == 0:
+                    break
+                pos = loc_positions[0]
+                dim_offset = base_vocab_size + dim_idx * loc_bin_num
+                pred_bin = shift_logits[batch_idx, pos, dim_offset:dim_offset + loc_bin_num].argmax(dim=-1)
+                pose_pred.append(pred_bin.to(torch.float32) / float(max(loc_bin_num - 1, 1)))
+                pose_target.append(actions[batch_idx, dim_idx].clamp(0.0, 1.0))
+            if len(pose_pred) == len(dim_names):
+                pred_pose_values.append(torch.stack(pose_pred))
+                target_pose_values.append(torch.stack(pose_target))
+                if loss_mask is not None:
+                    pose_weights.append(loss_mask[batch_idx, 0].to(device=shift_logits.device, dtype=torch.float32))
+                else:
+                    pose_weights.append(torch.ones((), device=shift_logits.device, dtype=torch.float32))
+
+        if pred_pose_values:
+            pred_pose = torch.stack(pred_pose_values, dim=0)
+            target_pose = torch.stack(target_pose_values, dim=0)
+            pose_weights = torch.stack(pose_weights, dim=0)
+            xy_loss = F.smooth_l1_loss(pred_pose[..., :2], target_pose[..., :2], reduction="none").mean(dim=-1)
+            z_loss = F.smooth_l1_loss(pred_pose[..., 2:3], target_pose[..., 2:3], reduction="none").mean(dim=-1)
+            angle_delta = torch.remainder(pred_pose[..., 3:5] - target_pose[..., 3:5] + 0.5, 1.0) - 0.5
+            angle_loss = F.smooth_l1_loss(angle_delta, torch.zeros_like(angle_delta), reduction="none").mean(dim=-1)
+            smooth_l1_loss = (
+                xy_loss * float(getattr(self.config, "loc_xy_loss_weight", 1.0))
+                + z_loss * float(getattr(self.config, "loc_z_loss_weight", 1.0))
+                + angle_loss * float(getattr(self.config, "loc_angle_loss_weight", 2.0))
+            )
+            smooth_l1_loss = (smooth_l1_loss * pose_weights).sum() / pose_weights.sum().clamp_min(1.0)
+        else:
+            smooth_l1_loss = torch.zeros((), device=shift_logits.device, dtype=torch.float32)
+        exact_acc = exact_correct / total_tokens
+        pm1_acc = pm1_correct / total_tokens
+        return loss.to(torch.float32), exact_acc.to(torch.float32), smooth_l1_loss.to(torch.float32), pm1_acc.to(torch.float32)
+
     def _compute_loc_bin_ce_loss(self, hidden_states, labels, loss_mask=None):
         loc_bin_token_ids = getattr(self.config, "loc_bin_token_ids", None)
         if loc_bin_token_ids is None:
@@ -4692,6 +4926,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         image_sizes,
                         task_id,
                     )
+                    inputs_embeds = self._replace_loc_st_placeholders(input_ids, inputs_embeds, actions)
                     und_img_idx = combined_img_idx[:combined_img_idx.size(0)//2, ...] #und_img_idx,sum()=32768 #32768/256=128.0
                     aux_img_idx = combined_img_idx[combined_img_idx.size(0)//2:, ...]#aux_img_idx.sum()=tensor(14592, device='cuda:0') #14592/256=57
                     und_image_embeds = combined_image_embeds[:combined_image_embeds.size(0)//2, ...]#torch.Size([128, 256, 896])
@@ -4762,6 +4997,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             loc_bin_token_acc = zero_loss
             loc_bin_smooth_l1_loss = zero_loss
             loc_bin_pred_valid_ratio = zero_loss
+            loc_st_bin_acc_pm1 = zero_loss
 
             # ==========================================
             # Branch 1: GENERATION (DiT Path)
@@ -5016,6 +5252,25 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                         locbrh_labels,
                         loss_mask=locbrh_loss_mask,
                     )
+                    masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
+
+                elif getattr(self.config, "loc_head_type", None) == "lm_st_ext_vocab":
+                    locbrh_hidden_states = hidden_states[loc_indices]
+                    locbrh_labels = labels[loc_indices]
+                    locbrh_actions = actions[loc_indices]
+                    locbrh_loss_mask = loss_mask[loc_indices]
+                    (
+                        masked_loc_loss,
+                        loc_bin_token_acc,
+                        loc_bin_smooth_l1_loss,
+                        loc_st_bin_acc_pm1,
+                    ) = self._compute_loc_st_ext_vocab_loss(
+                        locbrh_hidden_states,
+                        locbrh_labels,
+                        locbrh_actions,
+                        loss_mask=locbrh_loss_mask,
+                    )
+                    loc_bin_pred_valid_ratio = torch.ones_like(loc_st_bin_acc_pm1)
                     masked_loc_loss_valid5 = masked_loc_loss.detach().to(torch.float32)
 
                 elif getattr(self.config, "use_external_loc_model", False):
@@ -5377,13 +5632,21 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
                 "loc_loss": masked_loc_loss.detach().cpu().numpy().item(),
                 "loc_bin_ce_loss": masked_loc_loss.detach().cpu().numpy().item()
-                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                if getattr(self.config, "loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab") else 0.0,
+                "loc_st_soft_ce_loss": masked_loc_loss.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_st_ext_vocab" else 0.0,
                 "loc_bin_token_acc": loc_bin_token_acc.detach().cpu().numpy().item()
-                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                if getattr(self.config, "loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab") else 0.0,
+                "loc_st_bin_acc_exact": loc_bin_token_acc.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_st_ext_vocab" else 0.0,
                 "loc_bin_smooth_l1_loss": loc_bin_smooth_l1_loss.detach().cpu().numpy().item()
-                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                if getattr(self.config, "loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab") else 0.0,
+                "loc_st_hard_token_smooth_l1_loss": loc_bin_smooth_l1_loss.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_st_ext_vocab" else 0.0,
                 "loc_bin_pred_valid_ratio": loc_bin_pred_valid_ratio.detach().cpu().numpy().item()
-                if getattr(self.config, "loc_head_type", None) == "lm_bin_ce" else 0.0,
+                if getattr(self.config, "loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab") else 0.0,
+                "loc_st_bin_acc_pm1": loc_st_bin_acc_pm1.detach().cpu().numpy().item()
+                if getattr(self.config, "loc_head_type", None) == "lm_st_ext_vocab" else 0.0,
                 "alpha_loc": alpha_loc_loss.detach().cpu().numpy().item(),
                 "gen_loss": masked_gen_loss.detach().cpu().numpy().item(),
                 "alpha_weighted_loc_loss": (masked_loc_loss * alpha_loc_loss).detach().cpu().numpy().item(),
@@ -6296,6 +6559,101 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 next_token = loc_bin_token_ids[loc_logits.argmax(dim=-1)]
             else:
                 next_token = next_logits.argmax(dim=-1)
+            generated_ids.append(next_token)
+            cur_input_ids = torch.cat([cur_input_ids, next_token[:, None]], dim=1)
+            cur_attention_mask = torch.cat(
+                [
+                    cur_attention_mask,
+                    torch.ones((cur_attention_mask.shape[0], 1), device=device, dtype=cur_attention_mask.dtype),
+                ],
+                dim=1,
+            )
+
+        return torch.stack(generated_ids, dim=1)
+
+    @torch.no_grad()
+    def generate_loc_st_ext_vocab_tokens(
+        self,
+        input_ids: Optional[torch.Tensor] = None,
+        attention_mask: Optional[torch.Tensor] = None,
+        und_image: Optional[torch.Tensor] = None,
+        aux_image: Optional[torch.Tensor] = None,
+        max_new_tokens: int = 5,
+        constrain_to_loc_bins: bool = True,
+    ):
+        if getattr(self.config, "loc_head_type", None) != "lm_st_ext_vocab":
+            raise RuntimeError("generate_loc_st_ext_vocab_tokens is only valid for loc_head_type='lm_st_ext_vocab'.")
+
+        vision_feature_layer = self.config.vision_feature_layer
+        vision_feature_select_strategy = self.config.vision_feature_select_strategy
+        vision_dtype = self.model.vision_tower.embeddings.patch_embedding.weight.dtype
+        device = input_ids.device
+        base_vocab_size = int(getattr(self.config, "loc_st_base_vocab_size", self.lm_head.weight.shape[0]))
+        loc_bin_num = int(getattr(self.config, "loc_bin_num", 100))
+        dim_names = list(getattr(self.config, "loc_st_dim_names", ["x", "y", "z", "pitch", "yaw"]))
+        anchor_token_ids = torch.as_tensor(getattr(self.config, "loc_st_anchor_token_ids", []), device=device, dtype=torch.long)
+        if anchor_token_ids.numel() != len(dim_names) * loc_bin_num:
+            raise RuntimeError("lm_st_ext_vocab generation requires config.loc_st_anchor_token_ids.")
+
+        und_image_embeds = None
+        if und_image is not None:
+            und_image_embeds = self.model.get_image_features(
+                pixel_values=und_image.to(dtype=vision_dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        aux_image_embeds = None
+        if aux_image is not None:
+            aux_image_embeds = self.model.get_image_features(
+                pixel_values=aux_image.to(dtype=vision_dtype),
+                vision_feature_layer=vision_feature_layer,
+                vision_feature_select_strategy=vision_feature_select_strategy,
+            )
+
+        generated_ids = []
+        cur_input_ids = input_ids
+        cur_attention_mask = attention_mask
+        for step_idx in range(max_new_tokens):
+            text_embeds = self._embed_loc_st_extended_input_ids(cur_input_ids)
+            und_image_idx, aux_image_idx = split_image_tokens(cur_input_ids, IMAGE_TOKEN_IDX)
+            if und_image_embeds is not None and und_image_idx.any():
+                cur_und_embeds = und_image_embeds
+                if cur_und_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                    cur_und_embeds = cur_und_embeds.repeat(text_embeds.shape[0], 1, 1)
+                text_embeds[und_image_idx] = cur_und_embeds.flatten(0, 1)
+            if aux_image_embeds is not None and aux_image_idx.any():
+                cur_aux_embeds = aux_image_embeds
+                if cur_aux_embeds.shape[0] == 1 and text_embeds.shape[0] > 1:
+                    cur_aux_embeds = cur_aux_embeds.repeat(text_embeds.shape[0], 1, 1)
+                text_embeds[aux_image_idx] = cur_aux_embeds.flatten(0, 1)
+
+            position_ids = torch.cumsum(cur_attention_mask, dim=1) - 1
+            position_ids[position_ids < 0] = 0
+            outputs = self.model.language_model(
+                inputs_embeds=text_embeds,
+                attention_mask=cur_attention_mask.bool(),
+                position_ids=position_ids,
+                output_hidden_states=True,
+                return_dict=True,
+                use_cache=False,
+            )
+            hidden_states = outputs.hidden_states[-1]
+            last_indices = cur_attention_mask.sum(dim=1).long().clamp_min(1) - 1
+            next_hidden = hidden_states[torch.arange(hidden_states.shape[0], device=device), last_indices]
+            next_logits = F.linear(next_hidden, self._loc_st_extended_output_weight())
+            if constrain_to_loc_bins and step_idx < len(dim_names):
+                dim_start = base_vocab_size + step_idx * loc_bin_num
+                dim_logits = next_logits[:, dim_start:dim_start + loc_bin_num]
+                pred_bin = dim_logits.argmax(dim=-1)
+                next_token = anchor_token_ids[step_idx * loc_bin_num + pred_bin]
+            else:
+                ext_next = next_logits.argmax(dim=-1)
+                next_token = ext_next.clone()
+                ext_anchor_mask = ext_next >= base_vocab_size
+                if ext_anchor_mask.any():
+                    anchor_offset = (ext_next[ext_anchor_mask] - base_vocab_size).clamp(0, anchor_token_ids.numel() - 1)
+                    next_token[ext_anchor_mask] = anchor_token_ids[anchor_offset]
             generated_ids.append(next_token)
             cur_input_ids = torch.cat([cur_input_ids, next_token[:, None]], dim=1)
             cur_attention_mask = torch.cat(

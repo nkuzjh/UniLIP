@@ -173,6 +173,8 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp27_3_dust2` | `exp27_2_dust2` + teacher_gt action_dit attention weighting | perception feature 仍是 `vision_tower` FPS patch features；attention 权重复用 `teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled` wrapper，不用 hook |
 | `exp28_dust2` | `exp26_dust2` + `exp27_3_dust2` 的组合实验 | 默认 `linear_1m_sigma` combined aux-loc 与 teacher_gt attention-weighted vision_tower perceptual alignment 同时开启，验证 pose-level 与 patch-feature-level 监督是否互补 |
 | `exp28_1_dust2` | `exp26_2_dust2` + `exp27_3_dust2` 的组合实验 | 将 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，其他 attention-weighted vision_tower perceptual alignment 与训练设置保持一致 |
+| `exp29_dust2` | shared `language_model + lm_head` loc-token CE 对照 | 关闭内部 loc/action-DiT/loc-head 和所有 aux/perception/repa loss，只保留 gen + loc 联训；loc 用 5 个普通 `<loc_000>` 到 `<loc_255>` token 的 full-vocab hard CE |
+| `exp29_1_dust2` | LLaVA-ST-style text-side coordinate token 对照 | 基于 `exp29_dust2`，只替换 loc token 表达与 loss：100-bin placeholder + extended-vocab soft CE + NTP reparam；不做 visual LAPE image-feature 注入 |
 | `exp14_2_gen_dust2` | 当前主线配方的 LoRA gen-only 对照 | `task_mix_ratio=0.0`，`language_model + gen head` LoRA，loc head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp14_2_loc_dust2` | 当前主线配方的 LoRA loc-only 对照 | `task_mix_ratio=1.0`，`language_model + loc head` LoRA，gen head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
@@ -211,6 +213,8 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp27_3_dust2` | attention-weighted shallow vision_tower perceptual alignment | `exp27_2_dust2 + teacher_gt action_dit attention weighting`，权重方案固定为 `teacher_gt + last + mean heads + mean_one + detach + loc_sampled` |
 | `exp28_dust2` | default aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_dust2 + exp27_3_dust2`，同时使用默认 `linear_1m_sigma` combined aux-loc 和 teacher_gt action attention-weighted vision_tower feature alignment |
 | `exp28_1_dust2` | exp-sigma aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_2_dust2 + exp27_3_dust2`，保持 `exp28_dust2` 其他设置不变，仅将 combined aux-loc 权重改为 `exp_sigma, lambda=5.0, renorm=none` |
+| `exp29_dust2` | LLM-loc-token hard CE baseline | `gen + loc` 联训；定位走 shared `language_model + lm_head`，5 个普通 256-bin loc vocab token，full-vocab CE；无内部 loc/action-DiT/aux/perception/repa |
+| `exp29_1_dust2` | LLaVA-ST-style loc-token NTP 对照 | `exp29_dust2` 的最小变量实验；5 维 pose 改为 input/output placeholder + 100-bin extended vocab；训练用 interpolation + soft CE + NTP，推理用 hard anchor token 生成 |
 | `exp14_2_gen_dust2` | LoRA gen-only current baseline | 224 + short instruction；`task_mix_ratio=0.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=True`; `enable_loc_head_lora=False`; `freeze_inactive_head=True` |
 | `exp14_2_loc_dust2` | LoRA loc-only current baseline | 224 + short instruction；`task_mix_ratio=1.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=False`; `enable_loc_head_lora=True`; `freeze_inactive_head=True` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |
@@ -223,6 +227,72 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp17_8_dust2` | traditional REPA + aux_loc | `exp17_7_dust2 + aux_loc` |
 | `exp18_dust2` | warm-start 对照 | 用于比较 warm-start joint 与 scratch joint |
 | `exp18_1_dust2` | warm-start 调整版 | 比较不同 gen warm-start 来源和更保守 loc lr 的影响 |
+
+## LLaVA-ST-style Loc Token Line
+
+### exp29_dust2 baseline
+
+`exp29_dust2` 是定位 token 化路线的直接 hard-token baseline：
+
+- `loc_head_type=lm_bin_ce`
+- `loc_bin_num=256`
+- answer text 生成 5 个普通 loc vocab token，例如 `<loc_123> <loc_045> ...`
+- loss 仍是标准 full-vocab hard CE，通过 shared `language_model + lm_head` 更新 loc token
+- 关闭内部定位分支和所有交互损失：`skip_internal_loc_modules=True`, `use_pi05_action_dit=False`, `is_action_dit_projector=False`, `is_loc_aux_loss=False`, `is_loc_perception_loss=False`, `is_loc_repa_loss=False`, `is_repa_loss=False`, `is_gen_aux_loss=False`
+- gen branch 仍按 UniLIP generation branch 训练，实验只看 shared LLM loc token CE 是否能提供可用定位监督
+
+### exp29_1_dust2 design
+
+`exp29_1_dust2` 是 `exp29_dust2` 的最小变量实验：保留 shared `language_model` 做 loc + UniLIP gen 联训，但把 5D pose 的 token 表达改为 LLaVA-ST-style text-side coordinate token/NTP。
+
+关键配置：
+
+```yaml
+loc_head_type: lm_st_ext_vocab
+loc_bin_num: 100
+loc_bin_init_std: 1.0e-4
+loc_bin_train_full_embeddings: True
+loc_token_lr: 1.0e-4
+loc_lape_reparam_decay: 0.5
+loc_lape_circular_dims: ["pitch", "yaw"]
+loc_lape_visual_injection: False
+```
+
+文本侧 token 约定：
+
+- conditioning/input placeholders: `<loc_x_input>`, `<loc_y_input>`, `<loc_z_input>`, `<loc_pitch_input>`, `<loc_yaw_input>`
+- localization answer/output placeholders: `<loc_x_output>`, `<loc_y_output>`, `<loc_z_output>`, `<loc_pitch_output>`, `<loc_yaw_output>`
+- extended-vocab anchors: `<loc_x_000>` 到 `<loc_x_099>`，其他维度同理
+- tokenizer 只把 placeholder 作为普通输入 token resize 到 base embedding；anchor token 用于 extended output vocab，不作为普通 base-vocab embedding 训练
+
+训练路径：
+
+- dataset 中 loc answer 使用 output placeholders，而不是具体 `<loc_123>` 文本。
+- batch 保留连续 pose/action 数值，forward 中按 `actions` 对 placeholder 输入位置做相邻 bin embedding 线性插值。
+- input/output placeholder 在输入序列位置都使用对应维度的 input embedding table 插值；output embedding table 只参与最终 extended-vocab logits。
+- loc loss 对齐 causal next-token 位置，但不再对 base vocab 做 one-hot hard CE；而是在 extended vocab 的维度专属 100-bin anchor 上做 soft CE。
+- NTP reparam 使用 `decay=0.5`；`x/y/z` 是线性距离，`pitch/yaw` 是 circular distance。
+- 不启用 LLaVA-ST 的 visual LAPE image-feature position embedding 注入，`loc_lape_visual_injection=False`。
+
+推理路径：
+
+- loc eval 使用标准 LLM autoregressive hard-token generation。
+- 每个维度约束/解析为对应维度的 anchor token，例如 `<loc_yaw_037>`。
+- 坐标还原为 normalized bin value，默认 `bin / (loc_bin_num - 1)`。
+- 不使用单独 5 个 linear head，也不在推理时做 softmax expectation；这是和早期 `lm_lape_bin` 草案的主要区别。
+
+生成任务兼容性：
+
+- `is_multi_task=True`, `is_multi_task_balanced=True`, `task_mix_ratio=0.5`，仍然同时训练 gen 和 loc。
+- generation prompt 中的 pose token 也改为 input placeholders，并在 forward 中根据 `actions` 替换为插值 embedding。
+- `is_gen_aux_loss=False`，因此没有 aux-gen 反向定位侧路径；gen branch 本身仍按常规 UniLIP 生成 loss 训练。
+
+已补齐配置：
+
+- `csgo_configs/exp29_1_dust2.yaml`
+- `csgo_configs/test/exp29_1_dust2_loc.yaml`
+- `csgo_configs/test/exp29_1_dust2_gen.yaml`
+- `csgo_configs/test/exp29_1_dust2_gen_conti.yaml`
 
 ### Aux-loc step gate support
 

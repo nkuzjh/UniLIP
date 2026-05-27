@@ -1,0 +1,58 @@
+###################
+### exp29_1_dust2 gen eval
+###################
+debug: False
+
+is_multi_task: True
+is_multi_task_balanced: True
+loc_head_type: "lm_st_ext_vocab"
+loc_bin_num: 100
+loc_bin_init_std: 1.0e-4
+loc_bin_train_full_embeddings: True
+loc_token_lr: 1.0e-4
+loc_lape_reparam_decay: 0.5
+loc_lape_circular_dims: ["pitch", "yaw"]
+loc_lape_visual_injection: False
+
+skip_internal_loc_modules: True
+use_pi05_action_dit: False
+is_action_dit_projector: False
+use_vit_regression_head: False
+use_vit_cls_regression_head: False
+use_codex_vit_regression_head: False
+use_external_loc_model: False
+
+is_loc_aux_loss: False
+is_aux_loc_em_loss: False
+is_aux_loc_uncertainty_loss: False
+is_aux_loc_combined_em_unc_loss: False
+is_loc_perception_loss: False
+is_loc_repa_loss: False
+is_repa_loss: False
+is_gen_aux_loss: False
+alpha_loc_loss: 1.0
+
+img_size: 224
+use_short_instruction: True
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2']
+val_maps: ['de_dust2']
+test_maps: ['de_dust2']
+
+is_lora: True
+llm_train_mode: "lora"
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+
+fix_vit: True
+fix_llm: False
+fix_connect: False
+fix_dit: False
+
+ckpt_path: "outputs/csgo_1b/exp29_1_dust2/checkpoint-8000/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dim: 5

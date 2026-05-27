@@ -603,6 +603,8 @@ class NonMixTrainer(Trainer):
                     name for name, _ in opt_model.named_parameters()
                     if name.endswith("lm_head.weight")
                     or ("language_model" in name and name.endswith("embed_tokens.weight"))
+                    or "loc_st_input_embeddings" in name
+                    or "loc_st_output_embeddings" in name
                 ]
 
             def is_mm_projector_parameter(name):

@@ -855,6 +855,74 @@ def build_loc_bin_tokens(loc_bin_num: int, loc_bin_token_prefix: str) -> List[st
     return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
 
 
+LOC_ST_DIMS = ("x", "y", "z", "pitch", "yaw")
+
+
+def build_loc_st_placeholder_tokens() -> List[str]:
+    return [
+        f"<loc_{dim}_{io_type}>"
+        for dim in LOC_ST_DIMS
+        for io_type in ("input", "output")
+    ]
+
+
+def build_loc_st_anchor_tokens(loc_bin_num: int) -> List[str]:
+    width = len(str(int(loc_bin_num) - 1))
+    return [
+        f"<loc_{dim}_{idx:0{width}d}>"
+        for dim in LOC_ST_DIMS
+        for idx in range(int(loc_bin_num))
+    ]
+
+
+def add_loc_st_tokens_and_init(
+    tokenizer: transformers.PreTrainedTokenizer,
+    model: transformers.PreTrainedModel,
+    csgo_config: Dict,
+):
+    loc_bin_num = int(csgo_config.get("loc_bin_num", 100))
+    init_std = float(csgo_config.get("loc_bin_init_std", 1.0e-4))
+    placeholders = build_loc_st_placeholder_tokens()
+    old_vocab_size = len(tokenizer)
+    num_new_placeholders = tokenizer.add_tokens(placeholders, special_tokens=True)
+    if num_new_placeholders > 0:
+        model.resize_token_embeddings(len(tokenizer))
+        with torch.no_grad():
+            input_embeddings = model.get_input_embeddings().weight
+            input_embeddings[old_vocab_size:] = torch.empty_like(input_embeddings[old_vocab_size:]).normal_(
+                mean=0.0,
+                std=init_std,
+            )
+            lm_head = getattr(model, "lm_head", None)
+            if lm_head is not None and hasattr(lm_head, "weight") and lm_head.weight.shape[0] >= len(tokenizer):
+                lm_head.weight[old_vocab_size:] = torch.empty_like(lm_head.weight[old_vocab_size:]).normal_(
+                    mean=0.0,
+                    std=init_std,
+                )
+
+    base_vocab_size = len(tokenizer)
+    anchor_tokens = build_loc_st_anchor_tokens(loc_bin_num)
+    tokenizer.add_tokens(anchor_tokens, special_tokens=True)
+    placeholder_token_ids = tokenizer.convert_tokens_to_ids(placeholders)
+    anchor_token_ids = tokenizer.convert_tokens_to_ids(anchor_tokens)
+    if any(token_id == tokenizer.unk_token_id for token_id in placeholder_token_ids + anchor_token_ids):
+        raise ValueError("Failed to register one or more lm_st_ext_vocab loc tokens in tokenizer.")
+
+    if hasattr(model, "initialize_loc_st_ext_vocab_modules"):
+        model.initialize_loc_st_ext_vocab_modules(
+            loc_bin_num=loc_bin_num,
+            dim_names=list(LOC_ST_DIMS),
+            placeholder_token_ids=placeholder_token_ids,
+            anchor_token_ids=anchor_token_ids,
+            base_vocab_size=base_vocab_size,
+            init_std=init_std,
+            reparam_decay=float(csgo_config.get("loc_lape_reparam_decay", 0.5)),
+            circular_dims=csgo_config.get("loc_lape_circular_dims", ["pitch", "yaw"]),
+        )
+    model.text_tokenizer = tokenizer
+    return placeholders, anchor_tokens, placeholder_token_ids, anchor_token_ids, num_new_placeholders
+
+
 def add_loc_bin_tokens_and_resize(
     tokenizer: transformers.PreTrainedTokenizer,
     model: transformers.PreTrainedModel,
@@ -887,7 +955,7 @@ def add_loc_bin_tokens_and_resize(
 
 
 def validate_lm_bin_ce_config(csgo_config: Dict):
-    if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
+    if csgo_config.get("loc_head_type", None) not in ("lm_bin_ce", "lm_st_ext_vocab"):
         return
 
     required_false = [
@@ -905,15 +973,16 @@ def validate_lm_bin_ce_config(csgo_config: Dict):
         "is_repa_loss",
         "is_gen_aux_loss",
     ]
+    loc_head_type = csgo_config.get("loc_head_type", None)
     if not csgo_config.get("skip_internal_loc_modules", False):
-        raise ValueError("loc_head_type='lm_bin_ce' requires skip_internal_loc_modules=True.")
+        raise ValueError(f"loc_head_type='{loc_head_type}' requires skip_internal_loc_modules=True.")
     for key in required_false:
         if bool(csgo_config.get(key, False)):
-            raise ValueError(f"loc_head_type='lm_bin_ce' requires {key}=False.")
+            raise ValueError(f"loc_head_type='{loc_head_type}' requires {key}=False.")
     if csgo_config.get("loc_init_ckpt_path", None) is not None:
-        raise ValueError("loc_head_type='lm_bin_ce' forbids loc_init_ckpt_path.")
+        raise ValueError(f"loc_head_type='{loc_head_type}' forbids loc_init_ckpt_path.")
     if int(csgo_config.get("loc_bin_num", 0)) <= 1:
-        raise ValueError("loc_head_type='lm_bin_ce' requires loc_bin_num > 1.")
+        raise ValueError(f"loc_head_type='{loc_head_type}' requires loc_bin_num > 1.")
 
 
 def _tokenize_fn(strings: Sequence[str], tokenizer: transformers.PreTrainedTokenizer) -> Dict:
@@ -2383,6 +2452,23 @@ def train(attn_implementation=None):
             loc_bin_token_ids[0],
             loc_bin_token_ids[-1],
         )
+    elif csgo_config.get("loc_head_type", None) == "lm_st_ext_vocab":
+        (
+            _loc_st_placeholders,
+            _loc_st_anchor_tokens,
+            loc_st_placeholder_token_ids,
+            loc_st_anchor_token_ids,
+            num_new_loc_st_placeholders,
+        ) = add_loc_st_tokens_and_init(tokenizer, model, csgo_config)
+        logging.info(
+            "lm_st_ext_vocab loc tokens ready: loc_bin_num=%d, placeholders_added=%d, "
+            "base_vocab_size=%d, anchor_id_range=[%s, %s]",
+            int(csgo_config.get("loc_bin_num", 100)),
+            num_new_loc_st_placeholders,
+            int(getattr(model.config, "loc_st_base_vocab_size", len(tokenizer))),
+            loc_st_anchor_token_ids[0],
+            loc_st_anchor_token_ids[-1],
+        )
     if model_args.version in conversation_lib.conv_templates:
         conversation_lib.default_conversation = conversation_lib.conv_templates[model_args.version]
     else:
@@ -2401,6 +2487,11 @@ def train(attn_implementation=None):
     if model.config.loc_head_type == "lm_bin_ce":
         loc_tokens = build_loc_bin_tokens(model.config.loc_bin_num, model.config.loc_bin_token_prefix)
         model.config.loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
+    elif model.config.loc_head_type == "lm_st_ext_vocab":
+        loc_st_anchor_tokens = build_loc_st_anchor_tokens(model.config.loc_bin_num)
+        model.config.loc_st_anchor_token_ids = tokenizer.convert_tokens_to_ids(loc_st_anchor_tokens)
+        model.config.loc_st_placeholder_token_ids = tokenizer.convert_tokens_to_ids(build_loc_st_placeholder_tokens())
+        model.config.loc_st_dim_names = list(LOC_ST_DIMS)
 
     model.config.img_size = model_args.img_size = csgo_config.get("img_size", False)
     model.config.is_action_dit_dense_timestep = model_args.is_action_dit_dense_timestep = csgo_config.get("is_action_dit_dense_timestep", False)
@@ -2974,13 +3065,13 @@ def train(attn_implementation=None):
         model.inject_lora_to_sub_module(model_args, training_args)
 
         if (
-            getattr(model.config, "loc_head_type", None) == "lm_bin_ce"
+            getattr(model.config, "loc_head_type", None) in ("lm_bin_ce", "lm_st_ext_vocab")
             and bool(getattr(model.config, "loc_bin_train_full_embeddings", False))
         ):
             model.get_input_embeddings().weight.requires_grad = True
             if getattr(model, "lm_head", None) is not None:
                 model.lm_head.weight.requires_grad = True
-            logging.info("lm_bin_ce: set full input embeddings and lm_head trainable after LoRA injection.")
+            logging.info("%s: set full input embeddings and lm_head trainable after LoRA injection.", getattr(model.config, "loc_head_type", None))
 
         total_params = sum(p.numel() for p in model.parameters())
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
