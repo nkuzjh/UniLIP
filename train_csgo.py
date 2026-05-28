@@ -242,12 +242,18 @@ class TrainingArguments(transformers.TrainingArguments):
     llm_train_mode: str = "frozen"
     llm_lr: float = 1e-5
     llm_lora_lr: float = 1e-4
+    llm_connector_lora_lr: Optional[float] = None
+    gen_dit_lora_lr: Optional[float] = None
+    action_dit_lora_lr: Optional[float] = None
     group_by_modality_length: bool = field(default=False)
     bf16: bool = True
     pretrain_path : str = "none"
 
     action_dit_projector_lr: float = 1e-3
     action_dit_lr: float = 1e-4
+    action_dit_connector_lr: Optional[float] = None
+    action_dit_norm_lr: Optional[float] = None
+    action_io_mlp_lr: Optional[float] = None
     loc_token_lr: Optional[float] = None
     is_action_dit_projector: bool = False
     loc_learnable_query_lr: float = 5e-4
@@ -2643,6 +2649,22 @@ def train(attn_implementation=None):
     model.config.is_action_dit_projector =  training_args.is_action_dit_projector = csgo_config.get("is_action_dit_projector", False)
     model.config.action_dit_projector_lr =  training_args.action_dit_projector_lr = csgo_config.get("action_dit_projector_lr", 1e-3)
     model.config.action_dit_lr = training_args.action_dit_lr = csgo_config.get("action_dit_lr", training_args.learning_rate)
+    model.config.action_dit_lora_lr = training_args.action_dit_lora_lr = csgo_config.get(
+        "action_dit_lora_lr",
+        training_args.action_dit_lora_lr,
+    )
+    model.config.action_dit_connector_lr = training_args.action_dit_connector_lr = csgo_config.get(
+        "action_dit_connector_lr",
+        training_args.action_dit_connector_lr,
+    )
+    model.config.action_dit_norm_lr = training_args.action_dit_norm_lr = csgo_config.get(
+        "action_dit_norm_lr",
+        training_args.action_dit_norm_lr,
+    )
+    model.config.action_io_mlp_lr = training_args.action_io_mlp_lr = csgo_config.get(
+        "action_io_mlp_lr",
+        training_args.action_io_mlp_lr,
+    )
     model.config.mm_projector_lr = training_args.mm_projector_lr = csgo_config.get(
         "mm_projector_lr",
         training_args.mm_projector_lr,
@@ -2750,6 +2772,14 @@ def train(attn_implementation=None):
     model.config.llm_train_mode = training_args.llm_train_mode = llm_train_mode
     model.config.llm_lr = training_args.llm_lr = float(csgo_config.get("llm_lr", training_args.llm_lr))
     model.config.llm_lora_lr = training_args.llm_lora_lr = float(csgo_config.get("llm_lora_lr", training_args.llm_lora_lr))
+    model.config.llm_connector_lora_lr = training_args.llm_connector_lora_lr = csgo_config.get(
+        "llm_connector_lora_lr",
+        training_args.llm_connector_lora_lr,
+    )
+    model.config.gen_dit_lora_lr = training_args.gen_dit_lora_lr = csgo_config.get(
+        "gen_dit_lora_lr",
+        training_args.gen_dit_lora_lr,
+    )
     logging.info(
         "LoRA module gating: language_model=%s, gen_head=%s, loc_head=%s, freeze_inactive_head=%s",
         model_args.enable_language_model_lora,

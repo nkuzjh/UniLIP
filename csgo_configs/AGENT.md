@@ -115,6 +115,7 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 - `enable_gen_head_lora`: inject LoRA into gen-side `llm_connector` and SANA `dit`; allow gen-side small modules such as `projector` and `latent_queries` to train.
 - `enable_loc_head_lora`: inject LoRA into loc-side `action_dit`; allow loc-side small modules such as `action_dit_connector`, `action_dit_projector`, `action_dit_norm`, `action_in_proj`, `action_out_proj`, and `time_mlp_*` to train.
 - `freeze_inactive_head`: after LoRA injection, freeze the inactive head as a final guard. Current supported ablations are `task_mix_ratio=0.0` gen-only with loc head frozen, and `task_mix_ratio=1.0` loc-only with gen head frozen.
+- Optional fine LR fields override the default broad groups without changing trainability: `llm_connector_lora_lr`, `gen_dit_lora_lr`, `action_dit_lora_lr`, `action_dit_connector_lr`, `action_dit_norm_lr`, and `action_io_mlp_lr`.
 
 ## Existing Experiment Families
 
@@ -175,6 +176,7 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp28_1_dust2` | `exp26_2_dust2` + `exp27_3_dust2` 的组合实验 | 将 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，其他 attention-weighted vision_tower perceptual alignment 与训练设置保持一致 |
 | `exp29_dust2` | shared `language_model + lm_head` loc-token CE 对照 | 关闭内部 loc/action-DiT/loc-head 和所有 aux/perception/repa loss，只保留 gen + loc 联训；loc 用 5 个普通 `<loc_000>` 到 `<loc_255>` token 的 full-vocab hard CE |
 | `exp29_1_dust2` | LLaVA-ST-style text-side coordinate token 对照 | 基于 `exp29_dust2`，只替换 loc token 表达与 loss：100-bin placeholder + extended-vocab soft CE + NTP reparam；不做 visual LAPE image-feature 注入 |
+| `exp30_dust2` | `exp14_2_gen_dust2 + exp14_2_loc_dust2` 的 multi-task union LoRA baseline | `is_multi_task_balanced=True`；可学习模块为两个单任务 LoRA 实验并集；关闭 aux_loc / aux_gen；`alpha_loc_loss` 采用 `exp27_3_dust2` 的 `[2,5,10,20]` schedule；加入 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower loc_perception_loss；新增细粒度 optimizer 分组，使 LoRA/head 小模块按本文件推荐 LR 训练 |
 | `exp14_2_gen_dust2` | 当前主线配方的 LoRA gen-only 对照 | `task_mix_ratio=0.0`，`language_model + gen head` LoRA，loc head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp14_2_loc_dust2` | 当前主线配方的 LoRA loc-only 对照 | `task_mix_ratio=1.0`，`language_model + loc head` LoRA，gen head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
@@ -215,6 +217,7 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp28_1_dust2` | exp-sigma aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_2_dust2 + exp27_3_dust2`，保持 `exp28_dust2` 其他设置不变，仅将 combined aux-loc 权重改为 `exp_sigma, lambda=5.0, renorm=none` |
 | `exp29_dust2` | LLM-loc-token hard CE baseline | `gen + loc` 联训；定位走 shared `language_model + lm_head`，5 个普通 256-bin loc vocab token，full-vocab CE；无内部 loc/action-DiT/aux/perception/repa |
 | `exp29_1_dust2` | LLaVA-ST-style loc-token NTP 对照 | `exp29_dust2` 的最小变量实验；5 维 pose 改为 input/output placeholder + 100-bin extended vocab；训练用 interpolation + soft CE + NTP，推理用 hard anchor token 生成 |
+| `exp30_dust2` | LoRA multi-task union baseline + attention-weighted vision_tower loc perception | `exp14_2_gen_dust2 + exp14_2_loc_dust2` 的联合训练版本；`is_multi_task_balanced=True`；shared `language_model` LoRA，gen/loc heads 同时开启；关闭 aux_loc / aux_gen；`alpha_loc_loss` 用 `exp27_3_dust2` 的 `[2,5,10,20]` schedule；加入 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower loc_perception_loss |
 | `exp14_2_gen_dust2` | LoRA gen-only current baseline | 224 + short instruction；`task_mix_ratio=0.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=True`; `enable_loc_head_lora=False`; `freeze_inactive_head=True` |
 | `exp14_2_loc_dust2` | LoRA loc-only current baseline | 224 + short instruction；`task_mix_ratio=1.0`；`enable_language_model_lora=True`; `enable_gen_head_lora=False`; `enable_loc_head_lora=True`; `freeze_inactive_head=True` |
 | `exp17_4_dust2` | shared-tail baseline | `exp17_2_dust2 + 2-layer shared LLM tail` |

@@ -610,6 +610,61 @@ class NonMixTrainer(Trainer):
             def is_mm_projector_parameter(name):
                 return "mm_projector" in name or "multi_modal_projector" in name
 
+            def parameter_belongs_to_module(name, module_names):
+                return any(part in module_names for part in name.split("."))
+
+            def get_module_parameter_names(module_names, require_lora=None):
+                parameter_names = []
+                for name, _ in opt_model.named_parameters():
+                    if not parameter_belongs_to_module(name, module_names):
+                        continue
+                    if require_lora is True and "lora_" not in name:
+                        continue
+                    if require_lora is False and "lora_" in name:
+                        continue
+                    parameter_names.append(name)
+                return parameter_names
+
+            def regroup_parameters_with_lr(optimizer_grouped_parameters, parameter_names, lr):
+                if lr is None or len(parameter_names) == 0:
+                    return optimizer_grouped_parameters
+
+                parameter_name_set = set(parameter_names)
+                parameter_ids = {
+                    id(p)
+                    for n, p in opt_model.named_parameters()
+                    if n in parameter_name_set and p.requires_grad
+                }
+                if len(parameter_ids) == 0:
+                    return optimizer_grouped_parameters
+
+                optimizer_grouped_parameters = [
+                    {
+                        **group,
+                        "params": [p for p in group["params"] if id(p) not in parameter_ids],
+                    }
+                    for group in optimizer_grouped_parameters
+                ]
+                optimizer_grouped_parameters.extend([
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n in decay_parameters and n in parameter_name_set and p.requires_grad)
+                        ],
+                        "weight_decay": self.args.weight_decay,
+                        "lr": float(lr),
+                    },
+                    {
+                        "params": [
+                            p for n, p in opt_model.named_parameters()
+                            if (n not in decay_parameters and n in parameter_name_set and p.requires_grad)
+                        ],
+                        "weight_decay": 0.0,
+                        "lr": float(lr),
+                    },
+                ])
+                return optimizer_grouped_parameters
+
             if self.args.is_action_dit_projector and self.args.is_loc_learnable_query and self.args.mm_projector_lr is not None:
                 projector_parameters = [name for name, _ in opt_model.named_parameters() if is_mm_projector_parameter(name)]
                 action_dit_projector_parameters = get_action_head_parameter_names()
@@ -963,6 +1018,44 @@ class NonMixTrainer(Trainer):
                         "lr": language_model_lr,
                     },
                 ])
+
+            fine_lr_groups = [
+                (
+                    get_module_parameter_names({"llm_connector"}, require_lora=True),
+                    getattr(self.args, "llm_connector_lora_lr", None),
+                ),
+                (
+                    get_module_parameter_names({"dit"}, require_lora=True),
+                    getattr(self.args, "gen_dit_lora_lr", None),
+                ),
+                (
+                    get_module_parameter_names({"action_dit"}, require_lora=True),
+                    getattr(self.args, "action_dit_lora_lr", None),
+                ),
+                (
+                    get_module_parameter_names({"action_dit_connector"}),
+                    getattr(self.args, "action_dit_connector_lr", None),
+                ),
+                (
+                    get_module_parameter_names({"action_dit_norm"}),
+                    getattr(self.args, "action_dit_norm_lr", None),
+                ),
+                (
+                    get_module_parameter_names({
+                        "action_in_proj",
+                        "action_out_proj",
+                        "time_mlp_in",
+                        "time_mlp_out",
+                    }),
+                    getattr(self.args, "action_io_mlp_lr", None),
+                ),
+            ]
+            for parameter_names, lr in fine_lr_groups:
+                optimizer_grouped_parameters = regroup_parameters_with_lr(
+                    optimizer_grouped_parameters,
+                    parameter_names,
+                    lr,
+                )
 
             loc_token_parameters = get_loc_token_parameter_names()
             if len(loc_token_parameters) > 0 and getattr(self.args, "loc_token_lr", None) is not None:
