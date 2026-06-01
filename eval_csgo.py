@@ -63,7 +63,31 @@ def expand2square(pil_img, background_color):
         result.paste(pil_img, ((height - width) // 2, 0))
         return result
 
-def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False):
+LOC_ST_DIMS = ("x", "y", "z", "pitch", "yaw")
+
+
+def pose_to_loc_st_placeholder_tokens(actions_norm, io_type="input"):
+    return " ".join(
+        f"<loc_{dim}_{io_type}>"
+        for dim in LOC_ST_DIMS
+    )
+
+
+def build_sft_instruction_custom(pose_5d, map_name, z_max, z_min, use_short_instruction=False, pose_tokens=None):
+    if pose_tokens is not None:
+        if use_short_instruction:
+            return (
+                f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
+                f"{pose_tokens}. The pose tokens represent normalized x, y, z, pitch, yaw.\n"
+                "<image>"
+            )
+        definition_text = (
+            f"Task: Generate a First-Person View (FPV) image of CS2 map '{map_name}' based on the Radar Map and Camera Pose.\n"
+            "Coordinate System Definition:\n"
+            "- Pose tokens represent normalized x, y, z, pitch, yaw."
+        )
+        return f"{definition_text}\n\nCurrent Camera Pose: {pose_tokens}\n<image>"
+
     if use_short_instruction:
         return (
             f"Generate a CS2 FPV image on map '{map_name}' from the radar map and camera pose: "
@@ -189,8 +213,16 @@ class CSGOInferenceDataset(Dataset):
         z_min = self.map_z_range[map_name]['min_z']
         z_max = self.map_z_range[map_name]['max_z']
 
-        # 归一化 Z (0-1) 用于 Pose 数值展示
+        # 归一化坐标用于 lm_st_ext_vocab placeholder embedding replacement.
+        x_norm = data['x'] / 1024.0
+        y_norm = data['y'] / 1024.0
         z_norm = (data['z'] - z_min) / (z_max - z_min + 1e-6)
+        pitch_norm = data['angle_v'] / (2 * np.pi)
+        yaw_norm = data['angle_h'] / (2 * np.pi)
+        actions_norm = torch.tensor(
+            [x_norm, y_norm, z_norm, pitch_norm, yaw_norm],
+            dtype=torch.float32,
+        ).unsqueeze(0)
 
         # 弧度转角度
         pitch_deg = (data['angle_v'] / (2 * np.pi)) * 360.0
@@ -209,6 +241,8 @@ class CSGOInferenceDataset(Dataset):
             z_max,
             z_min,
             use_short_instruction=bool(self.config.get("use_short_instruction", False)),
+            pose_tokens=pose_to_loc_st_placeholder_tokens(actions_norm, io_type="input")
+            if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
         )
 
         return {
@@ -217,7 +251,8 @@ class CSGOInferenceDataset(Dataset):
             "gt_img": gt_img,
             "raw_prompt": raw_prompt,
             "file_frame": data['file_frame'],
-            "pose_info": pose_dict
+            "pose_info": pose_dict,
+            "actions": actions_norm,
         }
 
 def collate_fn(batch):
@@ -335,6 +370,23 @@ def build_loc_bin_tokens(loc_bin_num, loc_bin_token_prefix):
     return [f"{loc_bin_token_prefix}{idx:0{width}d}>" for idx in range(int(loc_bin_num))]
 
 
+def build_loc_st_placeholder_tokens():
+    return [
+        f"<loc_{dim}_{io_type}>"
+        for dim in LOC_ST_DIMS
+        for io_type in ("input", "output")
+    ]
+
+
+def build_loc_st_anchor_tokens(loc_bin_num):
+    width = len(str(int(loc_bin_num) - 1))
+    return [
+        f"<loc_{dim}_{idx:0{width}d}>"
+        for dim in LOC_ST_DIMS
+        for idx in range(int(loc_bin_num))
+    ]
+
+
 def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
     if csgo_config.get("loc_head_type", None) != "lm_bin_ce":
         return
@@ -349,6 +401,36 @@ def add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config):
     model.config.loc_bin_num = int(csgo_config.get("loc_bin_num", 256))
     model.config.loc_bin_token_prefix = csgo_config.get("loc_bin_token_prefix", "<loc_")
     model.config.loc_bin_token_ids = tokenizer.convert_tokens_to_ids(loc_tokens)
+
+
+def add_loc_st_tokens_and_init(tokenizer, model, csgo_config):
+    if csgo_config.get("loc_head_type", None) != "lm_st_ext_vocab":
+        return
+
+    placeholders = build_loc_st_placeholder_tokens()
+    tokenizer.add_tokens(placeholders, special_tokens=True)
+    model.resize_token_embeddings(len(tokenizer))
+    base_vocab_size = len(tokenizer)
+
+    loc_bin_num = int(csgo_config.get("loc_bin_num", 100))
+    anchor_tokens = build_loc_st_anchor_tokens(loc_bin_num)
+    tokenizer.add_tokens(anchor_tokens, special_tokens=True)
+    placeholder_token_ids = tokenizer.convert_tokens_to_ids(placeholders)
+    anchor_token_ids = tokenizer.convert_tokens_to_ids(anchor_tokens)
+    if any(token_id == tokenizer.unk_token_id for token_id in placeholder_token_ids + anchor_token_ids):
+        raise ValueError("Failed to register one or more lm_st_ext_vocab loc tokens in tokenizer.")
+
+    model.initialize_loc_st_ext_vocab_modules(
+        loc_bin_num=loc_bin_num,
+        dim_names=list(LOC_ST_DIMS),
+        placeholder_token_ids=placeholder_token_ids,
+        anchor_token_ids=anchor_token_ids,
+        base_vocab_size=base_vocab_size,
+        init_std=float(csgo_config.get("loc_bin_init_std", 1.0e-4)),
+        reparam_decay=float(csgo_config.get("loc_lape_reparam_decay", 0.5)),
+        circular_dims=csgo_config.get("loc_lape_circular_dims", ["pitch", "yaw"]),
+    )
+    model.text_tokenizer = tokenizer
 
 def smart_matching_state_dict_keys(state_dict, model):
     new_state_dict = {}
@@ -404,6 +486,7 @@ def run_csgo_generation_from_config(
     )
 
     add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config)
+    add_loc_st_tokens_and_init(tokenizer, model, csgo_config)
 
 
     # =====================================================================
@@ -465,6 +548,7 @@ def run_csgo_generation_from_config(
             radar_img = sample['radar_img']
             raw_prompt = sample['raw_prompt']
             file_frame = sample['file_frame']
+            actions = sample.get("actions", None)
 
             # 构造 UniLIP 格式的 multimodal prompts
             # [Positive_Prompt, Negative_Prompt, Image]
@@ -479,7 +563,8 @@ def run_csgo_generation_from_config(
                 gen_img = pipe(
                     multimodal_prompts,
                     guidance_scale=csgo_config["guidance_scale"],
-                    generator=generator
+                    generator=generator,
+                    actions=actions,
                 )
 
             os.makedirs(output_dir+f"/gen_imgs/{sample['map_name']}", exist_ok=True)

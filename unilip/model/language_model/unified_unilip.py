@@ -6191,6 +6191,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         max_var: Optional[float] = None,
         generator=None,
         guidance_scale: float = 4.5,
+        actions: Optional[torch.Tensor] = None,
     ):
         dit_path = self.model.config.dit_path
         scheduler = DPMSolverMultistepScheduler.from_pretrained(dit_path, subfolder="scheduler")
@@ -6202,6 +6203,11 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         input_ids = inputs.input_ids.to(device)  # B x N
 
         text_embeds = self.get_model().language_model.embed_tokens(input_ids)
+        if actions is not None:
+            actions = actions.to(device=device, dtype=torch.float32).reshape(actions.shape[0], -1)
+            if actions.shape[0] == 1 and input_ids.shape[0] > 1:
+                actions = actions.expand(input_ids.shape[0], -1)
+            text_embeds = self._replace_loc_st_placeholders(input_ids, text_embeds, actions)
         latent_queries = self.get_model().latent_queries.repeat(text_embeds.shape[0], 1, 1)
 
         if pixel_values is not None:

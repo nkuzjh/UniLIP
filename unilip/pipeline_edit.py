@@ -33,6 +33,7 @@ class CustomEditPipeline:
         crop_info: List[int] = [0, 0],
         original_size: List[int] = [1024, 1024],
         generator = None,
+        actions: torch.Tensor | None = None,
     ):
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -44,7 +45,8 @@ class CustomEditPipeline:
             inputs,
             do_classifier_free_guidance,
             generator=generator,
-            guidance_scale=guidance_scale
+            guidance_scale=guidance_scale,
+            actions=actions,
         )
         images = self.numpy_to_pil(np_img)
 
@@ -56,6 +58,7 @@ class CustomEditPipeline:
         do_classifier_free_guidance: bool = False,
         generator=None,
         guidance_scale: float = 4.5,
+        actions: torch.Tensor | None = None,
     ):
         pos_text_prompt, neg_text_prompt, input_image = inputs
         if self.multimodal_encoder_input_img_size==224:
@@ -86,7 +89,8 @@ class CustomEditPipeline:
             text=[pos_text_prompt, neg_text_prompt],
             pixel_values=image_prompt.cuda(),
             tokenizer=self.tokenizer,
-            guidance_scale=guidance_scale
+            guidance_scale=guidance_scale,
+            actions=actions,
         )
         return prompt
 
