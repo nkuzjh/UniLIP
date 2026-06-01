@@ -51,7 +51,7 @@ fix_llm: False
 fix_connect: False
 fix_dit: False
 
-ckpt_path: "outputs/csgo_1b/exp29_1_dust2/checkpoint-8000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp29_1_dust2/checkpoint-15700/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 is_conti_gen: True

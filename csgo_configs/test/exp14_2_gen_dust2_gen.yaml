@@ -48,7 +48,7 @@ fix_llm: False
 fix_connect: False
 fix_dit: False
 
-ckpt_path: "outputs/csgo_1b/exp14_2_gen_dust2/checkpoint-4000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp14_2_gen_dust2/checkpoint-12000/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"

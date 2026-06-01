@@ -1,0 +1,81 @@
+###################
+### exp30_1_dust2 continuous gen eval
+###################
+debug: False
+
+is_multi_task: True
+is_multi_task_balanced: True
+task_mix_ratio: 0.5
+
+alpha_loc_loss: 2
+alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
+alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
+
+is_loc_aux_loss: False
+alpha_loc_aux_loss: 0.0
+is_aux_loc_em_loss: False
+is_aux_loc_uncertainty_loss: False
+is_aux_loc_combined_em_unc_loss: False
+is_gen_aux_loss: False
+is_repa_loss: False
+is_loc_repa_loss: False
+
+is_loc_perception_loss: False
+alpha_loc_perception_loss: 0.0
+alpha_loc_perception_schedule_steps: [0, 1999, 2000]
+alpha_loc_perception_schedule_values: [0.0, 0.0, 0.1]
+loc_perception_teacher_type: "current_loc_head"
+loc_perception_use_ema_teacher: False
+loc_perception_ema_decay: 0.999
+loc_perception_feature_source: "vision_tower"
+loc_perception_loss_type: "smooth_l1"
+loc_perception_use_attention_weight: True
+loc_perception_attention_source: "teacher_gt"
+loc_perception_attention_layer: "last"
+loc_perception_attention_head_reduce: "mean"
+loc_perception_attention_normalize: "mean_one"
+loc_perception_attention_detach: True
+loc_perception_attention_action_time: "loc_sampled"
+loc_perception_attention_eps: 1.0e-6
+loc_perception_timestep_weight: "linear_1m_sigma"
+loc_perception_use_und_tokens_only: True
+loc_perception_teacher_detach: True
+
+is_action_dit_dense_timestep: True
+is_action_dit_projector: True
+action_dit_projector_lr: 5.0e-4
+action_dit_lr: 1.0e-4
+is_aciton_dit_vae_small_init: False
+use_pi05_action_dit: True
+pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+use_external_loc_model: False
+
+img_size: 224
+use_short_instruction: True
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2']
+val_maps: ['de_dust2']
+test_maps: ['de_dust2']
+
+is_lora: True
+llm_train_mode: "lora"
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+enable_language_model_lora: True
+enable_gen_head_lora: True
+enable_loc_head_lora: True
+freeze_inactive_head: False
+
+fix_vit: True
+fix_llm: False
+fix_connect: False
+fix_dit: False
+
+ckpt_path: "outputs/csgo_1b/exp30_1_dust2/checkpoint-xxxx/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+is_conti_gen: True
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dim: 5
