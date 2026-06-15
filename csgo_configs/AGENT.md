@@ -133,6 +133,8 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp14_2_loc_dust2` | 当前 224 + short-instruction + LoRA 定位单任务 baseline | 只训练 shared `language_model` LoRA 与 loc head LoRA/小模块；gen head 完全冻结 |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` 的 full-head 生成单任务解耦对照 | 非 LoRA；关闭 aux/perception/REPA/loc-gen 交互 loss，只训练 gen head，loc head 完全冻结 |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` 的 full-head 定位单任务解耦对照 | 非 LoRA；关闭 aux/perception/REPA/loc-gen 交互 loss，`alpha_loc_loss=1.0`，只训练 loc head，gen head 完全冻结 |
+| `exp14_3_gen` | `exp14_3_dust2_gen` 的三图泛化版本 | 非 LoRA；只采生成样本；关闭 aux/perception/REPA/loc-gen 交互 loss，只训练 gen head，loc head 完全冻结 |
+| `exp14_3_loc` | `exp14_3_dust2_loc` 的三图泛化版本 | 非 LoRA；只采定位样本；关闭 aux/perception/REPA/loc-gen 交互 loss，`alpha_loc_loss=1.0`，只训练 loc head，gen head 完全冻结 |
 
 ### Auxiliary localization line
 
@@ -179,6 +181,9 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp28_1_dust2` | `exp26_2_dust2` + `exp27_3_dust2` 的组合实验 | 将 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，其他 attention-weighted vision_tower perceptual alignment 与训练设置保持一致 |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` 的定位单任务解耦消融 | 只采定位样本；关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`alpha_loc_loss=1.0`；只训练 loc head，冻结 gen head |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` 的生成单任务解耦消融 | 只采生成样本；关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；只训练 gen head，冻结 loc head |
+| `exp28_1` | `exp28_1_dust2` 的三图泛化实验 | 训练/验证/测试地图扩展为 `['de_dust2','de_nuke','de_ancient']`，其余 loss、schedule、模型和可学习模块设置保持不变 |
+| `exp14_3_loc` | `exp14_3_dust2_loc` 的三图泛化实验 | 用三图定位样本做 loc-only 解耦消融，检验 `aux_loc_loss` 和 `loc_perception_loss` 对多地图定位泛化是否有增益 |
+| `exp14_3_gen` | `exp14_3_dust2_gen` 的三图泛化实验 | 用三图生成样本做 gen-only 解耦消融，检验 `aux_loc_loss` 和 `loc_perception_loss` 对多地图生成泛化是否有增益 |
 | `exp29_dust2` | shared `language_model + lm_head` loc-token CE 对照 | 关闭内部 loc/action-DiT/loc-head 和所有 aux/perception/repa loss，只保留 gen + loc 联训；loc 用 5 个普通 `<loc_000>` 到 `<loc_255>` token 的 full-vocab hard CE |
 | `exp29_1_dust2` | LLaVA-ST-style text-side coordinate token 对照 | 基于 `exp29_dust2`，只替换 loc token 表达与 loss：100-bin placeholder + extended-vocab soft CE + NTP reparam；不做 visual LAPE image-feature 注入 |
 | `exp30_dust2` | `exp14_2_gen_dust2 + exp14_2_loc_dust2` 的 multi-task union LoRA baseline | `is_multi_task_balanced=True`；可学习模块为两个单任务 LoRA 实验并集；关闭 aux_loc / aux_gen；`alpha_loc_loss` 采用 `exp27_3_dust2` 的 `[2,5,10,20]` schedule；加入 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower loc_perception_loss；新增细粒度 optimizer 分组，使 LoRA/head 小模块按本文件推荐 LR 训练 |
@@ -223,6 +228,9 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp28_1_dust2` | exp-sigma aux-loc + attention-weighted vision_tower perceptual alignment | `exp26_2_dust2 + exp27_3_dust2`，保持 `exp28_dust2` 其他设置不变，仅将 combined aux-loc 权重改为 `exp_sigma, lambda=5.0, renorm=none` |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` 的 loc-only decoupled ablation | 非 LoRA；只训练 loc head；关闭 `aux_loc`、`aux_gen`、`loc_perception`、REPA 和 loc-REPA；用于判断 `exp28_1_dust2` 的交互/辅助 loss 对定位是否有增益 |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` 的 gen-only decoupled ablation | 非 LoRA；只训练 gen head；关闭 `aux_loc`、`aux_gen`、`loc_perception`、REPA 和 loc-REPA；用于判断 `exp28_1_dust2` 的交互/辅助 loss 对生成是否有增益 |
+| `exp28_1` | `exp28_1_dust2` 的 three-map generalization | 地图扩展为 `['de_dust2','de_nuke','de_ancient']`，其余设置继承 `exp28_1_dust2`，验证 aux-loc + perception 组合在多地图上的泛化性 |
+| `exp14_3_loc` | `exp14_3_dust2_loc` 的 three-map loc-only decoupled ablation | 三图定位样本；非 LoRA；只训练 loc head；关闭所有 loc/gen 交互或辅助 loss，用作 `exp28_1` 定位消融对照 |
+| `exp14_3_gen` | `exp14_3_dust2_gen` 的 three-map gen-only decoupled ablation | 三图生成样本；非 LoRA；只训练 gen head；关闭所有 loc/gen 交互或辅助 loss，用作 `exp28_1` 生成消融对照 |
 | `exp29_dust2` | LLM-loc-token hard CE baseline | `gen + loc` 联训；定位走 shared `language_model + lm_head`，5 个普通 256-bin loc vocab token，full-vocab CE；无内部 loc/action-DiT/aux/perception/repa |
 | `exp29_1_dust2` | LLaVA-ST-style loc-token NTP 对照 | `exp29_dust2` 的最小变量实验；5 维 pose 改为 input/output placeholder + 100-bin extended vocab；训练用 interpolation + soft CE + NTP，推理用 hard anchor token 生成 |
 | `exp30_dust2` | LoRA multi-task union baseline + attention-weighted vision_tower loc perception | `exp14_2_gen_dust2 + exp14_2_loc_dust2` 的联合训练版本；`is_multi_task_balanced=True`；shared `language_model` LoRA，gen/loc heads 同时开启；关闭 aux_loc / aux_gen；`alpha_loc_loss` 用 `exp27_3_dust2` 的 `[2,5,10,20]` schedule；加入 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower loc_perception_loss |
@@ -667,6 +675,9 @@ same velocity target u_t
 | `exp28_1_dust2` | `exp26_2_dust2` | 保留 `exp26_2_dust2` 的 `exp_sigma` combined aux-loc timestep 权重，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；除 `aux_loc_timestep_weight_type=exp_sigma`, `aux_loc_exp_weight_lambda=5.0`, `aux_loc_timestep_weight_renorm=none` 外，其余与 `exp28_dust2` 一致 | 验证低噪声指数偏置的 pose-level aux-loc 与 attention-focused patch feature 对齐是否比默认 `linear_1m_sigma` 组合更稳定 |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` | 关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=1.0`；`alpha_loc_loss=1.0`；只训练 full loc head 并冻结 gen head | 判断 `exp28_1_dust2` 的定位收益是否来自 loc/gen 交互和辅助 loss，而不是单任务定位训练本身 |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` | 关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=0.0`；只训练 full gen head 并冻结 loc head | 判断 `exp28_1_dust2` 的生成收益是否来自 loc/gen 交互和辅助 loss，而不是单任务生成训练本身 |
+| `exp28_1` | `exp28_1_dust2` | 将 train/val/test maps 扩展为 `['de_dust2','de_nuke','de_ancient']`，其余 exp-sigma combined aux-loc、attention-weighted loc perception、schedule 和可学习模块设置保持不变 | 验证 `aux_loc_loss` 与 `loc_perception_loss` 组合在多地图训练下是否仍有泛化收益 |
+| `exp14_3_loc` | `exp14_3_dust2_loc` | 三图定位样本；关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=1.0`；`alpha_loc_loss=1.0`；只训练 full loc head 并冻结 gen head | 作为 `exp28_1` 的三图定位单任务解耦对照 |
+| `exp14_3_gen` | `exp14_3_dust2_gen` | 三图生成样本；关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=0.0`；只训练 full gen head 并冻结 loc head | 作为 `exp28_1` 的三图生成单任务解耦对照 |
 | `exp14_2_gen_dust2` | `exp14_dust2_gen` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 gen head LoRA/小模块，loc head 完全冻结 | 给当前主线提供严格 gen-only LoRA baseline |
 | `exp14_2_loc_dust2` | `exp14_dust2_loc` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 loc head LoRA/小模块，gen head 完全冻结 | 给当前主线提供严格 loc-only LoRA baseline |
 
@@ -733,6 +744,15 @@ aux_loc_combined_unc_eps: 1.0e-6
   - `csgo_configs/exp14_3_dust2_gen.yaml`
   - `csgo_configs/test/exp14_3_dust2_gen_gen.yaml`
   - `csgo_configs/test/exp14_3_dust2_gen_gen_conti.yaml`
+  - `csgo_configs/exp28_1.yaml`
+  - `csgo_configs/test/exp28_1_loc.yaml`
+  - `csgo_configs/test/exp28_1_gen.yaml`
+  - `csgo_configs/test/exp28_1_gen_conti.yaml`
+  - `csgo_configs/exp14_3_loc.yaml`
+  - `csgo_configs/test/exp14_3_loc_loc.yaml`
+  - `csgo_configs/exp14_3_gen.yaml`
+  - `csgo_configs/test/exp14_3_gen_gen.yaml`
+  - `csgo_configs/test/exp14_3_gen_gen_conti.yaml`
 - 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
 - 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
@@ -976,6 +996,7 @@ repa_spatial_norm_gamma: 1.0
 - `exp28_dust2` 是 `exp26_dust2` 和 `exp27_3_dust2` 的组合实验，用默认 `linear_1m_sigma` pose-level aux-loc 判断其与 attention-weighted feature-level alignment 是否互补。
 - `exp28_1_dust2` 是 `exp26_2_dust2` 和 `exp27_3_dust2` 的组合实验，只把 `exp28_dust2` 的 pose-level aux-loc timestep 权重改为 `exp(-5*sigma)`，判断低噪声指数偏置是否更适合与 attention-weighted feature-level alignment 叠加。
 - `exp14_3_dust2_loc` 和 `exp14_3_dust2_gen` 是 `exp28_1_dust2` 的 single-task decoupled 消融：去掉 `aux_loc_loss`、`aux_gen_loss`、`loc_perception_loss`、REPA/loc-REPA 等所有 loc/gen 交互或辅助 loss，并分别只训练定位 head 或生成 head，用于判断 `exp28_1_dust2` 的收益是否真的来自这些交互监督。
+- `exp28_1`、`exp14_3_loc` 和 `exp14_3_gen` 将上述组合实验和解耦消融扩展到 `['de_dust2','de_nuke','de_ancient']` 三张地图，用于判断 `aux_loc_loss` 与 `loc_perception_loss` 在多地图训练下是否仍具备定位/生成泛化收益。
 - `exp29_dust2` 取消所有 internal loc/action-DiT 模块，用 shared `language_model + lm_head` 直接预测 5 个 `<loc_xxx>` bin token；只保留 gen + loc 联合训练，不启用 aux_loc、loc_perception、loc_repa、REPA、aux_gen。LoRA 使用 `r=32, alpha=64, dropout=0.05`，`llm_lora_lr=1e-4`，`loc_token_lr=1e-4`，`mm_projector_lr=1e-4`。
 - 再验证传统 REPA 本身是否有效。
 - 再比较 teacher。
@@ -1015,6 +1036,15 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp14_3_dust2_gen.yaml`
 - `csgo_configs/test/exp14_3_dust2_gen_gen.yaml`
 - `csgo_configs/test/exp14_3_dust2_gen_gen_conti.yaml`
+- `csgo_configs/exp28_1.yaml`
+- `csgo_configs/test/exp28_1_loc.yaml`
+- `csgo_configs/test/exp28_1_gen.yaml`
+- `csgo_configs/test/exp28_1_gen_conti.yaml`
+- `csgo_configs/exp14_3_loc.yaml`
+- `csgo_configs/test/exp14_3_loc_loc.yaml`
+- `csgo_configs/exp14_3_gen.yaml`
+- `csgo_configs/test/exp14_3_gen_gen.yaml`
+- `csgo_configs/test/exp14_3_gen_gen_conti.yaml`
 - `csgo_configs/exp29_dust2.yaml`
 - `csgo_configs/test/exp29_dust2_loc.yaml`
 - `csgo_configs/test/exp29_dust2_gen.yaml`

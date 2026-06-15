@@ -1,5 +1,5 @@
 ###################
-### config.yaml
+### exp28_1 gen eval
 ###################
 debug: False
 
@@ -9,7 +9,6 @@ is_multi_task: True
 is_multi_task_balanced: True
 
 # Exp28_1: three-map version of exp28_1_dust2.
-# Keep exp-sigma combined aux-loc and attention-weighted vision_tower loc perception unchanged.
 alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
@@ -79,3 +78,15 @@ test_maps: ['de_dust2','de_nuke', 'de_ancient']
 
 ### lora
 is_lora: False
+
+
+### infer
+ckpt_path: "outputs/csgo_1b/exp28_1/checkpoint-12000/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+# is_conti_gen: True
+
+# 模仿训练时的 model_args
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+# action_dit_layer: 24 # use_pi05_action_dit=True使用pi05的action_dit时该超参无作用
+action_dim: 5

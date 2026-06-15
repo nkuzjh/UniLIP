@@ -1,0 +1,54 @@
+###################
+### exp14_3_loc loc eval
+###################
+debug: False
+
+is_multi_task: True
+is_multi_task_balanced: False
+task_mix_ratio: 1.0
+alpha_loc_loss: 1.0
+
+is_loc_aux_loss: False
+alpha_loc_aux_loss: 0.0
+is_aux_loc_em_loss: False
+is_aux_loc_uncertainty_loss: False
+is_aux_loc_combined_em_unc_loss: False
+is_gen_aux_loss: False
+alpha_gen_aux_loss: 0.0
+is_loc_perception_loss: False
+alpha_loc_perception_loss: 0.0
+is_loc_repa_loss: False
+is_repa_loss: False
+is_noisy_loc_loss: False
+
+is_action_dit_dense_timestep: True
+is_action_dit_projector: True
+action_dit_projector_lr: 0.0005
+action_dit_lr: 0.0001
+is_aciton_dit_vae_small_init: False
+
+use_pi05_action_dit: True
+pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
+use_external_loc_model: False
+
+img_size: 224
+use_short_instruction: True
+
+data_dir: "data/preprocessed_data"
+train_maps: ['de_dust2','de_nuke', 'de_ancient']
+val_maps: ['de_dust2','de_nuke', 'de_ancient']
+test_maps: ['de_dust2','de_nuke', 'de_ancient']
+
+is_lora: False
+llm_train_mode: "frozen"
+fix_vit: True
+fix_llm: True
+fix_connect: True
+fix_dit: True
+freeze_gen_head: True
+freeze_loc_head: False
+
+ckpt_path: "outputs/csgo_1b/exp14_3_loc/checkpoint-12000/model.safetensors"
+batch_size: 1
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dim: 5
