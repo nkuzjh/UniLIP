@@ -2694,10 +2694,25 @@ def train(attn_implementation=None):
     model_args.enable_gen_head_lora = bool(csgo_config.get("enable_gen_head_lora", True))
     model_args.enable_loc_head_lora = bool(csgo_config.get("enable_loc_head_lora", True))
     model_args.freeze_inactive_head = bool(csgo_config.get("freeze_inactive_head", False))
+    model_args.freeze_gen_head = bool(csgo_config.get("freeze_gen_head", False))
+    model_args.freeze_loc_head = bool(csgo_config.get("freeze_loc_head", False))
     model.config.enable_language_model_lora = model_args.enable_language_model_lora
     model.config.enable_gen_head_lora = model_args.enable_gen_head_lora
     model.config.enable_loc_head_lora = model_args.enable_loc_head_lora
     model.config.freeze_inactive_head = model_args.freeze_inactive_head
+    model.config.freeze_gen_head = model_args.freeze_gen_head
+    model.config.freeze_loc_head = model_args.freeze_loc_head
+
+    if model_args.freeze_gen_head and model_args.freeze_loc_head:
+        raise ValueError("freeze_gen_head=True and freeze_loc_head=True cannot be enabled together.")
+    if model_args.freeze_gen_head or model_args.freeze_loc_head:
+        if csgo_config.get("is_multi_task_balanced", False):
+            raise ValueError("freeze_gen_head/freeze_loc_head currently support only is_multi_task_balanced=False.")
+        task_mix_ratio = float(csgo_config.get("task_mix_ratio", 0.5))
+        if model_args.freeze_gen_head and task_mix_ratio != 1.0:
+            raise ValueError("freeze_gen_head=True requires loc-only task_mix_ratio=1.0.")
+        if model_args.freeze_loc_head and task_mix_ratio != 0.0:
+            raise ValueError("freeze_loc_head=True requires gen-only task_mix_ratio=0.0.")
 
     if model.config.is_lora and model_args.freeze_inactive_head:
         if csgo_config.get("is_multi_task_balanced", False):
@@ -3018,6 +3033,15 @@ def train(attn_implementation=None):
         model.initialize_aux_gen_modules_from_config()
 
     model.to(torch.bfloat16)
+
+    if model_args.freeze_gen_head:
+        if not hasattr(model, "_freeze_gen_head_parameters"):
+            raise RuntimeError("Current model does not support freeze_gen_head.")
+        model._freeze_gen_head_parameters()
+    if model_args.freeze_loc_head:
+        if not hasattr(model, "_freeze_loc_head_parameters"):
+            raise RuntimeError("Current model does not support freeze_loc_head.")
+        model._freeze_loc_head_parameters()
 
     if model.config.use_external_loc_model:
         csgosquare_root = csgo_config.get("external_loc_repo_root", "csgosquare")
