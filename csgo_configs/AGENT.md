@@ -131,6 +131,8 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp14_1_dust2_gen` | `dust2` 生成分支变体 | 保留作参考，不是当前主线 |
 | `exp14_2_gen_dust2` | 当前 224 + short-instruction + LoRA 生成单任务 baseline | 只训练 shared `language_model` LoRA 与 gen head LoRA/小模块；loc head 完全冻结 |
 | `exp14_2_loc_dust2` | 当前 224 + short-instruction + LoRA 定位单任务 baseline | 只训练 shared `language_model` LoRA 与 loc head LoRA/小模块；gen head 完全冻结 |
+| `exp14_2_gen` | `exp14_2_gen_dust2` 的三图泛化版本 | 只训练 shared `language_model` LoRA 与 gen head LoRA/小模块；loc head 完全冻结 |
+| `exp14_2_loc` | `exp14_2_loc_dust2` 的三图泛化版本 | 只训练 shared `language_model` LoRA 与 loc head LoRA/小模块；gen head 完全冻结 |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` 的 full-head 生成单任务解耦对照 | 非 LoRA；关闭 aux/perception/REPA/loc-gen 交互 loss，只训练 gen head，loc head 完全冻结 |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` 的 full-head 定位单任务解耦对照 | 非 LoRA；关闭 aux/perception/REPA/loc-gen 交互 loss，`alpha_loc_loss=1.0`，只训练 loc head，gen head 完全冻结 |
 | `exp14_3_gen` | `exp14_3_dust2_gen` 的三图泛化版本 | 非 LoRA；只采生成样本；关闭 aux/perception/REPA/loc-gen 交互 loss，只训练 gen head，loc head 完全冻结 |
@@ -188,8 +190,11 @@ CS:GO single-task LoRA baselines can gate LoRA injection and full-trainable head
 | `exp29_1_dust2` | LLaVA-ST-style text-side coordinate token 对照 | 基于 `exp29_dust2`，只替换 loc token 表达与 loss：100-bin placeholder + extended-vocab soft CE + NTP reparam；不做 visual LAPE image-feature 注入 |
 | `exp30_dust2` | `exp14_2_gen_dust2 + exp14_2_loc_dust2` 的 multi-task union LoRA baseline | `is_multi_task_balanced=True`；可学习模块为两个单任务 LoRA 实验并集；关闭 aux_loc / aux_gen；`alpha_loc_loss` 采用 `exp27_3_dust2` 的 `[2,5,10,20]` schedule；加入 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower loc_perception_loss；新增细粒度 optimizer 分组，使 LoRA/head 小模块按本文件推荐 LR 训练 |
 | `exp30_1_dust2` | `exp30_dust2` 去掉 loc_perception_loss 的 pure multi-task LoRA union baseline | 保留 balanced multi-task、shared `language_model` LoRA、gen/loc heads 同时训练、细粒度 optimizer LR 分组和 `alpha_loc_loss` schedule；关闭 aux_loc / aux_gen / loc_perception_loss；用于和 `exp14_2_gen_dust2` / `exp14_2_loc_dust2` 对比纯 joint training 收益，并和 `exp30_dust2` 对比 perception loss 收益 |
+| `exp30_2` | `exp30_1_dust2` 的三图泛化版本 | 地图扩展为 `['de_dust2','de_ancient','de_nuke']`，保留 pure LoRA multi-task union 设置和 `loc_perception_loss=False` |
 | `exp14_2_gen_dust2` | 当前主线配方的 LoRA gen-only 对照 | `task_mix_ratio=0.0`，`language_model + gen head` LoRA，loc head 通过 `freeze_inactive_head=True` 完全冻结 |
 | `exp14_2_loc_dust2` | 当前主线配方的 LoRA loc-only 对照 | `task_mix_ratio=1.0`，`language_model + loc head` LoRA，gen head 通过 `freeze_inactive_head=True` 完全冻结 |
+| `exp14_2_gen` | `exp14_2_gen_dust2` 的三图 LoRA gen-only 对照 | 地图扩展为 `['de_dust2','de_ancient','de_nuke']`，其余 LoRA gating 和 loss 设置保持不变 |
+| `exp14_2_loc` | `exp14_2_loc_dust2` 的三图 LoRA loc-only 对照 | 地图扩展为 `['de_dust2','de_ancient','de_nuke']`，其余 LoRA gating 和 loss 设置保持不变 |
 | `exp17_3` | shared `multi_modal_projector` 联合训练 | 生成结果显著退化，说明 shared 位置不合适 |
 | `exp17_4` | shared `language_model` tail 联合训练 | 用于替代 `exp17_3` 的更安全 shared 方案 |
 | `exp17_4_dust2` | `exp17_4` 的 `dust2` 专用版 | `dust2` shared-tail baseline |
@@ -680,6 +685,9 @@ same velocity target u_t
 | `exp14_3_gen` | `exp14_3_dust2_gen` | 三图生成样本；关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=0.0`；只训练 full gen head 并冻结 loc head | 作为 `exp28_1` 的三图生成单任务解耦对照 |
 | `exp14_2_gen_dust2` | `exp14_dust2_gen` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 gen head LoRA/小模块，loc head 完全冻结 | 给当前主线提供严格 gen-only LoRA baseline |
 | `exp14_2_loc_dust2` | `exp14_dust2_loc` | 改为当前主线 `img_size=224`, `use_short_instruction=True`, 100 epoch/effective batch 128/cosine_with_min_lr；启用 LoRA gating，只训练 shared LLM LoRA 与 loc head LoRA/小模块，gen head 完全冻结 | 给当前主线提供严格 loc-only LoRA baseline |
+| `exp14_2_gen` | `exp14_2_gen_dust2` | 将 train/val/test maps 扩展为 `['de_dust2','de_ancient','de_nuke']`，并补齐 `exp14_2_gen.yaml` / `exp14_2_gen_conti.yaml` 推理配置 | 三图 LoRA gen-only baseline |
+| `exp14_2_loc` | `exp14_2_loc_dust2` | 将 train/val/test maps 扩展为 `['de_dust2','de_ancient','de_nuke']`，并补齐 `exp14_2_loc.yaml` 推理配置 | 三图 LoRA loc-only baseline |
+| `exp30_2` | `exp30_1_dust2` | 将 train/val/test maps 扩展为 `['de_dust2','de_ancient','de_nuke']`，并补齐 loc/gen/continuous-gen 推理配置 | 三图 pure LoRA multi-task union baseline |
 
 建议第一版最小设置：
 
@@ -753,6 +761,15 @@ aux_loc_combined_unc_eps: 1.0e-6
   - `csgo_configs/exp14_3_gen.yaml`
   - `csgo_configs/test/exp14_3_gen_gen.yaml`
   - `csgo_configs/test/exp14_3_gen_gen_conti.yaml`
+  - `csgo_configs/exp14_2_gen.yaml`
+  - `csgo_configs/test/exp14_2_gen.yaml`
+  - `csgo_configs/test/exp14_2_gen_conti.yaml`
+  - `csgo_configs/exp14_2_loc.yaml`
+  - `csgo_configs/test/exp14_2_loc.yaml`
+  - `csgo_configs/exp30_2.yaml`
+  - `csgo_configs/test/exp30_2_loc.yaml`
+  - `csgo_configs/test/exp30_2_gen.yaml`
+  - `csgo_configs/test/exp30_2_gen_conti.yaml`
 - 第一版只实现 `aux_loc_combined_num_samples=2` 和 `aux_loc_combined_unc_metric=residual_l1_normed`。
 - 第一版要求 `aux_loc_combined_share_loc_noise=True`，避免 uncertainty 混入 loc-side flow-matching 随机性。
 - 该方案应在 `exp21_dust2` 和 `exp22_dust2` 的单独实验后再跑，避免无法判断收益来自 candidate responsibility 还是 uncertainty gating。
@@ -1045,6 +1062,15 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp14_3_gen.yaml`
 - `csgo_configs/test/exp14_3_gen_gen.yaml`
 - `csgo_configs/test/exp14_3_gen_gen_conti.yaml`
+- `csgo_configs/exp14_2_gen.yaml`
+- `csgo_configs/test/exp14_2_gen.yaml`
+- `csgo_configs/test/exp14_2_gen_conti.yaml`
+- `csgo_configs/exp14_2_loc.yaml`
+- `csgo_configs/test/exp14_2_loc.yaml`
+- `csgo_configs/exp30_2.yaml`
+- `csgo_configs/test/exp30_2_loc.yaml`
+- `csgo_configs/test/exp30_2_gen.yaml`
+- `csgo_configs/test/exp30_2_gen_conti.yaml`
 - `csgo_configs/exp29_dust2.yaml`
 - `csgo_configs/test/exp29_dust2_loc.yaml`
 - `csgo_configs/test/exp29_dust2_gen.yaml`

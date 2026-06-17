@@ -1,5 +1,5 @@
 ###################
-### exp14_2_gen_dust2
+### exp14_2_gen
 ###################
 debug: False
 
@@ -8,7 +8,7 @@ is_multi_task: True
 is_multi_task_balanced: False
 task_mix_ratio: 0.0
 
-# Exp14_2_gen_dust2: current 224 + short-instruction + LoRA gen-only dust2 baseline.
+# Exp14_2_gen: three-map version of exp14_2_gen_dust2.
 alpha_loc_loss: 1.0
 
 is_loc_aux_loss: False

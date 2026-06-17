@@ -48,7 +48,7 @@ fix_dit: False
 freeze_gen_head: False
 freeze_loc_head: True
 
-ckpt_path: "outputs/csgo_1b/exp14_3_dust2_gen/checkpoint-12000/model.safetensors"
+ckpt_path: "outputs/csgo_1b/exp14_3_dust2_gen/checkpoint-15700/model.safetensors"
 guidance_scale: 4.5
 batch_size: 1
 mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"

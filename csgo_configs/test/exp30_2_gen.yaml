@@ -1,15 +1,12 @@
 ###################
-### exp30_2
+### exp30_2 gen eval
 ###################
 debug: False
 
-### model
 is_multi_task: True
 is_multi_task_balanced: True
 task_mix_ratio: 0.5
 
-# Exp30_2: three-map version of exp30_1_dust2.
-# Pure multi-task LoRA union baseline for comparison with exp14_2_* three-map single-task baselines.
 alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
@@ -49,7 +46,6 @@ is_action_dit_projector: True
 action_dit_projector_lr: 5.0e-4
 action_dit_lr: 1.0e-4
 is_aciton_dit_vae_small_init: False
-
 use_pi05_action_dit: True
 pi05_pytorch_weight_path: "/home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base"
 use_external_loc_model: False
@@ -57,23 +53,16 @@ use_external_loc_model: False
 img_size: 224
 use_short_instruction: True
 
-### data
 data_dir: "data/preprocessed_data"
 train_maps: ['de_dust2','de_ancient','de_nuke']
 val_maps: ['de_dust2','de_ancient','de_nuke']
 test_maps: ['de_dust2','de_ancient','de_nuke']
 
-### lora
 is_lora: True
 llm_train_mode: "lora"
 lora_r: 32
 lora_alpha: 64
 lora_dropout: 0.05
-llm_lora_lr: 1.0e-4
-llm_connector_lora_lr: 1.0e-4
-gen_dit_lora_lr: 1.0e-4
-action_dit_lora_lr: 5.0e-5
-
 enable_language_model_lora: True
 enable_gen_head_lora: True
 enable_loc_head_lora: True
@@ -84,17 +73,8 @@ fix_llm: False
 fix_connect: False
 fix_dit: False
 
-### optimizer
-learning_rate: 1.0e-4
-mm_projector_lr: 1.0e-4
-action_dit_connector_lr: 1.0e-4
-action_dit_norm_lr: 5.0e-4
-action_io_mlp_lr: 1.0e-4
-weight_decay: 0.0
-warmup_ratio: 0.003
-lr_scheduler_type: "cosine_with_min_lr"
-lr_scheduler_kwargs:
-  min_lr: 1.0e-5
-
-# ### resume batch-size control
-resume_checkpoint_world_size: 1
+ckpt_path: "outputs/csgo_1b/exp30_2/checkpoint-46900/model.safetensors"
+guidance_scale: 4.5
+batch_size: 1
+mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
+action_dim: 5

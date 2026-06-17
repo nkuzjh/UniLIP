@@ -698,6 +698,65 @@ def _sanitize_trainer_state_for_resume(trainer_state: Dict, trainer_state_path: 
     return True
 
 
+def _load_checkpoint_trainer_state(checkpoint_path: str) -> Optional[Dict]:
+    trainer_state_path = os.path.join(checkpoint_path, "trainer_state.json")
+    if not os.path.exists(trainer_state_path):
+        return None
+    with open(trainer_state_path, "r") as f:
+        return json.load(f)
+
+
+def validate_resume_total_optimization_steps(trainer, checkpoint_path: Optional[str]) -> None:
+    if checkpoint_path is None:
+        return
+
+    trainer_state = _load_checkpoint_trainer_state(checkpoint_path)
+    if trainer_state is None:
+        raise ValueError(f"Resume checkpoint has no trainer_state.json: {checkpoint_path}")
+
+    checkpoint_max_steps = trainer_state.get("max_steps", None)
+    if checkpoint_max_steps is None:
+        raise ValueError(f"Resume checkpoint trainer_state.json has no max_steps: {checkpoint_path}")
+    checkpoint_max_steps = int(checkpoint_max_steps)
+
+    train_dataloader = trainer.get_train_dataloader()
+    try:
+        initial_values = trainer.set_initial_training_values(trainer.args, train_dataloader)
+    except TypeError as exc:
+        if "total_train_batch_size" not in str(exc):
+            raise
+        total_train_batch_size = trainer.get_total_train_batch_size(trainer.args)
+        initial_values = trainer.set_initial_training_values(
+            trainer.args,
+            train_dataloader,
+            total_train_batch_size,
+        )
+    current_max_steps = int(initial_values[-1])
+    current_update_steps_per_epoch = int(initial_values[1])
+    current_total_train_batch_size = int(initial_values[4])
+
+    if current_max_steps != checkpoint_max_steps:
+        raise ValueError(
+            "Resume total optimization steps mismatch: "
+            f"current_total_optimization_steps={current_max_steps}, "
+            f"checkpoint_trainer_state.max_steps={checkpoint_max_steps}, "
+            f"current_update_steps_per_epoch={current_update_steps_per_epoch}, "
+            f"current_total_train_batch_size={current_total_train_batch_size}, "
+            f"per_device_train_batch_size={trainer.args.per_device_train_batch_size}, "
+            f"gradient_accumulation_steps={trainer.args.gradient_accumulation_steps}, "
+            f"world_size={_get_current_world_size(trainer.args)}. "
+            "Check resume_checkpoint_world_size, resume_checkpoint_gradient_accumulation_steps, "
+            "resume_checkpoint_train_batch_size, resume_target_effective_batch_size, "
+            "per_device_train_batch_size, and gradient_accumulation_steps."
+        )
+
+    logging.info(
+        "Resume total optimization steps validated: current_total_optimization_steps=%s matches checkpoint max_steps=%s.",
+        current_max_steps,
+        checkpoint_max_steps,
+    )
+
+
 def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[str], csgo_config: Dict) -> Optional[str]:
     if checkpoint_path is None:
         return None
@@ -736,8 +795,7 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
         logging.warning("Resume checkpoint has no trainer_state.json: %s", checkpoint_path)
         return checkpoint_path
 
-    with open(trainer_state_path, "r") as f:
-        trainer_state = json.load(f)
+    trainer_state = _load_checkpoint_trainer_state(checkpoint_path)
     state_changed = _sanitize_trainer_state_for_resume(trainer_state, trainer_state_path)
 
     checkpoint_training_args = _load_checkpoint_training_args(checkpoint_path)
@@ -3369,6 +3427,7 @@ def train(attn_implementation=None):
     )
     unilip_log_callback.bind_trainer(trainer)
     logging.info("NonMixTrainer.Callbacks: %s", trainer.callback_handler.callback_list)
+    validate_resume_total_optimization_steps(trainer, auto_resume_checkpoint_path)
     # trainer.remove_callback(PrinterCallback)
     # trainer.remove_callback(ProgressCallback)
 
