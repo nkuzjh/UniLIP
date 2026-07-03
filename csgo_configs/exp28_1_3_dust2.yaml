@@ -1,5 +1,5 @@
 ###################
-### config.yaml
+### exp28_1_3_dust2
 ###################
 debug: False
 
@@ -8,27 +8,18 @@ debug: False
 is_multi_task: True
 is_multi_task_balanced: True
 
-# Exp28_1_dust2: exp26_2_dust2 + exp27_3_dust2 attention-weighted vision_tower loc perception.
+# Exp28_1_3_dust2: exp28_1_dust2 perception-only ablation.
+# Keep balanced joint training and attention-weighted vision_tower loc
+# perception, but disable pose-level aux-loc.
 alpha_loc_loss: 2
 alpha_loc_schedule_steps: [0, 10000, 18000, 28000]
 alpha_loc_schedule_values: [2.0, 5.0, 10.0, 20.0]
 
-is_loc_aux_loss: True
+is_loc_aux_loss: False
 alpha_loc_aux_loss: 0.0
-alpha_loc_aux_schedule_steps: [0, 6000]
-alpha_loc_aux_schedule_values: [0.0, 2.0]
-
-is_aux_loc_combined_em_unc_loss: True
-aux_loc_combined_num_samples: 2
-aux_loc_combined_candidate_tau: 1.0
-aux_loc_combined_unc_metric: "residual_l1_normed"
-aux_loc_combined_unc_tau: 1.0
-aux_loc_combined_unc_min_weight: 0.05
-aux_loc_combined_share_loc_noise: True
-aux_loc_combined_unc_eps: 1.0e-6
-aux_loc_timestep_weight_type: "exp_sigma"
-aux_loc_exp_weight_lambda: 5.0
-aux_loc_timestep_weight_renorm: "none"
+is_aux_loc_em_loss: False
+is_aux_loc_uncertainty_loss: False
+is_aux_loc_combined_em_unc_loss: False
 
 is_loc_perception_loss: True
 alpha_loc_perception_loss: 0.0
@@ -52,6 +43,7 @@ loc_perception_use_und_tokens_only: True
 loc_perception_teacher_detach: True
 
 is_repa_loss: False
+is_loc_repa_loss: False
 is_gen_aux_loss: False
 
 is_action_dit_dense_timestep: True
@@ -78,15 +70,3 @@ test_maps: ['de_dust2']
 
 ### lora
 is_lora: False
-
-
-### infer
-ckpt_path: "outputs/csgo_1b/exp28_1_dust2/checkpoint-12000/model.safetensors"
-guidance_scale: 4.5
-batch_size: 1
-is_conti_gen: True
-
-# 模仿训练时的 model_args
-mllm_hf_path: "OpenGVLab/InternVL3-1B-hf"
-# action_dit_layer: 24 # use_pi05_action_dit=True使用pi05的action_dit时该超参无作用
-action_dim: 5

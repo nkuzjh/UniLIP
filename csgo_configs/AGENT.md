@@ -678,6 +678,9 @@ same velocity target u_t
 | `exp27_3_dust2` | `exp27_2_dust2` | 在 vision_tower patch-level `smooth_l1` loc perception loss 上加入 teacher_gt action_dit attention 权重；`teacher_gt + last layer + mean heads + mean_one + detach + loc_sampled`；复用轻量 wrapper，不用 hook | 验证 loc/action_dit 注意力能否让浅层 vision_tower feature 对齐更聚焦 |
 | `exp28_dust2` | `exp26_dust2` | 保留默认 `linear_1m_sigma` combined aux-loc，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；`alpha_loc_aux` 从 step 0 到 6000 线性 warmup 到 2.0，`alpha_loc_perception` 从 step 2000 开始为 0.1 | 验证 pose-level aux-loc 与 attention-focused patch feature 对齐是否互补 |
 | `exp28_1_dust2` | `exp26_2_dust2` | 保留 `exp26_2_dust2` 的 `exp_sigma` combined aux-loc timestep 权重，并加入 `exp27_3_dust2` 的 attention-weighted vision_tower loc perception；除 `aux_loc_timestep_weight_type=exp_sigma`, `aux_loc_exp_weight_lambda=5.0`, `aux_loc_timestep_weight_renorm=none` 外，其余与 `exp28_dust2` 一致 | 验证低噪声指数偏置的 pose-level aux-loc 与 attention-focused patch feature 对齐是否比默认 `linear_1m_sigma` 组合更稳定 |
+| `exp28_1_1_dust2` | `exp28_1_dust2` | balanced joint training 保持不变，关闭 `aux_loc_loss` 和 `loc_perception_loss`，保留 exp28_1 的 loc-loss schedule、full-head non-LoRA 与 dust2 数据设置 | joint-only 消融，隔离 multi-task 同训本身的贡献 |
+| `exp28_1_2_dust2` | `exp28_1_dust2` | 保留 exp-sigma combined aux-loc，关闭 attention-weighted vision_tower `loc_perception_loss` | aux-loc-only 消融，判断 pose-level aux-loc 单独贡献 |
+| `exp28_1_3_dust2` | `exp28_1_dust2` | 关闭 `aux_loc_loss`，保留 `exp27_3_dust2` 的 teacher_gt attention-weighted vision_tower `loc_perception_loss` | perception-only 消融，判断 feature-level perception 单独贡献 |
 | `exp14_3_dust2_loc` | `exp28_1_dust2` | 关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=1.0`；`alpha_loc_loss=1.0`；只训练 full loc head 并冻结 gen head | 判断 `exp28_1_dust2` 的定位收益是否来自 loc/gen 交互和辅助 loss，而不是单任务定位训练本身 |
 | `exp14_3_dust2_gen` | `exp28_1_dust2` | 关闭 `aux_loc` / `aux_gen` / `loc_perception` / REPA / loc-REPA；`task_mix_ratio=0.0`；只训练 full gen head 并冻结 loc head | 判断 `exp28_1_dust2` 的生成收益是否来自 loc/gen 交互和辅助 loss，而不是单任务生成训练本身 |
 | `exp28_1` | `exp28_1_dust2` | 将 train/val/test maps 扩展为 `['de_dust2','de_nuke','de_ancient']`，其余 exp-sigma combined aux-loc、attention-weighted loc perception、schedule 和可学习模块设置保持不变 | 验证 `aux_loc_loss` 与 `loc_perception_loss` 组合在多地图训练下是否仍有泛化收益 |
@@ -1048,6 +1051,18 @@ repa_spatial_norm_gamma: 1.0
 - `csgo_configs/exp27_3_dust2.yaml`
 - `csgo_configs/exp28_dust2.yaml`
 - `csgo_configs/exp28_1_dust2.yaml`
+- `csgo_configs/exp28_1_1_dust2.yaml`
+- `csgo_configs/test/exp28_1_1_dust2_loc.yaml`
+- `csgo_configs/test/exp28_1_1_dust2_gen.yaml`
+- `csgo_configs/test/exp28_1_1_dust2_gen_conti.yaml`
+- `csgo_configs/exp28_1_2_dust2.yaml`
+- `csgo_configs/test/exp28_1_2_dust2_loc.yaml`
+- `csgo_configs/test/exp28_1_2_dust2_gen.yaml`
+- `csgo_configs/test/exp28_1_2_dust2_gen_conti.yaml`
+- `csgo_configs/exp28_1_3_dust2.yaml`
+- `csgo_configs/test/exp28_1_3_dust2_loc.yaml`
+- `csgo_configs/test/exp28_1_3_dust2_gen.yaml`
+- `csgo_configs/test/exp28_1_3_dust2_gen_conti.yaml`
 - `csgo_configs/exp14_3_dust2_loc.yaml`
 - `csgo_configs/test/exp14_3_dust2_loc_loc.yaml`
 - `csgo_configs/exp14_3_dust2_gen.yaml`

@@ -2917,16 +2917,16 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - dust2
 **train_csgo.py**
     ``` CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29542 train_csgo.py --csgo_config csgo_configs/exp28_1_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1_dust2 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True ```
-**eval_csgo_loc.py** : step=8000 4000
+**eval_csgo_loc.py** : step=8000 4000 15700 12000
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp28_1_dust2_loc.yaml  ```
-**eval_csgo.py** : step=8000 4000 15700
+**eval_csgo.py** : step=8000 4000 15700 12000
     ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_dust2_gen.yaml  ```
-    **benchmark_csgo_v1.py after eval_csgo.py** 8000 4000 15700
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp28_1_dust2_gen/test_20260615_164140/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
-**continuous gen**  : step=8000 4000 15700
+    **benchmark_csgo_v1.py after eval_csgo.py** 8000 4000 15700 12000
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp28_1_dust2_gen/test_20260619_180605/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
+**continuous gen**  : step=8000 4000 15700 12000 12000
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_dust2_gen_conti.yaml  ```
     **benchmark_csgo_v1_conti.py after eval_csgo.py** 8000 4000 15700
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp28_1_dust2_gen_conti/test_20260615_164140/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp28_1_dust2_gen_conti/test_20260619_180603/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
     **frames to video**
     ``    python frames_to_video.py --img_dir outputs_eval/exp28_1_dust2_gen_conti/test_20260615_164140/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp28_1_dust2_gen_conti/test_20260615_164140/gen_compared_videos/de_dust2 --max_duration 10        ``
 
@@ -2943,7 +2943,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 **train_csgo.py**
 ```  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29548 train_csgo.py --csgo_config csgo_configs/exp14_3_dust2_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_dust2_loc --num_train_epochs 100 --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 4 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True  ```
-**eval_csgo_loc.py** : step=15700
+**eval_csgo_loc.py** : step=15700 12000
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp14_3_dust2_loc_loc.yaml  ```
 
 ### exp14_3_dust2_gen
@@ -2959,15 +2959,16 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 **train_csgo.py**
 ```  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29549 train_csgo.py --csgo_config csgo_configs/exp14_3_dust2_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_dust2_gen --num_train_epochs 100 --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 4 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
-**eval_csgo.py** : step=15700
+**eval_csgo.py** : step=15700 12000
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_3_dust2_gen_gen.yaml  ```
-    **benchmark_csgo_v1.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_dust2_gen_gen/test_/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
-**continuous gen** : step=15700
+    **benchmark_csgo_v1.py after eval_csgo.py** 15700 12000
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_dust2_gen_gen/test_20260619_163127/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
+**continuous gen** : step=15700 12000
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_3_dust2_gen_gen_conti.yaml  ```
-    **benchmark_csgo_v1_conti.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_dust2_gen_gen_conti/test_/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
-
+    **benchmark_csgo_v1_conti.py after eval_csgo.py** 15700 12000
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_dust2_gen_gen_conti/test_20260619_163138/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
+    **frames to video** 15700
+    ``    python frames_to_video.py --img_dir outputs_eval/exp14_3_dust2_gen_gen_conti/test_20260617_183924/gen_imgs/de_dust2 --gt_dir data/preprocessed_data/de_dust2/imgs --output_dir outputs_eval/exp14_3_dust2_gen_gen_conti/test_20260617_183924/gen_compared_videos/de_dust2 --max_duration 10        ``
 
 ## exp28_1
 - exp28_1_dust2 three-map generalization
@@ -2976,11 +2977,11 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - keep all exp28_1_dust2 loss, schedule, model, and trainability settings unchanged except train/val/test maps
 
 **train_csgo.py**
-    ``` CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29542 train_csgo.py --csgo_config csgo_configs/exp28_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True ```
+    ``` CUDA_VISIBLE_DEVICES=2,3 torchrun --nproc_per_node=2 --master_port=29542 train_csgo.py --csgo_config csgo_configs/exp28_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True ```
 **eval_csgo_loc.py** : step=
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp28_1_loc.yaml  ```
 **eval_csgo.py** : step=
-    ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_gen.yaml  ```
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_gen.yaml  ```
     **benchmark_csgo_v1.py after eval_csgo.py**
     ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp28_1_gen//gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
 **continuous gen**  : step=
@@ -2999,15 +3000,19 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - trainability follows exp14_3_dust2_gen: full-head non-LoRA gen modules trainable, loc head frozen with `freeze_loc_head=True`
 
 **train_csgo.py**
-```  CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29550 train_csgo.py --csgo_config csgo_configs/exp14_3_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_gen --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
-**eval_csgo.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29550 train_csgo.py --csgo_config csgo_configs/exp14_3_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_gen --num_train_epochs 100 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
+**eval_csgo.py** : step=46900
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_3_gen_gen.yaml  ```
     **benchmark_csgo_v1.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_gen_gen//gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
-**continuous gen** : step=
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_gen_gen/test_20260623_034750/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_3_gen_gen/test_20260623_034750/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_3_gen_gen/test_20260623_034750/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke  ``` 46900
+**continuous gen** : step=46900
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_3_gen_gen_conti.yaml  ```
     **benchmark_csgo_v1_conti.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_gen_gen_conti//gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_3_gen_gen_conti/test_20260623_034753/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_3_gen_gen_conti/test_20260623_034753/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_3_gen_gen_conti/test_20260623_034753/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
 
 ### exp14_3_loc
 - exp14_3_dust2_loc three-map generalization
@@ -3019,8 +3024,8 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 - trainability follows exp14_3_dust2_loc: full-head non-LoRA loc modules trainable, gen head frozen with `freeze_gen_head=True`
 
 **train_csgo.py**
-```  CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29551 train_csgo.py --csgo_config csgo_configs/exp14_3_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_loc --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True  ```
-**eval_csgo_loc.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29551 train_csgo.py --csgo_config csgo_configs/exp14_3_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp14_3_loc --num_train_epochs 100 --per_device_train_batch_size 64 --per_device_eval_batch_size 64 --gradient_accumulation_steps 2 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True  ```
+**eval_csgo_loc.py** : step=46900
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp14_3_loc_loc.yaml  ```
 
 
@@ -3102,14 +3107,14 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_2_gen.yaml  ```
     **benchmark_csgo_v1.py after eval_csgo.py**
     ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_2_gen/test_20260616_024131/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ``` 46800
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_2_gen/test_20260616_024131/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_2_gen/test_20260616_024131/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_2_gen/test_20260616_024131/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient  ``` 46800
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_2_gen/test_20260616_024131/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke  ``` 46800
 **continuous gen** : step=46800
 ```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp14_2_gen_conti.yaml  ```
     **benchmark_csgo_v1_conti.py after eval_csgo.py**
     ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp14_2_gen_conti/test_20260616_024135/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46800
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_2_gen_conti/test_20260616_024135/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_2_gen_conti/test_20260616_024135/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp14_2_gen_conti/test_20260616_024135/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46800
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp14_2_gen_conti/test_20260616_024135/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46800
 
 ## exp14_2_loc_dust2
 - current 224 + short-instruction + LoRA loc-only dust2 baseline
@@ -3206,12 +3211,65 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 **eval_csgo.py** : step=46900
 ``` python eval_csgo.py --csgo_config csgo_configs/test/exp30_2_gen.yaml ```
     **benchmark_csgo_v1.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp30_2_gen//gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp30_2_gen//gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp30_2_gen//gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp30_2_gen/test_20260617_183221/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp30_2_gen/test_20260617_183221/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp30_2_gen/test_20260617_183221/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke  ``` 46900
 **continuous gen** : step=46900
 ``` python eval_csgo.py --csgo_config csgo_configs/test/exp30_2_gen_conti.yaml ```
     **benchmark_csgo_v1_conti.py after eval_csgo.py**
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp30_2_gen_conti//gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp30_2_gen_conti//gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
-    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp30_2_gen_conti//gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ```
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_dust2/imgs --pred outputs_eval/exp30_2_gen_conti/test_20260617_183225/gen_imgs/de_dust2 --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_dust2 --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_ancient/imgs --pred outputs_eval/exp30_2_gen_conti/test_20260617_183225/gen_imgs/de_ancient --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_ancient --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
+    ```  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt data/preprocessed_data/de_nuke/imgs --pred outputs_eval/exp30_2_gen_conti/test_20260617_183225/gen_imgs/de_nuke --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name de_nuke --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224  ``` 46900
+
+## exp28_1_1_dust2
+- exp28_1_dust2 joint-only ablation
+- dataset path: `is_multi_task=True`, `is_multi_task_balanced=True`
+- keep exp28_1_dust2 full-head non-LoRA route: `is_lora=False`, `fix_dit=False`, `fix_connect=False`, `fix_llm=True`
+- keep loc main loss schedule: `[0,10000,18000,28000] -> [2,5,10,20]`
+- disable aux/perception losses: `is_loc_aux_loss=False`, `is_loc_perception_loss=False`, `is_gen_aux_loss=False`, `is_repa_loss=False`, `is_loc_repa_loss=False`
+- purpose: isolate balanced multi-task joint training without pose-level aux-loc or feature-level perception alignment
+
+**train_csgo.py**
+```  CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29552 train_csgo.py --csgo_config csgo_configs/exp28_1_1_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1_1_dust2 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
+**eval_csgo_loc.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp28_1_1_dust2_loc.yaml  ```
+**eval_csgo.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_1_dust2_gen.yaml  ```
+**continuous gen** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_1_dust2_gen_conti.yaml  ```
+
+## exp28_1_2_dust2
+- exp28_1_dust2 aux-loc-only ablation
+- dataset path: `is_multi_task=True`, `is_multi_task_balanced=True`
+- keep exp28_1_dust2 full-head non-LoRA route: `is_lora=False`, `fix_dit=False`, `fix_connect=False`, `fix_llm=True`
+- keep loc main loss schedule: `[0,10000,18000,28000] -> [2,5,10,20]`
+- keep exp-sigma combined aux-loc: `is_loc_aux_loss=True`, `is_aux_loc_combined_em_unc_loss=True`, `aux_loc_timestep_weight_type=exp_sigma`, `aux_loc_exp_weight_lambda=5.0`, `aux_loc_timestep_weight_renorm=none`
+- disable perception: `is_loc_perception_loss=False`
+- purpose: isolate pose-level combined aux-loc contribution under balanced joint training
+
+**train_csgo.py**
+```  CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29553 train_csgo.py --csgo_config csgo_configs/exp28_1_2_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1_2_dust2 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
+**eval_csgo_loc.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp28_1_2_dust2_loc.yaml  ```
+**eval_csgo.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_2_dust2_gen.yaml  ```
+**continuous gen** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_2_dust2_gen_conti.yaml  ```
+
+## exp28_1_3_dust2
+- exp28_1_dust2 perception-only ablation
+- dataset path: `is_multi_task=True`, `is_multi_task_balanced=True`
+- keep exp28_1_dust2 full-head non-LoRA route: `is_lora=False`, `fix_dit=False`, `fix_connect=False`, `fix_llm=True`
+- keep loc main loss schedule: `[0,10000,18000,28000] -> [2,5,10,20]`
+- disable aux-loc: `is_loc_aux_loss=False`, `is_aux_loc_combined_em_unc_loss=False`
+- keep exp27_3-style perception: teacher_gt attention-weighted `vision_tower` patch features, `smooth_l1`, alpha disabled before step 2000 then `0.1`
+- purpose: isolate feature-level loc perception contribution under balanced joint training
+
+**train_csgo.py**
+```  CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29554 train_csgo.py --csgo_config csgo_configs/exp28_1_3_dust2.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp28_1_3_dust2 --num_train_epochs 100 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True  ```
+**eval_csgo_loc.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp28_1_3_dust2_loc.yaml  ```
+**eval_csgo.py** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_3_dust2_gen.yaml  ```
+**continuous gen** : step=
+```  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp28_1_3_dust2_gen_conti.yaml  ```

@@ -1,4 +1,5 @@
 import argparse
+import gc
 import json
 import os
 import re
@@ -177,6 +178,18 @@ def mean_or_none(values: Sequence[float]) -> Optional[float]:
     return float(np.mean(values))
 
 
+def iter_chunks(items: Sequence[FrameRecord], chunk_size: int):
+    chunk_size = max(1, int(chunk_size))
+    for start in range(0, len(items), chunk_size):
+        yield items[start : start + chunk_size]
+
+
+def release_cuda_memory(device: str) -> None:
+    gc.collect()
+    if str(device).startswith("cuda") and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+
 def require_cv2():
     try:
         import cv2  # pylint: disable=import-outside-toplevel
@@ -193,6 +206,7 @@ def compute_sequence_metrics(
     tracks: Sequence[Sequence[FrameRecord]],
     size: int,
     device: str,
+    batch_size: int,
 ) -> Dict[str, Optional[float]]:
     if len(tracks) == 0:
         return {
@@ -213,28 +227,54 @@ def compute_sequence_metrics(
     track_exact = []
     track_within_1 = []
 
-    with torch.no_grad():
+    with torch.inference_mode():
         for track in tqdm(tracks, desc="Sequence paired metrics"):
-            gt_uint8, pred_uint8 = load_track_pair(gt_dir, pred_dir, track, size)
-            gt_tensor = tensor_from_uint8(gt_uint8, device)
-            pred_tensor = tensor_from_uint8(pred_uint8, device)
+            psnr_sum = 0.0
+            ssim_sum = 0.0
+            lpips_sum = 0.0
+            mae_sum = 0.0
+            exact_sum = 0.0
+            within_1_sum = 0.0
+            frame_count = 0
+            channel_value_count = 0
+            pixel_count = 0
 
-            mse = (pred_tensor - gt_tensor).square().flatten(start_dim=1).mean(dim=1)
-            psnr = torch.where(
-                mse <= 1e-12,
-                torch.full_like(mse, 100.0),
-                10.0 * torch.log10(1.0 / mse.clamp_min(1e-12)),
-            )
-            track_psnr.append(psnr.mean().item())
-            track_ssim.append(ssim_metric(pred_tensor, gt_tensor).item())
-            track_lpips.append(lpips_metric(pred_tensor * 2.0 - 1.0, gt_tensor * 2.0 - 1.0).item())
+            for chunk in iter_chunks(track, batch_size):
+                gt_uint8, pred_uint8 = load_track_pair(gt_dir, pred_dir, chunk, size)
+                gt_tensor = tensor_from_uint8(gt_uint8, device)
+                pred_tensor = tensor_from_uint8(pred_uint8, device)
+                chunk_frames = int(gt_tensor.size(0))
 
-            diff = np.abs(pred_uint8.astype(np.int16) - gt_uint8.astype(np.int16))
-            track_mae.append(float(diff.mean()))
-            exact = np.all(diff == 0, axis=-1)
-            within_1 = np.all(diff <= 1, axis=-1)
-            track_exact.append(float(exact.mean()))
-            track_within_1.append(float(within_1.mean()))
+                mse = (pred_tensor - gt_tensor).square().flatten(start_dim=1).mean(dim=1)
+                psnr = torch.where(
+                    mse <= 1e-12,
+                    torch.full_like(mse, 100.0),
+                    10.0 * torch.log10(1.0 / mse.clamp_min(1e-12)),
+                )
+                psnr_sum += psnr.sum().item()
+                ssim_sum += ssim_metric(pred_tensor, gt_tensor).item() * chunk_frames
+                lpips_sum += lpips_metric(pred_tensor * 2.0 - 1.0, gt_tensor * 2.0 - 1.0).item() * chunk_frames
+
+                diff = np.abs(pred_uint8.astype(np.int16) - gt_uint8.astype(np.int16))
+                mae_sum += float(diff.sum())
+                exact = np.all(diff == 0, axis=-1)
+                within_1 = np.all(diff <= 1, axis=-1)
+                exact_sum += float(exact.sum())
+                within_1_sum += float(within_1.sum())
+                frame_count += chunk_frames
+                channel_value_count += int(diff.size)
+                pixel_count += int(exact.size)
+
+                del gt_tensor, pred_tensor, gt_uint8, pred_uint8
+
+            if frame_count > 0:
+                track_psnr.append(psnr_sum / frame_count)
+                track_ssim.append(ssim_sum / frame_count)
+                track_lpips.append(lpips_sum / frame_count)
+                track_mae.append(mae_sum / channel_value_count)
+                track_exact.append(exact_sum / pixel_count)
+                track_within_1.append(within_1_sum / pixel_count)
+            release_cuda_memory(device)
 
     return {
         "Seq-PSNR": mean_or_none(track_psnr),
@@ -542,6 +582,7 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
     metrics["Boundary_F1"] = boundary_results["Boundary_F1"]
     boundary_details = {key: value for key, value in boundary_results.items() if key != "Boundary_F1"}
     metrics["LPIPS"] = compute_lpips(args.gt, args.pred, common_files, args.paired_size, args.batch_size, args.device)
+    release_cuda_memory(args.device)
     metrics.update(compute_pixel_metrics(args.gt, args.pred, common_files, args.paired_size, args.batch_size))
 
     locator_results = compute_external_locator_metrics(
@@ -562,13 +603,20 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         "locator_z_max": locator_results.pop("locator_z_max"),
     }
     metrics.update(locator_results)
+    release_cuda_memory(args.device)
 
     metrics["FID"] = compute_fid(args.gt, args.pred, common_files, args.batch_size, args.device)
+    release_cuda_memory(args.device)
     metrics["IS"] = compute_inception_score(args.pred, common_files, args.batch_size, args.device)
+    release_cuda_memory(args.device)
     metrics["CLIP"] = compute_clip_score(args.gt, args.pred, common_files, args.batch_size, args.device)
+    release_cuda_memory(args.device)
     metrics["Aesthetic"] = compute_aesthetic_score(args.pred, common_files, args.batch_size, args.device)
+    release_cuda_memory(args.device)
 
-    metrics.update(compute_sequence_metrics(args.gt, args.pred, tracks, args.paired_size, args.device))
+    sequence_batch_size = args.sequence_batch_size if args.sequence_batch_size is not None else args.batch_size
+    metrics.update(compute_sequence_metrics(args.gt, args.pred, tracks, args.paired_size, args.device, sequence_batch_size))
+    release_cuda_memory(args.device)
     metrics.update(compute_temporal_metrics(args.gt, args.pred, tracks, args.paired_size))
     fvd_score, fvd_clip_count = compute_fvd_for_tracks(
         args.gt,
@@ -626,6 +674,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--clip_length", type=int, default=16)
     parser.add_argument("--clip_stride", type=int, default=16)
     parser.add_argument("--fvd_size", type=int, default=224)
+    parser.add_argument(
+        "--sequence_batch_size",
+        type=int,
+        default=None,
+        help="Batch size for sequence PSNR/SSIM/LPIPS metrics. Defaults to --batch_size.",
+    )
     parser.add_argument("--data_dir", type=str, default="data/preprocessed_data")
     parser.add_argument("--map_name", type=str, default="auto")
     parser.add_argument("--pose_json", type=str, default="auto")
