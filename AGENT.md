@@ -1,482 +1,417 @@
-# AGENT.md
-
-## 0. Mission
-
-This repository is an AI / Python research codebase.
-
-Your role is to act as a careful research engineer:
-- build accurate understanding before acting
-- design clean experiments
-- implement minimal, controlled changes
-- avoid unsupported assumptions
-
-This file defines persistent project-level rules shared across all Codex threads.
-
----
-
-## 1. Global Working Principles
-
-### 1.1 Order of operations
-Always follow:
-1. Analyze
-2. Plan
-3. Implement (minimal)
-4. Verify (if possible)
-5. Report
-
-### 1.2 Evidence over assumptions
-- Ground every claim in actual repository code.
-- Explicitly label:
-  - confirmed facts
-  - plausible hypotheses
-  - unknowns
-
-### 1.3 Minimality
-- Prefer smallest valid change.
-- Avoid broad refactors unless explicitly requested.
-- Do not mix:
-  - experiment logic
-  - refactoring
-  - bug fixing
-
-### 1.4 Reproducibility mindset
-- Never assume a result exists unless tied to a concrete script/config.
-- Never claim “works” or “fixed” without execution evidence.
-
----
-
-## 2. Repository Understanding Protocol
-
-When analyzing the repository, you MUST:
-
-### 2.1 Identify structure
-- top-level directories
-- key modules
-- dependency boundaries
-
-### 2.2 Identify entry points
-Locate scripts or functions for:
-- training
-- evaluation
-- inference
-- data preprocessing
-
-### 2.3 Trace full pipeline
-Follow end-to-end flow:
-
-- config loading
-- argument parsing
-- dataset construction
-- dataloader
-- model construction
-- loss construction
-- optimizer / scheduler
-- training loop
-- checkpointing
-- evaluation pipeline
-
-### 2.4 Experiment control surface
-Identify where behavior is controlled:
-- config files (yaml/json)
-- CLI args
-- shell scripts
-- launch scripts
-- notebooks
-
-### 2.5 Baseline reconstruction
-Determine:
-- canonical training command
-- active losses
-- dataset splits
-- evaluation metrics
-- output artifacts
-
----
-
-## 3. Experiment Design Rules
-
-### 3.1 Always define
-For any experiment:
-- hypothesis
-- baseline
-- changed variable
-- controlled variables
-- evaluation protocol
-
-### 3.2 Factor separation
-Separate:
-- architecture changes
-- loss changes
-- data changes
-- optimization changes
-- inference changes
-
-### 3.3 Ablation discipline
-- Prefer one-factor-at-a-time
-- Rank:
-  - must-run
-  - high-value
-  - optional
-
-### 3.4 Confounder control
-Explicitly consider:
-- data leakage
-- metric mismatch
-- seed variance
-- hidden coupling in config
-
----
-
-## 4. Implementation Rules
-
-### 4.1 Minimal edits
-- Modify the fewest files possible.
-- Keep diffs localized.
-
-### 4.2 Preserve baseline
-- Default behavior must remain unchanged.
-- New behavior should be gated by config/flags.
-
-### 4.3 Reuse abstractions
-- Do not duplicate logic.
-- Integrate with existing pipelines.
-
-### 4.4 Interface stability
-- Avoid breaking:
-  - checkpoints
-  - config schema
-  - public APIs
-
----
-
-## 5. Evaluation Rules
-
-### 5.1 Metric integrity
-- Identify exact metric implementation.
-- Do not rely on naming assumptions.
-
-### 5.2 Evaluation path
-- Distinguish:
-  - training-time metrics
-  - validation metrics
-  - test metrics
-
-### 5.3 Reporting discipline
-Always specify:
-- metric name
-- where computed
-- dataset split
-
----
-
-## 6. Debugging Protocol
-
-When debugging:
-
-1. Localize failure
-2. Narrow to smallest component
-3. Rank root causes:
-   - confirmed
-   - likely
-   - speculative
-4. Propose minimal verification steps
-5. Only then propose fixes
-
-Special attention to:
-- gradient flow
-- loss routing
-- masking logic
-- device / dtype issues
-
----
-
-## 7. Multi-Thread Development Protocol
-
-This repository is expected to be developed across multiple Codex threads.
-
-Therefore:
-
-### 7.1 No hidden context
-- Each response must be self-contained.
-- Do not rely on prior thread memory.
-
-### 7.2 Scope clarity
-Always restate:
-- current objective
-- boundaries
-
-### 7.3 Task isolation
-Each thread should focus on ONE:
-- analysis
-- experiment design
-- implementation
-- debugging
-
-### 7.4 Handoff requirement
-At the end of each task, produce:
-
-Handoff Summary:
-- Objective
-- Confirmed findings
-- Files inspected
-- Files modified
-- What remains
-- Next step
-- Risks
-
----
-
-## 8. Output Format Standard
-
-Unless otherwise specified:
-
-1. Objective
-2. Findings
-3. Uncertainties
-4. Proposed next step
-5. Relevant files
-
-Keep responses:
-- compact
-- structured
-- high-signal
-
----
-
-## 9. Prohibitions
-
-- Do NOT fabricate behavior not present in code
-- Do NOT claim validation without execution
-- Do NOT mix unrelated changes
-- Do NOT rewrite large subsystems without request
-- Do NOT silently change experiment semantics
-
----
-
-## 10. Preferred Scientific Workflow
-
-Baseline
-→ Reproduce
-→ Instrument
-→ Hypothesis
-→ Minimal change
-→ Run
-→ Evaluate
-→ Ablate
-→ Summarize
-
----
-
-## 11. Project-Specific Notes (To Be Filled)
-
-### 11.1 Intended task
-- Primary documented task: unified multimodal understanding, image generation, image editing, and image reconstruction for UniLIP (`README.md`, `TRAIN.md`, `EVAL.md`, `tokenizer/README_RECON.md`).
-- Additional task present in this checkout: a CS2/CS:GO-specific extension for first-person-view generation from radar + pose, and camera-pose localization from FPS + radar (`train_csgo.py`, `eval_csgo.py`, `eval_csgo_loc.py`).
-- Understanding benchmark evaluation is present, but its metric/runtime integration depends on external VLMEvalKit (`tokenizer/README_RECON.md`, `tokenizer/inference.py`).
-
-### 11.2 Primary entry points
-- Training:
-  - Official UniLIP generation/editing:
-    - `unilip/train/train_stage1.py::train`
-    - `unilip/train/train_stage2.py::train`
-    - `unilip/train/train_stage3.py::train`
-    - Launchers: `scripts/run_unilip_{1b,2b}_stage{1,2,3}.sh`
-  - Reconstruction/tokenizer:
-    - `tokenizer/scripts/train_stage1.py::main`
-    - `tokenizer/scripts/train_stage2.py::main`
-    - Launchers: `tokenizer/{1b,2b}_stage{1,2,2_448}.sh`
-  - CS2/CS:GO extension:
-    - `train_csgo.py::train`
-    - Local launcher: `run_unilip_1b_csgo.sh`
-- Evaluation:
-  - Official generation/editing benchmark drivers:
-    - `eval/geneval/geneval.py::main`
-    - `eval/WISE/wise.py::main`
-    - `eval/ImgEdit/imgedit.py::main`
-    - Launchers: `eval/*/*_{1b,2b}.sh`
-  - Reconstruction:
-    - `tokenizer/scripts/evaluation.py::main`
-    - Launcher: `tokenizer/{1b,2b}_test.sh`
-  - CS2/CS:GO:
-    - `eval_csgo.py::main`
-    - `eval_csgo_loc.py::main`
-    - `benchmark_csgo.py::main`
-    - `benchmark_csgo_video.py::main`
-- Inference:
-  - Official demos:
-    - `scripts/inference_gen.py`
-    - `scripts/inference_edit.py`
-  - Reconstruction demo:
-    - `tokenizer/scripts/inference.py::main`
-  - Lower-level inference wrappers:
-    - `unilip/pipeline_gen.py::CustomGenPipeline`
-    - `unilip/pipeline_edit.py::CustomEditPipeline`
-
-### 11.3 Baseline command
-- Most defensible official training pipeline from repository docs (`TRAIN.md`):
-  - `cd scripts && bash run_unilip_1b_stage1.sh`
-  - `cd scripts && bash run_unilip_1b_stage2.sh`
-  - `cd scripts && bash run_unilip_1b_stage3.sh`
-  - Rationale: this is the only end-to-end training sequence explicitly documented as the main UniLIP workflow.
-- Most defensible reconstruction/tokenizer baseline (`tokenizer/README_RECON.md`):
-  - `cd tokenizer && bash 1b_stage1.sh`
-  - `cd tokenizer && bash 1b_stage2.sh`
-  - `cd tokenizer && bash 1b_stage2_448.sh`
-- CS2/CS:GO baseline command: uncertain.
-  - Evidence: `train_csgo.py` is the entry point and `run_unilip_1b_csgo.sh` exists, but many `csgo_configs/*.yaml` variants are present and no single canonical config is documented in `README.md`/`TRAIN.md`.
-
-### 11.4 Key config files
-- Official UniLIP generation/editing training is primarily controlled by shell launchers plus CLI flags:
-  - `scripts/run_unilip_{1b,2b}_stage{1,2,3}.sh`
-- Reconstruction/tokenizer configs:
-  - `tokenizer/configs/training/InternVL3_1B_DCAE/*.yaml`
-  - `tokenizer/configs/training/InternVL3_2B_DCAE/*.yaml`
-- CS2/CS:GO configs:
-  - `csgo_configs/*.yaml`
-  - `csgo_configs/test/*.yaml`
-- DeepSpeed configs:
-  - `deepspeed_scripts/zero{0,1,2,3}.json`
-  - `deepspeed_scripts/zero3_offload.json`
-- Evaluation launch configs:
-  - `eval/geneval/*_{1b,2b}.sh`
-  - `eval/WISE/*_{1b,2b}.sh`
-  - `eval/ImgEdit/*_{1b,2b}.sh`
-
-### 11.5 Core model modules
-- Main UniLIP language-model wrappers:
-  - `unilip/model/language_model/unilip_internvl.py::UniLIP_InternVLForCausalLM`
-  - `unilip/model/language_model/unilip_vae_internvl.py::UniLIP_VAE_InternVLForCausalLM`
-  - `unilip/model/language_model/unified_unilip.py::Unified_UniLIP_InternVLForCausalLM`
-- Supporting UniLIP model code:
-  - `unilip/model/unilip_internvl.py`
-  - `unilip/model/unilip_vae_internvl.py`
-  - `unilip/model/builder.py::load_pretrained_model_general`
-  - `unilip/model/sana.py`
-  - `unilip/model/vae_modules.py`
-- Training wrapper:
-  - `unilip/train/nonmix_trainer.py::NonMixTrainer`
-- Reconstruction/tokenizer models:
-  - `tokenizer/modeling/dc_ae_vit.py::DC_AE_ViT`
-  - `tokenizer/modeling/dc_ae_vit_stage2.py::DC_AE_ViT_Stage2`
-  - `tokenizer/modeling/dc_ae_vit_stage2_448.py::DC_AE_ViT_Stage2_448`
-- CS2/CS:GO data/model integration:
-  - `csgo_datasets/unified_task_dataset.py`
-  - `unilip/model/external_loc_model_loader.py`
-
-### 11.6 Loss structure
-- Official UniLIP generation/editing loss:
-  - `unilip/model/language_model/unilip_internvl.py`
-  - `unilip/model/language_model/unilip_vae_internvl.py`
-  - Major term: diffusion-style image loss using `torch.nn.MSELoss()` between DiT noise prediction and target `noise - latents`.
-- CS2/CS:GO multitask loss:
-  - `unilip/model/language_model/unified_unilip.py`
-  - Major terms:
-    - `masked_gen_loss`: generation branch loss
-    - `masked_loc_loss`: localization branch loss
-    - `masked_loc_aux_loss`: optional auxiliary localization-on-generated-image loss
-    - Total loss: `gen_loss + alpha_loc_loss * loc_loss + alpha_loc_aux_loss * loc_aux_loss`
-  - Localization loss variants in code:
-    - plain `MSELoss`
-    - `_compute_codex_loc_regression_loss(...)`, which uses SmoothL1 on XY/Z and either circular or direct angle loss
-    - action-DiT localization path is implemented inside `Unified_UniLIP_InternVLForCausalLM.forward`; exact formula should be read there directly
-- Reconstruction/tokenizer losses:
-  - Instantiated in `tokenizer/utils/train_utils_stage1.py::create_model_and_loss_module` and `tokenizer/utils/train_utils_stage2.py::create_model_and_loss_module`
-  - Implemented in `tokenizer/modeling/modules/losses.py`
-  - Major terms:
-    - reconstruction loss (`l1` or `l2`)
-    - perceptual loss
-    - quantizer loss
-    - GAN generator/discriminator loss
-    - LeCam regularization
-    - VAE KL term (stage 1 when `quantize_mode == "vae"`)
-    - distillation loss (stage 2 only)
-  - Loss classes:
-    - `ReconstructionLoss_Stage1`
-    - `ReconstructionLoss_Stage2`
-
-### 11.7 Metrics
-- Reconstruction metrics implemented in-repo:
-  - `tokenizer/evaluator/evaluator.py`
-  - Metrics:
-    - `InceptionScore`
-    - `rFID`
-    - `psnr`
-    - `ssim`
-    - optional `CodebookUsage`
-    - optional `CodebookEntropy`
-- CS2/CS:GO localization metrics implemented in-repo:
-  - `eval_csgo_loc.py::calculate_metrics`
-  - Metrics:
-    - normalized-space: `Norm_L2_XY`, `Norm_L2_5D`, `Norm_MSE_5D`, `Norm_SmoothL1_5D`
-    - physical-space: `XY_Dist`, `Z_Dist`, `Pitch_Dist`, `Yaw_Dist`, `L1_*`, `L2_*`, `MSE_Loss_5D`, `SmoothL1_Loss_5D`
-    - optional train-aligned summaries: `TrainAligned_LocLoss`, `TrainAligned_TotalLoss`
-- CS2/CS:GO image/video post-hoc metrics:
-  - `benchmark_csgo.py`
-    - `FID`, `LPIPS`, `PSNR`, `SSIM`, `CLIP`, `Aesthetic`
-  - `benchmark_csgo_video.py`
-    - adds `FrechetVideoDistance`
-    - optional `DreamSim` if installed
-- Official GenEval / WISE / ImgEdit benchmark scripts:
-  - `eval/geneval/geneval.py`
-  - `eval/WISE/wise.py`
-  - `eval/ImgEdit/imgedit.py`
-  - These scripts clearly generate benchmark outputs, but final benchmark scoring logic is uncertain / not fully implemented in this repository.
-
-### 11.8 Dataset & splits
-- Official training datasets documented in `TRAIN.md`:
-  - Generation pretraining:
-    - `BLIP3o-Pretrain-Long-Caption`
-    - `BLIP3o-Pretrain-Short-Caption`
-    - `BLIP3o-Pretrain-JourneyDB`
-  - Editing pretraining:
-    - `GPT-Image-Edit-1.5M`
-  - SFT:
-    - `BLIP3o-60k`
-    - `ShareGPT-4o-Image`
-- Reconstruction/tokenizer dataset definitions:
-  - Train shards and eval shards are defined in YAML, e.g.
-    - `tokenizer/configs/training/InternVL3_1B_DCAE/internvl3_1B_stage1.yaml`
-    - `tokenizer/configs/training/InternVL3_1B_DCAE/internvl3_1B_stage2.yaml`
-  - Train:
-    - `train_shards_path_or_url`
-  - Eval:
-    - `eval_shards_path_or_url` (ImageNet val shards)
-- Official benchmark datasets:
-  - GenEval prompts from `eval/geneval/geneval_prompt.jsonl`
-  - WISE JSON files loaded from `data/WISE/data/*.json`
-  - ImgEdit single-turn benchmark loaded from `data/ImgEdit/Benchmark/singleturn/singleturn.json`
-- Understanding benchmark datasets:
-  - handled through external VLMEvalKit; dataset definitions/splits are outside this repo (`tokenizer/README_RECON.md`, `tokenizer/inference.py`)
-- CS2/CS:GO datasets and splits:
-  - Defined by YAML keys in `csgo_configs/*.yaml`
-  - Dataset root usually `data/preprocessed_data`
-  - Per-map split files:
-    - `splits_20000_5000/train_split.json`
-    - `splits_20000_5000/test_split.json`
-    - `splits_20000_5000/continuous_unseen_clips.json`
-  - Train maps / val maps / test maps are specified by config keys:
-    - `train_maps`
-    - `val_maps`
-    - `test_maps`
-  - In `train_csgo.py`, HF `eval_dataset` is `None`; validation is handled by separate eval scripts, not by the trainer loop.
-
-### 11.9 Known quirks / risks
-- The repository mixes at least three partially separate workflows:
-  - official UniLIP generation/editing
-  - reconstruction/tokenizer training
-  - local CS2/CS:GO multitask experiments
-- There is no single repo-wide config system:
-  - official UniLIP relies mainly on shell scripts + CLI args
-  - tokenizer relies on OmegaConf YAML
-  - CS2/CS:GO relies on YAML plus dataclass CLI args
-- `train_csgo.py` explicitly overrides some parsed training args in code:
-  - `training_args.deepspeed = "deepspeed_scripts/zero0.json"`
-  - `training_args.lr_scheduler_kwargs = {"min_lr": 1e-5}`
-- `unilip/model/builder.py::load_pretrained_model_general` hardcodes `.to('cuda:0')`; this is a non-obvious device assumption during inference loading.
-- `setup_transformers.py` copies local replacements into the installed `transformers` package; runtime behavior may depend on whether this patch has been applied.
-- The official benchmark driver scripts generate outputs, but exact final scoring for GenEval / WISE / ImgEdit is uncertain from in-repo code alone.
-- CS2/CS:GO baseline selection is ambiguous:
-  - many `csgo_configs/*.yaml` variants exist
-  - no single canonical experiment is documented in `README.md`/`TRAIN.md`
-- CS2 debug behavior can switch training data to test splits (`csgo_datasets/unified_task_dataset.py`, `train_csgo.py` path-specific dataset code); treat debug configs carefully.
-- Understanding evaluation is not standalone in this repo; it depends on external VLMEvalKit file replacement (`tokenizer/README_RECON.md`, `tokenizer/inference.py`).
+# UniLIP-CSGO Benchmark Project Entry
+
+Snapshot date: 2026-08-25
+
+Scope: This document is the high-signal project entry for the UniLIP-CSGO
+localization and generation benchmark in this checkout. It records the task,
+data contract, implementation map, evidence boundary, current experiments,
+and next operational priorities. It is not a replacement for the general
+UniLIP README, TRAIN.md, or EVAL.md workflows.
+
+## Evidence Levels
+
+Use the following evidence levels for every experiment claim:
+
+- Implemented: code, configuration, or an evaluation path exists and can be
+  located in the repository.
+- Trained: a concrete output directory contains a checkpoint or trainer state
+  for the named experiment and step.
+- Evaluated: an evaluation script produced metrics or artifacts for the named
+  checkpoint, with the relevant command or output recorded.
+- Conclusion: a scientific claim supported by a matched protocol, controlled
+  comparison, and an appropriate amount of repeated evidence.
+
+The existence of a YAML file is only Implemented evidence. It is never enough
+to claim that an experiment was started, trained, evaluated, or successful.
+Similarly, a checkpoint without a traceable evaluation artifact is not
+Evaluated evidence. A single run is useful evidence, but is not by itself a
+robust general conclusion.
+
+## Project Question
+
+UniLIP-CSGO extends UniLIP with a paired first-person-view and radar setting.
+The benchmark tests whether one model can learn both camera-pose localization
+and view generation, including generation at continuous unseen frames.
+
+The central research questions are:
+
+1. Does joint localization and generation training improve the two tasks over
+   matched single-task controls?
+2. Do auxiliary pose and perception objectives improve generation without
+   sacrificing localization?
+3. Can a model trained on discrete frame pairs generate coherent continuous
+   unseen-frame sequences?
+
+The current evidence must distinguish the joint-training effect from the
+effects of auxiliary losses, LoRA parameterization, map count, training step
+count, checkpoint selection, and evaluation protocol.
+
+## Tasks and Data
+
+The two benchmark directions are:
+
+- loc: FPS image + radar/map image -> normalized 5DoF pose
+  `[x, y, z, pitch, yaw]`.
+- gen: radar/map image + 5DoF pose -> FPS image.
+
+The main maps are `de_dust2`, `de_nuke`, and `de_ancient`. Each map has:
+
+- 20,000 training samples in `splits_20000_5000/train_split.json`.
+- 5,000 discrete test samples in `splits_20000_5000/test_split.json`.
+- A continuous unseen-frame split in
+  `splits_20000_5000/continuous_unseen_clips.json`.
+
+The current continuous unseen counts are:
+
+| Map | Continuous unseen frames |
+| --- | ---: |
+| `de_dust2` | 2,164 |
+| `de_nuke` | 4,602 |
+| `de_ancient` | 4,098 |
+
+The train split and the continuous unseen split have zero `file_frame`
+overlap under the current identity check. The continuous split overlaps the
+discrete test split by 67 Dust2, 165 Nuke, and 105 Ancient `file_frame`
+entries; disclose both facts when describing continuous generalization.
+
+Pose normalization is `x / 1024`, `y / 1024`, per-map training-range
+normalization for `z`, and angle division by `2*pi` for pitch/yaw. Evaluation
+must use the training split as the `z`-range reference.
+
+For `is_multi_task_balanced: True`,
+`UniLIPMultiTaskBalancedDataset` stores one base data entry per frame and
+returns `[loc_sample, gen_sample]` from `__getitem__`. The collator flattens
+these lists before building the batch. Thus one base sample supplies both task
+instances to the model, while the dataset length remains the number of base
+samples. This is different from drawing one task by a random mix ratio.
+
+## Repository Map
+
+The CSGO training and evaluation path is organized as follows:
+
+- `train_csgo.py`: argument parsing, YAML overrides, model construction,
+  dataset selection, optimizer setup, callbacks, checkpointing, and the
+  training entry point.
+- `csgo_datasets/unified_task_dataset.py`: CSGO sample construction,
+  normalized pose handling, task-specific image routing, balanced dataset,
+  and collator flattening.
+- `unilip/model/language_model/unified_unilip.py`: shared UniLIP model,
+  generation branch, localization branch, loss routing, auxiliary losses,
+  perception alignment, and trainable-module gating.
+- `unilip/train/nonmix_trainer.py`: `NonMixTrainer`, custom optimizer groups,
+  logging of model loss diagnostics, and the Hugging Face Trainer loop.
+- `eval_csgo.py`: generation inference over either the discrete test split or
+  the continuous split; metric computation is a separate benchmark step.
+- `eval_csgo_loc.py`: localization inference and normalized/physical pose
+  metrics.
+- `benchmark_csgo_v1.py`: paired image benchmark metrics and coverage checks.
+- `benchmark_csgo_v1_conti.py`: continuous-track metrics, temporal metrics,
+  and FVD evaluation.
+- `record.md`: training commands, checkpoint steps, evaluation commands, and
+  output references.
+- `csgo_configs/AGENT.md`: detailed experiment history, configuration design,
+  module learning rates, and config-specific notes.
+
+The normal CSGO training runs use no inline evaluation. The main commands set
+`eval_strategy: no`; evaluation is a separate operation using the checkpoint
+and the corresponding test configuration. Do not treat a successful training
+process as an evaluation result.
+
+Canonical evaluation outputs are:
+
+- Localization: normalized-space losses plus physical XY, Z, pitch, and yaw
+  errors from `eval_csgo_loc.py`.
+- Discrete generation: coverage, PSNR, SSIM, Boundary F1, LPIPS, pixel error,
+  external-locator pose error, FID, IS, CLIP, and Aesthetic from
+  `benchmark_csgo_v1.py`.
+- Continuous generation: the discrete metrics plus sequence metrics, temporal
+  warping/difference, flicker, optical-flow EPE, and FVD from
+  `benchmark_csgo_v1_conti.py`.
+
+Treat the `*_v1.py` benchmark scripts as canonical. Older `benchmark_csgo.py`
+and `benchmark_csgo_video.py` paths are legacy unless an experiment explicitly
+records their use.
+
+## Model Branches
+
+The shared language model produces contextual features for both task routes.
+The current full-head `exp28_1` family fixes the vision tower and, in its
+recorded launch command, fixes the shared language model. It trains the task
+heads and connectors according to the config. The LoRA family uses explicit
+gating and separate optimizer groups.
+
+Generation branch:
+
+- `llm_connector` processes the generation context.
+- `projector` maps context features to the SANA DiT caption channel.
+- `latent_queries` provide the generation query sequence.
+- SANA `dit` predicts the image flow/noise target.
+
+Localization branch:
+
+- The Pi05-compatible `action_dit` is the main flow-matching locator when
+  `use_pi05_action_dit: True`.
+- `action_dit_connector`, `action_dit_projector`, and `action_dit_norm`
+  connect language features to the action model.
+- `action_in_proj`, `action_out_proj`, `time_mlp_in`, and `time_mlp_out`
+  encode the noisy pose/time and decode the predicted velocity.
+- Optional localization modules include `loc_learnable_query`,
+  `regression_loc_head`, `cross_view_fusion`, and `vit_loc_fusion`.
+
+The generation and localization branches receive task masks. A localization
+sample contributes to the localization main loss, and a generation sample
+contributes to the generation main loss. A generation sample can also carry
+the ground-truth pose and generated-image localization context for auxiliary
+losses.
+
+## Loss Contract
+
+The active model objective is assembled in
+`unilip/model/language_model/unified_unilip.py` as:
+
+```text
+L = L_gen
+  + alpha_loc * L_loc
+  + alpha_repa * L_repa
+  + alpha_loc_repa * L_loc_repa
+  + alpha_loc_perception * L_loc_perception
+  + alpha_loc_aux * L_loc_aux
+  + alpha_gen_aux * L_gen_aux
+```
+
+Inactive terms are zero. The task masks are applied inside the branch losses;
+the total objective does not imply that every term is computed for every
+sample.
+
+Generation main loss:
+
+```text
+z_sigma = (1 - sigma) * z + sigma * epsilon
+v_target = epsilon - z
+L_gen = mean((v_pred(z_sigma, context) - v_target)^2)
+```
+
+The implementation computes per-sample SANA DiT MSE over latent dimensions and
+then applies the generation loss mask.
+
+Localization main loss:
+
+```text
+x_t = t * noise + (1 - t) * pose
+u_t = noise - pose
+L_loc = mean((v_pred(x_t, context) - u_t)^2)
+```
+
+The implementation computes the Pi05 Action DiT velocity MSE over the action
+dimensions and applies the localization loss mask. `alpha_loc` is scheduled
+in the main `exp28_1` family as `[2, 5, 10, 20]` at steps
+`[0, 10000, 18000, 28000]`.
+
+Auxiliary localization loss:
+
+- It decodes the generated flow sample into a predicted FPS image.
+- It evaluates localization candidates on that generated image while the
+  auxiliary locator modules are frozen for the consistency measurement.
+- The combined branch uses two candidates, soft EM responsibilities from
+  candidate weighted MSE, and an uncertainty weight from candidate residual
+  disagreement.
+- In `exp28_1`, the timestep weight is `exp(-5 * sigma)`, with no active-mean
+  renormalization, and the auxiliary coefficient is scheduled from 0 to 2.
+
+In short, the combined auxiliary term is a weighted per-sample form of:
+
+```text
+L_loc_aux = uncertainty_weight * sum_i(q_i * weighted_MSE_i)
+```
+
+where `q_i` is the EM responsibility and `weighted_MSE_i` includes the
+configured timestep weight.
+
+Localization perception loss:
+
+- The student is the generated FPS image and the teacher is the real target
+  FPS image.
+- The current mainline feature source is `vision_tower`.
+- The feature loss is Smooth L1 per feature dimension, averaged over patch
+  tokens, weighted by `(1 - sigma)`, and masked to generation samples.
+- With attention weighting enabled, the teacher-ground-truth localization
+  action trace reads the last Action DiT layer's attention from the action token
+  to the localization-side FPS/understanding patch tokens. Heads are reduced
+  by mean and patch weights are
+  normalized to mean one and detached.
+
+The current perception schedule is `[0, 0, 0.1]` at steps
+`[0, 1999, 2000]`. The implementation names the teacher type
+`current_loc_head`; EMA teacher mode is not active in the current path.
+
+Implemented but not all active in the current mainline:
+
+- REPA and localization REPA feature alignment.
+- `aux_gen_loss`, which trains a generation consistency route from predicted
+  pose information.
+- Token localization routes, including `lm_bin_ce` and
+  `lm_st_ext_vocab` with LAPE/NTP-style handling.
+- LoRA injection for the shared language model, LLM connector, SANA DiT, and
+  Action DiT, plus full-train projector and adapter modules.
+
+These are implementation capabilities, not automatic claims about the loss
+composition of every experiment. The active YAML and recorded launch command
+must be checked for each run.
+
+## Experiment Status
+
+The following is the project status at the snapshot date.
+
+| Experiment | Configuration and evidence | Current interpretation |
+| --- | --- | --- |
+| `exp28_1_dust2` | Full-head balanced joint training with exp-sigma combined aux_loc and attention-weighted vision perception; `15700/15700` complete; discrete gen, continuous gen, and loc evaluated. | Current strongest comprehensive Dust2 candidate under the recorded single-run protocol. |
+| `exp14_3_dust2_gen` / `exp14_3_dust2_loc` | Full-head single-task controls; trained and evaluated. | Matched Dust2 gen/loc controls for the full-head family. |
+| `exp28_1_1_dust2` | Joint-only ablation; `12000/15700`; no evaluation. | Aux_loc and perception are both disabled. |
+| `exp28_1_2_dust2` | Aux-only ablation; not started; no checkpoint. | Combined aux_loc enabled, perception disabled. |
+| `exp28_1_3_dust2` | Perception-only ablation; `4000/15700`; no evaluation. | Perception enabled, aux_loc disabled. |
+| `exp28_1` | Three-map joint run; `16000/46900`; no evaluation. | Step 16000 is close to Dust2 step 15700; evaluate it first as a matched-step comparison. |
+| `exp14_3_gen` / `exp14_3_loc` | Three-map single-task controls; trained and evaluated. | Three-map full-head controls. Do not compare 46.9k and 15.7k steps directly. |
+| `exp30_2` | Three-map pure-LoRA joint control; trained and evaluated. | Three-map LoRA control for the LoRA matrix. |
+| `exp30_dust2` / `exp30_1_dust2` and Dust2 `exp14_2` LoRA matrix | Trained and evaluated. | Generation changes are small, while localization degrades; results do not support a shared-LoRA joint-overall-better conclusion. |
+| `exp29_dust2` / `exp29_1_dust2` | Token-localization variants; trained and evaluated. | Useful token-route evidence, but not the current best overall route. |
+
+Status terms above follow the Evidence Levels section. In particular, the
+three new factor ablations are not complete merely because their configs and
+partial checkpoints exist.
+
+## Checkpoint-12000 Evidence
+
+The following values are the recorded single-run Dust2 checkpoint-12000
+comparison. Generation rows use `exp14_3_dust2_gen`; the localization row uses
+`exp14_3_dust2_loc`.
+
+| Metric | `exp28_1_dust2` | Matching single-task control |
+| --- | ---: | ---: |
+| Discrete generation PSNR | 17.810 | 17.492 |
+| Discrete generation LPIPS | 0.393 | 0.410 |
+| Discrete generation FID | 14.671 | 14.602 |
+| Continuous generation FVD | 336.673 | 359.695 |
+| Localization XY | 27.667 | 29.988 |
+
+These are mixed metrics from a single run and are not a complete statistical
+study. They suggest that `exp28_1_dust2` is a promising combined candidate,
+but they are not sufficient to attribute a gain specifically to aux_loc,
+perception, or joint training. The three factor ablations and matched-step
+evaluation are required for that attribution.
+
+## Risks and Next Priorities
+
+Priority 1 is to finish and evaluate the three Dust2 factor ablations:
+
+- `exp28_1_1_dust2`: joint only.
+- `exp28_1_2_dust2`: joint plus aux_loc only.
+- `exp28_1_3_dust2`: joint plus perception only.
+
+Evaluate them at the same optimizer steps as the relevant controls, using the
+same discrete, continuous, localization, seed, and metric settings. The
+comparison should separate the main joint effect from each auxiliary loss.
+
+Priority 2 is to evaluate `exp28_1` at step 16000. This is close to the Dust2
+reference step 15700 and should be treated as the first matched-step
+three-map result. Do not interpret the final 46900-step three-map result as a
+direct comparison with the 15700-step Dust2 result.
+
+Priority 3 is to repair evaluation provenance and paths. Several test
+configs have stale checkpoint paths or refer to output directories that were
+renamed. Fix the path/config pairing before accepting future metrics.
+
+Known examples at this snapshot are:
+
+- `exp28_1` test configs target missing `checkpoint-46900`, while the available
+  matched-step checkpoint is `checkpoint-16000`.
+- `exp28_1_2_dust2` and `exp28_1_3_dust2` test configs target step 12000,
+  which does not yet exist for those incomplete runs.
+- Three-map `exp14_3_gen` / `exp14_3_loc` artifacts live in renamed output
+  directories, while test YAMLs still use the original directory names.
+- `exp14_2_loc` has a flattened final `model.safetensors`, while its test YAML
+  targets a missing `checkpoint-46800/model.safetensors` path.
+
+The generation benchmark JSON currently does not record `ckpt_path`. For now,
+checkpoint provenance depends on `record.md`, the test YAML, and the output
+directory. This is a reproducibility risk and should be fixed before a public
+benchmark report.
+
+The repository still lacks a CSGO benchmark section in `README.md`, `TRAIN.md`,
+and `EVAL.md`. The dataset and the `csgosquare` dependency are supplied through
+symlinks or external paths in the current environment. License, data release,
+and benchmark release documentation are not yet closed.
+
+There is no formal automated test suite for the end-to-end CSGO path. Current
+verification is primarily source inspection, YAML loading, training logs,
+checkpoint presence, and post-hoc evaluation. Add small deterministic tests
+for dataset routing, balanced flattening, loss masks, checkpoint provenance,
+and metric JSON schemas before release.
+
+Continuous evaluation is valuable but must be described carefully: it has no
+overlap with training under the current split check, yet has a small overlap
+with the discrete test population. Report both facts.
+
+## Operational Notes
+
+`TrainingArguments` inherits the Hugging Face Trainer arguments and supports
+the CLI option `--max_steps`. When `--max_steps > 0`, Hugging Face Trainer
+prioritizes it over the epoch count.
+
+The current `train_csgo.py` does not map a YAML `max_steps` key into
+`training_args`. Therefore, to match 15,700 optimizer steps, use the CLI,
+for example `--max_steps 15700`; do not put `max_steps` only in YAML and
+assume it is applied. Keep an epoch value as a fallback if desired, but the
+positive CLI value is the controlling setting.
+
+For three-map runs, use matched optimizer steps when comparing against a
+Dust2 run. Dataset size changes the number of updates per epoch, so matching
+the nominal epoch count is not a valid matched-compute protocol.
+
+`train_csgo.py` currently overwrites `training_args.deepspeed` with
+`deepspeed_scripts/zero0.json`. Do not assume that a different CLI
+`--deepspeed` value remains effective without checking the source and runtime
+log.
+
+The detailed commands belong in `record.md`. The detailed experiment history,
+per-module learning rates, and config variants belong in
+`csgo_configs/AGENT.md`. Do not duplicate large command blocks or the full
+experiment history in this root entry document.
+
+## Scientific Workflow
+
+Use this compact workflow for new benchmark work:
+
+1. Define the hypothesis, baseline, changed factor, fixed factors, and target
+   checkpoint steps.
+2. Verify the YAML, data split, model flags, trainable modules, and optimizer
+   groups before launching.
+3. Train with a concrete output directory and record the actual step count,
+   seed, world size, batch settings, and checkpoint path.
+4. Evaluate discrete generation, continuous generation, and localization
+   separately when the model supports all three routes.
+5. Run post-hoc image/video benchmarks on the exact evaluation output and
+   preserve coverage and provenance metadata.
+6. Compare only matched steps and compatible metrics. Repeat runs when a
+   conclusion is important.
+7. Update the experiment record and report facts, uncertainties, and
+   conclusions separately.
+
+## Agent Work Rules
+
+- Read the relevant code and config before editing.
+- Keep changes minimal and within the requested scope.
+- Preserve unrelated user changes in a dirty worktree.
+- Never use destructive commands such as `git reset --hard` or
+  `git checkout --` without explicit authorization.
+- Use `rg` for repository search and `apply_patch` for manual edits.
+- Prefer structured parsers for YAML, JSON, and checkpoint metadata.
+- Do not claim a behavior, result, or fix without execution evidence or a
+  clearly labeled source-level inference.
+- Keep experiment logic, refactoring, and bug fixing as separate changes.
+- Before reporting completion, verify the intended file diff and run the
+  smallest relevant validation available.
+
+When handing work to another thread, report the objective, confirmed findings,
+files inspected, files modified, remaining work, next step, and risks. The
+next engineer should be able to continue from this document, `record.md`, and
+`csgo_configs/AGENT.md` without relying on hidden conversation context.
