@@ -91,3 +91,17 @@ data/csgo_benchmark_v2/audit/
 data/csgo_benchmark_v2/audit_archive/
 data/csgo_benchmark_v2/calibration/*.template.yaml
 visual_csgo_frame_unnorm.ipynb
+data/csgo_benchmark_v2/aggregate/crossmap_query_test.json
+data/csgo_benchmark_v2/aggregate/crossmap_support_seed_0.json
+data/csgo_benchmark_v2/aggregate/crossmap_support_seed_1.json
+data/csgo_benchmark_v2/aggregate/crossmap_support_seed_2.json
+data/csgo_benchmark_v2/aggregate/crossmap_support_seed_3.json
+data/csgo_benchmark_v2/aggregate/crossmap_support_seed_4.json
+data/csgo_benchmark_v2/aggregate/seen_discrete_test.json
+data/csgo_benchmark_v2/aggregate/seen_train.json
+data/csgo_benchmark_v2/aggregate/seen_validation.json
+data/csgo_benchmark_v2/calibration/z_calibration.json
+data/csgo_benchmark_v2/calibration/z_extrema_rows.jsonl
+data/csgo_benchmark_v2/build_report.json
+data/csgo_benchmark_v2/checksums.sha256
+data/csgo_benchmark_v2/selected_images.sha256
