@@ -1,0 +1,902 @@
+[
+  {
+    "angle_h": 6.266042006610528,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num183_frame_503",
+    "map": "cs_office",
+    "x": 946,
+    "y": 440,
+    "z": -23
+  },
+  {
+    "angle_h": 4.429944767815246,
+    "angle_v": 1.5046013273721048,
+    "file_frame": "file_num121_frame_574",
+    "map": "cs_office",
+    "x": 782,
+    "y": 407,
+    "z": -23
+  },
+  {
+    "angle_h": 4.996684622543957,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num20_frame_297",
+    "map": "cs_office",
+    "x": 798,
+    "y": 565,
+    "z": -23
+  },
+  {
+    "angle_h": 1.9321926130408293,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num112_frame_830",
+    "map": "cs_office",
+    "x": 858,
+    "y": 497,
+    "z": -23
+  },
+  {
+    "angle_h": 5.084031778924702,
+    "angle_v": 1.3090009337373822,
+    "file_frame": "file_num98_frame_708",
+    "map": "cs_office",
+    "x": 447,
+    "y": 713,
+    "z": -39
+  },
+  {
+    "angle_h": 1.4649276839809766,
+    "angle_v": 1.4831495647915167,
+    "file_frame": "file_num112_frame_583",
+    "map": "cs_office",
+    "x": 860,
+    "y": 480,
+    "z": -23
+  },
+  {
+    "angle_h": 0.041878740773714035,
+    "angle_v": 1.465275226503232,
+    "file_frame": "file_num152_frame_10",
+    "map": "cs_office",
+    "x": 781,
+    "y": 329,
+    "z": -23
+  },
+  {
+    "angle_h": 2.1993868994182066,
+    "angle_v": 1.3963299806227156,
+    "file_frame": "file_num177_frame_881",
+    "map": "cs_office",
+    "x": 853,
+    "y": 481,
+    "z": -23
+  },
+  {
+    "angle_h": 6.274436822998676,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num69_frame_816",
+    "map": "cs_office",
+    "x": 940,
+    "y": 440,
+    "z": -23
+  },
+  {
+    "angle_h": 4.558313926047028,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num177_frame_65",
+    "map": "cs_office",
+    "x": 553,
+    "y": 772,
+    "z": -52
+  },
+  {
+    "angle_h": 2.9080142512299956,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num183_frame_55",
+    "map": "cs_office",
+    "x": 997,
+    "y": 505,
+    "z": -23
+  },
+  {
+    "angle_h": 0.5919607892000879,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num160_frame_250",
+    "map": "cs_office",
+    "x": 799,
+    "y": 405,
+    "z": -23
+  },
+  {
+    "angle_h": 6.03634010153345,
+    "angle_v": 1.618433620793689,
+    "file_frame": "file_num112_frame_957",
+    "map": "cs_office",
+    "x": 871,
+    "y": 560,
+    "z": -23
+  },
+  {
+    "angle_h": 6.139770087737184,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num78_frame_722",
+    "map": "cs_office",
+    "x": 790,
+    "y": 484,
+    "z": -23
+  },
+  {
+    "angle_h": 3.6901404549121724,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num99_frame_702",
+    "map": "cs_office",
+    "x": 723,
+    "y": 488,
+    "z": -23
+  },
+  {
+    "angle_h": 6.119558559276246,
+    "angle_v": 1.488368827895854,
+    "file_frame": "file_num112_frame_193",
+    "map": "cs_office",
+    "x": 785,
+    "y": 316,
+    "z": -23
+  },
+  {
+    "angle_h": 1.8334066471459751,
+    "angle_v": 1.598665774970358,
+    "file_frame": "file_num123_frame_732",
+    "map": "cs_office",
+    "x": 813,
+    "y": 341,
+    "z": -27
+  },
+  {
+    "angle_h": 0.22481207499958392,
+    "angle_v": 1.565463346712013,
+    "file_frame": "file_num121_frame_830",
+    "map": "cs_office",
+    "x": 918,
+    "y": 436,
+    "z": -23
+  },
+  {
+    "angle_h": 3.4188176030548996,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num78_frame_844",
+    "map": "cs_office",
+    "x": 866,
+    "y": 542,
+    "z": -23
+  },
+  {
+    "angle_h": 0.25295103507736116,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num121_frame_482",
+    "map": "cs_office",
+    "x": 930,
+    "y": 536,
+    "z": -23
+  },
+  {
+    "angle_h": 4.944349778698373,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num69_frame_167",
+    "map": "cs_office",
+    "x": 869,
+    "y": 536,
+    "z": -23
+  },
+  {
+    "angle_h": 6.162060746061147,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num98_frame_758",
+    "map": "cs_office",
+    "x": 503,
+    "y": 584,
+    "z": -23
+  },
+  {
+    "angle_h": 0.3518448589963636,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num65_frame_50",
+    "map": "cs_office",
+    "x": 359,
+    "y": 554,
+    "z": -42
+  },
+  {
+    "angle_h": 3.0491463426698724,
+    "angle_v": 1.6311190560140634,
+    "file_frame": "file_num98_frame_448",
+    "map": "cs_office",
+    "x": 274,
+    "y": 637,
+    "z": -65
+  },
+  {
+    "angle_h": 6.24237289610634,
+    "angle_v": 1.3978879298604119,
+    "file_frame": "file_num172_frame_36",
+    "map": "cs_office",
+    "x": 763,
+    "y": 486,
+    "z": -23
+  },
+  {
+    "angle_h": 1.0912295908696954,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num121_frame_6",
+    "map": "cs_office",
+    "x": 859,
+    "y": 414,
+    "z": -23
+  },
+  {
+    "angle_h": 3.694760506771242,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num177_frame_567",
+    "map": "cs_office",
+    "x": 850,
+    "y": 460,
+    "z": -21
+  },
+  {
+    "angle_h": 3.0321407275291716,
+    "angle_v": 1.6281887798666492,
+    "file_frame": "file_num84_frame_383",
+    "map": "cs_office",
+    "x": 866,
+    "y": 562,
+    "z": -23
+  },
+  {
+    "angle_h": 1.824376533679789,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num31_frame_852",
+    "map": "cs_office",
+    "x": 454,
+    "y": 510,
+    "z": -23
+  },
+  {
+    "angle_h": 1.1896500379049362,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num158_frame_611",
+    "map": "cs_office",
+    "x": 868,
+    "y": 491,
+    "z": -23
+  },
+  {
+    "angle_h": 5.112422407725492,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num153_frame_375",
+    "map": "cs_office",
+    "x": 866,
+    "y": 475,
+    "z": -23
+  },
+  {
+    "angle_h": 2.500256857779636,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num123_frame_50",
+    "map": "cs_office",
+    "x": 444,
+    "y": 569,
+    "z": -23
+  },
+  {
+    "angle_h": 2.9122683847552877,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num121_frame_333",
+    "map": "cs_office",
+    "x": 847,
+    "y": 325,
+    "z": -23
+  },
+  {
+    "angle_h": 2.871210430229536,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num98_frame_243",
+    "map": "cs_office",
+    "x": 808,
+    "y": 411,
+    "z": -15
+  },
+  {
+    "angle_h": 0.2939131158038699,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num154_frame_378",
+    "map": "cs_office",
+    "x": 801,
+    "y": 416,
+    "z": -23
+  },
+  {
+    "angle_h": 5.715127187711286,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num210_frame_630",
+    "map": "cs_office",
+    "x": 824,
+    "y": 597,
+    "z": -23
+  },
+  {
+    "angle_h": 0.1398199519707951,
+    "angle_v": 1.541093558525025,
+    "file_frame": "file_num162_frame_981",
+    "map": "cs_office",
+    "x": 813,
+    "y": 597,
+    "z": -23
+  },
+  {
+    "angle_h": 6.076025995465592,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num152_frame_901",
+    "map": "cs_office",
+    "x": 605,
+    "y": 670,
+    "z": -29
+  },
+  {
+    "angle_h": 2.215307942204973,
+    "angle_v": 1.5711020576880377,
+    "file_frame": "file_num16_frame_252",
+    "map": "cs_office",
+    "x": 998,
+    "y": 489,
+    "z": -23
+  },
+  {
+    "angle_h": 0.06141302736944525,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num25_frame_241",
+    "map": "cs_office",
+    "x": 811,
+    "y": 324,
+    "z": -23
+  },
+  {
+    "angle_h": 1.6333779492506686,
+    "angle_v": 1.3093844289343537,
+    "file_frame": "file_num78_frame_680",
+    "map": "cs_office",
+    "x": 692,
+    "y": 447,
+    "z": -23
+  },
+  {
+    "angle_h": 3.2904308679599232,
+    "angle_v": 1.4330917236779515,
+    "file_frame": "file_num113_frame_956",
+    "map": "cs_office",
+    "x": 868,
+    "y": 553,
+    "z": -23
+  },
+  {
+    "angle_h": 4.752122811216454,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num160_frame_35",
+    "map": "cs_office",
+    "x": 681,
+    "y": 460,
+    "z": -23
+  },
+  {
+    "angle_h": 0.72647172953781,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num78_frame_152",
+    "map": "cs_office",
+    "x": 829,
+    "y": 309,
+    "z": -25
+  },
+  {
+    "angle_h": 5.574000955225808,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num121_frame_133",
+    "map": "cs_office",
+    "x": 827,
+    "y": 585,
+    "z": -23
+  },
+  {
+    "angle_h": 5.008081886745059,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num25_frame_628",
+    "map": "cs_office",
+    "x": 796,
+    "y": 546,
+    "z": -23
+  },
+  {
+    "angle_h": 5.768307052570752,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num160_frame_726",
+    "map": "cs_office",
+    "x": 788,
+    "y": 513,
+    "z": -23
+  },
+  {
+    "angle_h": 0.06250971710633987,
+    "angle_v": 1.4141145703822648,
+    "file_frame": "file_num121_frame_764",
+    "map": "cs_office",
+    "x": 854,
+    "y": 426,
+    "z": -23
+  },
+  {
+    "angle_h": 0.20844162377886685,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num39_frame_875",
+    "map": "cs_office",
+    "x": 357,
+    "y": 558,
+    "z": -43
+  },
+  {
+    "angle_h": 1.981070274317326,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num153_frame_879",
+    "map": "cs_office",
+    "x": 863,
+    "y": 464,
+    "z": -23
+  },
+  {
+    "angle_h": 3.2176386858847876,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num121_frame_72",
+    "map": "cs_office",
+    "x": 837,
+    "y": 578,
+    "z": -23
+  },
+  {
+    "angle_h": 1.5977548407194961,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num121_frame_424",
+    "map": "cs_office",
+    "x": 869,
+    "y": 416,
+    "z": -23
+  },
+  {
+    "angle_h": 1.7972322642691563,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num147_frame_122",
+    "map": "cs_office",
+    "x": 678,
+    "y": 497,
+    "z": -23
+  },
+  {
+    "angle_h": 3.2478447916006843,
+    "angle_v": 1.4027354156765741,
+    "file_frame": "file_num20_frame_640",
+    "map": "cs_office",
+    "x": 384,
+    "y": 573,
+    "z": -21
+  },
+  {
+    "angle_h": 0.7333746430832954,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num36_frame_257",
+    "map": "cs_office",
+    "x": 765,
+    "y": 395,
+    "z": -23
+  },
+  {
+    "angle_h": 0.13674000617011847,
+    "angle_v": 1.6563517083942372,
+    "file_frame": "file_num112_frame_188",
+    "map": "cs_office",
+    "x": 775,
+    "y": 319,
+    "z": -23
+  },
+  {
+    "angle_h": 1.6528822752841363,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num20_frame_90",
+    "map": "cs_office",
+    "x": 697,
+    "y": 448,
+    "z": -23
+  },
+  {
+    "angle_h": 5.903429188378647,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num160_frame_5",
+    "map": "cs_office",
+    "x": 786,
+    "y": 482,
+    "z": -24
+  },
+  {
+    "angle_h": 2.060639535576441,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num121_frame_936",
+    "map": "cs_office",
+    "x": 856,
+    "y": 496,
+    "z": -23
+  },
+  {
+    "angle_h": 0.2424528540602688,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num156_frame_320",
+    "map": "cs_office",
+    "x": 826,
+    "y": 419,
+    "z": -23
+  },
+  {
+    "angle_h": 6.110097146871521,
+    "angle_v": 1.6262473354319815,
+    "file_frame": "file_num98_frame_27",
+    "map": "cs_office",
+    "x": 715,
+    "y": 429,
+    "z": -23
+  },
+  {
+    "angle_h": 1.873469911004582,
+    "angle_v": 1.5913910841366972,
+    "file_frame": "file_num39_frame_172",
+    "map": "cs_office",
+    "x": 814,
+    "y": 341,
+    "z": -27
+  },
+  {
+    "angle_h": 1.0582609881550593,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num106_frame_408",
+    "map": "cs_office",
+    "x": 864,
+    "y": 493,
+    "z": -23
+  },
+  {
+    "angle_h": 4.688857821624968,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num57_frame_689",
+    "map": "cs_office",
+    "x": 679,
+    "y": 603,
+    "z": -23
+  },
+  {
+    "angle_h": 5.180846472980679,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num25_frame_127",
+    "map": "cs_office",
+    "x": 870,
+    "y": 561,
+    "z": -23
+  },
+  {
+    "angle_h": 2.542369424097059,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num31_frame_796",
+    "map": "cs_office",
+    "x": 599,
+    "y": 417,
+    "z": -23
+  },
+  {
+    "angle_h": 1.5813604210489685,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num112_frame_238",
+    "map": "cs_office",
+    "x": 754,
+    "y": 336,
+    "z": -23
+  },
+  {
+    "angle_h": 1.767679165652547,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num194_frame_584",
+    "map": "cs_office",
+    "x": 818,
+    "y": 329,
+    "z": -23
+  },
+  {
+    "angle_h": 0.3170906067708295,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num106_frame_433",
+    "map": "cs_office",
+    "x": 910,
+    "y": 533,
+    "z": -23
+  },
+  {
+    "angle_h": 5.305386538197145,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num112_frame_695",
+    "map": "cs_office",
+    "x": 867,
+    "y": 560,
+    "z": -23
+  },
+  {
+    "angle_h": 5.115676257945351,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num58_frame_180",
+    "map": "cs_office",
+    "x": 860,
+    "y": 489,
+    "z": -23
+  },
+  {
+    "angle_h": 0.06811833436204676,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num178_frame_438",
+    "map": "cs_office",
+    "x": 870,
+    "y": 301,
+    "z": -23
+  },
+  {
+    "angle_h": 2.946645267054358,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num106_frame_877",
+    "map": "cs_office",
+    "x": 687,
+    "y": 544,
+    "z": -23
+  },
+  {
+    "angle_h": 0.39603069622241327,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num177_frame_380",
+    "map": "cs_office",
+    "x": 885,
+    "y": 427,
+    "z": -23
+  },
+  {
+    "angle_h": 5.129158244647768,
+    "angle_v": 1.6558363867233068,
+    "file_frame": "file_num210_frame_861",
+    "map": "cs_office",
+    "x": 867,
+    "y": 296,
+    "z": -23
+  },
+  {
+    "angle_h": 5.004402463383006,
+    "angle_v": 1.5789216312807284,
+    "file_frame": "file_num25_frame_482",
+    "map": "cs_office",
+    "x": 824,
+    "y": 358,
+    "z": -27
+  },
+  {
+    "angle_h": 0.2715026152308531,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num201_frame_423",
+    "map": "cs_office",
+    "x": 945,
+    "y": 536,
+    "z": -23
+  },
+  {
+    "angle_h": 4.60497410624187,
+    "angle_v": 1.4860079355894988,
+    "file_frame": "file_num153_frame_91",
+    "map": "cs_office",
+    "x": 777,
+    "y": 407,
+    "z": -23
+  },
+  {
+    "angle_h": 0.24682709615072396,
+    "angle_v": 1.6192307049079497,
+    "file_frame": "file_num106_frame_538",
+    "map": "cs_office",
+    "x": 818,
+    "y": 558,
+    "z": -23
+  },
+  {
+    "angle_h": 4.245369594777342,
+    "angle_v": 1.3175696545447122,
+    "file_frame": "file_num121_frame_198",
+    "map": "cs_office",
+    "x": 850,
+    "y": 410,
+    "z": -23
+  },
+  {
+    "angle_h": 2.057955069197641,
+    "angle_v": 1.399026431226421,
+    "file_frame": "file_num112_frame_323",
+    "map": "cs_office",
+    "x": 867,
+    "y": 472,
+    "z": -23
+  },
+  {
+    "angle_h": 2.132754608944424,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num58_frame_935",
+    "map": "cs_office",
+    "x": 876,
+    "y": 307,
+    "z": -23
+  },
+  {
+    "angle_h": 1.7467487168553417,
+    "angle_v": 1.567117169748952,
+    "file_frame": "file_num123_frame_797",
+    "map": "cs_office",
+    "x": 813,
+    "y": 341,
+    "z": -27
+  },
+  {
+    "angle_h": 1.8331549784229626,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num147_frame_810",
+    "map": "cs_office",
+    "x": 357,
+    "y": 557,
+    "z": -44
+  },
+  {
+    "angle_h": 1.9481136558275955,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num78_frame_232",
+    "map": "cs_office",
+    "x": 867,
+    "y": 327,
+    "z": -23
+  },
+  {
+    "angle_h": 0.7920912198490353,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num25_frame_366",
+    "map": "cs_office",
+    "x": 740,
+    "y": 350,
+    "z": -23
+  },
+  {
+    "angle_h": 1.985839995829658,
+    "angle_v": 1.3963358395771137,
+    "file_frame": "file_num121_frame_686",
+    "map": "cs_office",
+    "x": 776,
+    "y": 306,
+    "z": -23
+  },
+  {
+    "angle_h": 6.0670138583367645,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num112_frame_368",
+    "map": "cs_office",
+    "x": 940,
+    "y": 439,
+    "z": -23
+  },
+  {
+    "angle_h": 0.6575802795113133,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num106_frame_166",
+    "map": "cs_office",
+    "x": 408,
+    "y": 648,
+    "z": -52
+  },
+  {
+    "angle_h": 2.8613056015033136,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num20_frame_242",
+    "map": "cs_office",
+    "x": 864,
+    "y": 560,
+    "z": -23
+  },
+  {
+    "angle_h": 5.627666314351994,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num20_frame_145",
+    "map": "cs_office",
+    "x": 797,
+    "y": 487,
+    "z": -23
+  },
+  {
+    "angle_h": 0.9091053249829915,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num123_frame_922",
+    "map": "cs_office",
+    "x": 865,
+    "y": 511,
+    "z": -23
+  },
+  {
+    "angle_h": 0.47082424385674365,
+    "angle_v": 1.5692263933322947,
+    "file_frame": "file_num171_frame_749",
+    "map": "cs_office",
+    "x": 780,
+    "y": 339,
+    "z": -27
+  },
+  {
+    "angle_h": 5.771249046626963,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num53_frame_479",
+    "map": "cs_office",
+    "x": 821,
+    "y": 303,
+    "z": -23
+  },
+  {
+    "angle_h": 1.1861985811321936,
+    "angle_v": 1.577363682043032,
+    "file_frame": "file_num123_frame_912",
+    "map": "cs_office",
+    "x": 866,
+    "y": 476,
+    "z": -23
+  },
+  {
+    "angle_h": 1.7500443787043147,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num58_frame_66",
+    "map": "cs_office",
+    "x": 864,
+    "y": 479,
+    "z": -23
+  },
+  {
+    "angle_h": 3.7510741132854033,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num112_frame_465",
+    "map": "cs_office",
+    "x": 845,
+    "y": 413,
+    "z": -23
+  },
+  {
+    "angle_h": 5.589418527408494,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num113_frame_686",
+    "map": "cs_office",
+    "x": 707,
+    "y": 428,
+    "z": -23
+  },
+  {
+    "angle_h": 0.4283401665672546,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num121_frame_399",
+    "map": "cs_office",
+    "x": 785,
+    "y": 409,
+    "z": -23
+  },
+  {
+    "angle_h": 0.47322721410832214,
+    "angle_v": 1.3583160192229244,
+    "file_frame": "file_num127_frame_770",
+    "map": "cs_office",
+    "x": 854,
+    "y": 426,
+    "z": -23
+  }
+]

@@ -1,0 +1,902 @@
+[
+  {
+    "angle_h": 2.7749592610602196,
+    "angle_v": 1.555546533760885,
+    "file_frame": "file_num184_frame_0",
+    "map": "de_palacio",
+    "x": 752,
+    "y": 429,
+    "z": 107
+  },
+  {
+    "angle_h": 2.795907686194783,
+    "angle_v": 1.5661224790818076,
+    "file_frame": "file_num202_frame_741",
+    "map": "de_palacio",
+    "x": 196,
+    "y": 492,
+    "z": 147
+  },
+  {
+    "angle_h": 4.227836940056914,
+    "angle_v": 1.6044360461042324,
+    "file_frame": "file_num189_frame_923",
+    "map": "de_palacio",
+    "x": 589,
+    "y": 432,
+    "z": 111
+  },
+  {
+    "angle_h": 2.410686760837001,
+    "angle_v": 1.5722464180084448,
+    "file_frame": "file_num209_frame_616",
+    "map": "de_palacio",
+    "x": 520,
+    "y": 843,
+    "z": 95
+  },
+  {
+    "angle_h": 2.165022134502097,
+    "angle_v": 1.5749428686121498,
+    "file_frame": "file_num56_frame_976",
+    "map": "de_palacio",
+    "x": 666,
+    "y": 505,
+    "z": 108
+  },
+  {
+    "angle_h": 4.914406793298176,
+    "angle_v": 1.5428070363703816,
+    "file_frame": "file_num193_frame_939",
+    "map": "de_palacio",
+    "x": 567,
+    "y": 456,
+    "z": 109
+  },
+  {
+    "angle_h": 1.2799571646792507,
+    "angle_v": 1.5780885944917515,
+    "file_frame": "file_num44_frame_959",
+    "map": "de_palacio",
+    "x": 260,
+    "y": 559,
+    "z": 107
+  },
+  {
+    "angle_h": 2.188822805164135,
+    "angle_v": 1.5489429595219242,
+    "file_frame": "file_num13_frame_31",
+    "map": "de_palacio",
+    "x": 359,
+    "y": 759,
+    "z": 94
+  },
+  {
+    "angle_h": 6.239826381472006,
+    "angle_v": 1.5937221490388436,
+    "file_frame": "file_num205_frame_342",
+    "map": "de_palacio",
+    "x": 488,
+    "y": 840,
+    "z": 95
+  },
+  {
+    "angle_h": 1.8196607411795311,
+    "angle_v": 1.5361019956938893,
+    "file_frame": "file_num190_frame_102",
+    "map": "de_palacio",
+    "x": 834,
+    "y": 524,
+    "z": 102
+  },
+  {
+    "angle_h": 2.2795793403724,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num144_frame_537",
+    "map": "de_palacio",
+    "x": 80,
+    "y": 257,
+    "z": 144
+  },
+  {
+    "angle_h": 2.282695238847793,
+    "angle_v": 1.6015057699568183,
+    "file_frame": "file_num190_frame_228",
+    "map": "de_palacio",
+    "x": 431,
+    "y": 434,
+    "z": 119
+  },
+  {
+    "angle_h": 0.7364426046590666,
+    "angle_v": 1.5571223261778848,
+    "file_frame": "file_num173_frame_348",
+    "map": "de_palacio",
+    "x": 678,
+    "y": 491,
+    "z": 108
+  },
+  {
+    "angle_h": 5.006559623865971,
+    "angle_v": 1.6041604089314092,
+    "file_frame": "file_num88_frame_423",
+    "map": "de_palacio",
+    "x": 659,
+    "y": 626,
+    "z": 57
+  },
+  {
+    "angle_h": 3.059213091590372,
+    "angle_v": 1.593092844073258,
+    "file_frame": "file_num190_frame_208",
+    "map": "de_palacio",
+    "x": 512,
+    "y": 429,
+    "z": 119
+  },
+  {
+    "angle_h": 6.001489975508673,
+    "angle_v": 1.5780885944917515,
+    "file_frame": "file_num1_frame_484",
+    "map": "de_palacio",
+    "x": 423,
+    "y": 602,
+    "z": 107
+  },
+  {
+    "angle_h": 2.9458183555358883,
+    "angle_v": 1.5511363389957138,
+    "file_frame": "file_num77_frame_30",
+    "map": "de_palacio",
+    "x": 161,
+    "y": 465,
+    "z": 150
+  },
+  {
+    "angle_h": 3.7400251905548827,
+    "angle_v": 1.5390562402911143,
+    "file_frame": "file_num1_frame_92",
+    "map": "de_palacio",
+    "x": 457,
+    "y": 930,
+    "z": 95
+  },
+  {
+    "angle_h": 1.321093016666887,
+    "angle_v": 1.5830383456937729,
+    "file_frame": "file_num189_frame_230",
+    "map": "de_palacio",
+    "x": 771,
+    "y": 532,
+    "z": 106
+  },
+  {
+    "angle_h": 0.31145802106531195,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num123_frame_521",
+    "map": "de_palacio",
+    "x": 457,
+    "y": 402,
+    "z": 119
+  },
+  {
+    "angle_h": 3.5701847551961694,
+    "angle_v": 1.5495064844085853,
+    "file_frame": "file_num11_frame_742",
+    "map": "de_palacio",
+    "x": 873,
+    "y": 193,
+    "z": 121
+  },
+  {
+    "angle_h": 6.099233313836761,
+    "angle_v": 1.6034951512911073,
+    "file_frame": "file_num88_frame_455",
+    "map": "de_palacio",
+    "x": 725,
+    "y": 510,
+    "z": 44
+  },
+  {
+    "angle_h": 1.2101131019308324,
+    "angle_v": 1.566751517731284,
+    "file_frame": "file_num173_frame_363",
+    "map": "de_palacio",
+    "x": 712,
+    "y": 503,
+    "z": 108
+  },
+  {
+    "angle_h": 1.5308469130728903,
+    "angle_v": 1.5968798591433506,
+    "file_frame": "file_num209_frame_495",
+    "map": "de_palacio",
+    "x": 751,
+    "y": 464,
+    "z": 107
+  },
+  {
+    "angle_h": 5.8234944082599185,
+    "angle_v": 1.5674287595964913,
+    "file_frame": "file_num44_frame_479",
+    "map": "de_palacio",
+    "x": 125,
+    "y": 441,
+    "z": 153
+  },
+  {
+    "angle_h": 1.194623491240659,
+    "angle_v": 1.5459530285660923,
+    "file_frame": "file_num19_frame_975",
+    "map": "de_palacio",
+    "x": 835,
+    "y": 198,
+    "z": 115
+  },
+  {
+    "angle_h": 2.2636224780689727,
+    "angle_v": 1.602440539499436,
+    "file_frame": "file_num189_frame_312",
+    "map": "de_palacio",
+    "x": 444,
+    "y": 403,
+    "z": 119
+  },
+  {
+    "angle_h": 1.7934871939862325,
+    "angle_v": 1.268764031775702,
+    "file_frame": "file_num48_frame_575",
+    "map": "de_palacio",
+    "x": 113,
+    "y": 493,
+    "z": 108
+  },
+  {
+    "angle_h": 4.584421426845292,
+    "angle_v": 1.6031896867140754,
+    "file_frame": "file_num67_frame_535",
+    "map": "de_palacio",
+    "x": 234,
+    "y": 448,
+    "z": 144
+  },
+  {
+    "angle_h": 1.598785484061357,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num123_frame_648",
+    "map": "de_palacio",
+    "x": 774,
+    "y": 754,
+    "z": 70
+  },
+  {
+    "angle_h": 4.9102187061679174,
+    "angle_v": 1.546276602638537,
+    "file_frame": "file_num65_frame_744",
+    "map": "de_palacio",
+    "x": 247,
+    "y": 634,
+    "z": 107
+  },
+  {
+    "angle_h": 3.4054613175559343,
+    "angle_v": 1.5414229915518676,
+    "file_frame": "file_num11_frame_75",
+    "map": "de_palacio",
+    "x": 656,
+    "y": 456,
+    "z": 107
+  },
+  {
+    "angle_h": 2.19530027872548,
+    "angle_v": 1.5378695357093748,
+    "file_frame": "file_num1_frame_411",
+    "map": "de_palacio",
+    "x": 448,
+    "y": 605,
+    "z": 107
+  },
+  {
+    "angle_h": 4.192795066433652,
+    "angle_v": 1.5379057547002,
+    "file_frame": "file_num209_frame_679",
+    "map": "de_palacio",
+    "x": 348,
+    "y": 934,
+    "z": 95
+  },
+  {
+    "angle_h": 0.18372402675351443,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num14_frame_324",
+    "map": "de_palacio",
+    "x": 213,
+    "y": 702,
+    "z": 140
+  },
+  {
+    "angle_h": 5.131890647926189,
+    "angle_v": 1.5391699572696607,
+    "file_frame": "file_num205_frame_490",
+    "map": "de_palacio",
+    "x": 825,
+    "y": 390,
+    "z": 107
+  },
+  {
+    "angle_h": 4.677976145410904,
+    "angle_v": 1.5366772384893463,
+    "file_frame": "file_num13_frame_936",
+    "map": "de_palacio",
+    "x": 273,
+    "y": 497,
+    "z": 134
+  },
+  {
+    "angle_h": 5.5114371759493395,
+    "angle_v": 1.592421727478558,
+    "file_frame": "file_num73_frame_992",
+    "map": "de_palacio",
+    "x": 820,
+    "y": 391,
+    "z": 107
+  },
+  {
+    "angle_h": 3.82765384306285,
+    "angle_v": 1.5363536644169018,
+    "file_frame": "file_num64_frame_168",
+    "map": "de_palacio",
+    "x": 410,
+    "y": 361,
+    "z": 127
+  },
+  {
+    "angle_h": 1.5644806402697737,
+    "angle_v": 1.4781524093220921,
+    "file_frame": "file_num48_frame_955",
+    "map": "de_palacio",
+    "x": 113,
+    "y": 493,
+    "z": 108
+  },
+  {
+    "angle_h": 2.6914292134698843,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num111_frame_651",
+    "map": "de_palacio",
+    "x": 464,
+    "y": 609,
+    "z": 107
+  },
+  {
+    "angle_h": 3.6472427887053938,
+    "angle_v": 1.5525683207138492,
+    "file_frame": "file_num202_frame_761",
+    "map": "de_palacio",
+    "x": 126,
+    "y": 519,
+    "z": 108
+  },
+  {
+    "angle_h": 4.608156051112297,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num123_frame_789",
+    "map": "de_palacio",
+    "x": 769,
+    "y": 688,
+    "z": 71
+  },
+  {
+    "angle_h": 2.8220692491631763,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num144_frame_248",
+    "map": "de_palacio",
+    "x": 832,
+    "y": 571,
+    "z": 102
+  },
+  {
+    "angle_h": 2.0641269450239,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num118_frame_995",
+    "map": "de_palacio",
+    "x": 238,
+    "y": 666,
+    "z": 119
+  },
+  {
+    "angle_h": 4.599892794881998,
+    "angle_v": 1.5395414682417266,
+    "file_frame": "file_num64_frame_153",
+    "map": "de_palacio",
+    "x": 408,
+    "y": 428,
+    "z": 120
+  },
+  {
+    "angle_h": 4.980272359694125,
+    "angle_v": 1.6003733938613165,
+    "file_frame": "file_num156_frame_742",
+    "map": "de_palacio",
+    "x": 403,
+    "y": 723,
+    "z": 107
+  },
+  {
+    "angle_h": 5.97302770767456,
+    "angle_v": 1.536593348915009,
+    "file_frame": "file_num56_frame_80",
+    "map": "de_palacio",
+    "x": 456,
+    "y": 314,
+    "z": 134
+  },
+  {
+    "angle_h": 0.8031108478075653,
+    "angle_v": 1.590636344283769,
+    "file_frame": "file_num19_frame_479",
+    "map": "de_palacio",
+    "x": 269,
+    "y": 812,
+    "z": 96
+  },
+  {
+    "angle_h": 0.37825809068776944,
+    "angle_v": 1.6006072194050256,
+    "file_frame": "file_num181_frame_518",
+    "map": "de_palacio",
+    "x": 265,
+    "y": 515,
+    "z": 126
+  },
+  {
+    "angle_h": 2.705097355132498,
+    "angle_v": 1.554138254176451,
+    "file_frame": "file_num19_frame_90",
+    "map": "de_palacio",
+    "x": 704,
+    "y": 343,
+    "z": 120
+  },
+  {
+    "angle_h": 4.663840618976981,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num13_frame_961",
+    "map": "de_palacio",
+    "x": 273,
+    "y": 478,
+    "z": 144
+  },
+  {
+    "angle_h": 2.3941903420967234,
+    "angle_v": 1.5508306081025724,
+    "file_frame": "file_num173_frame_20",
+    "map": "de_palacio",
+    "x": 452,
+    "y": 426,
+    "z": 119
+  },
+  {
+    "angle_h": 5.0063321899088775,
+    "angle_v": 1.5604539407015738,
+    "file_frame": "file_num48_frame_55",
+    "map": "de_palacio",
+    "x": 117,
+    "y": 462,
+    "z": 148
+  },
+  {
+    "angle_h": 6.164481559492029,
+    "angle_v": 1.603752945284627,
+    "file_frame": "file_num94_frame_875",
+    "map": "de_palacio",
+    "x": 617,
+    "y": 477,
+    "z": 107
+  },
+  {
+    "angle_h": 3.5452692853018237,
+    "angle_v": 1.5799101966773657,
+    "file_frame": "file_num182_frame_205",
+    "map": "de_palacio",
+    "x": 179,
+    "y": 339,
+    "z": 153
+  },
+  {
+    "angle_h": 0.9022922931242963,
+    "angle_v": 1.535988278715343,
+    "file_frame": "file_num173_frame_283",
+    "map": "de_palacio",
+    "x": 562,
+    "y": 415,
+    "z": 119
+  },
+  {
+    "angle_h": 2.761932408588097,
+    "angle_v": 1.5414589442265836,
+    "file_frame": "file_num13_frame_0",
+    "map": "de_palacio",
+    "x": 388,
+    "y": 656,
+    "z": 107
+  },
+  {
+    "angle_h": 1.5188267354928178,
+    "angle_v": 1.5785679634879657,
+    "file_frame": "file_num19_frame_459",
+    "map": "de_palacio",
+    "x": 270,
+    "y": 721,
+    "z": 107
+  },
+  {
+    "angle_h": 4.010652424735427,
+    "angle_v": 1.5836375569390406,
+    "file_frame": "file_num202_frame_62",
+    "map": "de_palacio",
+    "x": 769,
+    "y": 273,
+    "z": 119
+  },
+  {
+    "angle_h": 5.513899801009336,
+    "angle_v": 1.5372942929139177,
+    "file_frame": "file_num19_frame_698",
+    "map": "de_palacio",
+    "x": 853,
+    "y": 365,
+    "z": 109
+  },
+  {
+    "angle_h": 4.629769733887161,
+    "angle_v": 1.5899231497438457,
+    "file_frame": "file_num6_frame_722",
+    "map": "de_palacio",
+    "x": 230,
+    "y": 70,
+    "z": 144
+  },
+  {
+    "angle_h": 3.4993036575192744,
+    "angle_v": 1.559884823176624,
+    "file_frame": "file_num1_frame_976",
+    "map": "de_palacio",
+    "x": 510,
+    "y": 408,
+    "z": 119
+  },
+  {
+    "angle_h": 0.5666679493792783,
+    "angle_v": 1.5454195973997493,
+    "file_frame": "file_num202_frame_776",
+    "map": "de_palacio",
+    "x": 106,
+    "y": 564,
+    "z": 108
+  },
+  {
+    "angle_h": 0.9901007090058439,
+    "angle_v": 1.5575777267242883,
+    "file_frame": "file_num190_frame_680",
+    "map": "de_palacio",
+    "x": 571,
+    "y": 609,
+    "z": 108
+  },
+  {
+    "angle_h": 4.8308527772580305,
+    "angle_v": 1.5370189220572037,
+    "file_frame": "file_num203_frame_469",
+    "map": "de_palacio",
+    "x": 651,
+    "y": 548,
+    "z": 46
+  },
+  {
+    "angle_h": 2.9200522719893716,
+    "angle_v": 1.5975270072882397,
+    "file_frame": "file_num203_frame_942",
+    "map": "de_palacio",
+    "x": 666,
+    "y": 828,
+    "z": 78
+  },
+  {
+    "angle_h": 5.583714036353545,
+    "angle_v": 1.5988873499730523,
+    "file_frame": "file_num13_frame_432",
+    "map": "de_palacio",
+    "x": 679,
+    "y": 741,
+    "z": 69
+  },
+  {
+    "angle_h": 6.204976255447229,
+    "angle_v": 1.56647614687457,
+    "file_frame": "file_num65_frame_65",
+    "map": "de_palacio",
+    "x": 653,
+    "y": 458,
+    "z": 107
+  },
+  {
+    "angle_h": 5.846731820351406,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num105_frame_164",
+    "map": "de_palacio",
+    "x": 592,
+    "y": 507,
+    "z": 107
+  },
+  {
+    "angle_h": 0.7593385994988049,
+    "angle_v": 1.2503261686007565,
+    "file_frame": "file_num31_frame_981",
+    "map": "de_palacio",
+    "x": 262,
+    "y": 483,
+    "z": 134
+  },
+  {
+    "angle_h": 5.971859112588233,
+    "angle_v": 1.605095178474027,
+    "file_frame": "file_num205_frame_306",
+    "map": "de_palacio",
+    "x": 354,
+    "y": 927,
+    "z": 95
+  },
+  {
+    "angle_h": 5.264268396230758,
+    "angle_v": 1.5501954441825887,
+    "file_frame": "file_num161_frame_0",
+    "map": "de_palacio",
+    "x": 146,
+    "y": 178,
+    "z": 144
+  },
+  {
+    "angle_h": 3.7318157301786044,
+    "angle_v": 1.6030520012857183,
+    "file_frame": "file_num173_frame_468",
+    "map": "de_palacio",
+    "x": 759,
+    "y": 547,
+    "z": 104
+  },
+  {
+    "angle_h": 0.25238191755241124,
+    "angle_v": 1.53757019640285,
+    "file_frame": "file_num17_frame_772",
+    "map": "de_palacio",
+    "x": 648,
+    "y": 501,
+    "z": 108
+  },
+  {
+    "angle_h": 3.2054627133809452,
+    "angle_v": 1.5360362156149645,
+    "file_frame": "file_num181_frame_971",
+    "map": "de_palacio",
+    "x": 708,
+    "y": 499,
+    "z": 108
+  },
+  {
+    "angle_h": 6.235781572408394,
+    "angle_v": 1.590408377694458,
+    "file_frame": "file_num184_frame_155",
+    "map": "de_palacio",
+    "x": 533,
+    "y": 462,
+    "z": 121
+  },
+  {
+    "angle_h": 3.862294111993728,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num144_frame_912",
+    "map": "de_palacio",
+    "x": 285,
+    "y": 535,
+    "z": 119
+  },
+  {
+    "angle_h": 4.688432248482773,
+    "angle_v": 1.5359041228248964,
+    "file_frame": "file_num193_frame_333",
+    "map": "de_palacio",
+    "x": 244,
+    "y": 676,
+    "z": 107
+  },
+  {
+    "angle_h": 1.6235988217278976,
+    "angle_v": 1.4286335920131588,
+    "file_frame": "file_num32_frame_225",
+    "map": "de_palacio",
+    "x": 262,
+    "y": 483,
+    "z": 134
+  },
+  {
+    "angle_h": 5.921818848337862,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num14_frame_460",
+    "map": "de_palacio",
+    "x": 264,
+    "y": 523,
+    "z": 136
+  },
+  {
+    "angle_h": 2.280550062589734,
+    "angle_v": 1.5560317617114972,
+    "file_frame": "file_num44_frame_321",
+    "map": "de_palacio",
+    "x": 413,
+    "y": 710,
+    "z": 107
+  },
+  {
+    "angle_h": 0.6251632174584327,
+    "angle_v": 1.5493086115395922,
+    "file_frame": "file_num1_frame_343",
+    "map": "de_palacio",
+    "x": 478,
+    "y": 418,
+    "z": 119
+  },
+  {
+    "angle_h": 0.36322374738594515,
+    "angle_v": 1.5557020623685454,
+    "file_frame": "file_num1_frame_332",
+    "map": "de_palacio",
+    "x": 430,
+    "y": 411,
+    "z": 119
+  },
+  {
+    "angle_h": 3.8206609146725197,
+    "angle_v": 1.5467320031849405,
+    "file_frame": "file_num11_frame_737",
+    "map": "de_palacio",
+    "x": 883,
+    "y": 215,
+    "z": 119
+  },
+  {
+    "angle_h": 3.475670766005911,
+    "angle_v": 1.5409135288353353,
+    "file_frame": "file_num15_frame_548",
+    "map": "de_palacio",
+    "x": 228,
+    "y": 358,
+    "z": 153
+  },
+  {
+    "angle_h": 3.6804992791338673,
+    "angle_v": 1.5821152940599512,
+    "file_frame": "file_num202_frame_913",
+    "map": "de_palacio",
+    "x": 413,
+    "y": 347,
+    "z": 133
+  },
+  {
+    "angle_h": 3.5229424079870353,
+    "angle_v": 1.5962806478980827,
+    "file_frame": "file_num182_frame_840",
+    "map": "de_palacio",
+    "x": 578,
+    "y": 459,
+    "z": 120
+  },
+  {
+    "angle_h": 5.74572877284906,
+    "angle_v": 1.5980604384545827,
+    "file_frame": "file_num202_frame_32",
+    "map": "de_palacio",
+    "x": 687,
+    "y": 349,
+    "z": 120
+  },
+  {
+    "angle_h": 2.4858217257230795,
+    "angle_v": 1.5371387643062573,
+    "file_frame": "file_num19_frame_379",
+    "map": "de_palacio",
+    "x": 362,
+    "y": 515,
+    "z": 111
+  },
+  {
+    "angle_h": 5.522983843487596,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num182_frame_135",
+    "map": "de_palacio",
+    "x": 228,
+    "y": 423,
+    "z": 144
+  },
+  {
+    "angle_h": 1.2083394366448397,
+    "angle_v": 1.5834996051945744,
+    "file_frame": "file_num65_frame_884",
+    "map": "de_palacio",
+    "x": 583,
+    "y": 587,
+    "z": 108
+  },
+  {
+    "angle_h": 1.4927250936489511,
+    "angle_v": 1.5976050379081792,
+    "file_frame": "file_num181_frame_528",
+    "map": "de_palacio",
+    "x": 271,
+    "y": 539,
+    "z": 120
+  },
+  {
+    "angle_h": 0.510432107168947,
+    "angle_v": 1.594567170052726,
+    "file_frame": "file_num161_frame_167",
+    "map": "de_palacio",
+    "x": 353,
+    "y": 316,
+    "z": 134
+  },
+  {
+    "angle_h": 2.966730827995735,
+    "angle_v": 1.6045737315325894,
+    "file_frame": "file_num94_frame_222",
+    "map": "de_palacio",
+    "x": 737,
+    "y": 268,
+    "z": 116
+  },
+  {
+    "angle_h": 2.2682662320617437,
+    "angle_v": 1.550315286431642,
+    "file_frame": "file_num11_frame_333",
+    "map": "de_palacio",
+    "x": 142,
+    "y": 629,
+    "z": 107
+  },
+  {
+    "angle_h": 4.840662264817228,
+    "angle_v": 1.5600163833344738,
+    "file_frame": "file_num11_frame_444",
+    "map": "de_palacio",
+    "x": 243,
+    "y": 520,
+    "z": 122
+  },
+  {
+    "angle_h": 0.8267618488163411,
+    "angle_v": 1.591415052586508,
+    "file_frame": "file_num88_frame_60",
+    "map": "de_palacio",
+    "x": 198,
+    "y": 416,
+    "z": 144
+  },
+  {
+    "angle_h": 4.02718479615042,
+    "angle_v": 1.5960590728953883,
+    "file_frame": "file_num94_frame_277",
+    "map": "de_palacio",
+    "x": 596,
+    "y": 267,
+    "z": 124
+  },
+  {
+    "angle_h": 3.153049572599314,
+    "angle_v": 1.537102545315432,
+    "file_frame": "file_num1_frame_735",
+    "map": "de_palacio",
+    "x": 688,
+    "y": 460,
+    "z": 107
+  }
+]

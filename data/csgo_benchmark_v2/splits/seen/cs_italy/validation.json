@@ -1,0 +1,4502 @@
+[
+  {
+    "angle_h": 6.263908814577374,
+    "angle_v": 1.5143804548948758,
+    "file_frame": "file_num7_frame_733",
+    "map": "cs_italy",
+    "x": 433,
+    "y": 144,
+    "z": 13
+  },
+  {
+    "angle_h": 5.248599155325059,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num32_frame_155",
+    "map": "cs_italy",
+    "x": 755,
+    "y": 126,
+    "z": 13
+  },
+  {
+    "angle_h": 2.770680892769007,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num128_frame_973",
+    "map": "cs_italy",
+    "x": 294,
+    "y": 295,
+    "z": 14
+  },
+  {
+    "angle_h": 1.3604611954809833,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num114_frame_766",
+    "map": "cs_italy",
+    "x": 719,
+    "y": 52,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1483277879866036,
+    "angle_v": 1.562976753202206,
+    "file_frame": "file_num141_frame_494",
+    "map": "cs_italy",
+    "x": 602,
+    "y": 34,
+    "z": 11
+  },
+  {
+    "angle_h": 6.065635672472649,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num32_frame_25",
+    "map": "cs_italy",
+    "x": 756,
+    "y": 583,
+    "z": -19
+  },
+  {
+    "angle_h": 5.131711150868718,
+    "angle_v": 1.5596328881375023,
+    "file_frame": "file_num212_frame_741",
+    "map": "cs_italy",
+    "x": 550,
+    "y": 142,
+    "z": -20
+  },
+  {
+    "angle_h": 3.7612367360051455,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num141_frame_484",
+    "map": "cs_italy",
+    "x": 627,
+    "y": 44,
+    "z": 13
+  },
+  {
+    "angle_h": 0.18060226932372353,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_721",
+    "map": "cs_italy",
+    "x": 530,
+    "y": 80,
+    "z": 15
+  },
+  {
+    "angle_h": 1.4638131510647785,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num114_frame_65",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 85,
+    "z": 13
+  },
+  {
+    "angle_h": 1.591445146306826,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num110_frame_722",
+    "map": "cs_italy",
+    "x": 369,
+    "y": 689,
+    "z": -20
+  },
+  {
+    "angle_h": 5.343849774872833,
+    "angle_v": 1.6479747351853928,
+    "file_frame": "file_num81_frame_5",
+    "map": "cs_italy",
+    "x": 745,
+    "y": 150,
+    "z": 13
+  },
+  {
+    "angle_h": 4.930627574865631,
+    "angle_v": 1.6162285234111033,
+    "file_frame": "file_num123_frame_862",
+    "map": "cs_italy",
+    "x": 636,
+    "y": 553,
+    "z": -20
+  },
+  {
+    "angle_h": 5.371970891771306,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_384",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 54,
+    "z": 13
+  },
+  {
+    "angle_h": 2.2053310749712636,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num81_frame_146",
+    "map": "cs_italy",
+    "x": 698,
+    "y": 87,
+    "z": 41
+  },
+  {
+    "angle_h": 3.297807291547225,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num128_frame_290",
+    "map": "cs_italy",
+    "x": 717,
+    "y": 149,
+    "z": 13
+  },
+  {
+    "angle_h": 1.934751245058123,
+    "angle_v": 1.6330605004487313,
+    "file_frame": "file_num141_frame_45",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 18,
+    "z": 23
+  },
+  {
+    "angle_h": 1.467228655162805,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num128_frame_998",
+    "map": "cs_italy",
+    "x": 266,
+    "y": 349,
+    "z": 14
+  },
+  {
+    "angle_h": 1.765911492479007,
+    "angle_v": 1.427500949601548,
+    "file_frame": "file_num123_frame_346",
+    "map": "cs_italy",
+    "x": 739,
+    "y": 176,
+    "z": 14
+  },
+  {
+    "angle_h": 2.443355757929003,
+    "angle_v": 1.3090009337373822,
+    "file_frame": "file_num32_frame_926",
+    "map": "cs_italy",
+    "x": 759,
+    "y": 17,
+    "z": 41
+  },
+  {
+    "angle_h": 1.0684775398868758,
+    "angle_v": 1.5599327600762454,
+    "file_frame": "file_num100_frame_75",
+    "map": "cs_italy",
+    "x": 737,
+    "y": 83,
+    "z": 13
+  },
+  {
+    "angle_h": 5.48828365343219,
+    "angle_v": 1.4219463945159698,
+    "file_frame": "file_num129_frame_664",
+    "map": "cs_italy",
+    "x": 708,
+    "y": 44,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6973077970082933,
+    "angle_v": 1.3565423539369317,
+    "file_frame": "file_num100_frame_420",
+    "map": "cs_italy",
+    "x": 480,
+    "y": 239,
+    "z": -18
+  },
+  {
+    "angle_h": 5.204137680926186,
+    "angle_v": 1.5931828589181027,
+    "file_frame": "file_num73_frame_653",
+    "map": "cs_italy",
+    "x": 732,
+    "y": 162,
+    "z": 14
+  },
+  {
+    "angle_h": 5.098436817260941,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num41_frame_444",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 221,
+    "z": 6
+  },
+  {
+    "angle_h": 5.290496005594186,
+    "angle_v": 1.5030673465842193,
+    "file_frame": "file_num126_frame_671",
+    "map": "cs_italy",
+    "x": 733,
+    "y": 164,
+    "z": 14
+  },
+  {
+    "angle_h": 3.9759162820053056,
+    "angle_v": 1.3995777055720673,
+    "file_frame": "file_num149_frame_538",
+    "map": "cs_italy",
+    "x": 649,
+    "y": 80,
+    "z": 13
+  },
+  {
+    "angle_h": 0.523566817665218,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num190_frame_61",
+    "map": "cs_italy",
+    "x": 671,
+    "y": 104,
+    "z": 13
+  },
+  {
+    "angle_h": 5.278104317042047,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num128_frame_175",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 489,
+    "z": -20
+  },
+  {
+    "angle_h": 2.3967131545973555,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_973",
+    "map": "cs_italy",
+    "x": 706,
+    "y": 63,
+    "z": 41
+  },
+  {
+    "angle_h": 1.6389625980565647,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num200_frame_678",
+    "map": "cs_italy",
+    "x": 730,
+    "y": 418,
+    "z": -17
+  },
+  {
+    "angle_h": 2.4628540918500184,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_895",
+    "map": "cs_italy",
+    "x": 554,
+    "y": 29,
+    "z": 0
+  },
+  {
+    "angle_h": 4.783185922171138,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_564",
+    "map": "cs_italy",
+    "x": 412,
+    "y": 224,
+    "z": 14
+  },
+  {
+    "angle_h": 1.5527360998625241,
+    "angle_v": 1.6503356274917482,
+    "file_frame": "file_num126_frame_125",
+    "map": "cs_italy",
+    "x": 646,
+    "y": 487,
+    "z": -20
+  },
+  {
+    "angle_h": 0.6495449898703262,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num213_frame_831",
+    "map": "cs_italy",
+    "x": 286,
+    "y": 521,
+    "z": -20
+  },
+  {
+    "angle_h": 1.566092518519544,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num41_frame_982",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 42,
+    "z": 13
+  },
+  {
+    "angle_h": 4.644264787068244,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_586",
+    "map": "cs_italy",
+    "x": 737,
+    "y": 412,
+    "z": -16
+  },
+  {
+    "angle_h": 0.7493016779825142,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num7_frame_56",
+    "map": "cs_italy",
+    "x": 408,
+    "y": 237,
+    "z": 13
+  },
+  {
+    "angle_h": 4.011431665670384,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num73_frame_860",
+    "map": "cs_italy",
+    "x": 638,
+    "y": 63,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0315301745036616,
+    "angle_v": 1.560322114227615,
+    "file_frame": "file_num114_frame_70",
+    "map": "cs_italy",
+    "x": 735,
+    "y": 93,
+    "z": 13
+  },
+  {
+    "angle_h": 0.964508396720455,
+    "angle_v": 1.6192546733577604,
+    "file_frame": "file_num190_frame_771",
+    "map": "cs_italy",
+    "x": 739,
+    "y": 85,
+    "z": 13
+  },
+  {
+    "angle_h": 3.2866076338990062,
+    "angle_v": 1.5705987202420129,
+    "file_frame": "file_num40_frame_394",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 124,
+    "z": 13
+  },
+  {
+    "angle_h": 6.228057872614946,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num7_frame_945",
+    "map": "cs_italy",
+    "x": 770,
+    "y": 36,
+    "z": 41
+  },
+  {
+    "angle_h": 0.5435863322115616,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num40_frame_822",
+    "map": "cs_italy",
+    "x": 663,
+    "y": 101,
+    "z": 13
+  },
+  {
+    "angle_h": 2.734284801731439,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_941",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 492,
+    "z": -20
+  },
+  {
+    "angle_h": 1.545809217867228,
+    "angle_v": 1.5360479335237607,
+    "file_frame": "file_num40_frame_344",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 41,
+    "z": 15
+  },
+  {
+    "angle_h": 2.310954041174624,
+    "angle_v": 1.631544362840149,
+    "file_frame": "file_num128_frame_752",
+    "map": "cs_italy",
+    "x": 761,
+    "y": 94,
+    "z": 14
+  },
+  {
+    "angle_h": 2.919992350864845,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num40_frame_430",
+    "map": "cs_italy",
+    "x": 575,
+    "y": 144,
+    "z": 14
+  },
+  {
+    "angle_h": 6.158088108663076,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_675",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 109,
+    "z": 13
+  },
+  {
+    "angle_h": 0.7468089592022001,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num7_frame_231",
+    "map": "cs_italy",
+    "x": 615,
+    "y": 401,
+    "z": -20
+  },
+  {
+    "angle_h": 0.813651106769881,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num40_frame_304",
+    "map": "cs_italy",
+    "x": 768,
+    "y": 20,
+    "z": 41
+  },
+  {
+    "angle_h": 1.7576663457441215,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num126_frame_831",
+    "map": "cs_italy",
+    "x": 740,
+    "y": 173,
+    "z": 14
+  },
+  {
+    "angle_h": 1.6616487358024048,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num73_frame_70",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 407,
+    "z": -15
+  },
+  {
+    "angle_h": 0.3152450361354046,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num32_frame_551",
+    "map": "cs_italy",
+    "x": 491,
+    "y": 130,
+    "z": 14
+  },
+  {
+    "angle_h": 1.7205212406499688,
+    "angle_v": 1.6026983334929557,
+    "file_frame": "file_num26_frame_125",
+    "map": "cs_italy",
+    "x": 774,
+    "y": 110,
+    "z": 13
+  },
+  {
+    "angle_h": 4.061561412133381,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num41_frame_590",
+    "map": "cs_italy",
+    "x": 667,
+    "y": 151,
+    "z": 13
+  },
+  {
+    "angle_h": 4.431442529612307,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num81_frame_336",
+    "map": "cs_italy",
+    "x": 619,
+    "y": 67,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1558299127773566,
+    "angle_v": 1.3862690906566142,
+    "file_frame": "file_num184_frame_934",
+    "map": "cs_italy",
+    "x": 718,
+    "y": 90,
+    "z": 41
+  },
+  {
+    "angle_h": 6.150855495774639,
+    "angle_v": 1.3988408088984423,
+    "file_frame": "file_num212_frame_329",
+    "map": "cs_italy",
+    "x": 715,
+    "y": 110,
+    "z": 13
+  },
+  {
+    "angle_h": 4.912339647660057,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num41_frame_520",
+    "map": "cs_italy",
+    "x": 701,
+    "y": 19,
+    "z": 13
+  },
+  {
+    "angle_h": 3.302354905424645,
+    "angle_v": 1.4833173439401917,
+    "file_frame": "file_num71_frame_363",
+    "map": "cs_italy",
+    "x": 582,
+    "y": 657,
+    "z": -20
+  },
+  {
+    "angle_h": 0.752015971765523,
+    "angle_v": 1.5717609237417232,
+    "file_frame": "file_num110_frame_90",
+    "map": "cs_italy",
+    "x": 638,
+    "y": 51,
+    "z": 13
+  },
+  {
+    "angle_h": 0.767913179260533,
+    "angle_v": 1.6382435445622434,
+    "file_frame": "file_num40_frame_132",
+    "map": "cs_italy",
+    "x": 724,
+    "y": 87,
+    "z": 41
+  },
+  {
+    "angle_h": 2.4908612254538367,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num26_frame_804",
+    "map": "cs_italy",
+    "x": 401,
+    "y": 250,
+    "z": 13
+  },
+  {
+    "angle_h": 4.838211623982137,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num81_frame_321",
+    "map": "cs_italy",
+    "x": 638,
+    "y": 109,
+    "z": 13
+  },
+  {
+    "angle_h": 3.7043420277411285,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num200_frame_68",
+    "map": "cs_italy",
+    "x": 621,
+    "y": 395,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5933146853920614,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num81_frame_856",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 417,
+    "z": -16
+  },
+  {
+    "angle_h": 4.552513561192835,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num129_frame_644",
+    "map": "cs_italy",
+    "x": 698,
+    "y": 19,
+    "z": 13
+  },
+  {
+    "angle_h": 2.030762862887387,
+    "angle_v": 1.326036376282292,
+    "file_frame": "file_num200_frame_586",
+    "map": "cs_italy",
+    "x": 777,
+    "y": 102,
+    "z": 14
+  },
+  {
+    "angle_h": 2.5897430651479336,
+    "angle_v": 1.3465594945907697,
+    "file_frame": "file_num26_frame_293",
+    "map": "cs_italy",
+    "x": 586,
+    "y": 661,
+    "z": -20
+  },
+  {
+    "angle_h": 2.0637614261642865,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num81_frame_947",
+    "map": "cs_italy",
+    "x": 625,
+    "y": 611,
+    "z": -19
+  },
+  {
+    "angle_h": 4.613153739213939,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_603",
+    "map": "cs_italy",
+    "x": 736,
+    "y": 322,
+    "z": -5
+  },
+  {
+    "angle_h": 5.85619323275613,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_728",
+    "map": "cs_italy",
+    "x": 415,
+    "y": 155,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8886659081845742,
+    "angle_v": 1.5516396764417386,
+    "file_frame": "file_num213_frame_705",
+    "map": "cs_italy",
+    "x": 401,
+    "y": 216,
+    "z": 13
+  },
+  {
+    "angle_h": 5.157291345771147,
+    "angle_v": 1.6560041658719817,
+    "file_frame": "file_num7_frame_562",
+    "map": "cs_italy",
+    "x": 261,
+    "y": 474,
+    "z": -13
+  },
+  {
+    "angle_h": 2.972297633622328,
+    "angle_v": 1.6445893248076842,
+    "file_frame": "file_num129_frame_950",
+    "map": "cs_italy",
+    "x": 509,
+    "y": 159,
+    "z": 13
+  },
+  {
+    "angle_h": 2.388192370689647,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num110_frame_511",
+    "map": "cs_italy",
+    "x": 386,
+    "y": 238,
+    "z": 13
+  },
+  {
+    "angle_h": 1.700405719146328,
+    "angle_v": 1.3989366826976852,
+    "file_frame": "file_num212_frame_941",
+    "map": "cs_italy",
+    "x": 763,
+    "y": 23,
+    "z": 41
+  },
+  {
+    "angle_h": 2.675795658922792,
+    "angle_v": 1.5566549414065758,
+    "file_frame": "file_num184_frame_518",
+    "map": "cs_italy",
+    "x": 605,
+    "y": 27,
+    "z": 12
+  },
+  {
+    "angle_h": 4.403153899881267,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num71_frame_31",
+    "map": "cs_italy",
+    "x": 563,
+    "y": 369,
+    "z": -20
+  },
+  {
+    "angle_h": 4.545838081604442,
+    "angle_v": 1.3991284302961708,
+    "file_frame": "file_num129_frame_437",
+    "map": "cs_italy",
+    "x": 777,
+    "y": 531,
+    "z": -19
+  },
+  {
+    "angle_h": 5.39898333470798,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_661",
+    "map": "cs_italy",
+    "x": 716,
+    "y": 182,
+    "z": 12
+  },
+  {
+    "angle_h": 1.0414710890626548,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num128_frame_737",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 74,
+    "z": 13
+  },
+  {
+    "angle_h": 2.2944757319297584,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num110_frame_371",
+    "map": "cs_italy",
+    "x": 435,
+    "y": 161,
+    "z": 14
+  },
+  {
+    "angle_h": 1.8793122206459434,
+    "angle_v": 1.381247966737379,
+    "file_frame": "file_num7_frame_241",
+    "map": "cs_italy",
+    "x": 649,
+    "y": 432,
+    "z": -20
+  },
+  {
+    "angle_h": 4.548816560967587,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num81_frame_311",
+    "map": "cs_italy",
+    "x": 653,
+    "y": 140,
+    "z": 13
+  },
+  {
+    "angle_h": 2.962111042452775,
+    "angle_v": 1.5977368643821381,
+    "file_frame": "file_num128_frame_366",
+    "map": "cs_italy",
+    "x": 497,
+    "y": 159,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0231172486201012,
+    "angle_v": 1.3390334013502059,
+    "file_frame": "file_num26_frame_915",
+    "map": "cs_italy",
+    "x": 337,
+    "y": 562,
+    "z": -20
+  },
+  {
+    "angle_h": 4.653773870056481,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_583",
+    "map": "cs_italy",
+    "x": 733,
+    "y": 385,
+    "z": -13
+  },
+  {
+    "angle_h": 3.814782252882279,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_821",
+    "map": "cs_italy",
+    "x": 671,
+    "y": 106,
+    "z": 13
+  },
+  {
+    "angle_h": 5.137948806773902,
+    "angle_v": 1.4802315391851169,
+    "file_frame": "file_num213_frame_111",
+    "map": "cs_italy",
+    "x": 753,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 1.667083581796984,
+    "angle_v": 1.5645046087195844,
+    "file_frame": "file_num40_frame_501",
+    "map": "cs_italy",
+    "x": 446,
+    "y": 251,
+    "z": 12
+  },
+  {
+    "angle_h": 1.6048794624257305,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num110_frame_617",
+    "map": "cs_italy",
+    "x": 247,
+    "y": 434,
+    "z": 15
+  },
+  {
+    "angle_h": 0.9056659855932088,
+    "angle_v": 1.321392622289521,
+    "file_frame": "file_num212_frame_20",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 80,
+    "z": 13
+  },
+  {
+    "angle_h": 4.619882482024133,
+    "angle_v": 1.4849173711231114,
+    "file_frame": "file_num123_frame_907",
+    "map": "cs_italy",
+    "x": 643,
+    "y": 424,
+    "z": -19
+  },
+  {
+    "angle_h": 4.73329532757403,
+    "angle_v": 1.5592616434815454,
+    "file_frame": "file_num41_frame_600",
+    "map": "cs_italy",
+    "x": 657,
+    "y": 122,
+    "z": 13
+  },
+  {
+    "angle_h": 6.070249599061211,
+    "angle_v": 1.5714615844351985,
+    "file_frame": "file_num7_frame_608",
+    "map": "cs_italy",
+    "x": 282,
+    "y": 276,
+    "z": 15
+  },
+  {
+    "angle_h": 1.671403894875365,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num213_frame_453",
+    "map": "cs_italy",
+    "x": 555,
+    "y": 131,
+    "z": -20
+  },
+  {
+    "angle_h": 6.1049138364419,
+    "angle_v": 1.6580473430602904,
+    "file_frame": "file_num7_frame_783",
+    "map": "cs_italy",
+    "x": 618,
+    "y": 112,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0240640023876244,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_630",
+    "map": "cs_italy",
+    "x": 432,
+    "y": 235,
+    "z": 15
+  },
+  {
+    "angle_h": 4.781537958088597,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num40_frame_879",
+    "map": "cs_italy",
+    "x": 714,
+    "y": 55,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6438701381553082,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num190_frame_504",
+    "map": "cs_italy",
+    "x": 445,
+    "y": 252,
+    "z": 12
+  },
+  {
+    "angle_h": 6.089628090733172,
+    "angle_v": 1.3909791573605286,
+    "file_frame": "file_num149_frame_253",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 44,
+    "z": 14
+  },
+  {
+    "angle_h": 2.913089437319359,
+    "angle_v": 1.3095460828125214,
+    "file_frame": "file_num212_frame_490",
+    "map": "cs_italy",
+    "x": 766,
+    "y": 92,
+    "z": 14
+  },
+  {
+    "angle_h": 2.471039317460377,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num41_frame_962",
+    "map": "cs_italy",
+    "x": 763,
+    "y": 22,
+    "z": 41
+  },
+  {
+    "angle_h": 1.1694925716141265,
+    "angle_v": 1.396276184768696,
+    "file_frame": "file_num213_frame_811",
+    "map": "cs_italy",
+    "x": 254,
+    "y": 475,
+    "z": -13
+  },
+  {
+    "angle_h": 2.0185749061586393,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num110_frame_566",
+    "map": "cs_italy",
+    "x": 263,
+    "y": 280,
+    "z": 14
+  },
+  {
+    "angle_h": 3.4682346876101917,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num7_frame_532",
+    "map": "cs_italy",
+    "x": 309,
+    "y": 546,
+    "z": -20
+  },
+  {
+    "angle_h": 3.555749356823504,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num213_frame_383",
+    "map": "cs_italy",
+    "x": 673,
+    "y": 108,
+    "z": 13
+  },
+  {
+    "angle_h": 4.612164641185084,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_596",
+    "map": "cs_italy",
+    "x": 735,
+    "y": 382,
+    "z": -12
+  },
+  {
+    "angle_h": 2.559273306484119,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num200_frame_476",
+    "map": "cs_italy",
+    "x": 761,
+    "y": 88,
+    "z": 41
+  },
+  {
+    "angle_h": 1.9130957506541437,
+    "angle_v": 1.640179130042513,
+    "file_frame": "file_num141_frame_934",
+    "map": "cs_italy",
+    "x": 272,
+    "y": 279,
+    "z": 14
+  },
+  {
+    "angle_h": 3.2235706108968305,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num114_frame_110",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 136,
+    "z": 13
+  },
+  {
+    "angle_h": 4.5335662353013575,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num129_frame_447",
+    "map": "cs_italy",
+    "x": 778,
+    "y": 502,
+    "z": -19
+  },
+  {
+    "angle_h": 2.9822264307983612,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_433",
+    "map": "cs_italy",
+    "x": 487,
+    "y": 149,
+    "z": 13
+  },
+  {
+    "angle_h": 4.932533332941691,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_569",
+    "map": "cs_italy",
+    "x": 411,
+    "y": 206,
+    "z": 13
+  },
+  {
+    "angle_h": 1.606359514201542,
+    "angle_v": 1.4944088772481539,
+    "file_frame": "file_num81_frame_386",
+    "map": "cs_italy",
+    "x": 563,
+    "y": 99,
+    "z": -13
+  },
+  {
+    "angle_h": 3.2523151738064917,
+    "angle_v": 1.5727138027797536,
+    "file_frame": "file_num100_frame_855",
+    "map": "cs_italy",
+    "x": 752,
+    "y": 117,
+    "z": 13
+  },
+  {
+    "angle_h": 5.247808196481305,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num200_frame_193",
+    "map": "cs_italy",
+    "x": 502,
+    "y": 222,
+    "z": -19
+  },
+  {
+    "angle_h": 6.214605713316738,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num100_frame_390",
+    "map": "cs_italy",
+    "x": 485,
+    "y": 243,
+    "z": -21
+  },
+  {
+    "angle_h": 4.8482842318570345,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num114_frame_857",
+    "map": "cs_italy",
+    "x": 648,
+    "y": 132,
+    "z": 13
+  },
+  {
+    "angle_h": 5.760175622814413,
+    "angle_v": 1.311541589417318,
+    "file_frame": "file_num212_frame_284",
+    "map": "cs_italy",
+    "x": 593,
+    "y": 31,
+    "z": 7
+  },
+  {
+    "angle_h": 1.0134519712339312,
+    "angle_v": 1.5462467752343283,
+    "file_frame": "file_num26_frame_890",
+    "map": "cs_italy",
+    "x": 253,
+    "y": 485,
+    "z": -15
+  },
+  {
+    "angle_h": 4.342310256352881,
+    "angle_v": 1.5032772036781177,
+    "file_frame": "file_num141_frame_449",
+    "map": "cs_italy",
+    "x": 661,
+    "y": 152,
+    "z": 13
+  },
+  {
+    "angle_h": 5.396022964840248,
+    "angle_v": 1.4966499273054554,
+    "file_frame": "file_num73_frame_417",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 695,
+    "z": -21
+  },
+  {
+    "angle_h": 6.145540358871059,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_197",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 1.806400196321754,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num32_frame_456",
+    "map": "cs_italy",
+    "x": 451,
+    "y": 265,
+    "z": 11
+  },
+  {
+    "angle_h": 0.17297444332951858,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num100_frame_575",
+    "map": "cs_italy",
+    "x": 616,
+    "y": 109,
+    "z": 13
+  },
+  {
+    "angle_h": 1.79189329207382,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num141_frame_580",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 232,
+    "z": -19
+  },
+  {
+    "angle_h": 4.283479429976376,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num141_frame_237",
+    "map": "cs_italy",
+    "x": 767,
+    "y": 115,
+    "z": 13
+  },
+  {
+    "angle_h": 1.1689293130435747,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num41_frame_997",
+    "map": "cs_italy",
+    "x": 743,
+    "y": 92,
+    "z": 13
+  },
+  {
+    "angle_h": 6.0023349965225545,
+    "angle_v": 1.4836470432831437,
+    "file_frame": "file_num126_frame_546",
+    "map": "cs_italy",
+    "x": 678,
+    "y": 491,
+    "z": -20
+  },
+  {
+    "angle_h": 2.4280817301290716,
+    "angle_v": 1.633294059676331,
+    "file_frame": "file_num100_frame_770",
+    "map": "cs_italy",
+    "x": 763,
+    "y": 24,
+    "z": 41
+  },
+  {
+    "angle_h": 1.2861829695175833,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num41_frame_550",
+    "map": "cs_italy",
+    "x": 771,
+    "y": 93,
+    "z": 14
+  },
+  {
+    "angle_h": 0.6026328746363624,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num40_frame_752",
+    "map": "cs_italy",
+    "x": 568,
+    "y": 75,
+    "z": -7
+  },
+  {
+    "angle_h": 1.6225561941611315,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num123_frame_371",
+    "map": "cs_italy",
+    "x": 727,
+    "y": 249,
+    "z": 3
+  },
+  {
+    "angle_h": 6.143425276333318,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_813",
+    "map": "cs_italy",
+    "x": 757,
+    "y": 109,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8593704704034302,
+    "angle_v": 1.5733489666997376,
+    "file_frame": "file_num190_frame_458",
+    "map": "cs_italy",
+    "x": 394,
+    "y": 154,
+    "z": 13
+  },
+  {
+    "angle_h": 2.0260051255999607,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num73_frame_940",
+    "map": "cs_italy",
+    "x": 547,
+    "y": 160,
+    "z": -20
+  },
+  {
+    "angle_h": 2.5592850243929153,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num110_frame_834",
+    "map": "cs_italy",
+    "x": 417,
+    "y": 973,
+    "z": -38
+  },
+  {
+    "angle_h": 5.629751569485526,
+    "angle_v": 1.3855622877033074,
+    "file_frame": "file_num184_frame_195",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 228,
+    "z": -19
+  },
+  {
+    "angle_h": 2.7121739067810564,
+    "angle_v": 1.3146574878927106,
+    "file_frame": "file_num126_frame_957",
+    "map": "cs_italy",
+    "x": 670,
+    "y": 501,
+    "z": -19
+  },
+  {
+    "angle_h": 1.652798385709799,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num141_frame_984",
+    "map": "cs_italy",
+    "x": 248,
+    "y": 437,
+    "z": 15
+  },
+  {
+    "angle_h": 1.8652846853942235,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num114_frame_937",
+    "map": "cs_italy",
+    "x": 557,
+    "y": 117,
+    "z": -17
+  },
+  {
+    "angle_h": 1.3132014045667098,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num141_frame_810",
+    "map": "cs_italy",
+    "x": 500,
+    "y": 257,
+    "z": -19
+  },
+  {
+    "angle_h": 5.381989703792184,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num81_frame_491",
+    "map": "cs_italy",
+    "x": 528,
+    "y": 181,
+    "z": -19
+  },
+  {
+    "angle_h": 2.413664973884037,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num100_frame_260",
+    "map": "cs_italy",
+    "x": 510,
+    "y": 190,
+    "z": -19
+  },
+  {
+    "angle_h": 3.7891301526304177,
+    "angle_v": 1.432474402937271,
+    "file_frame": "file_num213_frame_282",
+    "map": "cs_italy",
+    "x": 758,
+    "y": 34,
+    "z": 41
+  },
+  {
+    "angle_h": 0.6161928919587188,
+    "angle_v": 1.380882314719711,
+    "file_frame": "file_num40_frame_762",
+    "map": "cs_italy",
+    "x": 568,
+    "y": 72,
+    "z": -6
+  },
+  {
+    "angle_h": 5.104752503786064,
+    "angle_v": 1.6548478213266695,
+    "file_frame": "file_num128_frame_120",
+    "map": "cs_italy",
+    "x": 626,
+    "y": 591,
+    "z": -19
+  },
+  {
+    "angle_h": 4.902416709438422,
+    "angle_v": 1.4830478320378757,
+    "file_frame": "file_num129_frame_422",
+    "map": "cs_italy",
+    "x": 779,
+    "y": 574,
+    "z": -19
+  },
+  {
+    "angle_h": 1.5275692275612753,
+    "angle_v": 1.6445413879080628,
+    "file_frame": "file_num110_frame_396",
+    "map": "cs_italy",
+    "x": 412,
+    "y": 201,
+    "z": 13
+  },
+  {
+    "angle_h": 0.021397966726568664,
+    "angle_v": 1.3856040993324215,
+    "file_frame": "file_num200_frame_361",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 35,
+    "z": 17
+  },
+  {
+    "angle_h": 3.8062739858316936,
+    "angle_v": 1.389151429904407,
+    "file_frame": "file_num184_frame_350",
+    "map": "cs_italy",
+    "x": 759,
+    "y": 89,
+    "z": 14
+  },
+  {
+    "angle_h": 1.6957378635456914,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num40_frame_999",
+    "map": "cs_italy",
+    "x": 730,
+    "y": 319,
+    "z": -4
+  },
+  {
+    "angle_h": 1.7359149775408993,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num126_frame_836",
+    "map": "cs_italy",
+    "x": 737,
+    "y": 188,
+    "z": 10
+  },
+  {
+    "angle_h": 1.6327907222303062,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num126_frame_861",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 264,
+    "z": 2
+  },
+  {
+    "angle_h": 2.328474977986255,
+    "angle_v": 1.600594968864011,
+    "file_frame": "file_num26_frame_834",
+    "map": "cs_italy",
+    "x": 278,
+    "y": 277,
+    "z": 14
+  },
+  {
+    "angle_h": 2.9755032806264565,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num26_frame_784",
+    "map": "cs_italy",
+    "x": 446,
+    "y": 252,
+    "z": 12
+  },
+  {
+    "angle_h": 3.979068399471523,
+    "angle_v": 1.309971655954716,
+    "file_frame": "file_num123_frame_932",
+    "map": "cs_italy",
+    "x": 585,
+    "y": 397,
+    "z": -20
+  },
+  {
+    "angle_h": 3.0064287061527835,
+    "angle_v": 1.621663236247628,
+    "file_frame": "file_num190_frame_428",
+    "map": "cs_italy",
+    "x": 508,
+    "y": 146,
+    "z": 13
+  },
+  {
+    "angle_h": 5.850668771390869,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_348",
+    "map": "cs_italy",
+    "x": 732,
+    "y": 47,
+    "z": 41
+  },
+  {
+    "angle_h": 0.1768333637490434,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num128_frame_586",
+    "map": "cs_italy",
+    "x": 574,
+    "y": 129,
+    "z": 14
+  },
+  {
+    "angle_h": 1.714912623394262,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num73_frame_237",
+    "map": "cs_italy",
+    "x": 492,
+    "y": 746,
+    "z": -25
+  },
+  {
+    "angle_h": 3.1021765378760753,
+    "angle_v": 1.3090368864120983,
+    "file_frame": "file_num213_frame_413",
+    "map": "cs_italy",
+    "x": 610,
+    "y": 24,
+    "z": 13
+  },
+  {
+    "angle_h": 4.625862876568015,
+    "angle_v": 1.4653649750319675,
+    "file_frame": "file_num110_frame_961",
+    "map": "cs_italy",
+    "x": 352,
+    "y": 601,
+    "z": -20
+  },
+  {
+    "angle_h": 2.7071586418162195,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num26_frame_794",
+    "map": "cs_italy",
+    "x": 428,
+    "y": 237,
+    "z": 15
+  },
+  {
+    "angle_h": 5.522234962589065,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num41_frame_464",
+    "map": "cs_italy",
+    "x": 748,
+    "y": 141,
+    "z": 13
+  },
+  {
+    "angle_h": 0.015981097069347493,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num190_frame_600",
+    "map": "cs_italy",
+    "x": 476,
+    "y": 148,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6779233132238789,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num26_frame_885",
+    "map": "cs_italy",
+    "x": 252,
+    "y": 463,
+    "z": -10
+  },
+  {
+    "angle_h": 1.8463076652565915,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num41_frame_881",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 18,
+    "z": 23
+  },
+  {
+    "angle_h": 1.2394504844991454,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num126_frame_801",
+    "map": "cs_italy",
+    "x": 778,
+    "y": 101,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0564753386441612,
+    "angle_v": 1.6346123244159203,
+    "file_frame": "file_num128_frame_742",
+    "map": "cs_italy",
+    "x": 729,
+    "y": 83,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6654776956596662,
+    "angle_v": 1.3090009337373822,
+    "file_frame": "file_num71_frame_177",
+    "map": "cs_italy",
+    "x": 542,
+    "y": 186,
+    "z": -20
+  },
+  {
+    "angle_h": 4.481009283820861,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num100_frame_455",
+    "map": "cs_italy",
+    "x": 448,
+    "y": 275,
+    "z": 4
+  },
+  {
+    "angle_h": 1.826515717825395,
+    "angle_v": 1.4524699490338038,
+    "file_frame": "file_num40_frame_949",
+    "map": "cs_italy",
+    "x": 767,
+    "y": 115,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8211228166179847,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num129_frame_15",
+    "map": "cs_italy",
+    "x": 270,
+    "y": 403,
+    "z": 5
+  },
+  {
+    "angle_h": 4.673757698244218,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_563",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 450,
+    "z": -20
+  },
+  {
+    "angle_h": 2.3157597153616716,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num213_frame_237",
+    "map": "cs_italy",
+    "x": 706,
+    "y": 63,
+    "z": 41
+  },
+  {
+    "angle_h": 5.037161475319853,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num190_frame_1",
+    "map": "cs_italy",
+    "x": 564,
+    "y": 86,
+    "z": -11
+  },
+  {
+    "angle_h": 2.8958561219054566,
+    "angle_v": 1.3146273941723925,
+    "file_frame": "file_num71_frame_378",
+    "map": "cs_italy",
+    "x": 541,
+    "y": 668,
+    "z": -20
+  },
+  {
+    "angle_h": 0.5834999264169061,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num32_frame_962",
+    "map": "cs_italy",
+    "x": 713,
+    "y": 82,
+    "z": 41
+  },
+  {
+    "angle_h": 1.3371219174778015,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num129_frame_834",
+    "map": "cs_italy",
+    "x": 725,
+    "y": 83,
+    "z": 13
+  },
+  {
+    "angle_h": 4.814722543167639,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_390",
+    "map": "cs_italy",
+    "x": 471,
+    "y": 825,
+    "z": -36
+  },
+  {
+    "angle_h": 3.3608677503669933,
+    "angle_v": 1.462548948495318,
+    "file_frame": "file_num7_frame_975",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 22,
+    "z": 23
+  },
+  {
+    "angle_h": 4.369005250487617,
+    "angle_v": 1.466455805814464,
+    "file_frame": "file_num123_frame_942",
+    "map": "cs_italy",
+    "x": 562,
+    "y": 386,
+    "z": -20
+  },
+  {
+    "angle_h": 2.977888141382622,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num123_frame_220",
+    "map": "cs_italy",
+    "x": 560,
+    "y": 150,
+    "z": 14
+  },
+  {
+    "angle_h": 1.8483569677154075,
+    "angle_v": 1.3179590086960817,
+    "file_frame": "file_num184_frame_421",
+    "map": "cs_italy",
+    "x": 746,
+    "y": 94,
+    "z": 13
+  },
+  {
+    "angle_h": 3.091846136007658,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num73_frame_785",
+    "map": "cs_italy",
+    "x": 774,
+    "y": 102,
+    "z": 14
+  },
+  {
+    "angle_h": 3.287890212279988,
+    "angle_v": 1.4077448216870132,
+    "file_frame": "file_num200_frame_132",
+    "map": "cs_italy",
+    "x": 540,
+    "y": 210,
+    "z": -20
+  },
+  {
+    "angle_h": 4.929249655317624,
+    "angle_v": 1.6296868079798188,
+    "file_frame": "file_num7_frame_583",
+    "map": "cs_italy",
+    "x": 265,
+    "y": 379,
+    "z": 11
+  },
+  {
+    "angle_h": 6.095009007715677,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num213_frame_983",
+    "map": "cs_italy",
+    "x": 435,
+    "y": 911,
+    "z": -38
+  },
+  {
+    "angle_h": 4.715438832465049,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num128_frame_225",
+    "map": "cs_italy",
+    "x": 733,
+    "y": 327,
+    "z": -5
+  },
+  {
+    "angle_h": 0.0023190806772410005,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num71_frame_696",
+    "map": "cs_italy",
+    "x": 677,
+    "y": 493,
+    "z": -20
+  },
+  {
+    "angle_h": 3.534243798388896,
+    "angle_v": 1.6489036457736126,
+    "file_frame": "file_num190_frame_248",
+    "map": "cs_italy",
+    "x": 754,
+    "y": 78,
+    "z": 41
+  },
+  {
+    "angle_h": 1.8072091315028656,
+    "angle_v": 1.6502397536925053,
+    "file_frame": "file_num200_frame_683",
+    "map": "cs_italy",
+    "x": 738,
+    "y": 431,
+    "z": -18
+  },
+  {
+    "angle_h": 2.9459680251891505,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num184_frame_10",
+    "map": "cs_italy",
+    "x": 679,
+    "y": 128,
+    "z": 13
+  },
+  {
+    "angle_h": 1.375998743070778,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num32_frame_435",
+    "map": "cs_italy",
+    "x": 400,
+    "y": 218,
+    "z": 13
+  },
+  {
+    "angle_h": 2.7246316417282292,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num213_frame_222",
+    "map": "cs_italy",
+    "x": 751,
+    "y": 37,
+    "z": 41
+  },
+  {
+    "angle_h": 0.2065542415143277,
+    "angle_v": 1.6275536159466653,
+    "file_frame": "file_num212_frame_409",
+    "map": "cs_italy",
+    "x": 762,
+    "y": 20,
+    "z": 41
+  },
+  {
+    "angle_h": 1.9071755435508975,
+    "angle_v": 1.5426515077627212,
+    "file_frame": "file_num73_frame_900",
+    "map": "cs_italy",
+    "x": 549,
+    "y": 42,
+    "z": 0
+  },
+  {
+    "angle_h": 1.3139264501734838,
+    "angle_v": 1.4869427051321167,
+    "file_frame": "file_num190_frame_136",
+    "map": "cs_italy",
+    "x": 728,
+    "y": 20,
+    "z": 25
+  },
+  {
+    "angle_h": 2.0531254265607823,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_993",
+    "map": "cs_italy",
+    "x": 709,
+    "y": 89,
+    "z": 41
+  },
+  {
+    "angle_h": 2.439640648208343,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num128_frame_471",
+    "map": "cs_italy",
+    "x": 439,
+    "y": 294,
+    "z": 1
+  },
+  {
+    "angle_h": 3.3467508660607015,
+    "angle_v": 1.5707904678404985,
+    "file_frame": "file_num40_frame_224",
+    "map": "cs_italy",
+    "x": 764,
+    "y": 24,
+    "z": 41
+  },
+  {
+    "angle_h": 6.123297637446718,
+    "angle_v": 1.6207465762004227,
+    "file_frame": "file_num40_frame_5",
+    "map": "cs_italy",
+    "x": 681,
+    "y": 114,
+    "z": 13
+  },
+  {
+    "angle_h": 2.297274181603214,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num123_frame_631",
+    "map": "cs_italy",
+    "x": 451,
+    "y": 862,
+    "z": -38
+  },
+  {
+    "angle_h": 1.6139455285666329,
+    "angle_v": 1.5917926888290812,
+    "file_frame": "file_num100_frame_90",
+    "map": "cs_italy",
+    "x": 778,
+    "y": 95,
+    "z": 13
+  },
+  {
+    "angle_h": 4.906048195900853,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num7_frame_588",
+    "map": "cs_italy",
+    "x": 265,
+    "y": 357,
+    "z": 14
+  },
+  {
+    "angle_h": 4.453943045030169,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_559",
+    "map": "cs_italy",
+    "x": 420,
+    "y": 235,
+    "z": 15
+  },
+  {
+    "angle_h": 2.0120195351354093,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num200_frame_602",
+    "map": "cs_italy",
+    "x": 758,
+    "y": 152,
+    "z": 13
+  },
+  {
+    "angle_h": 2.901392833811731,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_359",
+    "map": "cs_italy",
+    "x": 683,
+    "y": 125,
+    "z": 13
+  },
+  {
+    "angle_h": 4.525411103411316,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num123_frame_968",
+    "map": "cs_italy",
+    "x": 547,
+    "y": 306,
+    "z": -20
+  },
+  {
+    "angle_h": 5.3654871597814,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num71_frame_816",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 178,
+    "z": 13
+  },
+  {
+    "angle_h": 5.1892471483232265,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_719",
+    "map": "cs_italy",
+    "x": 558,
+    "y": 146,
+    "z": -20
+  },
+  {
+    "angle_h": 3.4915618482304143,
+    "angle_v": 1.4851991335664418,
+    "file_frame": "file_num81_frame_351",
+    "map": "cs_italy",
+    "x": 611,
+    "y": 29,
+    "z": 13
+  },
+  {
+    "angle_h": 5.325537879217448,
+    "angle_v": 1.395035684332937,
+    "file_frame": "file_num149_frame_684",
+    "map": "cs_italy",
+    "x": 501,
+    "y": 224,
+    "z": -19
+  },
+  {
+    "angle_h": 0.6626259045125774,
+    "angle_v": 1.631406677411792,
+    "file_frame": "file_num184_frame_270",
+    "map": "cs_italy",
+    "x": 594,
+    "y": 21,
+    "z": 8
+  },
+  {
+    "angle_h": 5.646385673654161,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num212_frame_227",
+    "map": "cs_italy",
+    "x": 523,
+    "y": 176,
+    "z": -19
+  },
+  {
+    "angle_h": 1.378647256774862,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num129_frame_30",
+    "map": "cs_italy",
+    "x": 271,
+    "y": 451,
+    "z": -6
+  },
+  {
+    "angle_h": 1.9825203655308743,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num73_frame_222",
+    "map": "cs_italy",
+    "x": 501,
+    "y": 701,
+    "z": -21
+  },
+  {
+    "angle_h": 0.30157689447279096,
+    "angle_v": 1.6527923935973463,
+    "file_frame": "file_num71_frame_891",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 22,
+    "z": 23
+  },
+  {
+    "angle_h": 4.121572551505009,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num40_frame_42",
+    "map": "cs_italy",
+    "x": 757,
+    "y": 80,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0348857574771615,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_936",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 88,
+    "z": 41
+  },
+  {
+    "angle_h": 1.7651504941975167,
+    "angle_v": 1.313459065402175,
+    "file_frame": "file_num32_frame_207",
+    "map": "cs_italy",
+    "x": 749,
+    "y": 20,
+    "z": 39
+  },
+  {
+    "angle_h": 6.214605713316738,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num100_frame_385",
+    "map": "cs_italy",
+    "x": 473,
+    "y": 243,
+    "z": -15
+  },
+  {
+    "angle_h": 3.1605516973900674,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_65",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 29,
+    "z": 23
+  },
+  {
+    "angle_h": 0.9183092097103054,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_117",
+    "map": "cs_italy",
+    "x": 499,
+    "y": 258,
+    "z": -19
+  },
+  {
+    "angle_h": 5.981692035965024,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num129_frame_402",
+    "map": "cs_italy",
+    "x": 729,
+    "y": 586,
+    "z": -20
+  },
+  {
+    "angle_h": 2.1313644388554027,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num26_frame_739",
+    "map": "cs_italy",
+    "x": 468,
+    "y": 241,
+    "z": -18
+  },
+  {
+    "angle_h": 4.912040308353531,
+    "angle_v": 1.566206368656145,
+    "file_frame": "file_num126_frame_350",
+    "map": "cs_italy",
+    "x": 440,
+    "y": 943,
+    "z": -38
+  },
+  {
+    "angle_h": 2.210148733383217,
+    "angle_v": 1.4835330599884882,
+    "file_frame": "file_num200_frame_866",
+    "map": "cs_italy",
+    "x": 427,
+    "y": 917,
+    "z": -38
+  },
+  {
+    "angle_h": 1.9666652359810874,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_986",
+    "map": "cs_italy",
+    "x": 501,
+    "y": 251,
+    "z": -19
+  },
+  {
+    "angle_h": 1.9095064752949893,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_578",
+    "map": "cs_italy",
+    "x": 563,
+    "y": 46,
+    "z": 0
+  },
+  {
+    "angle_h": 5.639973847013687,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_243",
+    "map": "cs_italy",
+    "x": 549,
+    "y": 143,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6156113358284774,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_966",
+    "map": "cs_italy",
+    "x": 507,
+    "y": 208,
+    "z": -19
+  },
+  {
+    "angle_h": 1.5989292947602212,
+    "angle_v": 1.5095627964829226,
+    "file_frame": "file_num7_frame_168",
+    "map": "cs_italy",
+    "x": 541,
+    "y": 220,
+    "z": -8
+  },
+  {
+    "angle_h": 4.674746796273074,
+    "angle_v": 1.4403541639705975,
+    "file_frame": "file_num32_frame_186",
+    "map": "cs_italy",
+    "x": 716,
+    "y": 63,
+    "z": 13
+  },
+  {
+    "angle_h": 3.216595792001913,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_829",
+    "map": "cs_italy",
+    "x": 300,
+    "y": 278,
+    "z": 15
+  },
+  {
+    "angle_h": 3.794912940621416,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num73_frame_688",
+    "map": "cs_italy",
+    "x": 766,
+    "y": 91,
+    "z": 14
+  },
+  {
+    "angle_h": 4.337162898597976,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num184_frame_497",
+    "map": "cs_italy",
+    "x": 625,
+    "y": 93,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8652846853942235,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num114_frame_932",
+    "map": "cs_italy",
+    "x": 557,
+    "y": 102,
+    "z": -14
+  },
+  {
+    "angle_h": 0.9696616134297582,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num200_frame_461",
+    "map": "cs_italy",
+    "x": 786,
+    "y": 129,
+    "z": 41
+  },
+  {
+    "angle_h": 1.906720143004494,
+    "angle_v": 1.5484817000211226,
+    "file_frame": "file_num129_frame_799",
+    "map": "cs_italy",
+    "x": 727,
+    "y": 16,
+    "z": 25
+  },
+  {
+    "angle_h": 1.2686740169308575,
+    "angle_v": 1.3090129179622876,
+    "file_frame": "file_num126_frame_100",
+    "map": "cs_italy",
+    "x": 646,
+    "y": 419,
+    "z": -19
+  },
+  {
+    "angle_h": 2.9324737879457192,
+    "angle_v": 1.4844499863518024,
+    "file_frame": "file_num128_frame_873",
+    "map": "cs_italy",
+    "x": 499,
+    "y": 157,
+    "z": 13
+  },
+  {
+    "angle_h": 1.4880752143856728,
+    "angle_v": 1.4520206737579076,
+    "file_frame": "file_num190_frame_998",
+    "map": "cs_italy",
+    "x": 727,
+    "y": 85,
+    "z": 41
+  },
+  {
+    "angle_h": 2.746604584934146,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num123_frame_686",
+    "map": "cs_italy",
+    "x": 417,
+    "y": 971,
+    "z": -38
+  },
+  {
+    "angle_h": 1.6090379884678894,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_35",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 237,
+    "z": -19
+  },
+  {
+    "angle_h": 2.9599118040245873,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num128_frame_325",
+    "map": "cs_italy",
+    "x": 620,
+    "y": 133,
+    "z": 13
+  },
+  {
+    "angle_h": 2.0156747237315433,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num200_frame_754",
+    "map": "cs_italy",
+    "x": 620,
+    "y": 616,
+    "z": -19
+  },
+  {
+    "angle_h": 2.610355931985147,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num100_frame_605",
+    "map": "cs_italy",
+    "x": 644,
+    "y": 127,
+    "z": 13
+  },
+  {
+    "angle_h": 2.9176554270083,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_192",
+    "map": "cs_italy",
+    "x": 561,
+    "y": 664,
+    "z": -20
+  },
+  {
+    "angle_h": 4.570651286112929,
+    "angle_v": 1.5367792375590965,
+    "file_frame": "file_num41_frame_605",
+    "map": "cs_italy",
+    "x": 646,
+    "y": 104,
+    "z": 13
+  },
+  {
+    "angle_h": 5.330942764649763,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_268",
+    "map": "cs_italy",
+    "x": 710,
+    "y": 63,
+    "z": 41
+  },
+  {
+    "angle_h": 0.2827318339671722,
+    "angle_v": 1.5409135288353353,
+    "file_frame": "file_num7_frame_859",
+    "map": "cs_italy",
+    "x": 738,
+    "y": 13,
+    "z": 31
+  },
+  {
+    "angle_h": 6.042739677632911,
+    "angle_v": 1.5901686931963508,
+    "file_frame": "file_num32_frame_0",
+    "map": "cs_italy",
+    "x": 660,
+    "y": 607,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3119370688391947,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num129_frame_187",
+    "map": "cs_italy",
+    "x": 420,
+    "y": 875,
+    "z": -38
+  },
+  {
+    "angle_h": 1.6407422554550102,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num110_frame_627",
+    "map": "cs_italy",
+    "x": 250,
+    "y": 465,
+    "z": 15
+  },
+  {
+    "angle_h": 3.019341575330251,
+    "angle_v": 1.6418926078878697,
+    "file_frame": "file_num213_frame_659",
+    "map": "cs_italy",
+    "x": 520,
+    "y": 159,
+    "z": 14
+  },
+  {
+    "angle_h": 4.268600881598322,
+    "angle_v": 1.587514320537869,
+    "file_frame": "file_num100_frame_470",
+    "map": "cs_italy",
+    "x": 435,
+    "y": 234,
+    "z": 15
+  },
+  {
+    "angle_h": 4.440760397634276,
+    "angle_v": 1.4854984728729665,
+    "file_frame": "file_num81_frame_331",
+    "map": "cs_italy",
+    "x": 624,
+    "y": 83,
+    "z": 13
+  },
+  {
+    "angle_h": 0.7867403965868482,
+    "angle_v": 1.3940710873861104,
+    "file_frame": "file_num126_frame_786",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 82,
+    "z": 13
+  },
+  {
+    "angle_h": 2.177623546990079,
+    "angle_v": 1.4095006437937025,
+    "file_frame": "file_num81_frame_756",
+    "map": "cs_italy",
+    "x": 769,
+    "y": 120,
+    "z": 13
+  },
+  {
+    "angle_h": 0.03925446183554995,
+    "angle_v": 1.5632883430497453,
+    "file_frame": "file_num128_frame_536",
+    "map": "cs_italy",
+    "x": 425,
+    "y": 157,
+    "z": 13
+  },
+  {
+    "angle_h": 4.890139004180939,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num184_frame_255",
+    "map": "cs_italy",
+    "x": 565,
+    "y": 51,
+    "z": -2
+  },
+  {
+    "angle_h": 5.337761788620911,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num190_frame_278",
+    "map": "cs_italy",
+    "x": 738,
+    "y": 46,
+    "z": 41
+  },
+  {
+    "angle_h": 4.783952912565081,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num200_frame_116",
+    "map": "cs_italy",
+    "x": 548,
+    "y": 270,
+    "z": -20
+  },
+  {
+    "angle_h": 3.800173749038758,
+    "angle_v": 1.3243647100660494,
+    "file_frame": "file_num129_frame_614",
+    "map": "cs_italy",
+    "x": 729,
+    "y": 79,
+    "z": 13
+  },
+  {
+    "angle_h": 4.535106607675859,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num7_frame_460",
+    "map": "cs_italy",
+    "x": 407,
+    "y": 822,
+    "z": -36
+  },
+  {
+    "angle_h": 2.686168138736433,
+    "angle_v": 1.3652130738140118,
+    "file_frame": "file_num114_frame_797",
+    "map": "cs_italy",
+    "x": 780,
+    "y": 96,
+    "z": 13
+  },
+  {
+    "angle_h": 2.331860654680073,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num32_frame_299",
+    "map": "cs_italy",
+    "x": 717,
+    "y": 24,
+    "z": 23
+  },
+  {
+    "angle_h": 2.186048457098545,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num100_frame_250",
+    "map": "cs_italy",
+    "x": 536,
+    "y": 178,
+    "z": -20
+  },
+  {
+    "angle_h": 3.031151895816425,
+    "angle_v": 1.649724432021575,
+    "file_frame": "file_num73_frame_96",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 482,
+    "z": -20
+  },
+  {
+    "angle_h": 6.11660458099513,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num212_frame_836",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 110,
+    "z": 13
+  },
+  {
+    "angle_h": 1.271718010056818,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num71_frame_237",
+    "map": "cs_italy",
+    "x": 565,
+    "y": 374,
+    "z": -20
+  },
+  {
+    "angle_h": 0.45851058592454425,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_80",
+    "map": "cs_italy",
+    "x": 583,
+    "y": 397,
+    "z": -20
+  },
+  {
+    "angle_h": 5.996636630738112,
+    "angle_v": 1.4822808416439328,
+    "file_frame": "file_num190_frame_861",
+    "map": "cs_italy",
+    "x": 737,
+    "y": 118,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6184456050185942,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num123_frame_421",
+    "map": "cs_italy",
+    "x": 730,
+    "y": 409,
+    "z": -15
+  },
+  {
+    "angle_h": 1.6741303060413335,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num200_frame_628",
+    "map": "cs_italy",
+    "x": 727,
+    "y": 232,
+    "z": 5
+  },
+  {
+    "angle_h": 1.0348857574771615,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num149_frame_931",
+    "map": "cs_italy",
+    "x": 709,
+    "y": 81,
+    "z": 41
+  },
+  {
+    "angle_h": 1.7417992319694295,
+    "angle_v": 1.5705206896220734,
+    "file_frame": "file_num126_frame_110",
+    "map": "cs_italy",
+    "x": 645,
+    "y": 442,
+    "z": -19
+  },
+  {
+    "angle_h": 2.0615383524443427,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num71_frame_127",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 244,
+    "z": -19
+  },
+  {
+    "angle_h": 5.6344254171986154,
+    "angle_v": 1.390026278322498,
+    "file_frame": "file_num141_frame_780",
+    "map": "cs_italy",
+    "x": 476,
+    "y": 272,
+    "z": -1
+  },
+  {
+    "angle_h": 5.283269517976255,
+    "angle_v": 1.3686884990365653,
+    "file_frame": "file_num129_frame_307",
+    "map": "cs_italy",
+    "x": 501,
+    "y": 706,
+    "z": -21
+  },
+  {
+    "angle_h": 4.05769077380506,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num81_frame_661",
+    "map": "cs_italy",
+    "x": 717,
+    "y": 76,
+    "z": 13
+  },
+  {
+    "angle_h": 1.461715911706341,
+    "angle_v": 1.4108069243083863,
+    "file_frame": "file_num71_frame_283",
+    "map": "cs_italy",
+    "x": 644,
+    "y": 447,
+    "z": -19
+  },
+  {
+    "angle_h": 0.7190534943213943,
+    "angle_v": 1.6575860835594889,
+    "file_frame": "file_num110_frame_652",
+    "map": "cs_italy",
+    "x": 279,
+    "y": 522,
+    "z": -20
+  },
+  {
+    "angle_h": 2.849854541448191,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num73_frame_116",
+    "map": "cs_italy",
+    "x": 673,
+    "y": 500,
+    "z": -19
+  },
+  {
+    "angle_h": 3.5562889132603535,
+    "angle_v": 1.6558363867233068,
+    "file_frame": "file_num123_frame_917",
+    "map": "cs_italy",
+    "x": 634,
+    "y": 400,
+    "z": -20
+  },
+  {
+    "angle_h": 3.1468598535937518,
+    "angle_v": 1.310774599023375,
+    "file_frame": "file_num212_frame_102",
+    "map": "cs_italy",
+    "x": 617,
+    "y": 25,
+    "z": 13
+  },
+  {
+    "angle_h": 2.1246293044585927,
+    "angle_v": 1.3810322506890824,
+    "file_frame": "file_num126_frame_931",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 470,
+    "z": -20
+  },
+  {
+    "angle_h": 6.197941515427785,
+    "angle_v": 1.558913834643181,
+    "file_frame": "file_num41_frame_287",
+    "map": "cs_italy",
+    "x": 528,
+    "y": 655,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3888338479444151,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_475",
+    "map": "cs_italy",
+    "x": 719,
+    "y": 78,
+    "z": 13
+  },
+  {
+    "angle_h": 1.9568501557836004,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num126_frame_926",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 457,
+    "z": -20
+  },
+  {
+    "angle_h": 1.8153464202136027,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num114_frame_225",
+    "map": "cs_italy",
+    "x": 556,
+    "y": 100,
+    "z": -13
+  },
+  {
+    "angle_h": 4.9820878366092325,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num212_frame_259",
+    "map": "cs_italy",
+    "x": 563,
+    "y": 95,
+    "z": -13
+  },
+  {
+    "angle_h": 4.548816560967587,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num81_frame_306",
+    "map": "cs_italy",
+    "x": 658,
+    "y": 152,
+    "z": 13
+  },
+  {
+    "angle_h": 2.6887625902703878,
+    "angle_v": 1.6456679050491663,
+    "file_frame": "file_num128_frame_903",
+    "map": "cs_italy",
+    "x": 414,
+    "y": 162,
+    "z": 13
+  },
+  {
+    "angle_h": 2.950791808871611,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_394",
+    "map": "cs_italy",
+    "x": 527,
+    "y": 155,
+    "z": 13
+  },
+  {
+    "angle_h": 1.3700066306180998,
+    "angle_v": 1.5315658334091573,
+    "file_frame": "file_num26_frame_945",
+    "map": "cs_italy",
+    "x": 374,
+    "y": 686,
+    "z": -20
+  },
+  {
+    "angle_h": 0.13936455142439158,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num40_frame_697",
+    "map": "cs_italy",
+    "x": 545,
+    "y": 80,
+    "z": 20
+  },
+  {
+    "angle_h": 2.551459591845827,
+    "angle_v": 1.6573344148364764,
+    "file_frame": "file_num114_frame_185",
+    "map": "cs_italy",
+    "x": 615,
+    "y": 24,
+    "z": 14
+  },
+  {
+    "angle_h": 6.0466646444474685,
+    "angle_v": 1.3945682995616282,
+    "file_frame": "file_num149_frame_825",
+    "map": "cs_italy",
+    "x": 749,
+    "y": 110,
+    "z": 13
+  },
+  {
+    "angle_h": 1.9115198250790892,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_811",
+    "map": "cs_italy",
+    "x": 766,
+    "y": 125,
+    "z": 13
+  },
+  {
+    "angle_h": 5.069315150740924,
+    "angle_v": 1.3090009337373822,
+    "file_frame": "file_num110_frame_200",
+    "map": "cs_italy",
+    "x": 696,
+    "y": 27,
+    "z": 13
+  },
+  {
+    "angle_h": 6.043698415625339,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num123_frame_270",
+    "map": "cs_italy",
+    "x": 608,
+    "y": 138,
+    "z": 13
+  },
+  {
+    "angle_h": 2.4866606214664544,
+    "angle_v": 1.4323726701836301,
+    "file_frame": "file_num123_frame_476",
+    "map": "cs_italy",
+    "x": 650,
+    "y": 500,
+    "z": -20
+  },
+  {
+    "angle_h": 1.59796456465534,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num114_frame_922",
+    "map": "cs_italy",
+    "x": 561,
+    "y": 67,
+    "z": -5
+  },
+  {
+    "angle_h": 3.5518664679541683,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num213_frame_45",
+    "map": "cs_italy",
+    "x": 641,
+    "y": 104,
+    "z": 13
+  },
+  {
+    "angle_h": 0.860203695256684,
+    "angle_v": 1.4981599396435303,
+    "file_frame": "file_num190_frame_41",
+    "map": "cs_italy",
+    "x": 639,
+    "y": 55,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6101105765969188,
+    "angle_v": 1.5496921067365637,
+    "file_frame": "file_num149_frame_40",
+    "map": "cs_italy",
+    "x": 497,
+    "y": 246,
+    "z": -19
+  },
+  {
+    "angle_h": 1.8794799997946185,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num81_frame_927",
+    "map": "cs_italy",
+    "x": 634,
+    "y": 555,
+    "z": -20
+  },
+  {
+    "angle_h": 1.9652451053298028,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num200_frame_814",
+    "map": "cs_italy",
+    "x": 491,
+    "y": 736,
+    "z": -23
+  },
+  {
+    "angle_h": 2.267541053296915,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_170",
+    "map": "cs_italy",
+    "x": 629,
+    "y": 629,
+    "z": -19
+  },
+  {
+    "angle_h": 0.31060128214263344,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_618",
+    "map": "cs_italy",
+    "x": 324,
+    "y": 276,
+    "z": 15
+  },
+  {
+    "angle_h": 2.7816464585574083,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num213_frame_272",
+    "map": "cs_italy",
+    "x": 724,
+    "y": 49,
+    "z": 41
+  },
+  {
+    "angle_h": 5.919781530103952,
+    "angle_v": 1.5499618849549888,
+    "file_frame": "file_num7_frame_638",
+    "map": "cs_italy",
+    "x": 388,
+    "y": 266,
+    "z": 13
+  },
+  {
+    "angle_h": 2.0302415491040042,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num213_frame_604",
+    "map": "cs_italy",
+    "x": 623,
+    "y": 68,
+    "z": 13
+  },
+  {
+    "angle_h": 0.8722837939612834,
+    "angle_v": 1.3090009337373822,
+    "file_frame": "file_num81_frame_726",
+    "map": "cs_italy",
+    "x": 726,
+    "y": 84,
+    "z": 13
+  },
+  {
+    "angle_h": 0.9231927813592381,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_333",
+    "map": "cs_italy",
+    "x": 732,
+    "y": 85,
+    "z": 13
+  },
+  {
+    "angle_h": 4.747646570056249,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num71_frame_56",
+    "map": "cs_italy",
+    "x": 560,
+    "y": 286,
+    "z": -20
+  },
+  {
+    "angle_h": 5.004929769278842,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num128_frame_647",
+    "map": "cs_italy",
+    "x": 762,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 5.035885288525487,
+    "angle_v": 1.5460369181404299,
+    "file_frame": "file_num114_frame_370",
+    "map": "cs_italy",
+    "x": 566,
+    "y": 75,
+    "z": -8
+  },
+  {
+    "angle_h": 6.1351082242490005,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_836",
+    "map": "cs_italy",
+    "x": 635,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 0.2819946709774383,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num213_frame_90",
+    "map": "cs_italy",
+    "x": 681,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 2.631634056462662,
+    "angle_v": 1.4215328055986804,
+    "file_frame": "file_num123_frame_561",
+    "map": "cs_italy",
+    "x": 517,
+    "y": 666,
+    "z": -20
+  },
+  {
+    "angle_h": 1.1019015431479153,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num190_frame_942",
+    "map": "cs_italy",
+    "x": 786,
+    "y": 33,
+    "z": 41
+  },
+  {
+    "angle_h": 2.9453150180898633,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num40_frame_414",
+    "map": "cs_italy",
+    "x": 643,
+    "y": 133,
+    "z": 13
+  },
+  {
+    "angle_h": 0.7962319027118906,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_66",
+    "map": "cs_italy",
+    "x": 445,
+    "y": 243,
+    "z": 12
+  },
+  {
+    "angle_h": 1.1879602621932808,
+    "angle_v": 1.4089254009982453,
+    "file_frame": "file_num141_frame_80",
+    "map": "cs_italy",
+    "x": 741,
+    "y": 89,
+    "z": 13
+  },
+  {
+    "angle_h": 4.194106939586625,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num100_frame_465",
+    "map": "cs_italy",
+    "x": 444,
+    "y": 244,
+    "z": 12
+  },
+  {
+    "angle_h": 1.6444393888383126,
+    "angle_v": 1.6469382328891342,
+    "file_frame": "file_num200_frame_401",
+    "map": "cs_italy",
+    "x": 728,
+    "y": 47,
+    "z": 41
+  },
+  {
+    "angle_h": 5.694849879171423,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num129_frame_569",
+    "map": "cs_italy",
+    "x": 730,
+    "y": 151,
+    "z": 13
+  },
+  {
+    "angle_h": 0.2688003056727497,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num40_frame_682",
+    "map": "cs_italy",
+    "x": 524,
+    "y": 103,
+    "z": 15
+  },
+  {
+    "angle_h": 3.38415336567421,
+    "angle_v": 1.4520267990284148,
+    "file_frame": "file_num123_frame_701",
+    "map": "cs_italy",
+    "x": 436,
+    "y": 926,
+    "z": -38
+  },
+  {
+    "angle_h": 1.5863638349469547,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_668",
+    "map": "cs_italy",
+    "x": 447,
+    "y": 283,
+    "z": 1
+  },
+  {
+    "angle_h": 5.5149126011718925,
+    "angle_v": 1.347607981111934,
+    "file_frame": "file_num129_frame_412",
+    "map": "cs_italy",
+    "x": 760,
+    "y": 585,
+    "z": -18
+  },
+  {
+    "angle_h": 5.343646043049442,
+    "angle_v": 1.3155203520858962,
+    "file_frame": "file_num128_frame_50",
+    "map": "cs_italy",
+    "x": 502,
+    "y": 706,
+    "z": -21
+  },
+  {
+    "angle_h": 5.666069629903155,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num128_frame_150",
+    "map": "cs_italy",
+    "x": 651,
+    "y": 502,
+    "z": -20
+  },
+  {
+    "angle_h": 4.854821227068744,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num40_frame_47",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 76,
+    "z": 13
+  },
+  {
+    "angle_h": 0.8842861283620527,
+    "angle_v": 1.4430924262034168,
+    "file_frame": "file_num190_frame_202",
+    "map": "cs_italy",
+    "x": 770,
+    "y": 94,
+    "z": 41
+  },
+  {
+    "angle_h": 1.433499054166679,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num213_frame_514",
+    "map": "cs_italy",
+    "x": 498,
+    "y": 228,
+    "z": -19
+  },
+  {
+    "angle_h": 5.471643423993048,
+    "angle_v": 1.5453178646461085,
+    "file_frame": "file_num41_frame_778",
+    "map": "cs_italy",
+    "x": 564,
+    "y": 45,
+    "z": -1
+  },
+  {
+    "angle_h": 0.8026495883067637,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num26_frame_714",
+    "map": "cs_italy",
+    "x": 488,
+    "y": 243,
+    "z": -19
+  },
+  {
+    "angle_h": 4.678862978053901,
+    "angle_v": 1.4847735604242471,
+    "file_frame": "file_num141_frame_181",
+    "map": "cs_italy",
+    "x": 610,
+    "y": 98,
+    "z": 13
+  },
+  {
+    "angle_h": 4.896604626675432,
+    "angle_v": 1.5620180152097776,
+    "file_frame": "file_num73_frame_467",
+    "map": "cs_italy",
+    "x": 615,
+    "y": 648,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6608098400590299,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num129_frame_227",
+    "map": "cs_italy",
+    "x": 449,
+    "y": 939,
+    "z": -38
+  },
+  {
+    "angle_h": 3.0968675262430025,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num190_frame_388",
+    "map": "cs_italy",
+    "x": 654,
+    "y": 153,
+    "z": 13
+  },
+  {
+    "angle_h": 0.4404623432170773,
+    "angle_v": 1.4262484649408838,
+    "file_frame": "file_num100_frame_395",
+    "map": "cs_italy",
+    "x": 493,
+    "y": 247,
+    "z": -19
+  },
+  {
+    "angle_h": 4.726836096666151,
+    "angle_v": 1.6578856891821228,
+    "file_frame": "file_num184_frame_366",
+    "map": "cs_italy",
+    "x": 715,
+    "y": 69,
+    "z": 13
+  },
+  {
+    "angle_h": 2.359298404442832,
+    "angle_v": 1.480704782910824,
+    "file_frame": "file_num41_frame_35",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 473,
+    "z": -20
+  },
+  {
+    "angle_h": 1.8797017079553675,
+    "angle_v": 1.6531998572441284,
+    "file_frame": "file_num32_frame_946",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 42,
+    "z": 41
+  },
+  {
+    "angle_h": 4.543465205073182,
+    "angle_v": 1.6578438775530087,
+    "file_frame": "file_num100_frame_15",
+    "map": "cs_italy",
+    "x": 718,
+    "y": 74,
+    "z": 13
+  },
+  {
+    "angle_h": 2.879108300758275,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num184_frame_436",
+    "map": "cs_italy",
+    "x": 776,
+    "y": 102,
+    "z": 13
+  },
+  {
+    "angle_h": 5.461486926543813,
+    "angle_v": 1.400848033412035,
+    "file_frame": "file_num212_frame_248",
+    "map": "cs_italy",
+    "x": 552,
+    "y": 127,
+    "z": -20
+  },
+  {
+    "angle_h": 2.403622193413348,
+    "angle_v": 1.3709953291727919,
+    "file_frame": "file_num81_frame_886",
+    "map": "cs_italy",
+    "x": 715,
+    "y": 490,
+    "z": -20
+  },
+  {
+    "angle_h": 4.839134142983741,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num26_frame_592",
+    "map": "cs_italy",
+    "x": 269,
+    "y": 342,
+    "z": 14
+  },
+  {
+    "angle_h": 0.7189216678474354,
+    "angle_v": 1.6565194875429121,
+    "file_frame": "file_num190_frame_192",
+    "map": "cs_italy",
+    "x": 736,
+    "y": 87,
+    "z": 41
+  },
+  {
+    "angle_h": 5.276762083852646,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num126_frame_676",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 151,
+    "z": 13
+  },
+  {
+    "angle_h": 2.986948215411072,
+    "angle_v": 1.4835330599884882,
+    "file_frame": "file_num128_frame_878",
+    "map": "cs_italy",
+    "x": 485,
+    "y": 156,
+    "z": 13
+  },
+  {
+    "angle_h": 2.5174062836192013,
+    "angle_v": 1.5898272759446028,
+    "file_frame": "file_num141_frame_95",
+    "map": "cs_italy",
+    "x": 776,
+    "y": 96,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6691568527056106,
+    "angle_v": 1.4822089362945008,
+    "file_frame": "file_num126_frame_916",
+    "map": "cs_italy",
+    "x": 736,
+    "y": 426,
+    "z": -18
+  },
+  {
+    "angle_h": 2.7697759506305983,
+    "angle_v": 1.3750819498655185,
+    "file_frame": "file_num71_frame_87",
+    "map": "cs_italy",
+    "x": 538,
+    "y": 194,
+    "z": -19
+  },
+  {
+    "angle_h": 1.5264127498579085,
+    "angle_v": 1.5707004529956536,
+    "file_frame": "file_num40_frame_476",
+    "map": "cs_italy",
+    "x": 411,
+    "y": 184,
+    "z": 13
+  },
+  {
+    "angle_h": 1.5543839307870106,
+    "angle_v": 1.3509518461766374,
+    "file_frame": "file_num141_frame_974",
+    "map": "cs_italy",
+    "x": 249,
+    "y": 399,
+    "z": 15
+  },
+  {
+    "angle_h": 5.522019246540769,
+    "angle_v": 1.5288573985805467,
+    "file_frame": "file_num114_frame_711",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 52,
+    "z": 41
+  },
+  {
+    "angle_h": 6.222149649736605,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num41_frame_297",
+    "map": "cs_italy",
+    "x": 565,
+    "y": 654,
+    "z": -20
+  },
+  {
+    "angle_h": 1.8560628243295516,
+    "angle_v": 1.6169475769054247,
+    "file_frame": "file_num26_frame_145",
+    "map": "cs_italy",
+    "x": 740,
+    "y": 169,
+    "z": 14
+  },
+  {
+    "angle_h": 4.620332023616139,
+    "angle_v": 1.4855645192680007,
+    "file_frame": "file_num123_frame_988",
+    "map": "cs_italy",
+    "x": 541,
+    "y": 246,
+    "z": -20
+  },
+  {
+    "angle_h": 6.250636152336638,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_611",
+    "map": "cs_italy",
+    "x": 524,
+    "y": 110,
+    "z": 20
+  },
+  {
+    "angle_h": 2.007129971374024,
+    "angle_v": 1.5634260284781023,
+    "file_frame": "file_num73_frame_212",
+    "map": "cs_italy",
+    "x": 512,
+    "y": 673,
+    "z": -20
+  },
+  {
+    "angle_h": 1.7304561630965094,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num212_frame_142",
+    "map": "cs_italy",
+    "x": 558,
+    "y": 126,
+    "z": -20
+  },
+  {
+    "angle_h": 2.1096130706521805,
+    "angle_v": 1.564252939996572,
+    "file_frame": "file_num213_frame_484",
+    "map": "cs_italy",
+    "x": 505,
+    "y": 220,
+    "z": -19
+  },
+  {
+    "angle_h": 1.3582201454236817,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num40_frame_364",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 88,
+    "z": 13
+  },
+  {
+    "angle_h": 5.213017991581055,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num73_frame_663",
+    "map": "cs_italy",
+    "x": 747,
+    "y": 132,
+    "z": 13
+  },
+  {
+    "angle_h": 2.76623474532912,
+    "angle_v": 1.3099117348301894,
+    "file_frame": "file_num32_frame_415",
+    "map": "cs_italy",
+    "x": 435,
+    "y": 159,
+    "z": 14
+  },
+  {
+    "angle_h": 1.3765500174164245,
+    "angle_v": 1.4809625769043437,
+    "file_frame": "file_num212_frame_966",
+    "map": "cs_italy",
+    "x": 723,
+    "y": 47,
+    "z": 13
+  },
+  {
+    "angle_h": 2.725464412201097,
+    "angle_v": 1.469277957621621,
+    "file_frame": "file_num114_frame_897",
+    "map": "cs_italy",
+    "x": 603,
+    "y": 25,
+    "z": 11
+  },
+  {
+    "angle_h": 6.065605578752331,
+    "angle_v": 1.4835871221586168,
+    "file_frame": "file_num32_frame_20",
+    "map": "cs_italy",
+    "x": 735,
+    "y": 585,
+    "z": -20
+  },
+  {
+    "angle_h": 4.203981940908639,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num100_frame_170",
+    "map": "cs_italy",
+    "x": 628,
+    "y": 72,
+    "z": 13
+  },
+  {
+    "angle_h": 0.24898425663368814,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num32_frame_656",
+    "map": "cs_italy",
+    "x": 524,
+    "y": 69,
+    "z": 15
+  },
+  {
+    "angle_h": 1.5671471303112154,
+    "angle_v": 1.3090310274577002,
+    "file_frame": "file_num110_frame_677",
+    "map": "cs_italy",
+    "x": 340,
+    "y": 567,
+    "z": -20
+  },
+  {
+    "angle_h": 5.522234962589065,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num41_frame_459",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 158,
+    "z": 14
+  },
+  {
+    "angle_h": 4.97437612104069,
+    "angle_v": 1.6241021591739226,
+    "file_frame": "file_num73_frame_492",
+    "map": "cs_italy",
+    "x": 632,
+    "y": 575,
+    "z": -19
+  },
+  {
+    "angle_h": 5.857433733191889,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num200_frame_356",
+    "map": "cs_italy",
+    "x": 717,
+    "y": 53,
+    "z": 13
+  },
+  {
+    "angle_h": 2.134492321555701,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num129_frame_744",
+    "map": "cs_italy",
+    "x": 699,
+    "y": 91,
+    "z": 41
+  },
+  {
+    "angle_h": 3.0114977669716403,
+    "angle_v": 1.5708980595485376,
+    "file_frame": "file_num190_frame_368",
+    "map": "cs_italy",
+    "x": 724,
+    "y": 136,
+    "z": 13
+  },
+  {
+    "angle_h": 1.9774570305083612,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num81_frame_201",
+    "map": "cs_italy",
+    "x": 726,
+    "y": 18,
+    "z": 24
+  },
+  {
+    "angle_h": 1.5405061983466077,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num141_frame_964",
+    "map": "cs_italy",
+    "x": 250,
+    "y": 365,
+    "z": 14
+  },
+  {
+    "angle_h": 1.7990358901174124,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num81_frame_771",
+    "map": "cs_italy",
+    "x": 745,
+    "y": 159,
+    "z": 14
+  },
+  {
+    "angle_h": 2.4837545800849603,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num114_frame_581",
+    "map": "cs_italy",
+    "x": 737,
+    "y": 44,
+    "z": 41
+  },
+  {
+    "angle_h": 1.1655078168330952,
+    "angle_v": 1.4788235259167921,
+    "file_frame": "file_num149_frame_478",
+    "map": "cs_italy",
+    "x": 746,
+    "y": 81,
+    "z": 13
+  },
+  {
+    "angle_h": 5.75396193535904,
+    "angle_v": 1.4131377228944235,
+    "file_frame": "file_num126_frame_766",
+    "map": "cs_italy",
+    "x": 705,
+    "y": 41,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6487057729046197,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_204",
+    "map": "cs_italy",
+    "x": 495,
+    "y": 237,
+    "z": -19
+  },
+  {
+    "angle_h": 4.93011251951081,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_646",
+    "map": "cs_italy",
+    "x": 728,
+    "y": 229,
+    "z": 5
+  },
+  {
+    "angle_h": 5.308657965280199,
+    "angle_v": 1.5143325179952545,
+    "file_frame": "file_num71_frame_821",
+    "map": "cs_italy",
+    "x": 729,
+    "y": 167,
+    "z": 14
+  },
+  {
+    "angle_h": 3.886664166496826,
+    "angle_v": 1.4463942133228973,
+    "file_frame": "file_num149_frame_543",
+    "map": "cs_italy",
+    "x": 639,
+    "y": 67,
+    "z": 13
+  },
+  {
+    "angle_h": 0.6013803899756981,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num212_frame_314",
+    "map": "cs_italy",
+    "x": 661,
+    "y": 99,
+    "z": 13
+  },
+  {
+    "angle_h": 5.1702524181643446,
+    "angle_v": 1.4835453105295027,
+    "file_frame": "file_num41_frame_338",
+    "map": "cs_italy",
+    "x": 634,
+    "y": 546,
+    "z": -20
+  },
+  {
+    "angle_h": 2.3967131545973555,
+    "angle_v": 1.658059593601305,
+    "file_frame": "file_num190_frame_968",
+    "map": "cs_italy",
+    "x": 719,
+    "y": 54,
+    "z": 41
+  },
+  {
+    "angle_h": 1.6182898100948246,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num123_frame_426",
+    "map": "cs_italy",
+    "x": 733,
+    "y": 422,
+    "z": -17
+  },
+  {
+    "angle_h": 2.5451018273754804,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num114_frame_190",
+    "map": "cs_italy",
+    "x": 601,
+    "y": 24,
+    "z": 11
+  },
+  {
+    "angle_h": 4.991723153433139,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num7_frame_713",
+    "map": "cs_italy",
+    "x": 411,
+    "y": 213,
+    "z": 13
+  },
+  {
+    "angle_h": 1.538025463791199,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_135",
+    "map": "cs_italy",
+    "x": 646,
+    "y": 518,
+    "z": -20
+  },
+  {
+    "angle_h": 0.9010579179590446,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num26_frame_900",
+    "map": "cs_italy",
+    "x": 262,
+    "y": 516,
+    "z": -20
+  },
+  {
+    "angle_h": 1.165178250648198,
+    "angle_v": 1.3757112548311041,
+    "file_frame": "file_num81_frame_721",
+    "map": "cs_italy",
+    "x": 721,
+    "y": 74,
+    "z": 13
+  },
+  {
+    "angle_h": 4.357584017836703,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num32_frame_65",
+    "map": "cs_italy",
+    "x": 751,
+    "y": 472,
+    "z": -19
+  },
+  {
+    "angle_h": 3.896125312585441,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num213_frame_398",
+    "map": "cs_italy",
+    "x": 641,
+    "y": 68,
+    "z": 13
+  },
+  {
+    "angle_h": 0.9364892788917313,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num212_frame_485",
+    "map": "cs_italy",
+    "x": 749,
+    "y": 93,
+    "z": 13
+  },
+  {
+    "angle_h": 2.9869061374658488,
+    "angle_v": 1.4820832350910491,
+    "file_frame": "file_num129_frame_849",
+    "map": "cs_italy",
+    "x": 768,
+    "y": 93,
+    "z": 14
+  },
+  {
+    "angle_h": 5.339385517937533,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num41_frame_952",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 37,
+    "z": 41
+  },
+  {
+    "angle_h": 0.7278858680766421,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num26_frame_110",
+    "map": "cs_italy",
+    "x": 726,
+    "y": 84,
+    "z": 13
+  },
+  {
+    "angle_h": 2.9221974482474304,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num41_frame_46",
+    "map": "cs_italy",
+    "x": 696,
+    "y": 501,
+    "z": -19
+  },
+  {
+    "angle_h": 1.3447199160677976,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num32_frame_309",
+    "map": "cs_italy",
+    "x": 722,
+    "y": 53,
+    "z": 13
+  },
+  {
+    "angle_h": 2.9231862799601767,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num40_frame_419",
+    "map": "cs_italy",
+    "x": 622,
+    "y": 134,
+    "z": 13
+  },
+  {
+    "angle_h": 6.057246715038898,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num100_frame_670",
+    "map": "cs_italy",
+    "x": 755,
+    "y": 111,
+    "z": 13
+  },
+  {
+    "angle_h": 0.6346185045926501,
+    "angle_v": 1.5270778743401558,
+    "file_frame": "file_num7_frame_226",
+    "map": "cs_italy",
+    "x": 594,
+    "y": 402,
+    "z": -20
+  },
+  {
+    "angle_h": 0.9153970430583037,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num40_frame_102",
+    "map": "cs_italy",
+    "x": 772,
+    "y": 34,
+    "z": 41
+  },
+  {
+    "angle_h": 1.7692670754525068,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num126_frame_826",
+    "map": "cs_italy",
+    "x": 744,
+    "y": 159,
+    "z": 14
+  },
+  {
+    "angle_h": 1.6505213829777812,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num126_frame_901",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 383,
+    "z": -12
+  },
+  {
+    "angle_h": 0.1382500185081934,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num40_frame_587",
+    "map": "cs_italy",
+    "x": 455,
+    "y": 146,
+    "z": 13
+  },
+  {
+    "angle_h": 1.89751625827718,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_135",
+    "map": "cs_italy",
+    "x": 759,
+    "y": 146,
+    "z": 13
+  },
+  {
+    "angle_h": 3.8483205057540824,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num114_frame_175",
+    "map": "cs_italy",
+    "x": 622,
+    "y": 53,
+    "z": 14
+  },
+  {
+    "angle_h": 3.498333201618049,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num184_frame_949",
+    "map": "cs_italy",
+    "x": 703,
+    "y": 91,
+    "z": 41
+  },
+  {
+    "angle_h": 6.1714683626118525,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num100_frame_585",
+    "map": "cs_italy",
+    "x": 649,
+    "y": 107,
+    "z": 13
+  },
+  {
+    "angle_h": 4.916306692419838,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num81_frame_686",
+    "map": "cs_italy",
+    "x": 698,
+    "y": 23,
+    "z": 13
+  },
+  {
+    "angle_h": 2.9322101349978014,
+    "angle_v": 1.4325463082867032,
+    "file_frame": "file_num73_frame_177",
+    "map": "cs_italy",
+    "x": 606,
+    "y": 657,
+    "z": -20
+  },
+  {
+    "angle_h": 0.34646980096825664,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_36",
+    "map": "cs_italy",
+    "x": 631,
+    "y": 40,
+    "z": 13
+  },
+  {
+    "angle_h": 0.07393068344114469,
+    "angle_v": 1.5846860434602048,
+    "file_frame": "file_num40_frame_828",
+    "map": "cs_italy",
+    "x": 687,
+    "y": 114,
+    "z": 13
+  },
+  {
+    "angle_h": 2.572581655083463,
+    "angle_v": 1.4237557461605694,
+    "file_frame": "file_num110_frame_366",
+    "map": "cs_italy",
+    "x": 452,
+    "y": 161,
+    "z": 14
+  },
+  {
+    "angle_h": 4.773849944653756,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num81_frame_316",
+    "map": "cs_italy",
+    "x": 649,
+    "y": 124,
+    "z": 13
+  },
+  {
+    "angle_h": 3.7297246160906736,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num71_frame_5",
+    "map": "cs_italy",
+    "x": 627,
+    "y": 398,
+    "z": -20
+  },
+  {
+    "angle_h": 4.132526133068505,
+    "angle_v": 1.3962399657778708,
+    "file_frame": "file_num129_frame_619",
+    "map": "cs_italy",
+    "x": 716,
+    "y": 75,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8081259247081254,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_36",
+    "map": "cs_italy",
+    "x": 777,
+    "y": 93,
+    "z": 14
+  },
+  {
+    "angle_h": 2.5238596555726813,
+    "angle_v": 1.3093484762596377,
+    "file_frame": "file_num7_frame_328",
+    "map": "cs_italy",
+    "x": 513,
+    "y": 665,
+    "z": -20
+  },
+  {
+    "angle_h": 2.316370910831845,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num126_frame_175",
+    "map": "cs_italy",
+    "x": 618,
+    "y": 642,
+    "z": -19
+  },
+  {
+    "angle_h": 4.616749006685546,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num73_frame_613",
+    "map": "cs_italy",
+    "x": 732,
+    "y": 290,
+    "z": -1
+  },
+  {
+    "angle_h": 5.887364468051071,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num32_frame_526",
+    "map": "cs_italy",
+    "x": 414,
+    "y": 159,
+    "z": 13
+  },
+  {
+    "angle_h": 1.7419730032305571,
+    "angle_v": 1.5517653776451903,
+    "file_frame": "file_num141_frame_949",
+    "map": "cs_italy",
+    "x": 253,
+    "y": 316,
+    "z": 14
+  },
+  {
+    "angle_h": 5.165692287429802,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num7_frame_567",
+    "map": "cs_italy",
+    "x": 256,
+    "y": 456,
+    "z": -8
+  },
+  {
+    "angle_h": 3.017705595472615,
+    "angle_v": 1.616893514735296,
+    "file_frame": "file_num100_frame_926",
+    "map": "cs_italy",
+    "x": 506,
+    "y": 159,
+    "z": 13
+  },
+  {
+    "angle_h": 2.6225979508840234,
+    "angle_v": 1.480567097482467,
+    "file_frame": "file_num141_frame_750",
+    "map": "cs_italy",
+    "x": 448,
+    "y": 302,
+    "z": 1
+  },
+  {
+    "angle_h": 1.6877503776462714,
+    "angle_v": 1.4034486102164974,
+    "file_frame": "file_num190_frame_166",
+    "map": "cs_italy",
+    "x": 732,
+    "y": 44,
+    "z": 41
+  },
+  {
+    "angle_h": 2.3674538026489818,
+    "angle_v": 1.5699574310515216,
+    "file_frame": "file_num114_frame_912",
+    "map": "cs_italy",
+    "x": 565,
+    "y": 38,
+    "z": 0
+  },
+  {
+    "angle_h": 3.601553064411777,
+    "angle_v": 1.3103732606471001,
+    "file_frame": "file_num123_frame_998",
+    "map": "cs_italy",
+    "x": 539,
+    "y": 212,
+    "z": -19
+  },
+  {
+    "angle_h": 5.351951110908854,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num32_frame_135",
+    "map": "cs_italy",
+    "x": 719,
+    "y": 192,
+    "z": 9
+  },
+  {
+    "angle_h": 1.105317047245942,
+    "angle_v": 1.657957594531555,
+    "file_frame": "file_num141_frame_70",
+    "map": "cs_italy",
+    "x": 719,
+    "y": 73,
+    "z": 13
+  },
+  {
+    "angle_h": 2.6848738424466543,
+    "angle_v": 1.3111461099954411,
+    "file_frame": "file_num213_frame_720",
+    "map": "cs_italy",
+    "x": 390,
+    "y": 273,
+    "z": 13
+  },
+  {
+    "angle_h": 2.8748056977011434,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num190_frame_443",
+    "map": "cs_italy",
+    "x": 451,
+    "y": 155,
+    "z": 13
+  },
+  {
+    "angle_h": 0.9126706318923351,
+    "angle_v": 1.3822844690336378,
+    "file_frame": "file_num110_frame_672",
+    "map": "cs_italy",
+    "x": 325,
+    "y": 559,
+    "z": -20
+  },
+  {
+    "angle_h": 4.886525627213919,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num32_frame_80",
+    "map": "cs_italy",
+    "x": 743,
+    "y": 408,
+    "z": -16
+  },
+  {
+    "angle_h": 3.776505171166788,
+    "angle_v": 1.6506232488894768,
+    "file_frame": "file_num190_frame_816",
+    "map": "cs_italy",
+    "x": 680,
+    "y": 111,
+    "z": 13
+  },
+  {
+    "angle_h": 5.106034815850937,
+    "angle_v": 1.4894474081373361,
+    "file_frame": "file_num184_frame_751",
+    "map": "cs_italy",
+    "x": 760,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6644110996430894,
+    "angle_v": 1.565001820895102,
+    "file_frame": "file_num110_frame_381",
+    "map": "cs_italy",
+    "x": 416,
+    "y": 160,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6393161326912729,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num110_frame_612",
+    "map": "cs_italy",
+    "x": 246,
+    "y": 415,
+    "z": 15
+  },
+  {
+    "angle_h": 0.8730388001303209,
+    "angle_v": 1.3498072195401214,
+    "file_frame": "file_num110_frame_235",
+    "map": "cs_italy",
+    "x": 728,
+    "y": 81,
+    "z": 13
+  },
+  {
+    "angle_h": 4.629368129194778,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num123_frame_897",
+    "map": "cs_italy",
+    "x": 648,
+    "y": 455,
+    "z": -20
+  },
+  {
+    "angle_h": 4.835071224424715,
+    "angle_v": 1.5701310691545947,
+    "file_frame": "file_num81_frame_326",
+    "map": "cs_italy",
+    "x": 630,
+    "y": 98,
+    "z": 13
+  },
+  {
+    "angle_h": 6.046467037894585,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_608",
+    "map": "cs_italy",
+    "x": 289,
+    "y": 279,
+    "z": 14
+  },
+  {
+    "angle_h": 1.672596325253448,
+    "angle_v": 1.6545900273331497,
+    "file_frame": "file_num213_frame_448",
+    "map": "cs_italy",
+    "x": 554,
+    "y": 111,
+    "z": -16
+  },
+  {
+    "angle_h": 0.9879854933100485,
+    "angle_v": 1.3090129179622876,
+    "file_frame": "file_num212_frame_625",
+    "map": "cs_italy",
+    "x": 422,
+    "y": 236,
+    "z": 15
+  },
+  {
+    "angle_h": 4.667046532297219,
+    "angle_v": 1.6087144143954448,
+    "file_frame": "file_num40_frame_874",
+    "map": "cs_italy",
+    "x": 714,
+    "y": 69,
+    "z": 13
+  },
+  {
+    "angle_h": 1.3128298935946436,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num190_frame_484",
+    "map": "cs_italy",
+    "x": 408,
+    "y": 235,
+    "z": 13
+  },
+  {
+    "angle_h": 5.583282604256952,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num200_frame_496",
+    "map": "cs_italy",
+    "x": 703,
+    "y": 63,
+    "z": 41
+  },
+  {
+    "angle_h": 2.916007462925759,
+    "angle_v": 1.364481769778676,
+    "file_frame": "file_num40_frame_389",
+    "map": "cs_italy",
+    "x": 750,
+    "y": 121,
+    "z": 13
+  },
+  {
+    "angle_h": 2.3730262009138636,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num81_frame_191",
+    "map": "cs_italy",
+    "x": 742,
+    "y": 17,
+    "z": 35
+  },
+  {
+    "angle_h": 1.4056956523862518,
+    "angle_v": 1.4074872940096026,
+    "file_frame": "file_num129_frame_25",
+    "map": "cs_italy",
+    "x": 269,
+    "y": 434,
+    "z": -3
+  },
+  {
+    "angle_h": 1.7554912089237993,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num128_frame_988",
+    "map": "cs_italy",
+    "x": 265,
+    "y": 319,
+    "z": 14
+  },
+  {
+    "angle_h": 2.821829564665069,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num26_frame_410",
+    "map": "cs_italy",
+    "x": 449,
+    "y": 950,
+    "z": -38
+  },
+  {
+    "angle_h": 3.6116981102683243,
+    "angle_v": 1.3341797902635364,
+    "file_frame": "file_num213_frame_388",
+    "map": "cs_italy",
+    "x": 663,
+    "y": 94,
+    "z": 13
+  },
+  {
+    "angle_h": 4.615568161058205,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num71_frame_746",
+    "map": "cs_italy",
+    "x": 738,
+    "y": 383,
+    "z": -12
+  },
+  {
+    "angle_h": 2.298460353552735,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num81_frame_751",
+    "map": "cs_italy",
+    "x": 775,
+    "y": 109,
+    "z": 13
+  },
+  {
+    "angle_h": 1.865146866807812,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num141_frame_944",
+    "map": "cs_italy",
+    "x": 252,
+    "y": 299,
+    "z": 14
+  },
+  {
+    "angle_h": 3.2257277713797947,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num100_frame_110",
+    "map": "cs_italy",
+    "x": 749,
+    "y": 128,
+    "z": 13
+  },
+  {
+    "angle_h": 4.373325430407943,
+    "angle_v": 1.332951540368792,
+    "file_frame": "file_num129_frame_452",
+    "map": "cs_italy",
+    "x": 768,
+    "y": 492,
+    "z": -19
+  },
+  {
+    "angle_h": 5.1197748628629824,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num100_frame_495",
+    "map": "cs_italy",
+    "x": 412,
+    "y": 191,
+    "z": 13
+  },
+  {
+    "angle_h": 1.5826487252262942,
+    "angle_v": 1.4908077508221487,
+    "file_frame": "file_num212_frame_132",
+    "map": "cs_italy",
+    "x": 561,
+    "y": 89,
+    "z": -10
+  },
+  {
+    "angle_h": 3.0541078117806904,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num141_frame_105",
+    "map": "cs_italy",
+    "x": 769,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 5.233630858418269,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num114_frame_320",
+    "map": "cs_italy",
+    "x": 508,
+    "y": 198,
+    "z": -19
+  },
+  {
+    "angle_h": 4.83810349964188,
+    "angle_v": 1.5687110716613646,
+    "file_frame": "file_num114_frame_862",
+    "map": "cs_italy",
+    "x": 637,
+    "y": 117,
+    "z": 13
+  },
+  {
+    "angle_h": 5.750276653042588,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num212_frame_279",
+    "map": "cs_italy",
+    "x": 575,
+    "y": 28,
+    "z": 2
+  },
+  {
+    "angle_h": 4.629044821438441,
+    "angle_v": 1.5673328857972486,
+    "file_frame": "file_num100_frame_140",
+    "map": "cs_italy",
+    "x": 660,
+    "y": 152,
+    "z": 13
+  },
+  {
+    "angle_h": 6.1446055893284415,
+    "angle_v": 1.658065452555703,
+    "file_frame": "file_num123_frame_305",
+    "map": "cs_italy",
+    "x": 720,
+    "y": 113,
+    "z": 13
+  },
+  {
+    "angle_h": 1.9894053027390015,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num110_frame_446",
+    "map": "cs_italy",
+    "x": 444,
+    "y": 295,
+    "z": 1
+  },
+  {
+    "angle_h": 0.07556053802827319,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num123_frame_265",
+    "map": "cs_italy",
+    "x": 594,
+    "y": 141,
+    "z": 13
+  },
+  {
+    "angle_h": 2.043340306925559,
+    "angle_v": 1.623580712232485,
+    "file_frame": "file_num114_frame_285",
+    "map": "cs_italy",
+    "x": 499,
+    "y": 239,
+    "z": -19
+  },
+  {
+    "angle_h": 3.9701521361419374,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num110_frame_150",
+    "map": "cs_italy",
+    "x": 777,
+    "y": 107,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6094993811267455,
+    "angle_v": 1.6010743378602252,
+    "file_frame": "file_num32_frame_997",
+    "map": "cs_italy",
+    "x": 790,
+    "y": 134,
+    "z": 41
+  },
+  {
+    "angle_h": 5.68164326332572,
+    "angle_v": 1.48352720103409,
+    "file_frame": "file_num128_frame_165",
+    "map": "cs_italy",
+    "x": 692,
+    "y": 495,
+    "z": -20
+  },
+  {
+    "angle_h": 2.190961989309741,
+    "angle_v": 1.592991111319617,
+    "file_frame": "file_num100_frame_785",
+    "map": "cs_italy",
+    "x": 731,
+    "y": 19,
+    "z": 28
+  },
+  {
+    "angle_h": 1.2857335610836325,
+    "angle_v": 1.4833474376605096,
+    "file_frame": "file_num41_frame_545",
+    "map": "cs_italy",
+    "x": 755,
+    "y": 89,
+    "z": 14
+  },
+  {
+    "angle_h": 0.7564261665306943,
+    "angle_v": 1.5707963267948966,
+    "file_frame": "file_num149_frame_155",
+    "map": "cs_italy",
+    "x": 628,
+    "y": 38,
+    "z": 13
+  },
+  {
+    "angle_h": 1.6226101231732057,
+    "angle_v": 1.4834851230888666,
+    "file_frame": "file_num123_frame_366",
+    "map": "cs_italy",
+    "x": 724,
+    "y": 233,
+    "z": 5
+  },
+  {
+    "angle_h": 6.144210376222673,
+    "angle_v": 1.327546388620367,
+    "file_frame": "file_num7_frame_808",
+    "map": "cs_italy",
+    "x": 734,
+    "y": 110,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8281455724125235,
+    "angle_v": 1.6208126225954569,
+    "file_frame": "file_num128_frame_918",
+    "map": "cs_italy",
+    "x": 398,
+    "y": 202,
+    "z": 13
+  },
+  {
+    "angle_h": 2.017562239154137,
+    "angle_v": 1.3966775231449708,
+    "file_frame": "file_num184_frame_563",
+    "map": "cs_italy",
+    "x": 553,
+    "y": 151,
+    "z": -20
+  },
+  {
+    "angle_h": 2.4777504834073767,
+    "angle_v": 1.3962639342276815,
+    "file_frame": "file_num126_frame_340",
+    "map": "cs_italy",
+    "x": 434,
+    "y": 973,
+    "z": -38
+  },
+  {
+    "angle_h": 6.180006989698865,
+    "angle_v": 1.3677297610441368,
+    "file_frame": "file_num7_frame_102",
+    "map": "cs_italy",
+    "x": 475,
+    "y": 240,
+    "z": -17
+  },
+  {
+    "angle_h": 2.7074281537185354,
+    "angle_v": 1.308994808466875,
+    "file_frame": "file_num126_frame_962",
+    "map": "cs_italy",
+    "x": 655,
+    "y": 499,
+    "z": -19
+  }
+]

@@ -1,0 +1,902 @@
+[
+  {
+    "angle_h": 5.943324673088579,
+    "angle_v": 1.5750387424113927,
+    "file_frame": "file_num192_frame_870",
+    "map": "de_golden",
+    "x": 635,
+    "y": 580,
+    "z": 87
+  },
+  {
+    "angle_h": 4.253159340965825,
+    "angle_v": 1.570610438150809,
+    "file_frame": "file_num99_frame_351",
+    "map": "de_golden",
+    "x": 687,
+    "y": 603,
+    "z": 39
+  },
+  {
+    "angle_h": 5.674500665282127,
+    "angle_v": 1.6049393835502574,
+    "file_frame": "file_num178_frame_941",
+    "map": "de_golden",
+    "x": 813,
+    "y": 735,
+    "z": 58
+  },
+  {
+    "angle_h": 3.074942253620598,
+    "angle_v": 1.5731873128215699,
+    "file_frame": "file_num175_frame_882",
+    "map": "de_golden",
+    "x": 705,
+    "y": 463,
+    "z": 38
+  },
+  {
+    "angle_h": 1.7804243888393938,
+    "angle_v": 1.5972154174407005,
+    "file_frame": "file_num133_frame_65",
+    "map": "de_golden",
+    "x": 357,
+    "y": 393,
+    "z": 34
+  },
+  {
+    "angle_h": 2.229970641376677,
+    "angle_v": 1.582774692745855,
+    "file_frame": "file_num2_frame_810",
+    "map": "de_golden",
+    "x": 478,
+    "y": 578,
+    "z": 81
+  },
+  {
+    "angle_h": 5.395723625533723,
+    "angle_v": 1.5922001524758633,
+    "file_frame": "file_num192_frame_352",
+    "map": "de_golden",
+    "x": 228,
+    "y": 662,
+    "z": 55
+  },
+  {
+    "angle_h": 5.256496759537689,
+    "angle_v": 1.5361438073230034,
+    "file_frame": "file_num85_frame_986",
+    "map": "de_golden",
+    "x": 306,
+    "y": 617,
+    "z": 62
+  },
+  {
+    "angle_h": 1.4972790991129867,
+    "angle_v": 1.5711377440466445,
+    "file_frame": "file_num209_frame_336",
+    "map": "de_golden",
+    "x": 235,
+    "y": 637,
+    "z": 55
+  },
+  {
+    "angle_h": 0.6259959879313005,
+    "angle_v": 1.565499299386729,
+    "file_frame": "file_num168_frame_753",
+    "map": "de_golden",
+    "x": 562,
+    "y": 689,
+    "z": 39
+  },
+  {
+    "angle_h": 5.474112174323552,
+    "angle_v": 1.588143625503455,
+    "file_frame": "file_num32_frame_40",
+    "map": "de_golden",
+    "x": 372,
+    "y": 540,
+    "z": 57
+  },
+  {
+    "angle_h": 0.3695335749566699,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num213_frame_737",
+    "map": "de_golden",
+    "x": 553,
+    "y": 576,
+    "z": 34
+  },
+  {
+    "angle_h": 3.9414736196273106,
+    "angle_v": 1.5363115864716785,
+    "file_frame": "file_num209_frame_70",
+    "map": "de_golden",
+    "x": 596,
+    "y": 414,
+    "z": 34
+  },
+  {
+    "angle_h": 0.6274820318195647,
+    "angle_v": 1.5379955032289356,
+    "file_frame": "file_num139_frame_527",
+    "map": "de_golden",
+    "x": 543,
+    "y": 539,
+    "z": 96
+  },
+  {
+    "angle_h": 6.251175442457379,
+    "angle_v": 1.594806854550833,
+    "file_frame": "file_num209_frame_946",
+    "map": "de_golden",
+    "x": 274,
+    "y": 740,
+    "z": 55
+  },
+  {
+    "angle_h": 2.416397377162458,
+    "angle_v": 1.5370189220572037,
+    "file_frame": "file_num209_frame_45",
+    "map": "de_golden",
+    "x": 625,
+    "y": 397,
+    "z": 34
+  },
+  {
+    "angle_h": 3.2930253194938786,
+    "angle_v": 1.5674766964961129,
+    "file_frame": "file_num196_frame_66",
+    "map": "de_golden",
+    "x": 593,
+    "y": 557,
+    "z": 87
+  },
+  {
+    "angle_h": 2.709441503502635,
+    "angle_v": 1.6046038252529073,
+    "file_frame": "file_num57_frame_768",
+    "map": "de_golden",
+    "x": 690,
+    "y": 630,
+    "z": 81
+  },
+  {
+    "angle_h": 6.157452678426983,
+    "angle_v": 1.5624792747105791,
+    "file_frame": "file_num213_frame_473",
+    "map": "de_golden",
+    "x": 693,
+    "y": 359,
+    "z": 34
+  },
+  {
+    "angle_h": 1.9942828822754817,
+    "angle_v": 1.5627309434335916,
+    "file_frame": "file_num20_frame_85",
+    "map": "de_golden",
+    "x": 258,
+    "y": 621,
+    "z": 62
+  },
+  {
+    "angle_h": 4.8770639484930856,
+    "angle_v": 1.6001038819590006,
+    "file_frame": "file_num32_frame_120",
+    "map": "de_golden",
+    "x": 380,
+    "y": 370,
+    "z": 34
+  },
+  {
+    "angle_h": 1.3452592061885384,
+    "angle_v": 1.589198237295126,
+    "file_frame": "file_num133_frame_700",
+    "map": "de_golden",
+    "x": 651,
+    "y": 512,
+    "z": 51
+  },
+  {
+    "angle_h": 4.561063906188643,
+    "angle_v": 1.5997081362210146,
+    "file_frame": "file_num127_frame_86",
+    "map": "de_golden",
+    "x": 863,
+    "y": 709,
+    "z": 76
+  },
+  {
+    "angle_h": 2.926182336186516,
+    "angle_v": 1.6056166254154647,
+    "file_frame": "file_num17_frame_630",
+    "map": "de_golden",
+    "x": 688,
+    "y": 350,
+    "z": 34
+  },
+  {
+    "angle_h": 2.6181158507694198,
+    "angle_v": 1.601733736546129,
+    "file_frame": "file_num133_frame_790",
+    "map": "de_golden",
+    "x": 622,
+    "y": 751,
+    "z": 52
+  },
+  {
+    "angle_h": 0.6895962695040279,
+    "angle_v": 1.5584885278170955,
+    "file_frame": "file_num7_frame_918",
+    "map": "de_golden",
+    "x": 780,
+    "y": 584,
+    "z": 90
+  },
+  {
+    "angle_h": 4.6013729798158645,
+    "angle_v": 1.5991869555956864,
+    "file_frame": "file_num13_frame_211",
+    "map": "de_golden",
+    "x": 425,
+    "y": 258,
+    "z": 31
+  },
+  {
+    "angle_h": 0.36743633559823247,
+    "angle_v": 1.5384748722251498,
+    "file_frame": "file_num2_frame_925",
+    "map": "de_golden",
+    "x": 344,
+    "y": 749,
+    "z": 61
+  },
+  {
+    "angle_h": 6.209925740333142,
+    "angle_v": 1.5524546037353029,
+    "file_frame": "file_num92_frame_767",
+    "map": "de_golden",
+    "x": 621,
+    "y": 399,
+    "z": 34
+  },
+  {
+    "angle_h": 4.481926476500284,
+    "angle_v": 1.5816119566139262,
+    "file_frame": "file_num192_frame_331",
+    "map": "de_golden",
+    "x": 253,
+    "y": 729,
+    "z": 55
+  },
+  {
+    "angle_h": 4.603721887897315,
+    "angle_v": 1.6045976999824,
+    "file_frame": "file_num139_frame_377",
+    "map": "de_golden",
+    "x": 647,
+    "y": 696,
+    "z": 61
+  },
+  {
+    "angle_h": 1.0507468791394008,
+    "angle_v": 1.5441732380095923,
+    "file_frame": "file_num178_frame_810",
+    "map": "de_golden",
+    "x": 881,
+    "y": 450,
+    "z": 66
+  },
+  {
+    "angle_h": 3.5546766355364197,
+    "angle_v": 1.5761173226528749,
+    "file_frame": "file_num48_frame_142",
+    "map": "de_golden",
+    "x": 384,
+    "y": 217,
+    "z": 25
+  },
+  {
+    "angle_h": 6.107832128364409,
+    "angle_v": 1.5999361028103256,
+    "file_frame": "file_num28_frame_538",
+    "map": "de_golden",
+    "x": 392,
+    "y": 397,
+    "z": 34
+  },
+  {
+    "angle_h": 6.001070793953094,
+    "angle_v": 1.5761412911026855,
+    "file_frame": "file_num7_frame_892",
+    "map": "de_golden",
+    "x": 682,
+    "y": 628,
+    "z": 78
+  },
+  {
+    "angle_h": 1.4119334414494897,
+    "angle_v": 1.5541262699515455,
+    "file_frame": "file_num168_frame_733",
+    "map": "de_golden",
+    "x": 553,
+    "y": 617,
+    "z": 34
+  },
+  {
+    "angle_h": 1.4254756155925428,
+    "angle_v": 1.539122020370039,
+    "file_frame": "file_num139_frame_151",
+    "map": "de_golden",
+    "x": 535,
+    "y": 517,
+    "z": 34
+  },
+  {
+    "angle_h": 3.5541195022363756,
+    "angle_v": 1.5955259080451545,
+    "file_frame": "file_num192_frame_80",
+    "map": "de_golden",
+    "x": 741,
+    "y": 832,
+    "z": 46
+  },
+  {
+    "angle_h": 1.157376520234811,
+    "angle_v": 1.5664820058289681,
+    "file_frame": "file_num13_frame_101",
+    "map": "de_golden",
+    "x": 410,
+    "y": 212,
+    "z": 21
+  },
+  {
+    "angle_h": 0.25295716034786836,
+    "angle_v": 1.6053769409173575,
+    "file_frame": "file_num195_frame_798",
+    "map": "de_golden",
+    "x": 532,
+    "y": 546,
+    "z": 87
+  },
+  {
+    "angle_h": 5.537263180620383,
+    "angle_v": 1.602602459693713,
+    "file_frame": "file_num171_frame_117",
+    "map": "de_golden",
+    "x": 424,
+    "y": 264,
+    "z": 25
+  },
+  {
+    "angle_h": 4.369555992201045,
+    "angle_v": 1.5437897428126208,
+    "file_frame": "file_num99_frame_592",
+    "map": "de_golden",
+    "x": 361,
+    "y": 294,
+    "z": 28
+  },
+  {
+    "angle_h": 4.388180010336187,
+    "angle_v": 1.548559464324953,
+    "file_frame": "file_num191_frame_425",
+    "map": "de_golden",
+    "x": 509,
+    "y": 448,
+    "z": 34
+  },
+  {
+    "angle_h": 5.973183236282221,
+    "angle_v": 1.5983659030316149,
+    "file_frame": "file_num2_frame_400",
+    "map": "de_golden",
+    "x": 617,
+    "y": 584,
+    "z": 87
+  },
+  {
+    "angle_h": 4.992735953595696,
+    "angle_v": 1.6052869260725127,
+    "file_frame": "file_num154_frame_295",
+    "map": "de_golden",
+    "x": 704,
+    "y": 456,
+    "z": 40
+  },
+  {
+    "angle_h": 0.09822270732430247,
+    "angle_v": 1.5988633815232416,
+    "file_frame": "file_num134_frame_843",
+    "map": "de_golden",
+    "x": 227,
+    "y": 627,
+    "z": 55
+  },
+  {
+    "angle_h": 0.9031311888676712,
+    "angle_v": 1.5751527257060483,
+    "file_frame": "file_num101_frame_25",
+    "map": "de_golden",
+    "x": 556,
+    "y": 677,
+    "z": 37
+  },
+  {
+    "angle_h": 5.610151236494761,
+    "angle_v": 1.5365214435655767,
+    "file_frame": "file_num108_frame_234",
+    "map": "de_golden",
+    "x": 316,
+    "y": 578,
+    "z": 62
+  },
+  {
+    "angle_h": 2.7155654424292726,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num171_frame_659",
+    "map": "de_golden",
+    "x": 300,
+    "y": 639,
+    "z": 62
+  },
+  {
+    "angle_h": 0.8220160957538198,
+    "angle_v": 1.573193171775968,
+    "file_frame": "file_num171_frame_379",
+    "map": "de_golden",
+    "x": 355,
+    "y": 484,
+    "z": 43
+  },
+  {
+    "angle_h": 4.112980128563977,
+    "angle_v": 1.5392836742482068,
+    "file_frame": "file_num135_frame_841",
+    "map": "de_golden",
+    "x": 717,
+    "y": 382,
+    "z": 35
+  },
+  {
+    "angle_h": 5.595111034238538,
+    "angle_v": 1.536293743292375,
+    "file_frame": "file_num108_frame_254",
+    "map": "de_golden",
+    "x": 368,
+    "y": 533,
+    "z": 58
+  },
+  {
+    "angle_h": 4.310186674652127,
+    "angle_v": 1.5720067335103376,
+    "file_frame": "file_num19_frame_145",
+    "map": "de_golden",
+    "x": 717,
+    "y": 575,
+    "z": 87
+  },
+  {
+    "angle_h": 4.397359393981472,
+    "angle_v": 1.5454195973997493,
+    "file_frame": "file_num22_frame_316",
+    "map": "de_golden",
+    "x": 688,
+    "y": 766,
+    "z": 46
+  },
+  {
+    "angle_h": 1.011276834413609,
+    "angle_v": 1.59974435521184,
+    "file_frame": "file_num40_frame_631",
+    "map": "de_golden",
+    "x": 315,
+    "y": 566,
+    "z": 62
+  },
+  {
+    "angle_h": 1.133252275500328,
+    "angle_v": 1.5508007806983637,
+    "file_frame": "file_num108_frame_560",
+    "map": "de_golden",
+    "x": 648,
+    "y": 567,
+    "z": 50
+  },
+  {
+    "angle_h": 5.566312941790967,
+    "angle_v": 1.6051191469238377,
+    "file_frame": "file_num40_frame_235",
+    "map": "de_golden",
+    "x": 687,
+    "y": 573,
+    "z": 87
+  },
+  {
+    "angle_h": 5.400439284875927,
+    "angle_v": 1.5497941058063138,
+    "file_frame": "file_num20_frame_380",
+    "map": "de_golden",
+    "x": 704,
+    "y": 455,
+    "z": 40
+  },
+  {
+    "angle_h": 1.1607141268709527,
+    "angle_v": 1.536725175388968,
+    "file_frame": "file_num20_frame_25",
+    "map": "de_golden",
+    "x": 371,
+    "y": 502,
+    "z": 46
+  },
+  {
+    "angle_h": 2.548511472519109,
+    "angle_v": 1.5796287005501444,
+    "file_frame": "file_num2_frame_815",
+    "map": "de_golden",
+    "x": 479,
+    "y": 600,
+    "z": 81
+  },
+  {
+    "angle_h": 1.6853775011150107,
+    "angle_v": 1.6039026149378894,
+    "file_frame": "file_num28_frame_911",
+    "map": "de_golden",
+    "x": 652,
+    "y": 728,
+    "z": 62
+  },
+  {
+    "angle_h": 4.614142304610576,
+    "angle_v": 1.5554623778704382,
+    "file_frame": "file_num191_frame_168",
+    "map": "de_golden",
+    "x": 656,
+    "y": 505,
+    "z": 51
+  },
+  {
+    "angle_h": 2.0370366046253414,
+    "angle_v": 1.554815229725549,
+    "file_frame": "file_num39_frame_221",
+    "map": "de_golden",
+    "x": 865,
+    "y": 752,
+    "z": 65
+  },
+  {
+    "angle_h": 5.636570327140565,
+    "angle_v": 1.581534192310096,
+    "file_frame": "file_num32_frame_157",
+    "map": "de_golden",
+    "x": 392,
+    "y": 240,
+    "z": 23
+  },
+  {
+    "angle_h": 4.239521293023529,
+    "angle_v": 1.5359760281743284,
+    "file_frame": "file_num195_frame_600",
+    "map": "de_golden",
+    "x": 460,
+    "y": 506,
+    "z": 88
+  },
+  {
+    "angle_h": 3.083912579120312,
+    "angle_v": 1.537372323533857,
+    "file_frame": "file_num37_frame_387",
+    "map": "de_golden",
+    "x": 537,
+    "y": 551,
+    "z": 87
+  },
+  {
+    "angle_h": 3.6050103801389173,
+    "angle_v": 1.5494164695637405,
+    "file_frame": "file_num139_frame_492",
+    "map": "de_golden",
+    "x": 568,
+    "y": 540,
+    "z": 87
+  },
+  {
+    "angle_h": 3.7360522868407022,
+    "angle_v": 1.541608613879846,
+    "file_frame": "file_num217_frame_695",
+    "map": "de_golden",
+    "x": 678,
+    "y": 319,
+    "z": 35
+  },
+  {
+    "angle_h": 5.861646321404176,
+    "angle_v": 1.5910438079305511,
+    "file_frame": "file_num92_frame_837",
+    "map": "de_golden",
+    "x": 734,
+    "y": 363,
+    "z": 43
+  },
+  {
+    "angle_h": 0.030458040755018227,
+    "angle_v": 1.5552589123631564,
+    "file_frame": "file_num24_frame_930",
+    "map": "de_golden",
+    "x": 704,
+    "y": 816,
+    "z": 43
+  },
+  {
+    "angle_h": 2.4556694158612027,
+    "angle_v": 1.5661224790818076,
+    "file_frame": "file_num171_frame_949",
+    "map": "de_golden",
+    "x": 470,
+    "y": 631,
+    "z": 34
+  },
+  {
+    "angle_h": 3.053808206158056,
+    "angle_v": 1.5546953874764955,
+    "file_frame": "file_num99_frame_567",
+    "map": "de_golden",
+    "x": 383,
+    "y": 291,
+    "z": 31
+  },
+  {
+    "angle_h": 2.519851065499894,
+    "angle_v": 1.5971855900364917,
+    "file_frame": "file_num24_frame_15",
+    "map": "de_golden",
+    "x": 552,
+    "y": 556,
+    "z": 34
+  },
+  {
+    "angle_h": 1.60930763352826,
+    "angle_v": 1.5909298246358956,
+    "file_frame": "file_num7_frame_772",
+    "map": "de_golden",
+    "x": 668,
+    "y": 497,
+    "z": 49
+  },
+  {
+    "angle_h": 4.480176779664102,
+    "angle_v": 1.5362458063927535,
+    "file_frame": "file_num101_frame_865",
+    "map": "de_golden",
+    "x": 430,
+    "y": 287,
+    "z": 39
+  },
+  {
+    "angle_h": 4.790651827971066,
+    "angle_v": 1.591517051656258,
+    "file_frame": "file_num68_frame_195",
+    "map": "de_golden",
+    "x": 594,
+    "y": 349,
+    "z": 35
+  },
+  {
+    "angle_h": 2.085674581403731,
+    "angle_v": 1.567075358119838,
+    "file_frame": "file_num171_frame_369",
+    "map": "de_golden",
+    "x": 386,
+    "y": 462,
+    "z": 38
+  },
+  {
+    "angle_h": 3.878850451858533,
+    "angle_v": 1.5621618259086418,
+    "file_frame": "file_num85_frame_543",
+    "map": "de_golden",
+    "x": 687,
+    "y": 323,
+    "z": 34
+  },
+  {
+    "angle_h": 3.2062712490878935,
+    "angle_v": 1.552226637145992,
+    "file_frame": "file_num99_frame_572",
+    "map": "de_golden",
+    "x": 369,
+    "y": 301,
+    "z": 38
+  },
+  {
+    "angle_h": 2.6590238693258,
+    "angle_v": 1.5990253017175184,
+    "file_frame": "file_num105_frame_95",
+    "map": "de_golden",
+    "x": 365,
+    "y": 544,
+    "z": 57
+  },
+  {
+    "angle_h": 5.200452664925843,
+    "angle_v": 1.5574879781955526,
+    "file_frame": "file_num101_frame_945",
+    "map": "de_golden",
+    "x": 434,
+    "y": 274,
+    "z": 30
+  },
+  {
+    "angle_h": 1.5328183180698216,
+    "angle_v": 1.5428070363703816,
+    "file_frame": "file_num108_frame_580",
+    "map": "de_golden",
+    "x": 697,
+    "y": 608,
+    "z": 39
+  },
+  {
+    "angle_h": 2.978660990730963,
+    "angle_v": 1.5731031569311231,
+    "file_frame": "file_num213_frame_825",
+    "map": "de_golden",
+    "x": 346,
+    "y": 733,
+    "z": 50
+  },
+  {
+    "angle_h": 4.372114757376393,
+    "angle_v": 1.573462683678284,
+    "file_frame": "file_num99_frame_356",
+    "map": "de_golden",
+    "x": 674,
+    "y": 594,
+    "z": 42
+  },
+  {
+    "angle_h": 6.139680339208448,
+    "angle_v": 1.5388104305224999,
+    "file_frame": "file_num196_frame_753",
+    "map": "de_golden",
+    "x": 383,
+    "y": 397,
+    "z": 34
+  },
+  {
+    "angle_h": 4.34388631508599,
+    "angle_v": 1.556930578579399,
+    "file_frame": "file_num105_frame_688",
+    "map": "de_golden",
+    "x": 553,
+    "y": 558,
+    "z": 34
+  },
+  {
+    "angle_h": 3.1209318498529584,
+    "angle_v": 1.5463666174833817,
+    "file_frame": "file_num40_frame_829",
+    "map": "de_golden",
+    "x": 614,
+    "y": 698,
+    "z": 62
+  },
+  {
+    "angle_h": 4.446453170780429,
+    "angle_v": 1.581300366766387,
+    "file_frame": "file_num32_frame_995",
+    "map": "de_golden",
+    "x": 411,
+    "y": 480,
+    "z": 45
+  },
+  {
+    "angle_h": 4.836029962417144,
+    "angle_v": 1.5858365290511192,
+    "file_frame": "file_num20_frame_230",
+    "map": "de_golden",
+    "x": 554,
+    "y": 867,
+    "z": 67
+  },
+  {
+    "angle_h": 2.871102838521497,
+    "angle_v": 1.5658827945837004,
+    "file_frame": "file_num134_frame_411",
+    "map": "de_golden",
+    "x": 749,
+    "y": 331,
+    "z": 58
+  },
+  {
+    "angle_h": 1.0811149050495743,
+    "angle_v": 1.5397630432444211,
+    "file_frame": "file_num135_frame_415",
+    "map": "de_golden",
+    "x": 693,
+    "y": 371,
+    "z": 34
+  },
+  {
+    "angle_h": 1.5054283720486292,
+    "angle_v": 1.5359041228248964,
+    "file_frame": "file_num139_frame_176",
+    "map": "de_golden",
+    "x": 554,
+    "y": 587,
+    "z": 34
+  },
+  {
+    "angle_h": 4.026603694400565,
+    "angle_v": 1.536293743292375,
+    "file_frame": "file_num77_frame_417",
+    "map": "de_golden",
+    "x": 551,
+    "y": 659,
+    "z": 36
+  },
+  {
+    "angle_h": 1.2423027300266203,
+    "angle_v": 1.5401705068912033,
+    "file_frame": "file_num2_frame_880",
+    "map": "de_golden",
+    "x": 230,
+    "y": 649,
+    "z": 55
+  },
+  {
+    "angle_h": 1.949989187025284,
+    "angle_v": 1.6001997557582435,
+    "file_frame": "file_num15_frame_353",
+    "map": "de_golden",
+    "x": 748,
+    "y": 332,
+    "z": 57
+  },
+  {
+    "angle_h": 1.8460679807584843,
+    "angle_v": 1.5734749342192984,
+    "file_frame": "file_num135_frame_540",
+    "map": "de_golden",
+    "x": 703,
+    "y": 626,
+    "z": 39
+  },
+  {
+    "angle_h": 1.5309607632094913,
+    "angle_v": 1.570676484545843,
+    "file_frame": "file_num22_frame_511",
+    "map": "de_golden",
+    "x": 475,
+    "y": 667,
+    "z": 34
+  },
+  {
+    "angle_h": 0.9508523724408011,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num24_frame_710",
+    "map": "de_golden",
+    "x": 416,
+    "y": 263,
+    "z": 24
+  },
+  {
+    "angle_h": 5.350944436016804,
+    "angle_v": 1.571719112112609,
+    "file_frame": "file_num88_frame_496",
+    "map": "de_golden",
+    "x": 664,
+    "y": 631,
+    "z": 74
+  },
+  {
+    "angle_h": 2.528857343674324,
+    "angle_v": 1.5677283652191252,
+    "file_frame": "file_num19_frame_448",
+    "map": "de_golden",
+    "x": 661,
+    "y": 365,
+    "z": 36
+  }
+]

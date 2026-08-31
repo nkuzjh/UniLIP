@@ -1,0 +1,4502 @@
+[
+  {
+    "angle_h": 5.756454654139354,
+    "angle_v": 1.5753982691585535,
+    "file_frame": "file_num104_frame_426",
+    "map": "de_dust2",
+    "x": 492,
+    "y": 553,
+    "z": 13
+  },
+  {
+    "angle_h": 4.440023234644542,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num169_frame_399",
+    "map": "de_dust2",
+    "x": 477,
+    "y": 577,
+    "z": 14
+  },
+  {
+    "angle_h": 4.780381613543285,
+    "angle_v": 1.572827786074409,
+    "file_frame": "file_num162_frame_133",
+    "map": "de_dust2",
+    "x": 861,
+    "y": 382,
+    "z": 14
+  },
+  {
+    "angle_h": 3.0653729831917254,
+    "angle_v": 1.6045620136237932,
+    "file_frame": "file_num162_frame_386",
+    "map": "de_dust2",
+    "x": 357,
+    "y": 218,
+    "z": -4
+  },
+  {
+    "angle_h": 4.69935600264206,
+    "angle_v": 1.5481163143195638,
+    "file_frame": "file_num162_frame_168",
+    "map": "de_dust2",
+    "x": 876,
+    "y": 206,
+    "z": 16
+  },
+  {
+    "angle_h": 6.117910861509814,
+    "angle_v": 1.5893180795441797,
+    "file_frame": "file_num12_frame_108",
+    "map": "de_dust2",
+    "x": 728,
+    "y": 254,
+    "z": 0
+  },
+  {
+    "angle_h": 5.840589771929356,
+    "angle_v": 1.603141749814454,
+    "file_frame": "file_num104_frame_337",
+    "map": "de_dust2",
+    "x": 258,
+    "y": 476,
+    "z": 22
+  },
+  {
+    "angle_h": 3.5874596159230774,
+    "angle_v": 1.59974435521184,
+    "file_frame": "file_num360_frame_471",
+    "map": "de_dust2",
+    "x": 526,
+    "y": 545,
+    "z": 27
+  },
+  {
+    "angle_h": 4.781142212350611,
+    "angle_v": 1.5802340370659194,
+    "file_frame": "file_num183_frame_262",
+    "map": "de_dust2",
+    "x": 863,
+    "y": 413,
+    "z": 13
+  },
+  {
+    "angle_h": 6.048228452639564,
+    "angle_v": 1.555588345389999,
+    "file_frame": "file_num171_frame_296",
+    "map": "de_dust2",
+    "x": 267,
+    "y": 228,
+    "z": 14
+  },
+  {
+    "angle_h": 3.5225530538356664,
+    "angle_v": 1.5972154174407005,
+    "file_frame": "file_num211_frame_203",
+    "map": "de_dust2",
+    "x": 293,
+    "y": 214,
+    "z": 15
+  },
+  {
+    "angle_h": 4.808298998618367,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num276_frame_186",
+    "map": "de_dust2",
+    "x": 741,
+    "y": 198,
+    "z": 5
+  },
+  {
+    "angle_h": 0.06809436591223604,
+    "angle_v": 1.536725175388968,
+    "file_frame": "file_num289_frame_261",
+    "map": "de_dust2",
+    "x": 377,
+    "y": 240,
+    "z": -9
+  },
+  {
+    "angle_h": 4.937764313954825,
+    "angle_v": 1.602237073992154,
+    "file_frame": "file_num287_frame_408",
+    "map": "de_dust2",
+    "x": 175,
+    "y": 653,
+    "z": 14
+  },
+  {
+    "angle_h": 4.640579504751793,
+    "angle_v": 1.5905165020347154,
+    "file_frame": "file_num207_frame_422",
+    "map": "de_dust2",
+    "x": 468,
+    "y": 771,
+    "z": 14
+  },
+  {
+    "angle_h": 5.9007806746745635,
+    "angle_v": 1.5990253017175184,
+    "file_frame": "file_num366_frame_254",
+    "map": "de_dust2",
+    "x": 246,
+    "y": 241,
+    "z": 14
+  },
+  {
+    "angle_h": 4.3437723317913335,
+    "angle_v": 1.5856567656775387,
+    "file_frame": "file_num250_frame_267",
+    "map": "de_dust2",
+    "x": 634,
+    "y": 743,
+    "z": 13
+  },
+  {
+    "angle_h": 1.2087229318418111,
+    "angle_v": 1.5401705068912033,
+    "file_frame": "file_num280_frame_176",
+    "map": "de_dust2",
+    "x": 469,
+    "y": 769,
+    "z": 14
+  },
+  {
+    "angle_h": 4.13669078438117,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num104_frame_8",
+    "map": "de_dust2",
+    "x": 181,
+    "y": 170,
+    "z": 26
+  },
+  {
+    "angle_h": 3.6452954853163284,
+    "angle_v": 1.5954300342459116,
+    "file_frame": "file_num250_frame_485",
+    "map": "de_dust2",
+    "x": 180,
+    "y": 224,
+    "z": 13
+  },
+  {
+    "angle_h": 5.810114154311142,
+    "angle_v": 1.5688309139104182,
+    "file_frame": "file_num171_frame_275",
+    "map": "de_dust2",
+    "x": 190,
+    "y": 270,
+    "z": 13
+  },
+  {
+    "angle_h": 4.001197137601209,
+    "angle_v": 1.5746792156642322,
+    "file_frame": "file_num258_frame_463",
+    "map": "de_dust2",
+    "x": 281,
+    "y": 804,
+    "z": 43
+  },
+  {
+    "angle_h": 1.476558374251625,
+    "angle_v": 1.565403425587486,
+    "file_frame": "file_num162_frame_464",
+    "map": "de_dust2",
+    "x": 108,
+    "y": 358,
+    "z": 21
+  },
+  {
+    "angle_h": 3.276337419471224,
+    "angle_v": 1.5796465437294478,
+    "file_frame": "file_num360_frame_360",
+    "map": "de_dust2",
+    "x": 694,
+    "y": 685,
+    "z": 14
+  },
+  {
+    "angle_h": 3.8878205110421376,
+    "angle_v": 1.6033694500876556,
+    "file_frame": "file_num184_frame_63",
+    "map": "de_dust2",
+    "x": 623,
+    "y": 699,
+    "z": 14
+  },
+  {
+    "angle_h": 6.2567182796341605,
+    "angle_v": 1.5603340984525202,
+    "file_frame": "file_num98_frame_458",
+    "map": "de_dust2",
+    "x": 679,
+    "y": 175,
+    "z": 36
+  },
+  {
+    "angle_h": 2.5520886304953034,
+    "angle_v": 1.55888986619337,
+    "file_frame": "file_num191_frame_120",
+    "map": "de_dust2",
+    "x": 252,
+    "y": 706,
+    "z": 16
+  },
+  {
+    "angle_h": 4.673740121381024,
+    "angle_v": 1.5397630432444211,
+    "file_frame": "file_num250_frame_23",
+    "map": "de_dust2",
+    "x": 119,
+    "y": 628,
+    "z": 23
+  },
+  {
+    "angle_h": 3.2888010133727947,
+    "angle_v": 1.5858543722304226,
+    "file_frame": "file_num126_frame_417",
+    "map": "de_dust2",
+    "x": 510,
+    "y": 906,
+    "z": 25
+  },
+  {
+    "angle_h": 6.149747088128947,
+    "angle_v": 1.5386306671489196,
+    "file_frame": "file_num181_frame_473",
+    "map": "de_dust2",
+    "x": 571,
+    "y": 255,
+    "z": -14
+  },
+  {
+    "angle_h": 2.329445700203589,
+    "angle_v": 1.5801080695463585,
+    "file_frame": "file_num162_frame_444",
+    "map": "de_dust2",
+    "x": 159,
+    "y": 294,
+    "z": 13
+  },
+  {
+    "angle_h": 2.806531834731436,
+    "angle_v": 1.5591836128616061,
+    "file_frame": "file_num237_frame_53",
+    "map": "de_dust2",
+    "x": 582,
+    "y": 880,
+    "z": 15
+  },
+  {
+    "angle_h": 1.19373066648521,
+    "angle_v": 1.539122020370039,
+    "file_frame": "file_num181_frame_433",
+    "map": "de_dust2",
+    "x": 483,
+    "y": 329,
+    "z": -13
+  },
+  {
+    "angle_h": 1.7741865997761557,
+    "angle_v": 1.5614246629189077,
+    "file_frame": "file_num211_frame_259",
+    "map": "de_dust2",
+    "x": 115,
+    "y": 296,
+    "z": 14
+  },
+  {
+    "angle_h": 3.849039559248404,
+    "angle_v": 1.5972756048813366,
+    "file_frame": "file_num370_frame_486",
+    "map": "de_dust2",
+    "x": 321,
+    "y": 905,
+    "z": 52
+  },
+  {
+    "angle_h": 5.741450404557848,
+    "angle_v": 1.5425854613676873,
+    "file_frame": "file_num82_frame_436",
+    "map": "de_dust2",
+    "x": 261,
+    "y": 477,
+    "z": 22
+  },
+  {
+    "angle_h": 6.263075777788398,
+    "angle_v": 1.5902166300959724,
+    "file_frame": "file_num366_frame_275",
+    "map": "de_dust2",
+    "x": 303,
+    "y": 212,
+    "z": 15
+  },
+  {
+    "angle_h": 3.46116985387043,
+    "angle_v": 1.598539807450797,
+    "file_frame": "file_num181_frame_322",
+    "map": "de_dust2",
+    "x": 831,
+    "y": 258,
+    "z": 14
+  },
+  {
+    "angle_h": 4.775701906875797,
+    "angle_v": 1.60175770499594,
+    "file_frame": "file_num169_frame_429",
+    "map": "de_dust2",
+    "x": 459,
+    "y": 450,
+    "z": -12
+  },
+  {
+    "angle_h": 5.623819111841266,
+    "angle_v": 1.5892818605533545,
+    "file_frame": "file_num211_frame_442",
+    "map": "de_dust2",
+    "x": 237,
+    "y": 853,
+    "z": 43
+  },
+  {
+    "angle_h": 5.616101271002217,
+    "angle_v": 1.5554685031409454,
+    "file_frame": "file_num280_frame_458",
+    "map": "de_dust2",
+    "x": 289,
+    "y": 469,
+    "z": 21
+  },
+  {
+    "angle_h": 2.03320764476808,
+    "angle_v": 1.6012181485590897,
+    "file_frame": "file_num191_frame_245",
+    "map": "de_dust2",
+    "x": 326,
+    "y": 786,
+    "z": 43
+  },
+  {
+    "angle_h": 4.943924205556178,
+    "angle_v": 1.545671532438871,
+    "file_frame": "file_num328_frame_401",
+    "map": "de_dust2",
+    "x": 212,
+    "y": 195,
+    "z": 13
+  },
+  {
+    "angle_h": 3.305350961650984,
+    "angle_v": 1.550315286431642,
+    "file_frame": "file_num258_frame_183",
+    "map": "de_dust2",
+    "x": 509,
+    "y": 261,
+    "z": -14
+  },
+  {
+    "angle_h": 0.13416339781546682,
+    "angle_v": 1.577465414796673,
+    "file_frame": "file_num209_frame_58",
+    "map": "de_dust2",
+    "x": 310,
+    "y": 901,
+    "z": 42
+  },
+  {
+    "angle_h": 2.067536457009474,
+    "angle_v": 1.5926196003475508,
+    "file_frame": "file_num184_frame_2",
+    "map": "de_dust2",
+    "x": 695,
+    "y": 685,
+    "z": 14
+  },
+  {
+    "angle_h": 2.4744188688836872,
+    "angle_v": 1.5626049759140308,
+    "file_frame": "file_num237_frame_48",
+    "map": "de_dust2",
+    "x": 587,
+    "y": 857,
+    "z": 14
+  },
+  {
+    "angle_h": 3.67145731460083,
+    "angle_v": 1.5421660134959998,
+    "file_frame": "file_num287_frame_257",
+    "map": "de_dust2",
+    "x": 511,
+    "y": 983,
+    "z": 26
+  },
+  {
+    "angle_h": 5.101600652635955,
+    "angle_v": 1.5411414954246463,
+    "file_frame": "file_num292_frame_282",
+    "map": "de_dust2",
+    "x": 849,
+    "y": 221,
+    "z": 16
+  },
+  {
+    "angle_h": 2.697978725538716,
+    "angle_v": 1.60250658589447,
+    "file_frame": "file_num278_frame_40",
+    "map": "de_dust2",
+    "x": 574,
+    "y": 903,
+    "z": 13
+  },
+  {
+    "angle_h": 0.4989152670348994,
+    "angle_v": 1.6022788856212682,
+    "file_frame": "file_num280_frame_19",
+    "map": "de_dust2",
+    "x": 361,
+    "y": 223,
+    "z": -4
+  },
+  {
+    "angle_h": 2.7777515854631676,
+    "angle_v": 1.5714733023439946,
+    "file_frame": "file_num211_frame_244",
+    "map": "de_dust2",
+    "x": 179,
+    "y": 298,
+    "z": 13
+  },
+  {
+    "angle_h": 6.156859592452222,
+    "angle_v": 1.5916249096804063,
+    "file_frame": "file_num12_frame_103",
+    "map": "de_dust2",
+    "x": 710,
+    "y": 257,
+    "z": -5
+  },
+  {
+    "angle_h": 1.6244197411339145,
+    "angle_v": 1.5790595830251946,
+    "file_frame": "file_num126_frame_234",
+    "map": "de_dust2",
+    "x": 640,
+    "y": 290,
+    "z": 36
+  },
+  {
+    "angle_h": 3.114364494604823,
+    "angle_v": 1.5741758782182071,
+    "file_frame": "file_num280_frame_286",
+    "map": "de_dust2",
+    "x": 338,
+    "y": 915,
+    "z": 40
+  },
+  {
+    "angle_h": 0.006471481448892548,
+    "angle_v": 1.5932845916717435,
+    "file_frame": "file_num250_frame_163",
+    "map": "de_dust2",
+    "x": 299,
+    "y": 915,
+    "z": 40
+  },
+  {
+    "angle_h": 1.40235804575011,
+    "angle_v": 1.5653735981832773,
+    "file_frame": "file_num209_frame_42",
+    "map": "de_dust2",
+    "x": 304,
+    "y": 836,
+    "z": 44
+  },
+  {
+    "angle_h": 0.008952216004301359,
+    "angle_v": 1.538043440128557,
+    "file_frame": "file_num122_frame_248",
+    "map": "de_dust2",
+    "x": 954,
+    "y": 304,
+    "z": 14
+  },
+  {
+    "angle_h": 4.100456347221771,
+    "angle_v": 1.5646723878682594,
+    "file_frame": "file_num177_frame_367",
+    "map": "de_dust2",
+    "x": 544,
+    "y": 224,
+    "z": -14
+  },
+  {
+    "angle_h": 2.1257857821619592,
+    "angle_v": 1.6016975175553039,
+    "file_frame": "file_num184_frame_23",
+    "map": "de_dust2",
+    "x": 648,
+    "y": 765,
+    "z": 13
+  },
+  {
+    "angle_h": 5.382678663566188,
+    "angle_v": 1.5459170758913763,
+    "file_frame": "file_num98_frame_433",
+    "map": "de_dust2",
+    "x": 638,
+    "y": 238,
+    "z": 49
+  },
+  {
+    "angle_h": 1.9086855558889724,
+    "angle_v": 1.5705507833423913,
+    "file_frame": "file_num63_frame_176",
+    "map": "de_dust2",
+    "x": 633,
+    "y": 329,
+    "z": 36
+  },
+  {
+    "angle_h": 4.711184698939755,
+    "angle_v": 1.5544919219692135,
+    "file_frame": "file_num191_frame_435",
+    "map": "de_dust2",
+    "x": 462,
+    "y": 447,
+    "z": -12
+  },
+  {
+    "angle_h": 2.9663952696983853,
+    "angle_v": 1.5664820058289681,
+    "file_frame": "file_num252_frame_332",
+    "map": "de_dust2",
+    "x": 287,
+    "y": 224,
+    "z": 15
+  },
+  {
+    "angle_h": 3.0726295645299735,
+    "angle_v": 1.605262957622702,
+    "file_frame": "file_num258_frame_78",
+    "map": "de_dust2",
+    "x": 751,
+    "y": 257,
+    "z": 5
+  },
+  {
+    "angle_h": 1.6501558641181677,
+    "angle_v": 1.5589617715428024,
+    "file_frame": "file_num171_frame_412",
+    "map": "de_dust2",
+    "x": 490,
+    "y": 254,
+    "z": -14
+  },
+  {
+    "angle_h": 3.106083395195222,
+    "angle_v": 1.5766148011445018,
+    "file_frame": "file_num360_frame_355",
+    "map": "de_dust2",
+    "x": 702,
+    "y": 672,
+    "z": 14
+  },
+  {
+    "angle_h": 0.8441208654336955,
+    "angle_v": 1.603273576288413,
+    "file_frame": "file_num360_frame_95",
+    "map": "de_dust2",
+    "x": 813,
+    "y": 254,
+    "z": 14
+  },
+  {
+    "angle_h": 0.056032376703049155,
+    "angle_v": 1.543891741882371,
+    "file_frame": "file_num289_frame_282",
+    "map": "de_dust2",
+    "x": 485,
+    "y": 247,
+    "z": -14
+  },
+  {
+    "angle_h": 4.803474948619798,
+    "angle_v": 1.5381331886572926,
+    "file_frame": "file_num250_frame_28",
+    "map": "de_dust2",
+    "x": 118,
+    "y": 624,
+    "z": 23
+  },
+  {
+    "angle_h": 3.1871566766799586,
+    "angle_v": 1.5900009140476759,
+    "file_frame": "file_num162_frame_325",
+    "map": "de_dust2",
+    "x": 632,
+    "y": 267,
+    "z": -13
+  },
+  {
+    "angle_h": 2.6487533885819095,
+    "angle_v": 1.535916373365911,
+    "file_frame": "file_num157_frame_149",
+    "map": "de_dust2",
+    "x": 495,
+    "y": 965,
+    "z": 31
+  },
+  {
+    "angle_h": 2.025699527864874,
+    "angle_v": 1.5955259080451545,
+    "file_frame": "file_num22_frame_406",
+    "map": "de_dust2",
+    "x": 194,
+    "y": 631,
+    "z": 16
+  },
+  {
+    "angle_h": 5.177964133732887,
+    "angle_v": 1.6013201476288397,
+    "file_frame": "file_num237_frame_298",
+    "map": "de_dust2",
+    "x": 677,
+    "y": 719,
+    "z": 13
+  },
+  {
+    "angle_h": 5.474525763240841,
+    "angle_v": 1.5440416778517425,
+    "file_frame": "file_num98_frame_428",
+    "map": "de_dust2",
+    "x": 636,
+    "y": 256,
+    "z": 37
+  },
+  {
+    "angle_h": 4.776846000880096,
+    "angle_v": 1.551525693147083,
+    "file_frame": "file_num191_frame_430",
+    "map": "de_dust2",
+    "x": 460,
+    "y": 470,
+    "z": -7
+  },
+  {
+    "angle_h": 3.219226462526693,
+    "angle_v": 1.5927812542257187,
+    "file_frame": "file_num31_frame_389",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 415,
+    "z": 26
+  },
+  {
+    "angle_h": 3.273599157238405,
+    "angle_v": 1.5642769084463826,
+    "file_frame": "file_num82_frame_18",
+    "map": "de_dust2",
+    "x": 519,
+    "y": 254,
+    "z": -14
+  },
+  {
+    "angle_h": 4.581904739615167,
+    "angle_v": 1.599241017765815,
+    "file_frame": "file_num287_frame_352",
+    "map": "de_dust2",
+    "x": 133,
+    "y": 884,
+    "z": 43
+  },
+  {
+    "angle_h": 4.8954962190297415,
+    "angle_v": 1.576392959825698,
+    "file_frame": "file_num98_frame_162",
+    "map": "de_dust2",
+    "x": 466,
+    "y": 386,
+    "z": -14
+  },
+  {
+    "angle_h": 2.231606488076258,
+    "angle_v": 1.590102913117426,
+    "file_frame": "file_num287_frame_125",
+    "map": "de_dust2",
+    "x": 743,
+    "y": 541,
+    "z": 14
+  },
+  {
+    "angle_h": 4.6609106091456765,
+    "angle_v": 1.5398828854934747,
+    "file_frame": "file_num209_frame_265",
+    "map": "de_dust2",
+    "x": 109,
+    "y": 400,
+    "z": 21
+  },
+  {
+    "angle_h": 0.41656579875579625,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num356_frame_200",
+    "map": "de_dust2",
+    "x": 739,
+    "y": 538,
+    "z": 14
+  },
+  {
+    "angle_h": 4.955764619762671,
+    "angle_v": 1.5935365267108652,
+    "file_frame": "file_num177_frame_227",
+    "map": "de_dust2",
+    "x": 863,
+    "y": 217,
+    "z": 16
+  },
+  {
+    "angle_h": 1.6489933943023483,
+    "angle_v": 1.5495243275878887,
+    "file_frame": "file_num237_frame_166",
+    "map": "de_dust2",
+    "x": 323,
+    "y": 812,
+    "z": 43
+  },
+  {
+    "angle_h": 3.9432653944087157,
+    "angle_v": 1.556697019351799,
+    "file_frame": "file_num169_frame_353",
+    "map": "de_dust2",
+    "x": 509,
+    "y": 615,
+    "z": 14
+  },
+  {
+    "angle_h": 6.125095271182521,
+    "angle_v": 1.5831219689520013,
+    "file_frame": "file_num177_frame_211",
+    "map": "de_dust2",
+    "x": 789,
+    "y": 218,
+    "z": 16
+  },
+  {
+    "angle_h": 3.08778934271914,
+    "angle_v": 1.5438677734325603,
+    "file_frame": "file_num237_frame_81",
+    "map": "de_dust2",
+    "x": 465,
+    "y": 899,
+    "z": 37
+  },
+  {
+    "angle_h": 1.7312710903900737,
+    "angle_v": 1.5619940467599667,
+    "file_frame": "file_num171_frame_417",
+    "map": "de_dust2",
+    "x": 485,
+    "y": 274,
+    "z": -14
+  },
+  {
+    "angle_h": 1.6806497243898475,
+    "angle_v": 1.5492305809196527,
+    "file_frame": "file_num252_frame_37",
+    "map": "de_dust2",
+    "x": 148,
+    "y": 420,
+    "z": 35
+  },
+  {
+    "angle_h": 3.4320604378914275,
+    "angle_v": 1.5433284833118193,
+    "file_frame": "file_num366_frame_362",
+    "map": "de_dust2",
+    "x": 537,
+    "y": 244,
+    "z": -14
+  },
+  {
+    "angle_h": 3.025501466931604,
+    "angle_v": 1.561904031915122,
+    "file_frame": "file_num287_frame_475",
+    "map": "de_dust2",
+    "x": 285,
+    "y": 493,
+    "z": 16
+  },
+  {
+    "angle_h": 0.7479653037475126,
+    "angle_v": 1.5485717148659675,
+    "file_frame": "file_num356_frame_220",
+    "map": "de_dust2",
+    "x": 743,
+    "y": 547,
+    "z": 14
+  },
+  {
+    "angle_h": 5.462931158802963,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num278_frame_376",
+    "map": "de_dust2",
+    "x": 423,
+    "y": 405,
+    "z": -11
+  },
+  {
+    "angle_h": 3.816268296770543,
+    "angle_v": 1.5791794252742481,
+    "file_frame": "file_num331_frame_261",
+    "map": "de_dust2",
+    "x": 442,
+    "y": 276,
+    "z": -12
+  },
+  {
+    "angle_h": 4.810725671003647,
+    "angle_v": 1.5928771280249614,
+    "file_frame": "file_num24_frame_476",
+    "map": "de_dust2",
+    "x": 634,
+    "y": 373,
+    "z": 15
+  },
+  {
+    "angle_h": 1.7876029395577022,
+    "angle_v": 1.5375880395821535,
+    "file_frame": "file_num331_frame_19",
+    "map": "de_dust2",
+    "x": 705,
+    "y": 607,
+    "z": 14
+  },
+  {
+    "angle_h": 0.001366201639210649,
+    "angle_v": 1.555786218258992,
+    "file_frame": "file_num331_frame_432",
+    "map": "de_dust2",
+    "x": 738,
+    "y": 222,
+    "z": 2
+  },
+  {
+    "angle_h": 4.556911505416992,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num31_frame_22",
+    "map": "de_dust2",
+    "x": 665,
+    "y": 196,
+    "z": 36
+  },
+  {
+    "angle_h": 5.113710845060872,
+    "angle_v": 1.5386306671489196,
+    "file_frame": "file_num252_frame_422",
+    "map": "de_dust2",
+    "x": 137,
+    "y": 212,
+    "z": 21
+  },
+  {
+    "angle_h": 2.574121494825747,
+    "angle_v": 1.5845062800866245,
+    "file_frame": "file_num181_frame_35",
+    "map": "de_dust2",
+    "x": 816,
+    "y": 500,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1456134942035945,
+    "angle_v": 1.5825589766975585,
+    "file_frame": "file_num171_frame_133",
+    "map": "de_dust2",
+    "x": 147,
+    "y": 594,
+    "z": 21
+  },
+  {
+    "angle_h": 1.7893166837191683,
+    "angle_v": 1.594746667110197,
+    "file_frame": "file_num209_frame_497",
+    "map": "de_dust2",
+    "x": 867,
+    "y": 378,
+    "z": 13
+  },
+  {
+    "angle_h": 3.2282263491145065,
+    "angle_v": 1.5557920772133902,
+    "file_frame": "file_num345_frame_13",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 431,
+    "z": 14
+  },
+  {
+    "angle_h": 1.5119417982846903,
+    "angle_v": 1.5949623831584936,
+    "file_frame": "file_num292_frame_368",
+    "map": "de_dust2",
+    "x": 868,
+    "y": 304,
+    "z": 12
+  },
+  {
+    "angle_h": 3.7290891858545816,
+    "angle_v": 1.5362396811222463,
+    "file_frame": "file_num360_frame_263",
+    "map": "de_dust2",
+    "x": 882,
+    "y": 564,
+    "z": 9
+  },
+  {
+    "angle_h": 1.7175431607609877,
+    "angle_v": 1.5988274288485256,
+    "file_frame": "file_num104_frame_74",
+    "map": "de_dust2",
+    "x": 115,
+    "y": 327,
+    "z": 22
+  },
+  {
+    "angle_h": 2.9271048551881194,
+    "angle_v": 1.5389603664918714,
+    "file_frame": "file_num328_frame_57",
+    "map": "de_dust2",
+    "x": 451,
+    "y": 398,
+    "z": -11
+  },
+  {
+    "angle_h": 4.299010985453719,
+    "angle_v": 1.5561156512858347,
+    "file_frame": "file_num292_frame_190",
+    "map": "de_dust2",
+    "x": 857,
+    "y": 323,
+    "z": 14
+  },
+  {
+    "angle_h": 1.1175289724245003,
+    "angle_v": 1.5413572114729428,
+    "file_frame": "file_num258_frame_260",
+    "map": "de_dust2",
+    "x": 450,
+    "y": 544,
+    "z": 10
+  },
+  {
+    "angle_h": 2.414078296485217,
+    "angle_v": 1.602542538569186,
+    "file_frame": "file_num104_frame_64",
+    "map": "de_dust2",
+    "x": 134,
+    "y": 303,
+    "z": 14
+  },
+  {
+    "angle_h": 0.12456989262067439,
+    "angle_v": 1.540596080033398,
+    "file_frame": "file_num280_frame_489",
+    "map": "de_dust2",
+    "x": 364,
+    "y": 408,
+    "z": -11
+  },
+  {
+    "angle_h": 4.953661255133727,
+    "angle_v": 1.5850815228820816,
+    "file_frame": "file_num104_frame_300",
+    "map": "de_dust2",
+    "x": 109,
+    "y": 429,
+    "z": 20
+  },
+  {
+    "angle_h": 6.2068276850370525,
+    "angle_v": 1.5909298246358956,
+    "file_frame": "file_num237_frame_226",
+    "map": "de_dust2",
+    "x": 470,
+    "y": 935,
+    "z": 35
+  },
+  {
+    "angle_h": 2.9055332503584776,
+    "angle_v": 1.5389603664918714,
+    "file_frame": "file_num345_frame_419",
+    "map": "de_dust2",
+    "x": 865,
+    "y": 454,
+    "z": 12
+  },
+  {
+    "angle_h": 0.8561711367340861,
+    "angle_v": 1.5967120799946755,
+    "file_frame": "file_num157_frame_37",
+    "map": "de_dust2",
+    "x": 489,
+    "y": 605,
+    "z": 14
+  },
+  {
+    "angle_h": 1.1210703108840332,
+    "angle_v": 1.590714108587599,
+    "file_frame": "file_num366_frame_162",
+    "map": "de_dust2",
+    "x": 124,
+    "y": 491,
+    "z": 22
+  },
+  {
+    "angle_h": 2.2561203532782192,
+    "angle_v": 1.537336370859141,
+    "file_frame": "file_num375_frame_412",
+    "map": "de_dust2",
+    "x": 154,
+    "y": 277,
+    "z": 13
+  },
+  {
+    "angle_h": 4.0550542443258815,
+    "angle_v": 1.546210556243503,
+    "file_frame": "file_num375_frame_78",
+    "map": "de_dust2",
+    "x": 504,
+    "y": 858,
+    "z": 14
+  },
+  {
+    "angle_h": 2.0722702258470895,
+    "angle_v": 1.60519105227327,
+    "file_frame": "file_num104_frame_53",
+    "map": "de_dust2",
+    "x": 156,
+    "y": 251,
+    "z": 13
+  },
+  {
+    "angle_h": 5.263507531107322,
+    "angle_v": 1.5416866444997854,
+    "file_frame": "file_num183_frame_197",
+    "map": "de_dust2",
+    "x": 699,
+    "y": 587,
+    "z": 14
+  },
+  {
+    "angle_h": 4.716601568596976,
+    "angle_v": 1.6046637463774343,
+    "file_frame": "file_num360_frame_451",
+    "map": "de_dust2",
+    "x": 510,
+    "y": 569,
+    "z": 26
+  },
+  {
+    "angle_h": 3.152252754801162,
+    "angle_v": 1.5706285476462216,
+    "file_frame": "file_num370_frame_436",
+    "map": "de_dust2",
+    "x": 511,
+    "y": 912,
+    "z": 24
+  },
+  {
+    "angle_h": 1.4508282433798245,
+    "angle_v": 1.5945432016029153,
+    "file_frame": "file_num104_frame_84",
+    "map": "de_dust2",
+    "x": 111,
+    "y": 367,
+    "z": 21
+  },
+  {
+    "angle_h": 3.5644323272415983,
+    "angle_v": 1.6056584370445788,
+    "file_frame": "file_num289_frame_93",
+    "map": "de_dust2",
+    "x": 194,
+    "y": 465,
+    "z": 21
+  },
+  {
+    "angle_h": 4.9638121599446725,
+    "angle_v": 1.564762136396995,
+    "file_frame": "file_num276_frame_472",
+    "map": "de_dust2",
+    "x": 128,
+    "y": 458,
+    "z": 21
+  },
+  {
+    "angle_h": 1.6730697021372096,
+    "angle_v": 1.5426693509420246,
+    "file_frame": "file_num31_frame_307",
+    "map": "de_dust2",
+    "x": 646,
+    "y": 236,
+    "z": 36
+  },
+  {
+    "angle_h": 2.675196447677524,
+    "angle_v": 1.5537427747545742,
+    "file_frame": "file_num292_frame_307",
+    "map": "de_dust2",
+    "x": 889,
+    "y": 159,
+    "z": 29
+  },
+  {
+    "angle_h": 4.975868290199461,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num183_frame_372",
+    "map": "de_dust2",
+    "x": 868,
+    "y": 163,
+    "z": 28
+  },
+  {
+    "angle_h": 5.57280839168967,
+    "angle_v": 1.5449223852242318,
+    "file_frame": "file_num370_frame_302",
+    "map": "de_dust2",
+    "x": 552,
+    "y": 895,
+    "z": 18
+  },
+  {
+    "angle_h": 1.7232476518159374,
+    "angle_v": 1.5445029373525443,
+    "file_frame": "file_num258_frame_193",
+    "map": "de_dust2",
+    "x": 475,
+    "y": 283,
+    "z": -14
+  },
+  {
+    "angle_h": 1.7876329001199658,
+    "angle_v": 1.5892818605533545,
+    "file_frame": "file_num22_frame_395",
+    "map": "de_dust2",
+    "x": 190,
+    "y": 583,
+    "z": 21
+  },
+  {
+    "angle_h": 1.5565051385952589,
+    "angle_v": 1.5766504875031087,
+    "file_frame": "file_num287_frame_145",
+    "map": "de_dust2",
+    "x": 702,
+    "y": 591,
+    "z": 14
+  },
+  {
+    "angle_h": 5.209938045780379,
+    "angle_v": 1.5820854666557425,
+    "file_frame": "file_num345_frame_334",
+    "map": "de_dust2",
+    "x": 841,
+    "y": 472,
+    "z": 14
+  },
+  {
+    "angle_h": 1.495948850148492,
+    "angle_v": 1.603788897959343,
+    "file_frame": "file_num82_frame_225",
+    "map": "de_dust2",
+    "x": 150,
+    "y": 757,
+    "z": 16
+  },
+  {
+    "angle_h": 3.205360447995086,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num276_frame_201",
+    "map": "de_dust2",
+    "x": 738,
+    "y": 200,
+    "z": 18
+  },
+  {
+    "angle_h": 4.468557940460305,
+    "angle_v": 1.5467320031849405,
+    "file_frame": "file_num237_frame_468",
+    "map": "de_dust2",
+    "x": 448,
+    "y": 331,
+    "z": -13
+  },
+  {
+    "angle_h": 2.8787066960658914,
+    "angle_v": 1.558907975688783,
+    "file_frame": "file_num184_frame_143",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 556,
+    "z": 14
+  },
+  {
+    "angle_h": 1.4733286256396316,
+    "angle_v": 1.555786218258992,
+    "file_frame": "file_num12_frame_275",
+    "map": "de_dust2",
+    "x": 880,
+    "y": 196,
+    "z": 18
+  },
+  {
+    "angle_h": 3.890307370868054,
+    "angle_v": 1.5719707808356216,
+    "file_frame": "file_num258_frame_468",
+    "map": "de_dust2",
+    "x": 264,
+    "y": 802,
+    "z": 43
+  },
+  {
+    "angle_h": 4.546982708240958,
+    "angle_v": 1.5886887745785938,
+    "file_frame": "file_num250_frame_262",
+    "map": "de_dust2",
+    "x": 643,
+    "y": 763,
+    "z": 13
+  },
+  {
+    "angle_h": 4.7362434469007475,
+    "angle_v": 1.5922060114302614,
+    "file_frame": "file_num183_frame_282",
+    "map": "de_dust2",
+    "x": 868,
+    "y": 324,
+    "z": 12
+  },
+  {
+    "angle_h": 1.6512164680222918,
+    "angle_v": 1.5369528756621695,
+    "file_frame": "file_num258_frame_218",
+    "map": "de_dust2",
+    "x": 471,
+    "y": 366,
+    "z": -14
+  },
+  {
+    "angle_h": 1.5821034429931005,
+    "angle_v": 1.5419622816726086,
+    "file_frame": "file_num82_frame_114",
+    "map": "de_dust2",
+    "x": 108,
+    "y": 306,
+    "z": 14
+  },
+  {
+    "angle_h": 2.6078392447550223,
+    "angle_v": 1.5478944730007602,
+    "file_frame": "file_num184_frame_163",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 554,
+    "z": 27
+  },
+  {
+    "angle_h": 4.716026325801519,
+    "angle_v": 1.5496140761166242,
+    "file_frame": "file_num366_frame_453",
+    "map": "de_dust2",
+    "x": 238,
+    "y": 231,
+    "z": 14
+  },
+  {
+    "angle_h": 1.2434891682922506,
+    "angle_v": 1.5987254297787754,
+    "file_frame": "file_num292_frame_52",
+    "map": "de_dust2",
+    "x": 855,
+    "y": 227,
+    "z": 16
+  },
+  {
+    "angle_h": 3.518083204262077,
+    "angle_v": 1.5769743278916624,
+    "file_frame": "file_num289_frame_164",
+    "map": "de_dust2",
+    "x": 78,
+    "y": 283,
+    "z": 15
+  },
+  {
+    "angle_h": 1.606419435326069,
+    "angle_v": 1.6052091617686826,
+    "file_frame": "file_num207_frame_382",
+    "map": "de_dust2",
+    "x": 462,
+    "y": 699,
+    "z": 14
+  },
+  {
+    "angle_h": 2.3960481632731625,
+    "angle_v": 1.6050051636291822,
+    "file_frame": "file_num328_frame_253",
+    "map": "de_dust2",
+    "x": 317,
+    "y": 431,
+    "z": -10
+  },
+  {
+    "angle_h": 4.8057642018928295,
+    "angle_v": 1.5571582788526008,
+    "file_frame": "file_num278_frame_477",
+    "map": "de_dust2",
+    "x": 420,
+    "y": 188,
+    "z": -8
+  },
+  {
+    "angle_h": 4.338816721634915,
+    "angle_v": 1.544526905802355,
+    "file_frame": "file_num375_frame_437",
+    "map": "de_dust2",
+    "x": 117,
+    "y": 268,
+    "z": 13
+  },
+  {
+    "angle_h": 4.945590279134132,
+    "angle_v": 1.6009845893314898,
+    "file_frame": "file_num252_frame_215",
+    "map": "de_dust2",
+    "x": 494,
+    "y": 529,
+    "z": 8
+  },
+  {
+    "angle_h": 3.1438936247716214,
+    "angle_v": 1.5599087916264347,
+    "file_frame": "file_num122_frame_329",
+    "map": "de_dust2",
+    "x": 816,
+    "y": 259,
+    "z": 14
+  },
+  {
+    "angle_h": 0.5628511069049768,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num356_frame_210",
+    "map": "de_dust2",
+    "x": 740,
+    "y": 542,
+    "z": 20
+  },
+  {
+    "angle_h": 3.2471198791519646,
+    "angle_v": 1.552963800135726,
+    "file_frame": "file_num345_frame_18",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 431,
+    "z": 14
+  },
+  {
+    "angle_h": 1.535400918536926,
+    "angle_v": 1.563312311499556,
+    "file_frame": "file_num280_frame_130",
+    "map": "de_dust2",
+    "x": 458,
+    "y": 594,
+    "z": 14
+  },
+  {
+    "angle_h": 4.775947450328302,
+    "angle_v": 1.5371387643062573,
+    "file_frame": "file_num250_frame_33",
+    "map": "de_dust2",
+    "x": 124,
+    "y": 626,
+    "z": 16
+  },
+  {
+    "angle_h": 3.9840059001325296,
+    "angle_v": 1.5896174188507044,
+    "file_frame": "file_num24_frame_471",
+    "map": "de_dust2",
+    "x": 632,
+    "y": 397,
+    "z": 14
+  },
+  {
+    "angle_h": 4.601415057761088,
+    "angle_v": 1.5361139799187946,
+    "file_frame": "file_num345_frame_450",
+    "map": "de_dust2",
+    "x": 854,
+    "y": 365,
+    "z": 14
+  },
+  {
+    "angle_h": 5.753152867019875,
+    "angle_v": 1.550471081355412,
+    "file_frame": "file_num82_frame_452",
+    "map": "de_dust2",
+    "x": 312,
+    "y": 449,
+    "z": 18
+  },
+  {
+    "angle_h": 4.4093377599324315,
+    "angle_v": 1.5395894051413481,
+    "file_frame": "file_num237_frame_401",
+    "map": "de_dust2",
+    "x": 483,
+    "y": 589,
+    "z": 14
+  },
+  {
+    "angle_h": 1.6603005105005522,
+    "angle_v": 1.60108658840124,
+    "file_frame": "file_num207_frame_352",
+    "map": "de_dust2",
+    "x": 466,
+    "y": 542,
+    "z": 8
+  },
+  {
+    "angle_h": 4.763004487430518,
+    "angle_v": 1.561898172960724,
+    "file_frame": "file_num157_frame_214",
+    "map": "de_dust2",
+    "x": 467,
+    "y": 889,
+    "z": 38
+  },
+  {
+    "angle_h": 4.096004607143595,
+    "angle_v": 1.5411052764338211,
+    "file_frame": "file_num169_frame_263",
+    "map": "de_dust2",
+    "x": 715,
+    "y": 657,
+    "z": 14
+  },
+  {
+    "angle_h": 2.0981201989679437,
+    "angle_v": 1.5518431419490206,
+    "file_frame": "file_num287_frame_180",
+    "map": "de_dust2",
+    "x": 671,
+    "y": 731,
+    "z": 13
+  },
+  {
+    "angle_h": 0.18145927456251104,
+    "angle_v": 1.5963946311927382,
+    "file_frame": "file_num126_frame_134",
+    "map": "de_dust2",
+    "x": 658,
+    "y": 217,
+    "z": 45
+  },
+  {
+    "angle_h": 3.8903371982722628,
+    "angle_v": 1.6030520012857183,
+    "file_frame": "file_num169_frame_475",
+    "map": "de_dust2",
+    "x": 464,
+    "y": 273,
+    "z": -14
+  },
+  {
+    "angle_h": 4.772981221506172,
+    "angle_v": 1.5359643102655323,
+    "file_frame": "file_num184_frame_203",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 550,
+    "z": 27
+  },
+  {
+    "angle_h": 4.585092543439992,
+    "angle_v": 1.57938289078153,
+    "file_frame": "file_num292_frame_157",
+    "map": "de_dust2",
+    "x": 881,
+    "y": 478,
+    "z": 12
+  },
+  {
+    "angle_h": 1.1933291949508806,
+    "angle_v": 1.5571582788526008,
+    "file_frame": "file_num104_frame_140",
+    "map": "de_dust2",
+    "x": 186,
+    "y": 582,
+    "z": 21
+  },
+  {
+    "angle_h": 5.000279890015563,
+    "angle_v": 1.544934369449137,
+    "file_frame": "file_num191_frame_22",
+    "map": "de_dust2",
+    "x": 181,
+    "y": 813,
+    "z": 43
+  },
+  {
+    "angle_h": 4.207373742872964,
+    "angle_v": 1.5367552691092858,
+    "file_frame": "file_num157_frame_159",
+    "map": "de_dust2",
+    "x": 484,
+    "y": 957,
+    "z": 34
+  },
+  {
+    "angle_h": 4.248641554492614,
+    "angle_v": 1.5988274288485256,
+    "file_frame": "file_num375_frame_252",
+    "map": "de_dust2",
+    "x": 441,
+    "y": 247,
+    "z": -13
+  },
+  {
+    "angle_h": 2.1895418586584565,
+    "angle_v": 1.5424536348937283,
+    "file_frame": "file_num98_frame_109",
+    "map": "de_dust2",
+    "x": 309,
+    "y": 449,
+    "z": 0
+  },
+  {
+    "angle_h": 4.701195714323086,
+    "angle_v": 1.536030090344457,
+    "file_frame": "file_num98_frame_398",
+    "map": "de_dust2",
+    "x": 639,
+    "y": 369,
+    "z": 15
+  },
+  {
+    "angle_h": 5.000202125711733,
+    "angle_v": 1.5851715377269264,
+    "file_frame": "file_num209_frame_185",
+    "map": "de_dust2",
+    "x": 161,
+    "y": 635,
+    "z": 14
+  },
+  {
+    "angle_h": 0.6504499320087351,
+    "angle_v": 1.5473610418344173,
+    "file_frame": "file_num191_frame_100",
+    "map": "de_dust2",
+    "x": 237,
+    "y": 689,
+    "z": 14
+  },
+  {
+    "angle_h": 3.4055992693004,
+    "angle_v": 1.5552589123631564,
+    "file_frame": "file_num162_frame_269",
+    "map": "de_dust2",
+    "x": 856,
+    "y": 267,
+    "z": 14
+  },
+  {
+    "angle_h": 4.137374151516886,
+    "angle_v": 1.5525382269935313,
+    "file_frame": "file_num237_frame_478",
+    "map": "de_dust2",
+    "x": 446,
+    "y": 284,
+    "z": -13
+  },
+  {
+    "angle_h": 3.24649030787027,
+    "angle_v": 1.5452401003422782,
+    "file_frame": "file_num331_frame_44",
+    "map": "de_dust2",
+    "x": 692,
+    "y": 687,
+    "z": 14
+  },
+  {
+    "angle_h": 5.150951690796213,
+    "angle_v": 1.5467919243094674,
+    "file_frame": "file_num181_frame_171",
+    "map": "de_dust2",
+    "x": 662,
+    "y": 748,
+    "z": 13
+  },
+  {
+    "angle_h": 2.102440512046325,
+    "angle_v": 1.5364676477115573,
+    "file_frame": "file_num122_frame_258",
+    "map": "de_dust2",
+    "x": 933,
+    "y": 332,
+    "z": 14
+  },
+  {
+    "angle_h": 3.221503465258711,
+    "angle_v": 1.5905463294389242,
+    "file_frame": "file_num31_frame_384",
+    "map": "de_dust2",
+    "x": 515,
+    "y": 414,
+    "z": 14
+  },
+  {
+    "angle_h": 3.201639479320028,
+    "angle_v": 1.6014040372031773,
+    "file_frame": "file_num258_frame_43",
+    "map": "de_dust2",
+    "x": 828,
+    "y": 266,
+    "z": 14
+  },
+  {
+    "angle_h": 2.7359985458929055,
+    "angle_v": 1.5389182885466481,
+    "file_frame": "file_num366_frame_60",
+    "map": "de_dust2",
+    "x": 289,
+    "y": 224,
+    "z": 14
+  },
+  {
+    "angle_h": 3.1241857000728173,
+    "angle_v": 1.5383009678059676,
+    "file_frame": "file_num177_frame_419",
+    "map": "de_dust2",
+    "x": 347,
+    "y": 229,
+    "z": -2
+  },
+  {
+    "angle_h": 4.374793364800795,
+    "angle_v": 1.5994567338141115,
+    "file_frame": "file_num171_frame_225",
+    "map": "de_dust2",
+    "x": 131,
+    "y": 422,
+    "z": 22
+  },
+  {
+    "angle_h": 4.773700275000494,
+    "angle_v": 1.591445146306826,
+    "file_frame": "file_num63_frame_468",
+    "map": "de_dust2",
+    "x": 127,
+    "y": 855,
+    "z": 37
+  },
+  {
+    "angle_h": 1.5346998413799626,
+    "angle_v": 1.6023926025998145,
+    "file_frame": "file_num183_frame_28",
+    "map": "de_dust2",
+    "x": 314,
+    "y": 845,
+    "z": 43
+  },
+  {
+    "angle_h": 1.6278412373443938,
+    "angle_v": 1.5852013651311352,
+    "file_frame": "file_num207_frame_322",
+    "map": "de_dust2",
+    "x": 475,
+    "y": 412,
+    "z": -14
+  },
+  {
+    "angle_h": 6.267395957708724,
+    "angle_v": 1.5444190477782067,
+    "file_frame": "file_num356_frame_230",
+    "map": "de_dust2",
+    "x": 743,
+    "y": 552,
+    "z": 24
+  },
+  {
+    "angle_h": 4.505894926310997,
+    "angle_v": 1.540056789912657,
+    "file_frame": "file_num122_frame_293",
+    "map": "de_dust2",
+    "x": 865,
+    "y": 398,
+    "z": 12
+  },
+  {
+    "angle_h": 5.815417040673709,
+    "angle_v": 1.602908190586854,
+    "file_frame": "file_num24_frame_177",
+    "map": "de_dust2",
+    "x": 539,
+    "y": 429,
+    "z": 14
+  },
+  {
+    "angle_h": 1.5555464006028303,
+    "angle_v": 1.6056464528196734,
+    "file_frame": "file_num207_frame_377",
+    "map": "de_dust2",
+    "x": 462,
+    "y": 671,
+    "z": 13
+  },
+  {
+    "angle_h": 4.354611930060175,
+    "angle_v": 1.5661824002063343,
+    "file_frame": "file_num331_frame_84",
+    "map": "de_dust2",
+    "x": 551,
+    "y": 657,
+    "z": 14
+  },
+  {
+    "angle_h": 3.112866466491653,
+    "angle_v": 1.5898272759446028,
+    "file_frame": "file_num280_frame_311",
+    "map": "de_dust2",
+    "x": 226,
+    "y": 919,
+    "z": 41
+  },
+  {
+    "angle_h": 3.033632896687943,
+    "angle_v": 1.537839708305166,
+    "file_frame": "file_num345_frame_424",
+    "map": "de_dust2",
+    "x": 860,
+    "y": 460,
+    "z": 14
+  },
+  {
+    "angle_h": 0.666478699661595,
+    "angle_v": 1.5985997285753237,
+    "file_frame": "file_num252_frame_210",
+    "map": "de_dust2",
+    "x": 484,
+    "y": 520,
+    "z": 6
+  },
+  {
+    "angle_h": 4.641238903437697,
+    "angle_v": 1.5389662254462695,
+    "file_frame": "file_num157_frame_169",
+    "map": "de_dust2",
+    "x": 480,
+    "y": 911,
+    "z": 41
+  },
+  {
+    "angle_h": 1.9719862318390657,
+    "angle_v": 1.5492305809196527,
+    "file_frame": "file_num126_frame_280",
+    "map": "de_dust2",
+    "x": 546,
+    "y": 427,
+    "z": 14
+  },
+  {
+    "angle_h": 4.620763455712732,
+    "angle_v": 1.6035012765616146,
+    "file_frame": "file_num181_frame_269",
+    "map": "de_dust2",
+    "x": 879,
+    "y": 469,
+    "z": 12
+  },
+  {
+    "angle_h": 2.349219671297427,
+    "angle_v": 1.5644148601908487,
+    "file_frame": "file_num63_frame_186",
+    "map": "de_dust2",
+    "x": 638,
+    "y": 366,
+    "z": 16
+  },
+  {
+    "angle_h": 5.29249737115338,
+    "angle_v": 1.5997922921114613,
+    "file_frame": "file_num122_frame_68",
+    "map": "de_dust2",
+    "x": 588,
+    "y": 863,
+    "z": 14
+  },
+  {
+    "angle_h": 1.4898009427720442,
+    "angle_v": 1.6031297655895487,
+    "file_frame": "file_num356_frame_475",
+    "map": "de_dust2",
+    "x": 690,
+    "y": 589,
+    "z": 14
+  },
+  {
+    "angle_h": 2.6478724148933113,
+    "angle_v": 1.5520348895475062,
+    "file_frame": "file_num375_frame_337",
+    "map": "de_dust2",
+    "x": 289,
+    "y": 218,
+    "z": 15
+  },
+  {
+    "angle_h": 2.7535913880539686,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num292_frame_317",
+    "map": "de_dust2",
+    "x": 864,
+    "y": 169,
+    "z": 28
+  },
+  {
+    "angle_h": 4.336935464640883,
+    "angle_v": 1.5827986611956657,
+    "file_frame": "file_num191_frame_480",
+    "map": "de_dust2",
+    "x": 441,
+    "y": 289,
+    "z": -13
+  },
+  {
+    "angle_h": 0.009803095972581676,
+    "angle_v": 1.5381331886572926,
+    "file_frame": "file_num289_frame_234",
+    "map": "de_dust2",
+    "x": 262,
+    "y": 229,
+    "z": 14
+  },
+  {
+    "angle_h": 0.7590626960098728,
+    "angle_v": 1.601463958327704,
+    "file_frame": "file_num292_frame_117",
+    "map": "de_dust2",
+    "x": 906,
+    "y": 477,
+    "z": 12
+  },
+  {
+    "angle_h": 3.1697374726219687,
+    "angle_v": 1.5362157126724356,
+    "file_frame": "file_num171_frame_29",
+    "map": "de_dust2",
+    "x": 266,
+    "y": 920,
+    "z": 40
+  },
+  {
+    "angle_h": 5.297968036664621,
+    "angle_v": 1.5447484808050496,
+    "file_frame": "file_num237_frame_156",
+    "map": "de_dust2",
+    "x": 329,
+    "y": 793,
+    "z": 43
+  },
+  {
+    "angle_h": 5.079879111836942,
+    "angle_v": 1.5642769084463826,
+    "file_frame": "file_num207_frame_464",
+    "map": "de_dust2",
+    "x": 497,
+    "y": 613,
+    "z": 13
+  },
+  {
+    "angle_h": 4.604728562789365,
+    "angle_v": 1.5409135288353353,
+    "file_frame": "file_num171_frame_64",
+    "map": "de_dust2",
+    "x": 132,
+    "y": 883,
+    "z": 43
+  },
+  {
+    "angle_h": 3.901662024491716,
+    "angle_v": 1.6005230635145788,
+    "file_frame": "file_num122_frame_450",
+    "map": "de_dust2",
+    "x": 271,
+    "y": 223,
+    "z": 15
+  },
+  {
+    "angle_h": 4.156968092921034,
+    "angle_v": 1.539930822393096,
+    "file_frame": "file_num157_frame_436",
+    "map": "de_dust2",
+    "x": 164,
+    "y": 512,
+    "z": 22
+  },
+  {
+    "angle_h": 4.754920728257691,
+    "angle_v": 1.6055447200660324,
+    "file_frame": "file_num360_frame_441",
+    "map": "de_dust2",
+    "x": 509,
+    "y": 569,
+    "z": 14
+  },
+  {
+    "angle_h": 1.852982878528875,
+    "angle_v": 1.585500970753769,
+    "file_frame": "file_num171_frame_138",
+    "map": "de_dust2",
+    "x": 140,
+    "y": 595,
+    "z": 21
+  },
+  {
+    "angle_h": 3.1989012170872084,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num276_frame_231",
+    "map": "de_dust2",
+    "x": 734,
+    "y": 204,
+    "z": 4
+  },
+  {
+    "angle_h": 1.6597851888296218,
+    "angle_v": 1.6033753090420537,
+    "file_frame": "file_num280_frame_60",
+    "map": "de_dust2",
+    "x": 464,
+    "y": 346,
+    "z": -14
+  },
+  {
+    "angle_h": 4.698019628407058,
+    "angle_v": 1.5676085229700718,
+    "file_frame": "file_num171_frame_113",
+    "map": "de_dust2",
+    "x": 148,
+    "y": 670,
+    "z": 14
+  },
+  {
+    "angle_h": 5.642748328237331,
+    "angle_v": 1.5489429595219242,
+    "file_frame": "file_num98_frame_124",
+    "map": "de_dust2",
+    "x": 315,
+    "y": 442,
+    "z": -10
+  },
+  {
+    "angle_h": 5.677568626857899,
+    "angle_v": 1.6014578330571967,
+    "file_frame": "file_num24_frame_172",
+    "map": "de_dust2",
+    "x": 526,
+    "y": 442,
+    "z": 14
+  },
+  {
+    "angle_h": 4.173788085733756,
+    "angle_v": 1.540829905577107,
+    "file_frame": "file_num22_frame_257",
+    "map": "de_dust2",
+    "x": 209,
+    "y": 201,
+    "z": 13
+  },
+  {
+    "angle_h": 5.324884605802052,
+    "angle_v": 1.6019193588741076,
+    "file_frame": "file_num24_frame_219",
+    "map": "de_dust2",
+    "x": 638,
+    "y": 307,
+    "z": 36
+  },
+  {
+    "angle_h": 4.659700468746344,
+    "angle_v": 1.5699153531062982,
+    "file_frame": "file_num209_frame_210",
+    "map": "de_dust2",
+    "x": 182,
+    "y": 539,
+    "z": 21
+  },
+  {
+    "angle_h": 0.08535750873034768,
+    "angle_v": 1.6051010374284251,
+    "file_frame": "file_num209_frame_447",
+    "map": "de_dust2",
+    "x": 748,
+    "y": 264,
+    "z": 4
+  },
+  {
+    "angle_h": 5.380952935179817,
+    "angle_v": 1.5397151063447998,
+    "file_frame": "file_num98_frame_418",
+    "map": "de_dust2",
+    "x": 636,
+    "y": 304,
+    "z": 36
+  },
+  {
+    "angle_h": 2.680943016677697,
+    "angle_v": 1.5921341060808294,
+    "file_frame": "file_num162_frame_421",
+    "map": "de_dust2",
+    "x": 238,
+    "y": 255,
+    "z": 14
+  },
+  {
+    "angle_h": 4.7206703461104,
+    "angle_v": 1.59249363282799,
+    "file_frame": "file_num237_frame_318",
+    "map": "de_dust2",
+    "x": 711,
+    "y": 668,
+    "z": 14
+  },
+  {
+    "angle_h": 1.7519438783518138,
+    "angle_v": 1.536167775772814,
+    "file_frame": "file_num211_frame_337",
+    "map": "de_dust2",
+    "x": 192,
+    "y": 574,
+    "z": 21
+  },
+  {
+    "angle_h": 2.98594739947342,
+    "angle_v": 1.5700474458963665,
+    "file_frame": "file_num289_frame_13",
+    "map": "de_dust2",
+    "x": 398,
+    "y": 414,
+    "z": -11
+  },
+  {
+    "angle_h": 0.13681191151955063,
+    "angle_v": 1.5359041228248964,
+    "file_frame": "file_num126_frame_14",
+    "map": "de_dust2",
+    "x": 631,
+    "y": 206,
+    "z": 36
+  },
+  {
+    "angle_h": 5.750121124434927,
+    "angle_v": 1.5501235388331565,
+    "file_frame": "file_num24_frame_304",
+    "map": "de_dust2",
+    "x": 676,
+    "y": 256,
+    "z": 36
+  },
+  {
+    "angle_h": 3.2010882049743814,
+    "angle_v": 1.564995961940704,
+    "file_frame": "file_num258_frame_158",
+    "map": "de_dust2",
+    "x": 563,
+    "y": 262,
+    "z": -14
+  },
+  {
+    "angle_h": 3.1916749957853874,
+    "angle_v": 1.5887668051985333,
+    "file_frame": "file_num157_frame_254",
+    "map": "de_dust2",
+    "x": 478,
+    "y": 900,
+    "z": 33
+  },
+  {
+    "angle_h": 6.153294418700933,
+    "angle_v": 1.5543539702247473,
+    "file_frame": "file_num370_frame_282",
+    "map": "de_dust2",
+    "x": 476,
+    "y": 892,
+    "z": 36
+  },
+  {
+    "angle_h": 2.9561785848085145,
+    "angle_v": 1.5731031569311231,
+    "file_frame": "file_num375_frame_302",
+    "map": "de_dust2",
+    "x": 361,
+    "y": 214,
+    "z": -4
+  },
+  {
+    "angle_h": 2.7363460884151607,
+    "angle_v": 1.6054126272759643,
+    "file_frame": "file_num276_frame_389",
+    "map": "de_dust2",
+    "x": 244,
+    "y": 242,
+    "z": 14
+  },
+  {
+    "angle_h": 3.628715709633931,
+    "angle_v": 1.591517051656258,
+    "file_frame": "file_num258_frame_23",
+    "map": "de_dust2",
+    "x": 864,
+    "y": 294,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1145860696075176,
+    "angle_v": 1.5461807288392941,
+    "file_frame": "file_num345_frame_33",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 431,
+    "z": 14
+  },
+  {
+    "angle_h": 2.6756640987649423,
+    "angle_v": 1.5889644117514172,
+    "file_frame": "file_num360_frame_496",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 557,
+    "z": 14
+  },
+  {
+    "angle_h": 0.9322768238374984,
+    "angle_v": 1.5429689565646585,
+    "file_frame": "file_num258_frame_265",
+    "map": "de_dust2",
+    "x": 453,
+    "y": 559,
+    "z": 13
+  },
+  {
+    "angle_h": 1.4578090543871949,
+    "angle_v": 1.566739799822488,
+    "file_frame": "file_num356_frame_355",
+    "map": "de_dust2",
+    "x": 694,
+    "y": 556,
+    "z": 24
+  },
+  {
+    "angle_h": 3.6036324605909105,
+    "angle_v": 1.5885809165544458,
+    "file_frame": "file_num181_frame_342",
+    "map": "de_dust2",
+    "x": 755,
+    "y": 238,
+    "z": 6
+  },
+  {
+    "angle_h": 4.748527543744847,
+    "angle_v": 1.5871547937907082,
+    "file_frame": "file_num345_frame_199",
+    "map": "de_dust2",
+    "x": 709,
+    "y": 667,
+    "z": 14
+  },
+  {
+    "angle_h": 2.5671168485266205,
+    "angle_v": 1.5454976280196888,
+    "file_frame": "file_num184_frame_168",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 552,
+    "z": 15
+  },
+  {
+    "angle_h": 1.1241143040099937,
+    "angle_v": 1.5965325829372043,
+    "file_frame": "file_num292_frame_47",
+    "map": "de_dust2",
+    "x": 836,
+    "y": 220,
+    "z": 37
+  },
+  {
+    "angle_h": 5.174644503434103,
+    "angle_v": 1.5367491438387786,
+    "file_frame": "file_num183_frame_157",
+    "map": "de_dust2",
+    "x": 677,
+    "y": 713,
+    "z": 13
+  },
+  {
+    "angle_h": 1.0006468269225577,
+    "angle_v": 1.575889622379673,
+    "file_frame": "file_num122_frame_490",
+    "map": "de_dust2",
+    "x": 250,
+    "y": 180,
+    "z": 15
+  },
+  {
+    "angle_h": 4.9924304890186635,
+    "angle_v": 1.5515315521014812,
+    "file_frame": "file_num370_frame_38",
+    "map": "de_dust2",
+    "x": 136,
+    "y": 732,
+    "z": 13
+  },
+  {
+    "angle_h": 0.3297398230003789,
+    "angle_v": 1.5702570366741555,
+    "file_frame": "file_num287_frame_465",
+    "map": "de_dust2",
+    "x": 283,
+    "y": 483,
+    "z": 18
+  },
+  {
+    "angle_h": 5.688881735168556,
+    "angle_v": 1.6055207516162218,
+    "file_frame": "file_num104_frame_352",
+    "map": "de_dust2",
+    "x": 306,
+    "y": 450,
+    "z": 21
+  },
+  {
+    "angle_h": 0.5508908504494309,
+    "angle_v": 1.551717440745569,
+    "file_frame": "file_num258_frame_280",
+    "map": "de_dust2",
+    "x": 500,
+    "y": 615,
+    "z": 13
+  },
+  {
+    "angle_h": 4.702543806466885,
+    "angle_v": 1.5360660430191733,
+    "file_frame": "file_num183_frame_172",
+    "map": "de_dust2",
+    "x": 711,
+    "y": 668,
+    "z": 14
+  },
+  {
+    "angle_h": 4.402039633281177,
+    "angle_v": 1.5981443280289203,
+    "file_frame": "file_num122_frame_455",
+    "map": "de_dust2",
+    "x": 261,
+    "y": 241,
+    "z": 14
+  },
+  {
+    "angle_h": 2.982046667424781,
+    "angle_v": 1.5663802730753273,
+    "file_frame": "file_num181_frame_377",
+    "map": "de_dust2",
+    "x": 642,
+    "y": 243,
+    "z": -14
+  },
+  {
+    "angle_h": 5.968251860891721,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num250_frame_211",
+    "map": "de_dust2",
+    "x": 496,
+    "y": 902,
+    "z": 30
+  },
+  {
+    "angle_h": 3.57578698086526,
+    "angle_v": 1.5432565779623872,
+    "file_frame": "file_num292_frame_216",
+    "map": "de_dust2",
+    "x": 809,
+    "y": 244,
+    "z": 14
+  },
+  {
+    "angle_h": 5.039222762003574,
+    "angle_v": 1.6044059523839145,
+    "file_frame": "file_num287_frame_398",
+    "map": "de_dust2",
+    "x": 158,
+    "y": 688,
+    "z": 14
+  },
+  {
+    "angle_h": 5.4973019158315255,
+    "angle_v": 1.5856567656775387,
+    "file_frame": "file_num171_frame_250",
+    "map": "de_dust2",
+    "x": 106,
+    "y": 335,
+    "z": 21
+  },
+  {
+    "angle_h": 4.762597023783735,
+    "angle_v": 1.5512380717493546,
+    "file_frame": "file_num162_frame_163",
+    "map": "de_dust2",
+    "x": 875,
+    "y": 232,
+    "z": 13
+  },
+  {
+    "angle_h": 2.8533661856615695,
+    "angle_v": 1.5730493610771037,
+    "file_frame": "file_num366_frame_495",
+    "map": "de_dust2",
+    "x": 141,
+    "y": 237,
+    "z": 13
+  },
+  {
+    "angle_h": 2.159832965118077,
+    "angle_v": 1.5829003939493067,
+    "file_frame": "file_num31_frame_499",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 523,
+    "z": 14
+  },
+  {
+    "angle_h": 4.86262322379824,
+    "angle_v": 1.5816119566139262,
+    "file_frame": "file_num345_frame_189",
+    "map": "de_dust2",
+    "x": 694,
+    "y": 681,
+    "z": 14
+  },
+  {
+    "angle_h": 4.681307759934593,
+    "angle_v": 1.6015057699568183,
+    "file_frame": "file_num183_frame_302",
+    "map": "de_dust2",
+    "x": 875,
+    "y": 232,
+    "z": 13
+  },
+  {
+    "angle_h": 1.5740560359691536,
+    "angle_v": 1.550609033099878,
+    "file_frame": "file_num280_frame_150",
+    "map": "de_dust2",
+    "x": 465,
+    "y": 685,
+    "z": 13
+  },
+  {
+    "angle_h": 0.37823412223795877,
+    "angle_v": 1.5631562502596772,
+    "file_frame": "file_num126_frame_84",
+    "map": "de_dust2",
+    "x": 676,
+    "y": 217,
+    "z": 36
+  },
+  {
+    "angle_h": 4.682428418121298,
+    "angle_v": 1.589198237295126,
+    "file_frame": "file_num375_frame_155",
+    "map": "de_dust2",
+    "x": 461,
+    "y": 594,
+    "z": 14
+  },
+  {
+    "angle_h": 3.669120124428177,
+    "angle_v": 1.5932547642675348,
+    "file_frame": "file_num207_frame_417",
+    "map": "de_dust2",
+    "x": 461,
+    "y": 790,
+    "z": 14
+  },
+  {
+    "angle_h": 0.83022502349788,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num252_frame_402",
+    "map": "de_dust2",
+    "x": 122,
+    "y": 250,
+    "z": 20
+  },
+  {
+    "angle_h": 2.7049713876129373,
+    "angle_v": 1.6049393835502574,
+    "file_frame": "file_num276_frame_373",
+    "map": "de_dust2",
+    "x": 304,
+    "y": 212,
+    "z": 14
+  },
+  {
+    "angle_h": 4.737262372333811,
+    "angle_v": 1.5364375539912392,
+    "file_frame": "file_num98_frame_403",
+    "map": "de_dust2",
+    "x": 636,
+    "y": 351,
+    "z": 24
+  },
+  {
+    "angle_h": 3.3204814450681597,
+    "angle_v": 1.5448443546042923,
+    "file_frame": "file_num252_frame_367",
+    "map": "de_dust2",
+    "x": 158,
+    "y": 226,
+    "z": 14
+  },
+  {
+    "angle_h": 4.975724479500596,
+    "angle_v": 1.6011462432096575,
+    "file_frame": "file_num171_frame_487",
+    "map": "de_dust2",
+    "x": 456,
+    "y": 404,
+    "z": -1
+  },
+  {
+    "angle_h": 1.2419611796168175,
+    "angle_v": 1.5704847369473574,
+    "file_frame": "file_num258_frame_311",
+    "map": "de_dust2",
+    "x": 608,
+    "y": 669,
+    "z": 14
+  },
+  {
+    "angle_h": 5.927727337532312,
+    "angle_v": 1.5689028192598502,
+    "file_frame": "file_num24_frame_117",
+    "map": "de_dust2",
+    "x": 506,
+    "y": 628,
+    "z": 22
+  },
+  {
+    "angle_h": 1.5364675145535027,
+    "angle_v": 1.5366231763192177,
+    "file_frame": "file_num162_frame_224",
+    "map": "de_dust2",
+    "x": 878,
+    "y": 186,
+    "z": 21
+  },
+  {
+    "angle_h": 4.859723041371144,
+    "angle_v": 1.5612089468706114,
+    "file_frame": "file_num104_frame_446",
+    "map": "de_dust2",
+    "x": 526,
+    "y": 530,
+    "z": 14
+  },
+  {
+    "angle_h": 5.373546684188306,
+    "angle_v": 1.581875609561844,
+    "file_frame": "file_num184_frame_296",
+    "map": "de_dust2",
+    "x": 662,
+    "y": 211,
+    "z": 36
+  },
+  {
+    "angle_h": 1.7273822094082856,
+    "angle_v": 1.5360479335237607,
+    "file_frame": "file_num162_frame_209",
+    "map": "de_dust2",
+    "x": 869,
+    "y": 119,
+    "z": 37
+  },
+  {
+    "angle_h": 6.19860064779758,
+    "angle_v": 1.5780166891423193,
+    "file_frame": "file_num370_frame_241",
+    "map": "de_dust2",
+    "x": 318,
+    "y": 909,
+    "z": 41
+  },
+  {
+    "angle_h": 2.316131226333738,
+    "angle_v": 1.5895098271426655,
+    "file_frame": "file_num31_frame_489",
+    "map": "de_dust2",
+    "x": 519,
+    "y": 547,
+    "z": 25
+  },
+  {
+    "angle_h": 1.458288423383409,
+    "angle_v": 1.6054187525464716,
+    "file_frame": "file_num356_frame_445",
+    "map": "de_dust2",
+    "x": 699,
+    "y": 554,
+    "z": 21
+  },
+  {
+    "angle_h": 3.4553758806028534,
+    "angle_v": 1.5663861320297254,
+    "file_frame": "file_num184_frame_133",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 559,
+    "z": 23
+  },
+  {
+    "angle_h": 2.354390997502143,
+    "angle_v": 1.5655592205112558,
+    "file_frame": "file_num98_frame_7",
+    "map": "de_dust2",
+    "x": 516,
+    "y": 247,
+    "z": -14
+  },
+  {
+    "angle_h": 6.27138084564781,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num31_frame_97",
+    "map": "de_dust2",
+    "x": 672,
+    "y": 191,
+    "z": 40
+  },
+  {
+    "angle_h": 5.017890841672039,
+    "angle_v": 1.5450182590234747,
+    "file_frame": "file_num171_frame_386",
+    "map": "de_dust2",
+    "x": 489,
+    "y": 262,
+    "z": -14
+  },
+  {
+    "angle_h": 2.6677483850568997,
+    "angle_v": 1.5957115303731328,
+    "file_frame": "file_num171_frame_472",
+    "map": "de_dust2",
+    "x": 445,
+    "y": 411,
+    "z": -10
+  },
+  {
+    "angle_h": 4.914814789577177,
+    "angle_v": 1.5972814638357347,
+    "file_frame": "file_num356_frame_130",
+    "map": "de_dust2",
+    "x": 691,
+    "y": 684,
+    "z": 14
+  },
+  {
+    "angle_h": 3.4575389000402152,
+    "angle_v": 1.605358831421945,
+    "file_frame": "file_num157_frame_310",
+    "map": "de_dust2",
+    "x": 229,
+    "y": 911,
+    "z": 41
+  },
+  {
+    "angle_h": 4.146565785703184,
+    "angle_v": 1.5539465065779652,
+    "file_frame": "file_num250_frame_314",
+    "map": "de_dust2",
+    "x": 497,
+    "y": 615,
+    "z": 13
+  },
+  {
+    "angle_h": 3.9265892122948576,
+    "angle_v": 1.590138865792142,
+    "file_frame": "file_num289_frame_144",
+    "map": "de_dust2",
+    "x": 105,
+    "y": 306,
+    "z": 14
+  },
+  {
+    "angle_h": 2.7566953023044563,
+    "angle_v": 1.5362157126724356,
+    "file_frame": "file_num375_frame_387",
+    "map": "de_dust2",
+    "x": 202,
+    "y": 264,
+    "z": 13
+  },
+  {
+    "angle_h": 2.5547131757495762,
+    "angle_v": 1.5694421093805913,
+    "file_frame": "file_num250_frame_445",
+    "map": "de_dust2",
+    "x": 306,
+    "y": 190,
+    "z": 17
+  },
+  {
+    "angle_h": 0.7185320473799568,
+    "angle_v": 1.5577215374231526,
+    "file_frame": "file_num22_frame_348",
+    "map": "de_dust2",
+    "x": 124,
+    "y": 427,
+    "z": 21
+  },
+  {
+    "angle_h": 5.740701523659317,
+    "angle_v": 1.5518431419490206,
+    "file_frame": "file_num280_frame_463",
+    "map": "de_dust2",
+    "x": 307,
+    "y": 449,
+    "z": 21
+  },
+  {
+    "angle_h": 2.2649226333131494,
+    "angle_v": 1.5446827007261246,
+    "file_frame": "file_num181_frame_97",
+    "map": "de_dust2",
+    "x": 703,
+    "y": 674,
+    "z": 14
+  },
+  {
+    "angle_h": 3.3529405850662632,
+    "angle_v": 1.539930822393096,
+    "file_frame": "file_num366_frame_428",
+    "map": "de_dust2",
+    "x": 286,
+    "y": 224,
+    "z": 15
+  },
+  {
+    "angle_h": 4.9388487531507055,
+    "angle_v": 1.6007148111130647,
+    "file_frame": "file_num356_frame_59",
+    "map": "de_dust2",
+    "x": 528,
+    "y": 905,
+    "z": 21
+  },
+  {
+    "angle_h": 5.474310047192544,
+    "angle_v": 1.5389662254462695,
+    "file_frame": "file_num191_frame_80",
+    "map": "de_dust2",
+    "x": 173,
+    "y": 734,
+    "z": 28
+  },
+  {
+    "angle_h": 0.5354551687713316,
+    "angle_v": 1.5472593090807762,
+    "file_frame": "file_num237_frame_161",
+    "map": "de_dust2",
+    "x": 330,
+    "y": 796,
+    "z": 43
+  },
+  {
+    "angle_h": 5.487762472806861,
+    "angle_v": 1.5700474458963665,
+    "file_frame": "file_num345_frame_169",
+    "map": "de_dust2",
+    "x": 661,
+    "y": 694,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1359600678842754,
+    "angle_v": 1.5780885944917515,
+    "file_frame": "file_num162_frame_304",
+    "map": "de_dust2",
+    "x": 716,
+    "y": 260,
+    "z": -2
+  },
+  {
+    "angle_h": 1.4846057812755722,
+    "angle_v": 1.5591955970865115,
+    "file_frame": "file_num252_frame_462",
+    "map": "de_dust2",
+    "x": 125,
+    "y": 224,
+    "z": 13
+  },
+  {
+    "angle_h": 3.9848868738211283,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num177_frame_23",
+    "map": "de_dust2",
+    "x": 213,
+    "y": 326,
+    "z": 22
+  },
+  {
+    "angle_h": 6.170581529968856,
+    "angle_v": 1.5663802730753273,
+    "file_frame": "file_num289_frame_179",
+    "map": "de_dust2",
+    "x": 92,
+    "y": 279,
+    "z": 14
+  },
+  {
+    "angle_h": 2.7718673310346373,
+    "angle_v": 1.5376359764817749,
+    "file_frame": "file_num375_frame_377",
+    "map": "de_dust2",
+    "x": 222,
+    "y": 256,
+    "z": 14
+  },
+  {
+    "angle_h": 4.199086518192855,
+    "angle_v": 1.601799516625054,
+    "file_frame": "file_num104_frame_18",
+    "map": "de_dust2",
+    "x": 176,
+    "y": 146,
+    "z": 24
+  },
+  {
+    "angle_h": 4.812672974392713,
+    "angle_v": 1.5976947864369149,
+    "file_frame": "file_num280_frame_392",
+    "map": "de_dust2",
+    "x": 188,
+    "y": 624,
+    "z": 19
+  },
+  {
+    "angle_h": 3.141688527389036,
+    "angle_v": 1.5553366766669865,
+    "file_frame": "file_num184_frame_148",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 557,
+    "z": 26
+  },
+  {
+    "angle_h": 5.809886187721832,
+    "angle_v": 1.5594352815846186,
+    "file_frame": "file_num252_frame_145",
+    "map": "de_dust2",
+    "x": 319,
+    "y": 434,
+    "z": -10
+  },
+  {
+    "angle_h": 0.07118043698341986,
+    "angle_v": 1.5845243895820371,
+    "file_frame": "file_num209_frame_396",
+    "map": "de_dust2",
+    "x": 530,
+    "y": 248,
+    "z": -14
+  },
+  {
+    "angle_h": 3.5776266925462865,
+    "angle_v": 1.590743935991808,
+    "file_frame": "file_num181_frame_337",
+    "map": "de_dust2",
+    "x": 763,
+    "y": 241,
+    "z": 9
+  },
+  {
+    "angle_h": 3.6153290640985385,
+    "angle_v": 1.564995961940704,
+    "file_frame": "file_num22_frame_217",
+    "map": "de_dust2",
+    "x": 276,
+    "y": 233,
+    "z": 15
+  },
+  {
+    "angle_h": 2.8118227368690962,
+    "angle_v": 1.5968859844138579,
+    "file_frame": "file_num289_frame_58",
+    "map": "de_dust2",
+    "x": 307,
+    "y": 456,
+    "z": -6
+  },
+  {
+    "angle_h": 3.890247183427418,
+    "angle_v": 1.5479783625750976,
+    "file_frame": "file_num209_frame_245",
+    "map": "de_dust2",
+    "x": 174,
+    "y": 431,
+    "z": 23
+  },
+  {
+    "angle_h": 1.457767109600026,
+    "angle_v": 1.5971317941824723,
+    "file_frame": "file_num184_frame_397",
+    "map": "de_dust2",
+    "x": 650,
+    "y": 153,
+    "z": 48
+  },
+  {
+    "angle_h": 4.962559675284008,
+    "angle_v": 1.5477027254022744,
+    "file_frame": "file_num278_frame_264",
+    "map": "de_dust2",
+    "x": 172,
+    "y": 666,
+    "z": 14
+  },
+  {
+    "angle_h": 0.1675035115021688,
+    "angle_v": 1.5429689565646585,
+    "file_frame": "file_num24_frame_77",
+    "map": "de_dust2",
+    "x": 502,
+    "y": 603,
+    "z": 19
+  },
+  {
+    "angle_h": 0.7604709755943067,
+    "angle_v": 1.5964665365421704,
+    "file_frame": "file_num252_frame_205",
+    "map": "de_dust2",
+    "x": 473,
+    "y": 502,
+    "z": 8
+  },
+  {
+    "angle_h": 5.79961597329405,
+    "angle_v": 1.605460564175586,
+    "file_frame": "file_num104_frame_362",
+    "map": "de_dust2",
+    "x": 319,
+    "y": 435,
+    "z": -10
+  },
+  {
+    "angle_h": 1.001461754216122,
+    "angle_v": 1.55225673086631,
+    "file_frame": "file_num207_frame_272",
+    "map": "de_dust2",
+    "x": 431,
+    "y": 239,
+    "z": -13
+  },
+  {
+    "angle_h": 4.740042712511854,
+    "angle_v": 1.5449045420449283,
+    "file_frame": "file_num191_frame_343",
+    "map": "de_dust2",
+    "x": 466,
+    "y": 840,
+    "z": 14
+  },
+  {
+    "angle_h": 4.876303349685759,
+    "angle_v": 1.5586203542910544,
+    "file_frame": "file_num184_frame_265",
+    "map": "de_dust2",
+    "x": 634,
+    "y": 361,
+    "z": 17
+  },
+  {
+    "angle_h": 5.150364463775851,
+    "angle_v": 1.5395414682417266,
+    "file_frame": "file_num157_frame_481",
+    "map": "de_dust2",
+    "x": 105,
+    "y": 332,
+    "z": 21
+  },
+  {
+    "angle_h": 1.6154974856918767,
+    "angle_v": 1.538043440128557,
+    "file_frame": "file_num278_frame_204",
+    "map": "de_dust2",
+    "x": 144,
+    "y": 767,
+    "z": 17
+  },
+  {
+    "angle_h": 0.768716122329192,
+    "angle_v": 1.537372323533857,
+    "file_frame": "file_num280_frame_186",
+    "map": "de_dust2",
+    "x": 461,
+    "y": 809,
+    "z": 14
+  },
+  {
+    "angle_h": 3.1953895728738297,
+    "angle_v": 1.5600403517842845,
+    "file_frame": "file_num366_frame_473",
+    "map": "de_dust2",
+    "x": 224,
+    "y": 211,
+    "z": 14
+  },
+  {
+    "angle_h": 5.6476080645945075,
+    "angle_v": 1.5792752990734908,
+    "file_frame": "file_num24_frame_259",
+    "map": "de_dust2",
+    "x": 676,
+    "y": 256,
+    "z": 36
+  },
+  {
+    "angle_h": 3.3021391893763483,
+    "angle_v": 1.6054845326253966,
+    "file_frame": "file_num278_frame_56",
+    "map": "de_dust2",
+    "x": 520,
+    "y": 933,
+    "z": 21
+  },
+  {
+    "angle_h": 2.4418097929162124,
+    "angle_v": 1.5511959938041313,
+    "file_frame": "file_num375_frame_452",
+    "map": "de_dust2",
+    "x": 120,
+    "y": 245,
+    "z": 14
+  },
+  {
+    "angle_h": 2.046761803136038,
+    "angle_v": 1.5389603664918714,
+    "file_frame": "file_num375_frame_8",
+    "map": "de_dust2",
+    "x": 679,
+    "y": 712,
+    "z": 13
+  },
+  {
+    "angle_h": 0.5658591473562212,
+    "angle_v": 1.5449881653031565,
+    "file_frame": "file_num360_frame_213",
+    "map": "de_dust2",
+    "x": 906,
+    "y": 673,
+    "z": -25
+  },
+  {
+    "angle_h": 5.110894285892005,
+    "angle_v": 1.6019193588741076,
+    "file_frame": "file_num12_frame_400",
+    "map": "de_dust2",
+    "x": 847,
+    "y": 469,
+    "z": 14
+  },
+  {
+    "angle_h": 4.706516710181065,
+    "angle_v": 1.6015180204978328,
+    "file_frame": "file_num209_frame_154",
+    "map": "de_dust2",
+    "x": 125,
+    "y": 754,
+    "z": 14
+  },
+  {
+    "angle_h": 5.881929488898438,
+    "angle_v": 1.605262957622702,
+    "file_frame": "file_num366_frame_227",
+    "map": "de_dust2",
+    "x": 146,
+    "y": 284,
+    "z": 14
+  },
+  {
+    "angle_h": 3.111308517253957,
+    "angle_v": 1.5608195927192419,
+    "file_frame": "file_num177_frame_43",
+    "map": "de_dust2",
+    "x": 210,
+    "y": 322,
+    "z": 25
+  },
+  {
+    "angle_h": 5.761476044374699,
+    "angle_v": 1.5825589766975585,
+    "file_frame": "file_num169_frame_188",
+    "map": "de_dust2",
+    "x": 614,
+    "y": 879,
+    "z": 15
+  },
+  {
+    "angle_h": 3.081317861270248,
+    "angle_v": 1.5382951088515695,
+    "file_frame": "file_num177_frame_455",
+    "map": "de_dust2",
+    "x": 195,
+    "y": 254,
+    "z": 12
+  },
+  {
+    "angle_h": 5.122651076840268,
+    "angle_v": 1.5676924125444092,
+    "file_frame": "file_num345_frame_359",
+    "map": "de_dust2",
+    "x": 868,
+    "y": 434,
+    "z": 12
+  },
+  {
+    "angle_h": 2.533962623484006,
+    "angle_v": 1.566344054084502,
+    "file_frame": "file_num250_frame_440",
+    "map": "de_dust2",
+    "x": 324,
+    "y": 179,
+    "z": 13
+  },
+  {
+    "angle_h": 2.639225929782151,
+    "angle_v": 1.6000676629681754,
+    "file_frame": "file_num276_frame_412",
+    "map": "de_dust2",
+    "x": 151,
+    "y": 284,
+    "z": 13
+  },
+  {
+    "angle_h": 0.7593263489577906,
+    "angle_v": 1.5831640468972246,
+    "file_frame": "file_num122_frame_480",
+    "map": "de_dust2",
+    "x": 242,
+    "y": 170,
+    "z": 15
+  },
+  {
+    "angle_h": 2.6000135458918243,
+    "angle_v": 1.594644934356556,
+    "file_frame": "file_num289_frame_53",
+    "map": "de_dust2",
+    "x": 313,
+    "y": 437,
+    "z": -10
+  },
+  {
+    "angle_h": 4.771201697265782,
+    "angle_v": 1.582774692745855,
+    "file_frame": "file_num162_frame_118",
+    "map": "de_dust2",
+    "x": 857,
+    "y": 449,
+    "z": 14
+  },
+  {
+    "angle_h": 2.990213783539727,
+    "angle_v": 1.5743196889170714,
+    "file_frame": "file_num31_frame_359",
+    "map": "de_dust2",
+    "x": 571,
+    "y": 403,
+    "z": 26
+  },
+  {
+    "angle_h": 3.431934736687976,
+    "angle_v": 1.5854112222250334,
+    "file_frame": "file_num360_frame_370",
+    "map": "de_dust2",
+    "x": 666,
+    "y": 687,
+    "z": 13
+  },
+  {
+    "angle_h": 1.4737600577362244,
+    "angle_v": 1.541902360548082,
+    "file_frame": "file_num356_frame_305",
+    "map": "de_dust2",
+    "x": 696,
+    "y": 546,
+    "z": 14
+  },
+  {
+    "angle_h": 6.256616280564411,
+    "angle_v": 1.5554623778704382,
+    "file_frame": "file_num366_frame_336",
+    "map": "de_dust2",
+    "x": 533,
+    "y": 255,
+    "z": -14
+  },
+  {
+    "angle_h": 1.9765042846283853,
+    "angle_v": 1.5847161371805227,
+    "file_frame": "file_num258_frame_333",
+    "map": "de_dust2",
+    "x": 640,
+    "y": 758,
+    "z": 13
+  },
+  {
+    "angle_h": 6.252990919372486,
+    "angle_v": 1.605262957622702,
+    "file_frame": "file_num126_frame_179",
+    "map": "de_dust2",
+    "x": 671,
+    "y": 224,
+    "z": 36
+  },
+  {
+    "angle_h": 0.7529507413081409,
+    "angle_v": 1.5408895603855246,
+    "file_frame": "file_num24_frame_12",
+    "map": "de_dust2",
+    "x": 509,
+    "y": 601,
+    "z": 14
+  },
+  {
+    "angle_h": 1.4368186844654627,
+    "angle_v": 1.5364793656203535,
+    "file_frame": "file_num211_frame_322",
+    "map": "de_dust2",
+    "x": 186,
+    "y": 505,
+    "z": 21
+  },
+  {
+    "angle_h": 4.640129963159788,
+    "angle_v": 1.5655232678365396,
+    "file_frame": "file_num12_frame_144",
+    "map": "de_dust2",
+    "x": 879,
+    "y": 205,
+    "z": 16
+  },
+  {
+    "angle_h": 2.729832795337154,
+    "angle_v": 1.553712681034256,
+    "file_frame": "file_num181_frame_398",
+    "map": "de_dust2",
+    "x": 554,
+    "y": 261,
+    "z": -14
+  },
+  {
+    "angle_h": 3.105669806277932,
+    "angle_v": 1.5845243895820371,
+    "file_frame": "file_num280_frame_301",
+    "map": "de_dust2",
+    "x": 266,
+    "y": 917,
+    "z": 40
+  },
+  {
+    "angle_h": 5.965070182337403,
+    "angle_v": 1.5385228091247714,
+    "file_frame": "file_num292_frame_272",
+    "map": "de_dust2",
+    "x": 811,
+    "y": 223,
+    "z": 17
+  },
+  {
+    "angle_h": 5.560842276279725,
+    "angle_v": 1.5360841525145859,
+    "file_frame": "file_num209_frame_285",
+    "map": "de_dust2",
+    "x": 105,
+    "y": 319,
+    "z": 19
+  },
+  {
+    "angle_h": 4.921178146685812,
+    "angle_v": 1.6055804064246395,
+    "file_frame": "file_num183_frame_8",
+    "map": "de_dust2",
+    "x": 320,
+    "y": 789,
+    "z": 43
+  },
+  {
+    "angle_h": 3.1777189664089365,
+    "angle_v": 1.5394993902965033,
+    "file_frame": "file_num169_frame_268",
+    "map": "de_dust2",
+    "x": 711,
+    "y": 667,
+    "z": 14
+  },
+  {
+    "angle_h": 5.070118093809583,
+    "angle_v": 1.5596451386785168,
+    "file_frame": "file_num370_frame_53",
+    "map": "de_dust2",
+    "x": 145,
+    "y": 702,
+    "z": 14
+  },
+  {
+    "angle_h": 3.280100466091506,
+    "angle_v": 1.5901090383879333,
+    "file_frame": "file_num331_frame_492",
+    "map": "de_dust2",
+    "x": 869,
+    "y": 120,
+    "z": 36
+  },
+  {
+    "angle_h": 4.28057924754928,
+    "angle_v": 1.5515075836516705,
+    "file_frame": "file_num250_frame_319",
+    "map": "de_dust2",
+    "x": 486,
+    "y": 601,
+    "z": 13
+  },
+  {
+    "angle_h": 5.738651954884393,
+    "angle_v": 1.5433284833118193,
+    "file_frame": "file_num104_frame_477",
+    "map": "de_dust2",
+    "x": 561,
+    "y": 417,
+    "z": 14
+  },
+  {
+    "angle_h": 0.05658365104869555,
+    "angle_v": 1.5661824002063343,
+    "file_frame": "file_num289_frame_322",
+    "map": "de_dust2",
+    "x": 657,
+    "y": 261,
+    "z": -14
+  },
+  {
+    "angle_h": 0.25731329294291094,
+    "angle_v": 1.6038608033087753,
+    "file_frame": "file_num171_frame_210",
+    "map": "de_dust2",
+    "x": 168,
+    "y": 432,
+    "z": 23
+  },
+  {
+    "angle_h": 1.5062672677920041,
+    "angle_v": 1.5761652595524962,
+    "file_frame": "file_num12_frame_305",
+    "map": "de_dust2",
+    "x": 890,
+    "y": 266,
+    "z": 12
+  },
+  {
+    "angle_h": 4.616503463233041,
+    "angle_v": 1.5385289343952786,
+    "file_frame": "file_num370_frame_368",
+    "map": "de_dust2",
+    "x": 686,
+    "y": 734,
+    "z": 13
+  },
+  {
+    "angle_h": 1.7529924980310325,
+    "angle_v": 1.5454976280196888,
+    "file_frame": "file_num207_frame_181",
+    "map": "de_dust2",
+    "x": 126,
+    "y": 317,
+    "z": 16
+  },
+  {
+    "angle_h": 1.4584741788694422,
+    "angle_v": 1.54990782278486,
+    "file_frame": "file_num360_frame_202",
+    "map": "de_dust2",
+    "x": 901,
+    "y": 639,
+    "z": -15
+  },
+  {
+    "angle_h": 3.5778365496401845,
+    "angle_v": 1.535958184995025,
+    "file_frame": "file_num169_frame_288",
+    "map": "de_dust2",
+    "x": 646,
+    "y": 714,
+    "z": 13
+  },
+  {
+    "angle_h": 1.8788628122119926,
+    "angle_v": 1.6050531005288038,
+    "file_frame": "file_num104_frame_33",
+    "map": "de_dust2",
+    "x": 177,
+    "y": 179,
+    "z": 16
+  },
+  {
+    "angle_h": 2.4577248435905257,
+    "angle_v": 1.5877121934068619,
+    "file_frame": "file_num171_frame_457",
+    "map": "de_dust2",
+    "x": 468,
+    "y": 395,
+    "z": -14
+  },
+  {
+    "angle_h": 4.250984603619665,
+    "angle_v": 1.5826607094511995,
+    "file_frame": "file_num250_frame_272",
+    "map": "de_dust2",
+    "x": 626,
+    "y": 723,
+    "z": 14
+  },
+  {
+    "angle_h": 0.17226124878959537,
+    "angle_v": 1.584158737564369,
+    "file_frame": "file_num289_frame_349",
+    "map": "de_dust2",
+    "x": 777,
+    "y": 265,
+    "z": 9
+  },
+  {
+    "angle_h": 6.2157980105367665,
+    "angle_v": 1.5805874385425729,
+    "file_frame": "file_num177_frame_206",
+    "map": "de_dust2",
+    "x": 771,
+    "y": 219,
+    "z": 12
+  },
+  {
+    "angle_h": 5.974998979513437,
+    "angle_v": 1.59249363282799,
+    "file_frame": "file_num169_frame_173",
+    "map": "de_dust2",
+    "x": 552,
+    "y": 901,
+    "z": 16
+  },
+  {
+    "angle_h": 4.870712841925465,
+    "angle_v": 1.5982822797733864,
+    "file_frame": "file_num183_frame_292",
+    "map": "de_dust2",
+    "x": 869,
+    "y": 271,
+    "z": 12
+  },
+  {
+    "angle_h": 5.378795774696853,
+    "angle_v": 1.5428011774159835,
+    "file_frame": "file_num122_frame_233",
+    "map": "de_dust2",
+    "x": 926,
+    "y": 337,
+    "z": 14
+  },
+  {
+    "angle_h": 1.9914546051978175,
+    "angle_v": 1.5376298512112676,
+    "file_frame": "file_num22_frame_302",
+    "map": "de_dust2",
+    "x": 155,
+    "y": 247,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1824290331128497,
+    "angle_v": 1.5465583650818675,
+    "file_frame": "file_num82_frame_366",
+    "map": "de_dust2",
+    "x": 228,
+    "y": 461,
+    "z": 22
+  },
+  {
+    "angle_h": 4.464926986630091,
+    "angle_v": 1.6051431153736484,
+    "file_frame": "file_num184_frame_53",
+    "map": "de_dust2",
+    "x": 616,
+    "y": 742,
+    "z": 14
+  },
+  {
+    "angle_h": 5.75793483907322,
+    "angle_v": 1.5468939233792174,
+    "file_frame": "file_num370_frame_297",
+    "map": "de_dust2",
+    "x": 535,
+    "y": 894,
+    "z": 22
+  },
+  {
+    "angle_h": 2.440671291550203,
+    "angle_v": 1.554815229725549,
+    "file_frame": "file_num331_frame_303",
+    "map": "de_dust2",
+    "x": 303,
+    "y": 237,
+    "z": 13
+  },
+  {
+    "angle_h": 5.062442330915757,
+    "angle_v": 1.5694002977514772,
+    "file_frame": "file_num12_frame_138",
+    "map": "de_dust2",
+    "x": 858,
+    "y": 219,
+    "z": 16
+  },
+  {
+    "angle_h": 4.595015481661627,
+    "angle_v": 1.5679739086716304,
+    "file_frame": "file_num292_frame_173",
+    "map": "de_dust2",
+    "x": 872,
+    "y": 403,
+    "z": 12
+  },
+  {
+    "angle_h": 5.587021682427423,
+    "angle_v": 1.5886887745785938,
+    "file_frame": "file_num122_frame_158",
+    "map": "de_dust2",
+    "x": 709,
+    "y": 562,
+    "z": 14
+  },
+  {
+    "angle_h": 4.181062243935199,
+    "angle_v": 1.5820015770814049,
+    "file_frame": "file_num331_frame_477",
+    "map": "de_dust2",
+    "x": 882,
+    "y": 176,
+    "z": 22
+  },
+  {
+    "angle_h": 2.0775672532552574,
+    "angle_v": 1.5365214435655767,
+    "file_frame": "file_num122_frame_278",
+    "map": "de_dust2",
+    "x": 883,
+    "y": 400,
+    "z": 12
+  },
+  {
+    "angle_h": 4.621111264551096,
+    "angle_v": 1.570179006054216,
+    "file_frame": "file_num171_frame_118",
+    "map": "de_dust2",
+    "x": 154,
+    "y": 655,
+    "z": 14
+  },
+  {
+    "angle_h": 4.436512123063381,
+    "angle_v": 1.6056762802238822,
+    "file_frame": "file_num375_frame_216",
+    "map": "de_dust2",
+    "x": 470,
+    "y": 366,
+    "z": -14
+  },
+  {
+    "angle_h": 6.250881695789143,
+    "angle_v": 1.544658732276314,
+    "file_frame": "file_num356_frame_245",
+    "map": "de_dust2",
+    "x": 735,
+    "y": 550,
+    "z": 18
+  },
+  {
+    "angle_h": 0.21534453732435224,
+    "angle_v": 1.6022788856212682,
+    "file_frame": "file_num126_frame_149",
+    "map": "de_dust2",
+    "x": 676,
+    "y": 215,
+    "z": 36
+  },
+  {
+    "angle_h": 2.7141273354406295,
+    "angle_v": 1.5505310024799386,
+    "file_frame": "file_num345_frame_389",
+    "map": "de_dust2",
+    "x": 885,
+    "y": 394,
+    "z": 12
+  },
+  {
+    "angle_h": 2.4917360738719276,
+    "angle_v": 1.5779509090633945,
+    "file_frame": "file_num181_frame_45",
+    "map": "de_dust2",
+    "x": 778,
+    "y": 525,
+    "z": 14
+  },
+  {
+    "angle_h": 5.672493174452426,
+    "angle_v": 1.5708922005941395,
+    "file_frame": "file_num98_frame_282",
+    "map": "de_dust2",
+    "x": 496,
+    "y": 599,
+    "z": 14
+  },
+  {
+    "angle_h": 3.5042832361255045,
+    "angle_v": 1.5390141623458908,
+    "file_frame": "file_num12_frame_195",
+    "map": "de_dust2",
+    "x": 780,
+    "y": 114,
+    "z": 36
+  },
+  {
+    "angle_h": 4.649645437734641,
+    "angle_v": 1.5858365290511192,
+    "file_frame": "file_num328_frame_328",
+    "map": "de_dust2",
+    "x": 110,
+    "y": 426,
+    "z": 20
+  },
+  {
+    "angle_h": 1.8784913012399265,
+    "angle_v": 1.555588345389999,
+    "file_frame": "file_num169_frame_23",
+    "map": "de_dust2",
+    "x": 180,
+    "y": 648,
+    "z": 14
+  },
+  {
+    "angle_h": 6.281950932014334,
+    "angle_v": 1.6054067683215663,
+    "file_frame": "file_num171_frame_200",
+    "map": "de_dust2",
+    "x": 131,
+    "y": 428,
+    "z": 21
+  },
+  {
+    "angle_h": 0.02873817132304506,
+    "angle_v": 1.5483498735471637,
+    "file_frame": "file_num331_frame_417",
+    "map": "de_dust2",
+    "x": 686,
+    "y": 221,
+    "z": -12
+  },
+  {
+    "angle_h": 0.13772271261235772,
+    "angle_v": 1.536323837012693,
+    "file_frame": "file_num278_frame_229",
+    "map": "de_dust2",
+    "x": 140,
+    "y": 816,
+    "z": 29
+  },
+  {
+    "angle_h": 1.5827565832504424,
+    "angle_v": 1.5369827030663783,
+    "file_frame": "file_num278_frame_209",
+    "map": "de_dust2",
+    "x": 143,
+    "y": 779,
+    "z": 20
+  },
+  {
+    "angle_h": 1.6078096054150903,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num31_frame_82",
+    "map": "de_dust2",
+    "x": 668,
+    "y": 190,
+    "z": 36
+  },
+  {
+    "angle_h": 4.893979815105051,
+    "angle_v": 1.590743935991808,
+    "file_frame": "file_num122_frame_470",
+    "map": "de_dust2",
+    "x": 243,
+    "y": 202,
+    "z": 14
+  },
+  {
+    "angle_h": 0.01407533899328679,
+    "angle_v": 1.5672308867274984,
+    "file_frame": "file_num98_frame_322",
+    "map": "de_dust2",
+    "x": 501,
+    "y": 603,
+    "z": 25
+  },
+  {
+    "angle_h": 5.08452899110022,
+    "angle_v": 1.598803460398715,
+    "file_frame": "file_num331_frame_145",
+    "map": "de_dust2",
+    "x": 523,
+    "y": 438,
+    "z": 14
+  },
+  {
+    "angle_h": 3.037096071369482,
+    "angle_v": 1.5936382594645062,
+    "file_frame": "file_num177_frame_322",
+    "map": "de_dust2",
+    "x": 705,
+    "y": 231,
+    "z": -6
+  },
+  {
+    "angle_h": 0.033813623728518066,
+    "angle_v": 1.5578235364929027,
+    "file_frame": "file_num126_frame_74",
+    "map": "de_dust2",
+    "x": 673,
+    "y": 226,
+    "z": 36
+  },
+  {
+    "angle_h": 5.56364658490758,
+    "angle_v": 1.5724442908774376,
+    "file_frame": "file_num24_frame_269",
+    "map": "de_dust2",
+    "x": 663,
+    "y": 271,
+    "z": 44
+  },
+  {
+    "angle_h": 3.085758149755737,
+    "angle_v": 1.604861352930318,
+    "file_frame": "file_num177_frame_287",
+    "map": "de_dust2",
+    "x": 848,
+    "y": 222,
+    "z": 16
+  },
+  {
+    "angle_h": 1.498165931755983,
+    "angle_v": 1.5662543055557665,
+    "file_frame": "file_num360_frame_172",
+    "map": "de_dust2",
+    "x": 892,
+    "y": 522,
+    "z": 12
+  },
+  {
+    "angle_h": 1.6014579662152513,
+    "angle_v": 1.5374801815580053,
+    "file_frame": "file_num162_frame_229",
+    "map": "de_dust2",
+    "x": 885,
+    "y": 206,
+    "z": 16
+  },
+  {
+    "angle_h": 6.210021614132384,
+    "angle_v": 1.5478944730007602,
+    "file_frame": "file_num328_frame_496",
+    "map": "de_dust2",
+    "x": 278,
+    "y": 223,
+    "z": 15
+  },
+  {
+    "angle_h": 3.1135676768066713,
+    "angle_v": 1.5571582788526008,
+    "file_frame": "file_num177_frame_48",
+    "map": "de_dust2",
+    "x": 209,
+    "y": 322,
+    "z": 14
+  },
+  {
+    "angle_h": 3.88420127512072,
+    "angle_v": 1.6041004878068825,
+    "file_frame": "file_num183_frame_312",
+    "map": "de_dust2",
+    "x": 889,
+    "y": 191,
+    "z": 18
+  },
+  {
+    "angle_h": 0.30075024927043037,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num24_frame_42",
+    "map": "de_dust2",
+    "x": 492,
+    "y": 598,
+    "z": 14
+  },
+  {
+    "angle_h": 5.273730074951591,
+    "angle_v": 1.5940816757860043,
+    "file_frame": "file_num162_frame_8",
+    "map": "de_dust2",
+    "x": 660,
+    "y": 732,
+    "z": 13
+  },
+  {
+    "angle_h": 4.4255585414998855,
+    "angle_v": 1.5933687475621903,
+    "file_frame": "file_num370_frame_113",
+    "map": "de_dust2",
+    "x": 178,
+    "y": 590,
+    "z": 21
+  },
+  {
+    "angle_h": 5.783586939325081,
+    "angle_v": 1.5624792747105791,
+    "file_frame": "file_num183_frame_101",
+    "map": "de_dust2",
+    "x": 523,
+    "y": 894,
+    "z": 25
+  },
+  {
+    "angle_h": 1.5815461765350014,
+    "angle_v": 1.5589678968133096,
+    "file_frame": "file_num211_frame_264",
+    "map": "de_dust2",
+    "x": 105,
+    "y": 308,
+    "z": 14
+  },
+  {
+    "angle_h": 1.4133955168879433,
+    "angle_v": 1.5571223261778848,
+    "file_frame": "file_num250_frame_108",
+    "map": "de_dust2",
+    "x": 134,
+    "y": 804,
+    "z": 23
+  },
+  {
+    "angle_h": 5.09962911448097,
+    "angle_v": 1.547852661371646,
+    "file_frame": "file_num366_frame_351",
+    "map": "de_dust2",
+    "x": 577,
+    "y": 251,
+    "z": -14
+  },
+  {
+    "angle_h": 4.341135802312156,
+    "angle_v": 1.6028602536872327,
+    "file_frame": "file_num183_frame_307",
+    "map": "de_dust2",
+    "x": 882,
+    "y": 213,
+    "z": 14
+  },
+  {
+    "angle_h": 5.98822956380895,
+    "angle_v": 1.544832636695496,
+    "file_frame": "file_num280_frame_478",
+    "map": "de_dust2",
+    "x": 324,
+    "y": 428,
+    "z": -10
+  },
+  {
+    "angle_h": 5.569356934916927,
+    "angle_v": 1.5360122471651536,
+    "file_frame": "file_num252_frame_407",
+    "map": "de_dust2",
+    "x": 131,
+    "y": 243,
+    "z": 24
+  },
+  {
+    "angle_h": 4.430184452313354,
+    "angle_v": 1.5750446013657908,
+    "file_frame": "file_num157_frame_234",
+    "map": "de_dust2",
+    "x": 488,
+    "y": 887,
+    "z": 35
+  },
+  {
+    "angle_h": 3.243069211133954,
+    "angle_v": 1.5480683774199424,
+    "file_frame": "file_num345_frame_28",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 430,
+    "z": 25
+  },
+  {
+    "angle_h": 2.87974319836215,
+    "angle_v": 1.6045976999824,
+    "file_frame": "file_num328_frame_278",
+    "map": "de_dust2",
+    "x": 272,
+    "y": 491,
+    "z": 21
+  },
+  {
+    "angle_h": 5.040570854147372,
+    "angle_v": 1.570406972643527,
+    "file_frame": "file_num184_frame_280",
+    "map": "de_dust2",
+    "x": 644,
+    "y": 284,
+    "z": 36
+  },
+  {
+    "angle_h": 0.34482210320182466,
+    "angle_v": 1.602237073992154,
+    "file_frame": "file_num22_frame_471",
+    "map": "de_dust2",
+    "x": 139,
+    "y": 888,
+    "z": 43
+  },
+  {
+    "angle_h": 5.188013039474082,
+    "angle_v": 1.5429630976102604,
+    "file_frame": "file_num169_frame_258",
+    "map": "de_dust2",
+    "x": 716,
+    "y": 662,
+    "z": 14
+  },
+  {
+    "angle_h": 3.2425179367883077,
+    "angle_v": 1.6010386515016184,
+    "file_frame": "file_num289_frame_68",
+    "map": "de_dust2",
+    "x": 292,
+    "y": 479,
+    "z": 11
+  },
+  {
+    "angle_h": 0.13708142342186663,
+    "angle_v": 1.595010320058115,
+    "file_frame": "file_num104_frame_316",
+    "map": "de_dust2",
+    "x": 164,
+    "y": 465,
+    "z": 21
+  },
+  {
+    "angle_h": 4.227537068118172,
+    "angle_v": 1.5707664993906878,
+    "file_frame": "file_num22_frame_272",
+    "map": "de_dust2",
+    "x": 187,
+    "y": 173,
+    "z": 15
+  },
+  {
+    "angle_h": 5.257000096983714,
+    "angle_v": 1.5494106106093424,
+    "file_frame": "file_num122_frame_218",
+    "map": "de_dust2",
+    "x": 892,
+    "y": 388,
+    "z": 12
+  },
+  {
+    "angle_h": 1.8276122744042351,
+    "angle_v": 1.5909356835902937,
+    "file_frame": "file_num63_frame_145",
+    "map": "de_dust2",
+    "x": 671,
+    "y": 195,
+    "z": 36
+  },
+  {
+    "angle_h": 3.6335807723132874,
+    "angle_v": 1.5571223261778848,
+    "file_frame": "file_num331_frame_69",
+    "map": "de_dust2",
+    "x": 609,
+    "y": 666,
+    "z": 14
+  },
+  {
+    "angle_h": 4.564407771253347,
+    "angle_v": 1.5359462007701197,
+    "file_frame": "file_num360_frame_253",
+    "map": "de_dust2",
+    "x": 891,
+    "y": 595,
+    "z": 0
+  },
+  {
+    "angle_h": 5.363839462014967,
+    "angle_v": 1.536593348915009,
+    "file_frame": "file_num370_frame_333",
+    "map": "de_dust2",
+    "x": 635,
+    "y": 807,
+    "z": 14
+  },
+  {
+    "angle_h": 4.426439515188483,
+    "angle_v": 1.539823230685057,
+    "file_frame": "file_num162_frame_189",
+    "map": "de_dust2",
+    "x": 874,
+    "y": 128,
+    "z": 34
+  },
+  {
+    "angle_h": 5.33043356824934,
+    "angle_v": 1.5412134007740785,
+    "file_frame": "file_num157_frame_486",
+    "map": "de_dust2",
+    "x": 107,
+    "y": 309,
+    "z": 14
+  },
+  {
+    "angle_h": 1.0544979415347775,
+    "angle_v": 1.6054126272759643,
+    "file_frame": "file_num280_frame_35",
+    "map": "de_dust2",
+    "x": 425,
+    "y": 243,
+    "z": -12
+  },
+  {
+    "angle_h": 1.3731405054308505,
+    "angle_v": 1.6048016981219004,
+    "file_frame": "file_num370_frame_175",
+    "map": "de_dust2",
+    "x": 133,
+    "y": 807,
+    "z": 23
+  },
+  {
+    "angle_h": 0.0030679615757712823,
+    "angle_v": 1.5866336131653798,
+    "file_frame": "file_num287_frame_23",
+    "map": "de_dust2",
+    "x": 789,
+    "y": 217,
+    "z": 16
+  },
+  {
+    "angle_h": 1.2876510370684895,
+    "angle_v": 1.6006668742134431,
+    "file_frame": "file_num360_frame_105",
+    "map": "de_dust2",
+    "x": 848,
+    "y": 265,
+    "z": 14
+  },
+  {
+    "angle_h": 5.54387847276814,
+    "angle_v": 1.562737068704099,
+    "file_frame": "file_num276_frame_160",
+    "map": "de_dust2",
+    "x": 676,
+    "y": 261,
+    "z": -13
+  },
+  {
+    "angle_h": 4.638494249618261,
+    "angle_v": 1.5694421093805913,
+    "file_frame": "file_num22_frame_47",
+    "map": "de_dust2",
+    "x": 468,
+    "y": 449,
+    "z": -12
+  },
+  {
+    "angle_h": 3.623832004826943,
+    "angle_v": 1.6042442985057468,
+    "file_frame": "file_num331_frame_200",
+    "map": "de_dust2",
+    "x": 510,
+    "y": 399,
+    "z": 22
+  },
+  {
+    "angle_h": 3.2230315870921977,
+    "angle_v": 1.5523406204406474,
+    "file_frame": "file_num184_frame_153",
+    "map": "de_dust2",
+    "x": 514,
+    "y": 555,
+    "z": 17
+  },
+  {
+    "angle_h": 0.24583240548357935,
+    "angle_v": 1.5923141357705188,
+    "file_frame": "file_num12_frame_7",
+    "map": "de_dust2",
+    "x": 299,
+    "y": 208,
+    "z": 15
+  },
+  {
+    "angle_h": 1.1834062567292454,
+    "angle_v": 1.5927034899218884,
+    "file_frame": "file_num237_frame_3",
+    "map": "de_dust2",
+    "x": 599,
+    "y": 681,
+    "z": 15
+  },
+  {
+    "angle_h": 4.776091261027167,
+    "angle_v": 1.5572301842020329,
+    "file_frame": "file_num366_frame_468",
+    "map": "de_dust2",
+    "x": 239,
+    "y": 205,
+    "z": 14
+  },
+  {
+    "angle_h": 3.395916015576872,
+    "angle_v": 1.5485536053705549,
+    "file_frame": "file_num276_frame_271",
+    "map": "de_dust2",
+    "x": 690,
+    "y": 258,
+    "z": -9
+  },
+  {
+    "angle_h": 1.534843652078827,
+    "angle_v": 1.5990253017175184,
+    "file_frame": "file_num289_frame_439",
+    "map": "de_dust2",
+    "x": 912,
+    "y": 556,
+    "z": 11
+  },
+  {
+    "angle_h": 4.468318255962198,
+    "angle_v": 1.60250658589447,
+    "file_frame": "file_num252_frame_220",
+    "map": "de_dust2",
+    "x": 485,
+    "y": 514,
+    "z": 4
+  },
+  {
+    "angle_h": 1.6710024233410354,
+    "angle_v": 1.541536708530414,
+    "file_frame": "file_num162_frame_244",
+    "map": "de_dust2",
+    "x": 882,
+    "y": 270,
+    "z": 12
+  },
+  {
+    "angle_h": 4.201980841665553,
+    "angle_v": 1.5673390110677559,
+    "file_frame": "file_num278_frame_462",
+    "map": "de_dust2",
+    "x": 432,
+    "y": 202,
+    "z": -10
+  },
+  {
+    "angle_h": 5.400001727508827,
+    "angle_v": 1.5597828241068739,
+    "file_frame": "file_num328_frame_373",
+    "map": "de_dust2",
+    "x": 161,
+    "y": 279,
+    "z": 13
+  },
+  {
+    "angle_h": 0.0599091403018775,
+    "angle_v": 1.570406972643527,
+    "file_frame": "file_num209_frame_376",
+    "map": "de_dust2",
+    "x": 435,
+    "y": 241,
+    "z": -13
+  },
+  {
+    "angle_h": 4.701183463782072,
+    "angle_v": 1.599516388622529,
+    "file_frame": "file_num122_frame_133",
+    "map": "de_dust2",
+    "x": 720,
+    "y": 647,
+    "z": 14
+  },
+  {
+    "angle_h": 5.247292874810375,
+    "angle_v": 1.5544618282488956,
+    "file_frame": "file_num104_frame_457",
+    "map": "de_dust2",
+    "x": 517,
+    "y": 484,
+    "z": 14
+  },
+  {
+    "angle_h": 5.740701523659317,
+    "angle_v": 1.570640531871127,
+    "file_frame": "file_num356_frame_185",
+    "map": "de_dust2",
+    "x": 723,
+    "y": 551,
+    "z": 14
+  },
+  {
+    "angle_h": 6.261296253548006,
+    "angle_v": 1.597598912637672,
+    "file_frame": "file_num209_frame_421",
+    "map": "de_dust2",
+    "x": 636,
+    "y": 259,
+    "z": -13
+  },
+  {
+    "angle_h": 5.410056758520529,
+    "angle_v": 1.5991211755167614,
+    "file_frame": "file_num181_frame_254",
+    "map": "de_dust2",
+    "x": 830,
+    "y": 497,
+    "z": 13
+  },
+  {
+    "angle_h": 3.55622286686532,
+    "angle_v": 1.5368689860878322,
+    "file_frame": "file_num237_frame_106",
+    "map": "de_dust2",
+    "x": 365,
+    "y": 907,
+    "z": 41
+  },
+  {
+    "angle_h": 0.9138570701579654,
+    "angle_v": 1.5980604384545827,
+    "file_frame": "file_num104_frame_389",
+    "map": "de_dust2",
+    "x": 427,
+    "y": 402,
+    "z": -11
+  },
+  {
+    "angle_h": 3.719975315972112,
+    "angle_v": 1.5971317941824723,
+    "file_frame": "file_num289_frame_444",
+    "map": "de_dust2",
+    "x": 909,
+    "y": 544,
+    "z": 11
+  },
+  {
+    "angle_h": 1.1347862562882138,
+    "angle_v": 1.5787959300772767,
+    "file_frame": "file_num157_frame_68",
+    "map": "de_dust2",
+    "x": 586,
+    "y": 640,
+    "z": 14
+  },
+  {
+    "angle_h": 3.232882619964401,
+    "angle_v": 1.5955259080451545,
+    "file_frame": "file_num162_frame_335",
+    "map": "de_dust2",
+    "x": 585,
+    "y": 264,
+    "z": -13
+  },
+  {
+    "angle_h": 4.375326529651029,
+    "angle_v": 1.6047415106812644,
+    "file_frame": "file_num181_frame_300",
+    "map": "de_dust2",
+    "x": 857,
+    "y": 336,
+    "z": 14
+  },
+  {
+    "angle_h": 0.1032920344592683,
+    "angle_v": 1.5436581826547713,
+    "file_frame": "file_num207_frame_186",
+    "map": "de_dust2",
+    "x": 131,
+    "y": 310,
+    "z": 14
+  },
+  {
+    "angle_h": 4.626348104518628,
+    "angle_v": 1.5699094941519,
+    "file_frame": "file_num169_frame_373",
+    "map": "de_dust2",
+    "x": 515,
+    "y": 633,
+    "z": 26
+  },
+  {
+    "angle_h": 4.715283303857388,
+    "angle_v": 1.5733249982499269,
+    "file_frame": "file_num12_frame_455",
+    "map": "de_dust2",
+    "x": 877,
+    "y": 245,
+    "z": 12
+  },
+  {
+    "angle_h": 1.9281479371352714,
+    "angle_v": 1.5956875619233222,
+    "file_frame": "file_num207_frame_412",
+    "map": "de_dust2",
+    "x": 460,
+    "y": 795,
+    "z": 14
+  },
+  {
+    "angle_h": 3.1767186831035024,
+    "angle_v": 1.5469178918290283,
+    "file_frame": "file_num345_frame_491",
+    "map": "de_dust2",
+    "x": 803,
+    "y": 259,
+    "z": 14
+  },
+  {
+    "angle_h": 4.354216184322189,
+    "angle_v": 1.5485536053705549,
+    "file_frame": "file_num375_frame_83",
+    "map": "de_dust2",
+    "x": 488,
+    "y": 846,
+    "z": 15
+  },
+  {
+    "angle_h": 6.133604070865324,
+    "angle_v": 1.5652777243840343,
+    "file_frame": "file_num177_frame_181",
+    "map": "de_dust2",
+    "x": 671,
+    "y": 223,
+    "z": -14
+  },
+  {
+    "angle_h": 2.6635539063400246,
+    "angle_v": 1.6029500022159682,
+    "file_frame": "file_num276_frame_404",
+    "map": "de_dust2",
+    "x": 187,
+    "y": 265,
+    "z": 13
+  },
+  {
+    "angle_h": 5.640699025778515,
+    "angle_v": 1.5795267014803942,
+    "file_frame": "file_num211_frame_427",
+    "map": "de_dust2",
+    "x": 182,
+    "y": 896,
+    "z": 43
+  },
+  {
+    "angle_h": 6.1679870784349005,
+    "angle_v": 1.5601484761245419,
+    "file_frame": "file_num82_frame_467",
+    "map": "de_dust2",
+    "x": 342,
+    "y": 418,
+    "z": -11
+  },
+  {
+    "angle_h": 1.5884430979680342,
+    "angle_v": 1.5381331886572926,
+    "file_frame": "file_num345_frame_58",
+    "map": "de_dust2",
+    "x": 525,
+    "y": 517,
+    "z": 14
+  },
+  {
+    "angle_h": 2.9153664400513772,
+    "angle_v": 1.5423218084197694,
+    "file_frame": "file_num280_frame_231",
+    "map": "de_dust2",
+    "x": 575,
+    "y": 898,
+    "z": 15
+  },
+  {
+    "angle_h": 1.768368258584605,
+    "angle_v": 1.5507227500784242,
+    "file_frame": "file_num31_frame_323",
+    "map": "de_dust2",
+    "x": 640,
+    "y": 311,
+    "z": 36
+  },
+  {
+    "angle_h": 3.466994187174433,
+    "angle_v": 1.5979765488802453,
+    "file_frame": "file_num360_frame_476",
+    "map": "de_dust2",
+    "x": 528,
+    "y": 532,
+    "z": 14
+  },
+  {
+    "angle_h": 4.622848710846264,
+    "angle_v": 1.5691483627123555,
+    "file_frame": "file_num278_frame_144",
+    "map": "de_dust2",
+    "x": 132,
+    "y": 882,
+    "z": 43
+  },
+  {
+    "angle_h": 1.521079769775025,
+    "angle_v": 1.5745892008193874,
+    "file_frame": "file_num292_frame_337",
+    "map": "de_dust2",
+    "x": 864,
+    "y": 178,
+    "z": 31
+  },
+  {
+    "angle_h": 3.713935266619812,
+    "angle_v": 1.5579492376963544,
+    "file_frame": "file_num22_frame_227",
+    "map": "de_dust2",
+    "x": 260,
+    "y": 232,
+    "z": 14
+  },
+  {
+    "angle_h": 3.4465613500269088,
+    "angle_v": 1.589198237295126,
+    "file_frame": "file_num191_frame_490",
+    "map": "de_dust2",
+    "x": 437,
+    "y": 254,
+    "z": -13
+  },
+  {
+    "angle_h": 1.1543624876711138,
+    "angle_v": 1.555786218258992,
+    "file_frame": "file_num191_frame_115",
+    "map": "de_dust2",
+    "x": 261,
+    "y": 715,
+    "z": 16
+  },
+  {
+    "angle_h": 3.1251742654694548,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num183_frame_327",
+    "map": "de_dust2",
+    "x": 880,
+    "y": 145,
+    "z": 31
+  },
+  {
+    "angle_h": 4.748467356304212,
+    "angle_v": 1.5977368643821381,
+    "file_frame": "file_num169_frame_419",
+    "map": "de_dust2",
+    "x": 462,
+    "y": 497,
+    "z": 0
+  },
+  {
+    "angle_h": 3.780687399342648,
+    "angle_v": 1.5395356092873285,
+    "file_frame": "file_num345_frame_470",
+    "map": "de_dust2",
+    "x": 862,
+    "y": 296,
+    "z": 14
+  },
+  {
+    "angle_h": 5.111116127210808,
+    "angle_v": 1.5591836128616061,
+    "file_frame": "file_num278_frame_159",
+    "map": "de_dust2",
+    "x": 128,
+    "y": 817,
+    "z": 27
+  },
+  {
+    "angle_h": 4.421034363440059,
+    "angle_v": 1.536838892367514,
+    "file_frame": "file_num345_frame_430",
+    "map": "de_dust2",
+    "x": 859,
+    "y": 444,
+    "z": 14
+  },
+  {
+    "angle_h": 3.1394892889608483,
+    "angle_v": 1.5781844682909942,
+    "file_frame": "file_num126_frame_406",
+    "map": "de_dust2",
+    "x": 562,
+    "y": 908,
+    "z": 13
+  },
+  {
+    "angle_h": 6.130362471186479,
+    "angle_v": 1.554174206851167,
+    "file_frame": "file_num289_frame_199",
+    "map": "de_dust2",
+    "x": 174,
+    "y": 269,
+    "z": 13
+  },
+  {
+    "angle_h": 3.1077492024570663,
+    "angle_v": 1.604687714827245,
+    "file_frame": "file_num207_frame_73",
+    "map": "de_dust2",
+    "x": 553,
+    "y": 245,
+    "z": -14
+  },
+  {
+    "angle_h": 1.6447749471356627,
+    "angle_v": 1.5668713599803377,
+    "file_frame": "file_num252_frame_472",
+    "map": "de_dust2",
+    "x": 126,
+    "y": 276,
+    "z": 13
+  }
+]

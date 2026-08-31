@@ -1,0 +1,4502 @@
+[
+  {
+    "angle_h": 3.568255028670298,
+    "angle_v": 1.5593034551106597,
+    "file_frame": "file_num205_frame_446",
+    "map": "de_mirage",
+    "x": 420,
+    "y": 218,
+    "z": -3
+  },
+  {
+    "angle_h": 3.2234869876386014,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_970",
+    "map": "de_mirage",
+    "x": 406,
+    "y": 527,
+    "z": -20
+  },
+  {
+    "angle_h": 3.3903553352207862,
+    "angle_v": 1.536725175388968,
+    "file_frame": "file_num78_frame_475",
+    "map": "de_mirage",
+    "x": 260,
+    "y": 458,
+    "z": -20
+  },
+  {
+    "angle_h": 0.7710170935110204,
+    "angle_v": 1.5401167110371838,
+    "file_frame": "file_num205_frame_521",
+    "map": "de_mirage",
+    "x": 255,
+    "y": 216,
+    "z": 4
+  },
+  {
+    "angle_h": 0.05700895787478121,
+    "angle_v": 1.559884823176624,
+    "file_frame": "file_num186_frame_961",
+    "map": "de_mirage",
+    "x": 473,
+    "y": 235,
+    "z": -3
+  },
+  {
+    "angle_h": 4.125047976727562,
+    "angle_v": 1.5589617715428024,
+    "file_frame": "file_num166_frame_449",
+    "map": "de_mirage",
+    "x": 525,
+    "y": 426,
+    "z": -20
+  },
+  {
+    "angle_h": 0.13349228122076684,
+    "angle_v": 1.5511959938041313,
+    "file_frame": "file_num138_frame_847",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 179,
+    "z": -14
+  },
+  {
+    "angle_h": 0.9288553276270192,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num209_frame_688",
+    "map": "de_mirage",
+    "x": 678,
+    "y": 464,
+    "z": -20
+  },
+  {
+    "angle_h": 0.7825219494201627,
+    "angle_v": 1.5426693509420246,
+    "file_frame": "file_num25_frame_531",
+    "map": "de_mirage",
+    "x": 449,
+    "y": 446,
+    "z": -45
+  },
+  {
+    "angle_h": 1.2565459813266366,
+    "angle_v": 1.5972814638357347,
+    "file_frame": "file_num98_frame_60",
+    "map": "de_mirage",
+    "x": 341,
+    "y": 745,
+    "z": -40
+  },
+  {
+    "angle_h": 5.097136395700655,
+    "angle_v": 1.5483858262218797,
+    "file_frame": "file_num166_frame_47",
+    "map": "de_mirage",
+    "x": 481,
+    "y": 814,
+    "z": -21
+  },
+  {
+    "angle_h": 3.309749438507358,
+    "angle_v": 1.5410754490296124,
+    "file_frame": "file_num88_frame_277",
+    "map": "de_mirage",
+    "x": 783,
+    "y": 590,
+    "z": -39
+  },
+  {
+    "angle_h": 0.27977785568605634,
+    "angle_v": 1.5362039947636394,
+    "file_frame": "file_num186_frame_741",
+    "map": "de_mirage",
+    "x": 686,
+    "y": 464,
+    "z": -20
+  },
+  {
+    "angle_h": 0.1685221706191241,
+    "angle_v": 1.6055865316951468,
+    "file_frame": "file_num200_frame_235",
+    "map": "de_mirage",
+    "x": 682,
+    "y": 463,
+    "z": -20
+  },
+  {
+    "angle_h": 3.4189017589453456,
+    "angle_v": 1.5398650423141713,
+    "file_frame": "file_num126_frame_297",
+    "map": "de_mirage",
+    "x": 481,
+    "y": 315,
+    "z": -21
+  },
+  {
+    "angle_h": 5.09652546654659,
+    "angle_v": 1.5647682616675023,
+    "file_frame": "file_num200_frame_895",
+    "map": "de_mirage",
+    "x": 852,
+    "y": 553,
+    "z": -39
+  },
+  {
+    "angle_h": 4.690697533305994,
+    "angle_v": 1.5386727450941429,
+    "file_frame": "file_num36_frame_501",
+    "map": "de_mirage",
+    "x": 715,
+    "y": 346,
+    "z": -26
+  },
+  {
+    "angle_h": 4.113201703566672,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_860",
+    "map": "de_mirage",
+    "x": 405,
+    "y": 597,
+    "z": -20
+  },
+  {
+    "angle_h": 0.7944822058757086,
+    "angle_v": 1.5426693509420246,
+    "file_frame": "file_num219_frame_487",
+    "map": "de_mirage",
+    "x": 384,
+    "y": 538,
+    "z": -23
+  },
+  {
+    "angle_h": 0.6369495694947964,
+    "angle_v": 1.5362039947636394,
+    "file_frame": "file_num36_frame_775",
+    "map": "de_mirage",
+    "x": 413,
+    "y": 612,
+    "z": -21
+  },
+  {
+    "angle_h": 1.5343642830826125,
+    "angle_v": 1.5937221490388436,
+    "file_frame": "file_num54_frame_333",
+    "map": "de_mirage",
+    "x": 907,
+    "y": 486,
+    "z": -16
+  },
+  {
+    "angle_h": 5.318497280243605,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num20_frame_127",
+    "map": "de_mirage",
+    "x": 263,
+    "y": 408,
+    "z": -20
+  },
+  {
+    "angle_h": 4.229634573792718,
+    "angle_v": 1.6055804064246395,
+    "file_frame": "file_num20_frame_117",
+    "map": "de_mirage",
+    "x": 253,
+    "y": 430,
+    "z": -20
+  },
+  {
+    "angle_h": 0.4137433806325303,
+    "angle_v": 1.601529738406629,
+    "file_frame": "file_num25_frame_435",
+    "map": "de_mirage",
+    "x": 539,
+    "y": 234,
+    "z": -3
+  },
+  {
+    "angle_h": 0.5889346392534308,
+    "angle_v": 1.5753982691585535,
+    "file_frame": "file_num112_frame_185",
+    "map": "de_mirage",
+    "x": 892,
+    "y": 500,
+    "z": -34
+  },
+  {
+    "angle_h": 5.060255076712475,
+    "angle_v": 1.5922060114302614,
+    "file_frame": "file_num200_frame_493",
+    "map": "de_mirage",
+    "x": 448,
+    "y": 402,
+    "z": -60
+  },
+  {
+    "angle_h": 4.521695993690656,
+    "angle_v": 1.5703947221025125,
+    "file_frame": "file_num200_frame_603",
+    "map": "de_mirage",
+    "x": 649,
+    "y": 453,
+    "z": -25
+  },
+  {
+    "angle_h": 0.6475374990406244,
+    "angle_v": 1.552226637145992,
+    "file_frame": "file_num20_frame_218",
+    "map": "de_mirage",
+    "x": 266,
+    "y": 443,
+    "z": -20
+  },
+  {
+    "angle_h": 1.171679692659354,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_20",
+    "map": "de_mirage",
+    "x": 415,
+    "y": 485,
+    "z": -20
+  },
+  {
+    "angle_h": 0.3791867349598801,
+    "angle_v": 1.6030338917903058,
+    "file_frame": "file_num20_frame_398",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 452,
+    "z": -20
+  },
+  {
+    "angle_h": 3.1194399470102963,
+    "angle_v": 1.5449045420449283,
+    "file_frame": "file_num153_frame_663",
+    "map": "de_mirage",
+    "x": 518,
+    "y": 434,
+    "z": -20
+  },
+  {
+    "angle_h": 2.0057398012850025,
+    "angle_v": 1.5991869555956864,
+    "file_frame": "file_num166_frame_814",
+    "map": "de_mirage",
+    "x": 599,
+    "y": 458,
+    "z": -24
+  },
+  {
+    "angle_h": 1.8114994840189833,
+    "angle_v": 1.5927812542257187,
+    "file_frame": "file_num153_frame_212",
+    "map": "de_mirage",
+    "x": 282,
+    "y": 346,
+    "z": -20
+  },
+  {
+    "angle_h": 0.012667325724961896,
+    "angle_v": 1.5382530309063462,
+    "file_frame": "file_num200_frame_75",
+    "map": "de_mirage",
+    "x": 529,
+    "y": 454,
+    "z": -42
+  },
+  {
+    "angle_h": 1.466503609556031,
+    "angle_v": 1.5612808522200434,
+    "file_frame": "file_num152_frame_869",
+    "map": "de_mirage",
+    "x": 495,
+    "y": 402,
+    "z": -11
+  },
+  {
+    "angle_h": 0.048494032921470864,
+    "angle_v": 1.5434962624604942,
+    "file_frame": "file_num152_frame_183",
+    "map": "de_mirage",
+    "x": 743,
+    "y": 240,
+    "z": -39
+  },
+  {
+    "angle_h": 2.9276081926341444,
+    "angle_v": 1.547690741177369,
+    "file_frame": "file_num153_frame_142",
+    "map": "de_mirage",
+    "x": 327,
+    "y": 196,
+    "z": 3
+  },
+  {
+    "angle_h": 5.434462499382234,
+    "angle_v": 1.5958731842513005,
+    "file_frame": "file_num88_frame_649",
+    "map": "de_mirage",
+    "x": 512,
+    "y": 525,
+    "z": -33
+  },
+  {
+    "angle_h": 3.9177869322599275,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_255",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 510,
+    "z": -40
+  },
+  {
+    "angle_h": 2.560735381922573,
+    "angle_v": 1.577022264791284,
+    "file_frame": "file_num152_frame_592",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 584,
+    "z": -20
+  },
+  {
+    "angle_h": 1.2920312712713973,
+    "angle_v": 1.4052222755024901,
+    "file_frame": "file_num20_frame_539",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 736,
+    "z": 7
+  },
+  {
+    "angle_h": 0.29768228769465904,
+    "angle_v": 1.5856146877323154,
+    "file_frame": "file_num88_frame_342",
+    "map": "de_mirage",
+    "x": 616,
+    "y": 709,
+    "z": -20
+  },
+  {
+    "angle_h": 0.6154677131938903,
+    "angle_v": 1.603579307181554,
+    "file_frame": "file_num205_frame_71",
+    "map": "de_mirage",
+    "x": 633,
+    "y": 702,
+    "z": -20
+  },
+  {
+    "angle_h": 5.457604037674478,
+    "angle_v": 1.6033694500876556,
+    "file_frame": "file_num112_frame_140",
+    "map": "de_mirage",
+    "x": 830,
+    "y": 564,
+    "z": -39
+  },
+  {
+    "angle_h": 3.1259710832676064,
+    "angle_v": 1.6052448481272894,
+    "file_frame": "file_num152_frame_663",
+    "map": "de_mirage",
+    "x": 381,
+    "y": 535,
+    "z": -24
+  },
+  {
+    "angle_h": 5.855636099456085,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num25_frame_410",
+    "map": "de_mirage",
+    "x": 441,
+    "y": 224,
+    "z": -3
+  },
+  {
+    "angle_h": 5.388670776018866,
+    "angle_v": 1.5863158980473333,
+    "file_frame": "file_num133_frame_135",
+    "map": "de_mirage",
+    "x": 651,
+    "y": 649,
+    "z": -21
+  },
+  {
+    "angle_h": 3.0282937913345522,
+    "angle_v": 1.5569066101295883,
+    "file_frame": "file_num200_frame_331",
+    "map": "de_mirage",
+    "x": 813,
+    "y": 241,
+    "z": -29
+  },
+  {
+    "angle_h": 4.581293277828885,
+    "angle_v": 1.5607056094245864,
+    "file_frame": "file_num133_frame_770",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 592,
+    "z": -20
+  },
+  {
+    "angle_h": 4.702789882551608,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num219_frame_803",
+    "map": "de_mirage",
+    "x": 264,
+    "y": 403,
+    "z": -12
+  },
+  {
+    "angle_h": 1.3555057184826185,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num166_frame_649",
+    "map": "de_mirage",
+    "x": 520,
+    "y": 433,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6426597314398672,
+    "angle_v": 1.553712681034256,
+    "file_frame": "file_num48_frame_333",
+    "map": "de_mirage",
+    "x": 299,
+    "y": 253,
+    "z": -21
+  },
+  {
+    "angle_h": 1.532716452158126,
+    "angle_v": 1.5554623778704382,
+    "file_frame": "file_num25_frame_506",
+    "map": "de_mirage",
+    "x": 444,
+    "y": 349,
+    "z": -60
+  },
+  {
+    "angle_h": 1.129884708301923,
+    "angle_v": 1.6033574658627503,
+    "file_frame": "file_num138_frame_933",
+    "map": "de_mirage",
+    "x": 916,
+    "y": 322,
+    "z": -20
+  },
+  {
+    "angle_h": 3.835851052898114,
+    "angle_v": 1.5661283380362057,
+    "file_frame": "file_num54_frame_495",
+    "map": "de_mirage",
+    "x": 558,
+    "y": 742,
+    "z": -23
+  },
+  {
+    "angle_h": 3.55031437767087,
+    "angle_v": 1.602602459693713,
+    "file_frame": "file_num36_frame_309",
+    "map": "de_mirage",
+    "x": 761,
+    "y": 188,
+    "z": -14
+  },
+  {
+    "angle_h": 3.228532080007648,
+    "angle_v": 1.5872746360397618,
+    "file_frame": "file_num138_frame_706",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 453,
+    "z": -42
+  },
+  {
+    "angle_h": 2.79792716124939,
+    "angle_v": 1.551525693147083,
+    "file_frame": "file_num200_frame_437",
+    "map": "de_mirage",
+    "x": 627,
+    "y": 454,
+    "z": -29
+  },
+  {
+    "angle_h": 4.597843758739292,
+    "angle_v": 1.6056405938652754,
+    "file_frame": "file_num186_frame_302",
+    "map": "de_mirage",
+    "x": 297,
+    "y": 717,
+    "z": -40
+  },
+  {
+    "angle_h": 4.726104792630816,
+    "angle_v": 1.5571582788526008,
+    "file_frame": "file_num133_frame_775",
+    "map": "de_mirage",
+    "x": 523,
+    "y": 571,
+    "z": -20
+  },
+  {
+    "angle_h": 0.26365294791784455,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_752",
+    "map": "de_mirage",
+    "x": 611,
+    "y": 726,
+    "z": -20
+  },
+  {
+    "angle_h": 3.851154641786145,
+    "angle_v": 1.5398051211896444,
+    "file_frame": "file_num200_frame_981",
+    "map": "de_mirage",
+    "x": 895,
+    "y": 305,
+    "z": -22
+  },
+  {
+    "angle_h": 2.324867726289743,
+    "angle_v": 1.5616462379216023,
+    "file_frame": "file_num36_frame_710",
+    "map": "de_mirage",
+    "x": 512,
+    "y": 576,
+    "z": -21
+  },
+  {
+    "angle_h": 4.351418267280951,
+    "angle_v": 1.603651212530986,
+    "file_frame": "file_num166_frame_223",
+    "map": "de_mirage",
+    "x": 480,
+    "y": 337,
+    "z": -20
+  },
+  {
+    "angle_h": 1.8900261177113322,
+    "angle_v": 1.5629527847523952,
+    "file_frame": "file_num36_frame_546",
+    "map": "de_mirage",
+    "x": 699,
+    "y": 377,
+    "z": -20
+  },
+  {
+    "angle_h": 0.7013466688656754,
+    "angle_v": 1.5995824350175631,
+    "file_frame": "file_num133_frame_50",
+    "map": "de_mirage",
+    "x": 406,
+    "y": 590,
+    "z": -20
+  },
+  {
+    "angle_h": 6.025380661015555,
+    "angle_v": 1.6039628023785255,
+    "file_frame": "file_num88_frame_377",
+    "map": "de_mirage",
+    "x": 718,
+    "y": 653,
+    "z": -26
+  },
+  {
+    "angle_h": 6.0681044228031515,
+    "angle_v": 1.5613287891196648,
+    "file_frame": "file_num200_frame_30",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 471,
+    "z": -20
+  },
+  {
+    "angle_h": 5.509286140736882,
+    "angle_v": 1.573229124450684,
+    "file_frame": "file_num186_frame_372",
+    "map": "de_mirage",
+    "x": 328,
+    "y": 562,
+    "z": -25
+  },
+  {
+    "angle_h": 0.13324061249775437,
+    "angle_v": 1.5716112540884608,
+    "file_frame": "file_num126_frame_55",
+    "map": "de_mirage",
+    "x": 587,
+    "y": 432,
+    "z": -20
+  },
+  {
+    "angle_h": 6.280530668204996,
+    "angle_v": 2.6179838911374063,
+    "file_frame": "file_num138_frame_476",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 736,
+    "z": 5
+  },
+  {
+    "angle_h": 1.7627236886541822,
+    "angle_v": 1.5970359203832294,
+    "file_frame": "file_num88_frame_76",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 621,
+    "z": -20
+  },
+  {
+    "angle_h": 6.22701524504818,
+    "angle_v": 1.5404101913893105,
+    "file_frame": "file_num20_frame_860",
+    "map": "de_mirage",
+    "x": 416,
+    "y": 822,
+    "z": -22
+  },
+  {
+    "angle_h": 4.558146146898352,
+    "angle_v": 1.5384447785048319,
+    "file_frame": "file_num25_frame_238",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 592,
+    "z": -20
+  },
+  {
+    "angle_h": 3.8494289133997737,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_340",
+    "map": "de_mirage",
+    "x": 642,
+    "y": 459,
+    "z": -27
+  },
+  {
+    "angle_h": 4.731893439576211,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_525",
+    "map": "de_mirage",
+    "x": 710,
+    "y": 376,
+    "z": -20
+  },
+  {
+    "angle_h": 0.6875589512701172,
+    "angle_v": 1.5528860358318957,
+    "file_frame": "file_num205_frame_546",
+    "map": "de_mirage",
+    "x": 293,
+    "y": 254,
+    "z": -20
+  },
+  {
+    "angle_h": 6.091539441447522,
+    "angle_v": 1.5495123433629834,
+    "file_frame": "file_num200_frame_50",
+    "map": "de_mirage",
+    "x": 441,
+    "y": 464,
+    "z": -21
+  },
+  {
+    "angle_h": 2.783911477064521,
+    "angle_v": 1.594644934356556,
+    "file_frame": "file_num25_frame_450",
+    "map": "de_mirage",
+    "x": 596,
+    "y": 241,
+    "z": -4
+  },
+  {
+    "angle_h": 0.044072120247503295,
+    "angle_v": 1.5371086705859391,
+    "file_frame": "file_num186_frame_721",
+    "map": "de_mirage",
+    "x": 613,
+    "y": 460,
+    "z": -34
+  },
+  {
+    "angle_h": 3.874080197713983,
+    "angle_v": 1.5529936275399348,
+    "file_frame": "file_num20_frame_25",
+    "map": "de_mirage",
+    "x": 443,
+    "y": 625,
+    "z": -20
+  },
+  {
+    "angle_h": 4.836665392653237,
+    "angle_v": 1.5361499325935106,
+    "file_frame": "file_num205_frame_225",
+    "map": "de_mirage",
+    "x": 906,
+    "y": 623,
+    "z": -20
+  },
+  {
+    "angle_h": 6.205389578048409,
+    "angle_v": 1.5667035808316627,
+    "file_frame": "file_num138_frame_436",
+    "map": "de_mirage",
+    "x": 577,
+    "y": 739,
+    "z": -22
+  },
+  {
+    "angle_h": 1.4239356426922045,
+    "angle_v": 1.5581590947902526,
+    "file_frame": "file_num152_frame_864",
+    "map": "de_mirage",
+    "x": 492,
+    "y": 385,
+    "z": -19
+  },
+  {
+    "angle_h": 0.439815195072188,
+    "angle_v": 1.601733736546129,
+    "file_frame": "file_num126_frame_437",
+    "map": "de_mirage",
+    "x": 426,
+    "y": 308,
+    "z": -21
+  },
+  {
+    "angle_h": 2.0545395650996148,
+    "angle_v": 1.5612089468706114,
+    "file_frame": "file_num126_frame_210",
+    "map": "de_mirage",
+    "x": 704,
+    "y": 359,
+    "z": -24
+  },
+  {
+    "angle_h": 2.018922448680895,
+    "angle_v": 1.5363536644169018,
+    "file_frame": "file_num88_frame_532",
+    "map": "de_mirage",
+    "x": 790,
+    "y": 581,
+    "z": -38
+  },
+  {
+    "angle_h": 4.594398160920948,
+    "angle_v": 1.6054187525464716,
+    "file_frame": "file_num112_frame_115",
+    "map": "de_mirage",
+    "x": 791,
+    "y": 579,
+    "z": -39
+  },
+  {
+    "angle_h": 5.970463083544813,
+    "angle_v": 1.5771058880495121,
+    "file_frame": "file_num78_frame_671",
+    "map": "de_mirage",
+    "x": 231,
+    "y": 362,
+    "z": -20
+  },
+  {
+    "angle_h": 6.184776711211197,
+    "angle_v": 1.597431133488997,
+    "file_frame": "file_num200_frame_563",
+    "map": "de_mirage",
+    "x": 561,
+    "y": 458,
+    "z": -42
+  },
+  {
+    "angle_h": 0.027593544686529005,
+    "angle_v": 1.5846261223356781,
+    "file_frame": "file_num98_frame_272",
+    "map": "de_mirage",
+    "x": 595,
+    "y": 489,
+    "z": -38
+  },
+  {
+    "angle_h": 0.41684116961251044,
+    "angle_v": 1.5426693509420246,
+    "file_frame": "file_num219_frame_197",
+    "map": "de_mirage",
+    "x": 436,
+    "y": 316,
+    "z": -21
+  },
+  {
+    "angle_h": 0.36186979628774885,
+    "angle_v": 1.5578174112223955,
+    "file_frame": "file_num20_frame_323",
+    "map": "de_mirage",
+    "x": 410,
+    "y": 458,
+    "z": -17
+  },
+  {
+    "angle_h": 5.506487691063427,
+    "angle_v": 1.6048016981219004,
+    "file_frame": "file_num209_frame_613",
+    "map": "de_mirage",
+    "x": 643,
+    "y": 456,
+    "z": -27
+  },
+  {
+    "angle_h": 2.25906234733443,
+    "angle_v": 1.57050284644277,
+    "file_frame": "file_num112_frame_632",
+    "map": "de_mirage",
+    "x": 497,
+    "y": 757,
+    "z": -23
+  },
+  {
+    "angle_h": 1.8212726194293016,
+    "angle_v": 1.605262957622702,
+    "file_frame": "file_num36_frame_638",
+    "map": "de_mirage",
+    "x": 697,
+    "y": 352,
+    "z": -25
+  },
+  {
+    "angle_h": 5.632627783462811,
+    "angle_v": 1.5567867678805347,
+    "file_frame": "file_num166_frame_32",
+    "map": "de_mirage",
+    "x": 437,
+    "y": 801,
+    "z": -20
+  },
+  {
+    "angle_h": 0.07882637247303735,
+    "angle_v": 1.5905103767642081,
+    "file_frame": "file_num54_frame_246",
+    "map": "de_mirage",
+    "x": 751,
+    "y": 238,
+    "z": -39
+  },
+  {
+    "angle_h": 0.6540212310305313,
+    "angle_v": 1.5922060114302614,
+    "file_frame": "file_num126_frame_85",
+    "map": "de_mirage",
+    "x": 653,
+    "y": 435,
+    "z": -23
+  },
+  {
+    "angle_h": 1.5607894989989237,
+    "angle_v": 1.5589617715428024,
+    "file_frame": "file_num152_frame_273",
+    "map": "de_mirage",
+    "x": 902,
+    "y": 481,
+    "z": -20
+  },
+  {
+    "angle_h": 4.517297516834281,
+    "angle_v": 1.6018594377495807,
+    "file_frame": "file_num25_frame_687",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 617,
+    "z": -20
+  },
+  {
+    "angle_h": 3.425199069658947,
+    "angle_v": 1.5378098809009573,
+    "file_frame": "file_num54_frame_445",
+    "map": "de_mirage",
+    "x": 711,
+    "y": 800,
+    "z": 4
+  },
+  {
+    "angle_h": 5.923478796645309,
+    "angle_v": 1.6044000934295164,
+    "file_frame": "file_num48_frame_511",
+    "map": "de_mirage",
+    "x": 373,
+    "y": 538,
+    "z": -23
+  },
+  {
+    "angle_h": 4.956106037014419,
+    "angle_v": 1.5365033340701642,
+    "file_frame": "file_num219_frame_452",
+    "map": "de_mirage",
+    "x": 325,
+    "y": 473,
+    "z": -20
+  },
+  {
+    "angle_h": 0.47857803737050936,
+    "angle_v": 1.5658947788086057,
+    "file_frame": "file_num219_frame_522",
+    "map": "de_mirage",
+    "x": 472,
+    "y": 645,
+    "z": -20
+  },
+  {
+    "angle_h": 4.3173468495589145,
+    "angle_v": 1.5709041848190448,
+    "file_frame": "file_num209_frame_247",
+    "map": "de_mirage",
+    "x": 617,
+    "y": 450,
+    "z": -24
+  },
+  {
+    "angle_h": 0.07286408742456796,
+    "angle_v": 1.5962209930896651,
+    "file_frame": "file_num25_frame_80",
+    "map": "de_mirage",
+    "x": 469,
+    "y": 467,
+    "z": -40
+  },
+  {
+    "angle_h": 0.8892175037525523,
+    "angle_v": 1.604687714827245,
+    "file_frame": "file_num126_frame_688",
+    "map": "de_mirage",
+    "x": 271,
+    "y": 432,
+    "z": -20
+  },
+  {
+    "angle_h": 4.772586008400405,
+    "angle_v": 1.5421660134959998,
+    "file_frame": "file_num36_frame_511",
+    "map": "de_mirage",
+    "x": 716,
+    "y": 303,
+    "z": -38
+  },
+  {
+    "angle_h": 1.7889092200723862,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num219_frame_312",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 446,
+    "z": -16
+  },
+  {
+    "angle_h": 4.681229995630763,
+    "angle_v": 1.544928510494739,
+    "file_frame": "file_num25_frame_900",
+    "map": "de_mirage",
+    "x": 321,
+    "y": 725,
+    "z": -40
+  },
+  {
+    "angle_h": 4.389761928023694,
+    "angle_v": 1.6049393835502574,
+    "file_frame": "file_num98_frame_606",
+    "map": "de_mirage",
+    "x": 761,
+    "y": 192,
+    "z": -14
+  },
+  {
+    "angle_h": 5.7206338058972435,
+    "angle_v": 1.5794787645807729,
+    "file_frame": "file_num205_frame_856",
+    "map": "de_mirage",
+    "x": 837,
+    "y": 637,
+    "z": -20
+  },
+  {
+    "angle_h": 3.3177549007441365,
+    "angle_v": 1.5792752990734908,
+    "file_frame": "file_num126_frame_472",
+    "map": "de_mirage",
+    "x": 446,
+    "y": 310,
+    "z": -21
+  },
+  {
+    "angle_h": 3.5187782893065873,
+    "angle_v": 1.563084344910245,
+    "file_frame": "file_num205_frame_441",
+    "map": "de_mirage",
+    "x": 440,
+    "y": 227,
+    "z": -3
+  },
+  {
+    "angle_h": 4.432635093148444,
+    "angle_v": 1.5702871303944734,
+    "file_frame": "file_num205_frame_291",
+    "map": "de_mirage",
+    "x": 887,
+    "y": 360,
+    "z": -20
+  },
+  {
+    "angle_h": 0.530187968767373,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_90",
+    "map": "de_mirage",
+    "x": 511,
+    "y": 667,
+    "z": -21
+  },
+  {
+    "angle_h": 3.3701440730759575,
+    "angle_v": 1.5559958090367811,
+    "file_frame": "file_num153_frame_342",
+    "map": "de_mirage",
+    "x": 287,
+    "y": 467,
+    "z": -20
+  },
+  {
+    "angle_h": 4.238125263980109,
+    "angle_v": 1.5959392306463347,
+    "file_frame": "file_num166_frame_202",
+    "map": "de_mirage",
+    "x": 508,
+    "y": 415,
+    "z": -20
+  },
+  {
+    "angle_h": 4.67951012619879,
+    "angle_v": 1.6042682669555575,
+    "file_frame": "file_num25_frame_697",
+    "map": "de_mirage",
+    "x": 508,
+    "y": 587,
+    "z": -20
+  },
+  {
+    "angle_h": 1.484384073114823,
+    "angle_v": 1.5792691738029836,
+    "file_frame": "file_num133_frame_620",
+    "map": "de_mirage",
+    "x": 518,
+    "y": 568,
+    "z": -22
+  },
+  {
+    "angle_h": 6.087195293077385,
+    "angle_v": 1.6054187525464716,
+    "file_frame": "file_num54_frame_571",
+    "map": "de_mirage",
+    "x": 573,
+    "y": 471,
+    "z": -41
+  },
+  {
+    "angle_h": 1.1419588148940696,
+    "angle_v": 1.5750387424113927,
+    "file_frame": "file_num186_frame_527",
+    "map": "de_mirage",
+    "x": 329,
+    "y": 606,
+    "z": -39
+  },
+  {
+    "angle_h": 4.32695819793301,
+    "angle_v": 1.5691904406575787,
+    "file_frame": "file_num54_frame_500",
+    "map": "de_mirage",
+    "x": 553,
+    "y": 725,
+    "z": -23
+  },
+  {
+    "angle_h": 4.113896788611182,
+    "angle_v": 1.6051431153736484,
+    "file_frame": "file_num36_frame_915",
+    "map": "de_mirage",
+    "x": 651,
+    "y": 783,
+    "z": 4
+  },
+  {
+    "angle_h": 3.6716426706127,
+    "angle_v": 1.5742898615128627,
+    "file_frame": "file_num186_frame_80",
+    "map": "de_mirage",
+    "x": 376,
+    "y": 536,
+    "z": -24
+  },
+  {
+    "angle_h": 5.641478000397363,
+    "angle_v": 1.5666977218772646,
+    "file_frame": "file_num112_frame_195",
+    "map": "de_mirage",
+    "x": 891,
+    "y": 474,
+    "z": -31
+  },
+  {
+    "angle_h": 2.979931318570931,
+    "angle_v": 1.5362039947636394,
+    "file_frame": "file_num98_frame_475",
+    "map": "de_mirage",
+    "x": 643,
+    "y": 420,
+    "z": -21
+  },
+  {
+    "angle_h": 1.4108728375453659,
+    "angle_v": 1.537510008962214,
+    "file_frame": "file_num200_frame_688",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 588,
+    "z": -20
+  },
+  {
+    "angle_h": 1.880588540598364,
+    "angle_v": 1.584895634237994,
+    "file_frame": "file_num153_frame_302",
+    "map": "de_mirage",
+    "x": 313,
+    "y": 542,
+    "z": -28
+  },
+  {
+    "angle_h": 0.6228382778267936,
+    "angle_v": 1.6027164429883685,
+    "file_frame": "file_num166_frame_263",
+    "map": "de_mirage",
+    "x": 489,
+    "y": 390,
+    "z": -19
+  },
+  {
+    "angle_h": 1.2410324021866526,
+    "angle_v": 1.5436280889344531,
+    "file_frame": "file_num25_frame_591",
+    "map": "de_mirage",
+    "x": 533,
+    "y": 670,
+    "z": -21
+  },
+  {
+    "angle_h": 1.6962412009917165,
+    "angle_v": 1.568692962165952,
+    "file_frame": "file_num25_frame_486",
+    "map": "de_mirage",
+    "x": 442,
+    "y": 271,
+    "z": -60
+  },
+  {
+    "angle_h": 5.624394354636723,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_978",
+    "map": "de_mirage",
+    "x": 790,
+    "y": 601,
+    "z": -39
+  },
+  {
+    "angle_h": 2.3460377264270007,
+    "angle_v": 1.5460968392649566,
+    "file_frame": "file_num88_frame_502",
+    "map": "de_mirage",
+    "x": 877,
+    "y": 522,
+    "z": -39
+  },
+  {
+    "angle_h": 3.08704046182061,
+    "angle_v": 1.5418845173687785,
+    "file_frame": "file_num25_frame_835",
+    "map": "de_mirage",
+    "x": 531,
+    "y": 810,
+    "z": -21
+  },
+  {
+    "angle_h": 0.7143136002132713,
+    "angle_v": 1.6000676629681754,
+    "file_frame": "file_num54_frame_602",
+    "map": "de_mirage",
+    "x": 686,
+    "y": 465,
+    "z": -20
+  },
+  {
+    "angle_h": 0.24211729576291882,
+    "angle_v": 1.5387563683523713,
+    "file_frame": "file_num166_frame_709",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 5.872527997618239,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_917",
+    "map": "de_mirage",
+    "x": 629,
+    "y": 682,
+    "z": -20
+  },
+  {
+    "angle_h": 0.19340728047704253,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_375",
+    "map": "de_mirage",
+    "x": 590,
+    "y": 257,
+    "z": -3
+  },
+  {
+    "angle_h": 1.8849627826888191,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num48_frame_272",
+    "map": "de_mirage",
+    "x": 300,
+    "y": 206,
+    "z": 3
+  },
+  {
+    "angle_h": 6.039126566982,
+    "angle_v": 1.6053290040177361,
+    "file_frame": "file_num209_frame_30",
+    "map": "de_mirage",
+    "x": 341,
+    "y": 547,
+    "z": -22
+  },
+  {
+    "angle_h": 4.2448066025229,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_335",
+    "map": "de_mirage",
+    "x": 635,
+    "y": 469,
+    "z": -29
+  },
+  {
+    "angle_h": 6.057384400467257,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_772",
+    "map": "de_mirage",
+    "x": 672,
+    "y": 738,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6134182226707972,
+    "angle_v": 1.5613287891196648,
+    "file_frame": "file_num48_frame_900",
+    "map": "de_mirage",
+    "x": 700,
+    "y": 291,
+    "z": -39
+  },
+  {
+    "angle_h": 3.542542740977801,
+    "angle_v": 1.536191744222625,
+    "file_frame": "file_num153_frame_112",
+    "map": "de_mirage",
+    "x": 449,
+    "y": 232,
+    "z": -3
+  },
+  {
+    "angle_h": 1.4364112208186806,
+    "angle_v": 1.5877121934068619,
+    "file_frame": "file_num25_frame_764",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 568,
+    "z": -22
+  },
+  {
+    "angle_h": 1.4435418346373678,
+    "angle_v": 1.605496783166411,
+    "file_frame": "file_num36_frame_334",
+    "map": "de_mirage",
+    "x": 744,
+    "y": 188,
+    "z": -14
+  },
+  {
+    "angle_h": 2.3492255302518252,
+    "angle_v": 1.5897015747411511,
+    "file_frame": "file_num138_frame_406",
+    "map": "de_mirage",
+    "x": 488,
+    "y": 796,
+    "z": -23
+  },
+  {
+    "angle_h": 2.9391849538927186,
+    "angle_v": 1.5577215374231526,
+    "file_frame": "file_num88_frame_307",
+    "map": "de_mirage",
+    "x": 707,
+    "y": 662,
+    "z": -22
+  },
+  {
+    "angle_h": 0.6561123451184616,
+    "angle_v": 1.5469956561328584,
+    "file_frame": "file_num20_frame_228",
+    "map": "de_mirage",
+    "x": 290,
+    "y": 473,
+    "z": -20
+  },
+  {
+    "angle_h": 1.4852349530831033,
+    "angle_v": 1.5867172364236082,
+    "file_frame": "file_num126_frame_462",
+    "map": "de_mirage",
+    "x": 481,
+    "y": 318,
+    "z": -21
+  },
+  {
+    "angle_h": 3.6678380786794125,
+    "angle_v": 1.5868671723929797,
+    "file_frame": "file_num133_frame_930",
+    "map": "de_mirage",
+    "x": 362,
+    "y": 298,
+    "z": -20
+  },
+  {
+    "angle_h": 5.541787358680208,
+    "angle_v": 1.5769743278916624,
+    "file_frame": "file_num36_frame_100",
+    "map": "de_mirage",
+    "x": 647,
+    "y": 419,
+    "z": -21
+  },
+  {
+    "angle_h": 5.027777827218959,
+    "angle_v": 1.603944692883113,
+    "file_frame": "file_num186_frame_895",
+    "map": "de_mirage",
+    "x": 548,
+    "y": 252,
+    "z": -20
+  },
+  {
+    "angle_h": 6.280213219403058,
+    "angle_v": 1.5928771280249614,
+    "file_frame": "file_num25_frame_75",
+    "map": "de_mirage",
+    "x": 454,
+    "y": 465,
+    "z": -40
+  },
+  {
+    "angle_h": 1.4405697468608394,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_215",
+    "map": "de_mirage",
+    "x": 520,
+    "y": 572,
+    "z": -21
+  },
+  {
+    "angle_h": 1.7188194807134083,
+    "angle_v": 1.561670206371413,
+    "file_frame": "file_num112_frame_621",
+    "map": "de_mirage",
+    "x": 501,
+    "y": 706,
+    "z": -23
+  },
+  {
+    "angle_h": 1.2199821111403937,
+    "angle_v": 1.5393257521934303,
+    "file_frame": "file_num78_frame_732",
+    "map": "de_mirage",
+    "x": 479,
+    "y": 313,
+    "z": -21
+  },
+  {
+    "angle_h": 0.637135191822775,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_55",
+    "map": "de_mirage",
+    "x": 410,
+    "y": 597,
+    "z": -20
+  },
+  {
+    "angle_h": 4.919679852256533,
+    "angle_v": 1.5635759644474738,
+    "file_frame": "file_num78_frame_530",
+    "map": "de_mirage",
+    "x": 185,
+    "y": 298,
+    "z": -20
+  },
+  {
+    "angle_h": 5.918942634360577,
+    "angle_v": 1.5385289343952786,
+    "file_frame": "file_num36_frame_207",
+    "map": "de_mirage",
+    "x": 765,
+    "y": 184,
+    "z": -14
+  },
+  {
+    "angle_h": 1.0917389204281729,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_184",
+    "map": "de_mirage",
+    "x": 487,
+    "y": 476,
+    "z": -40
+  },
+  {
+    "angle_h": 1.7079977256238712,
+    "angle_v": 1.5788137732565801,
+    "file_frame": "file_num200_frame_754",
+    "map": "de_mirage",
+    "x": 616,
+    "y": 810,
+    "z": -20
+  },
+  {
+    "angle_h": 4.868932785052856,
+    "angle_v": 1.535994137669741,
+    "file_frame": "file_num88_frame_252",
+    "map": "de_mirage",
+    "x": 781,
+    "y": 636,
+    "z": -39
+  },
+  {
+    "angle_h": 2.510928943215911,
+    "angle_v": 1.5656132826813844,
+    "file_frame": "file_num88_frame_317",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 655,
+    "z": -22
+  },
+  {
+    "angle_h": 1.4100998550389703,
+    "angle_v": 1.5467080347351299,
+    "file_frame": "file_num25_frame_825",
+    "map": "de_mirage",
+    "x": 560,
+    "y": 805,
+    "z": -20
+  },
+  {
+    "angle_h": 5.788830170879229,
+    "angle_v": 1.6006010941345183,
+    "file_frame": "file_num48_frame_792",
+    "map": "de_mirage",
+    "x": 624,
+    "y": 433,
+    "z": -20
+  },
+  {
+    "angle_h": 3.143078697478057,
+    "angle_v": 1.567452728046302,
+    "file_frame": "file_num48_frame_157",
+    "map": "de_mirage",
+    "x": 537,
+    "y": 225,
+    "z": -3
+  },
+  {
+    "angle_h": 0.3527974717182849,
+    "angle_v": 1.5640670513524844,
+    "file_frame": "file_num20_frame_333",
+    "map": "de_mirage",
+    "x": 398,
+    "y": 452,
+    "z": -20
+  },
+  {
+    "angle_h": 3.9713862449910806,
+    "angle_v": 1.5884610743053922,
+    "file_frame": "file_num205_frame_316",
+    "map": "de_mirage",
+    "x": 861,
+    "y": 274,
+    "z": -39
+  },
+  {
+    "angle_h": 0.012403672777044052,
+    "angle_v": 1.5397033884360036,
+    "file_frame": "file_num200_frame_70",
+    "map": "de_mirage",
+    "x": 510,
+    "y": 452,
+    "z": -41
+  },
+  {
+    "angle_h": 4.7316478961237065,
+    "angle_v": 1.5761173226528749,
+    "file_frame": "file_num88_frame_176",
+    "map": "de_mirage",
+    "x": 512,
+    "y": 611,
+    "z": -20
+  },
+  {
+    "angle_h": 5.392871380006248,
+    "angle_v": 1.5610771203966525,
+    "file_frame": "file_num153_frame_46",
+    "map": "de_mirage",
+    "x": 433,
+    "y": 187,
+    "z": -4
+  },
+  {
+    "angle_h": 1.462147343802934,
+    "angle_v": 1.5884610743053922,
+    "file_frame": "file_num78_frame_656",
+    "map": "de_mirage",
+    "x": 187,
+    "y": 371,
+    "z": -20
+  },
+  {
+    "angle_h": 3.147494751197627,
+    "angle_v": 1.5859443870752672,
+    "file_frame": "file_num152_frame_705",
+    "map": "de_mirage",
+    "x": 286,
+    "y": 464,
+    "z": -20
+  },
+  {
+    "angle_h": 0.8884087017294953,
+    "angle_v": 1.5942854076093955,
+    "file_frame": "file_num36_frame_870",
+    "map": "de_mirage",
+    "x": 657,
+    "y": 763,
+    "z": 4
+  },
+  {
+    "angle_h": 6.1095999346960035,
+    "angle_v": 1.5870410768121619,
+    "file_frame": "file_num54_frame_241",
+    "map": "de_mirage",
+    "x": 731,
+    "y": 247,
+    "z": -40
+  },
+  {
+    "angle_h": 3.8626296702910783,
+    "angle_v": 1.5954598616501203,
+    "file_frame": "file_num205_frame_948",
+    "map": "de_mirage",
+    "x": 912,
+    "y": 292,
+    "z": -27
+  },
+  {
+    "angle_h": 5.35260438432425,
+    "angle_v": 1.5845243895820371,
+    "file_frame": "file_num219_frame_833",
+    "map": "de_mirage",
+    "x": 263,
+    "y": 401,
+    "z": -10
+  },
+  {
+    "angle_h": 0.1777739922460594,
+    "angle_v": 2.4390294527381693,
+    "file_frame": "file_num205_frame_751",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 736,
+    "z": 7
+  },
+  {
+    "angle_h": 0.1598035138424227,
+    "angle_v": 1.6053769409173575,
+    "file_frame": "file_num20_frame_413",
+    "map": "de_mirage",
+    "x": 422,
+    "y": 477,
+    "z": -14
+  },
+  {
+    "angle_h": 0.572234755005871,
+    "angle_v": 1.5547734180964348,
+    "file_frame": "file_num219_frame_507",
+    "map": "de_mirage",
+    "x": 415,
+    "y": 610,
+    "z": -21
+  },
+  {
+    "angle_h": 5.6245802432808105,
+    "angle_v": 1.5816119566139262,
+    "file_frame": "file_num54_frame_235",
+    "map": "de_mirage",
+    "x": 716,
+    "y": 279,
+    "z": -39
+  },
+  {
+    "angle_h": 0.2951355067442163,
+    "angle_v": 1.5569066101295883,
+    "file_frame": "file_num20_frame_212",
+    "map": "de_mirage",
+    "x": 264,
+    "y": 414,
+    "z": -20
+  },
+  {
+    "angle_h": 3.2054206354357224,
+    "angle_v": 1.6041604089314092,
+    "file_frame": "file_num78_frame_877",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 440,
+    "z": -12
+  },
+  {
+    "angle_h": 2.9607325902725496,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_640",
+    "map": "de_mirage",
+    "x": 653,
+    "y": 461,
+    "z": -24
+  },
+  {
+    "angle_h": 0.3263424283977648,
+    "angle_v": 1.601337990808143,
+    "file_frame": "file_num20_frame_393",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 457,
+    "z": -9
+  },
+  {
+    "angle_h": 4.42637346879345,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num88_frame_684",
+    "map": "de_mirage",
+    "x": 626,
+    "y": 458,
+    "z": -31
+  },
+  {
+    "angle_h": 5.274952465891938,
+    "angle_v": 1.603447214391486,
+    "file_frame": "file_num48_frame_800",
+    "map": "de_mirage",
+    "x": 659,
+    "y": 429,
+    "z": -23
+  },
+  {
+    "angle_h": 5.112176864272986,
+    "angle_v": 1.6036690557102897,
+    "file_frame": "file_num133_frame_410",
+    "map": "de_mirage",
+    "x": 409,
+    "y": 617,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5632702335543327,
+    "angle_v": 1.5597766988363666,
+    "file_frame": "file_num138_frame_276",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 440,
+    "z": -17
+  },
+  {
+    "angle_h": 3.2381013504365206,
+    "angle_v": 1.5786699625577159,
+    "file_frame": "file_num209_frame_378",
+    "map": "de_mirage",
+    "x": 584,
+    "y": 230,
+    "z": -3
+  },
+  {
+    "angle_h": 2.021493064923094,
+    "angle_v": 1.5753924102041554,
+    "file_frame": "file_num88_frame_45",
+    "map": "de_mirage",
+    "x": 537,
+    "y": 489,
+    "z": -40
+  },
+  {
+    "angle_h": 6.173853223368019,
+    "angle_v": 1.5362098537180375,
+    "file_frame": "file_num186_frame_447",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 474,
+    "z": -20
+  },
+  {
+    "angle_h": 5.430543657838182,
+    "angle_v": 1.5376298512112676,
+    "file_frame": "file_num36_frame_202",
+    "map": "de_mirage",
+    "x": 765,
+    "y": 195,
+    "z": -14
+  },
+  {
+    "angle_h": 2.2192088074116665,
+    "angle_v": 1.599546482342847,
+    "file_frame": "file_num36_frame_359",
+    "map": "de_mirage",
+    "x": 765,
+    "y": 219,
+    "z": -14
+  },
+  {
+    "angle_h": 1.7070569639688007,
+    "angle_v": 1.5573620106759918,
+    "file_frame": "file_num112_frame_616",
+    "map": "de_mirage",
+    "x": 505,
+    "y": 680,
+    "z": -22
+  },
+  {
+    "angle_h": 1.893345748010116,
+    "angle_v": 1.5370189220572037,
+    "file_frame": "file_num153_frame_96",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 229,
+    "z": -3
+  },
+  {
+    "angle_h": 6.2500667684955795,
+    "angle_v": 1.555546533760885,
+    "file_frame": "file_num25_frame_25",
+    "map": "de_mirage",
+    "x": 396,
+    "y": 471,
+    "z": -12
+  },
+  {
+    "angle_h": 4.35761970419531,
+    "angle_v": 1.569268204961409,
+    "file_frame": "file_num54_frame_652",
+    "map": "de_mirage",
+    "x": 508,
+    "y": 411,
+    "z": -20
+  },
+  {
+    "angle_h": 1.7505537082627924,
+    "angle_v": 1.5402964744107641,
+    "file_frame": "file_num48_frame_358",
+    "map": "de_mirage",
+    "x": 283,
+    "y": 368,
+    "z": -21
+  },
+  {
+    "angle_h": 4.295601606626199,
+    "angle_v": 1.5711318850922464,
+    "file_frame": "file_num153_frame_31",
+    "map": "de_mirage",
+    "x": 446,
+    "y": 228,
+    "z": -3
+  },
+  {
+    "angle_h": 4.622758696001418,
+    "angle_v": 1.561975937264554,
+    "file_frame": "file_num152_frame_741",
+    "map": "de_mirage",
+    "x": 181,
+    "y": 423,
+    "z": -20
+  },
+  {
+    "angle_h": 4.6767835818747665,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_902",
+    "map": "de_mirage",
+    "x": 589,
+    "y": 703,
+    "z": -20
+  },
+  {
+    "angle_h": 5.568248527271236,
+    "angle_v": 1.6056166254154647,
+    "file_frame": "file_num54_frame_867",
+    "map": "de_mirage",
+    "x": 648,
+    "y": 436,
+    "z": -22
+  },
+  {
+    "angle_h": 4.805889903096282,
+    "angle_v": 1.555786218258992,
+    "file_frame": "file_num98_frame_232",
+    "map": "de_mirage",
+    "x": 521,
+    "y": 571,
+    "z": -20
+  },
+  {
+    "angle_h": 5.7609905501079774,
+    "angle_v": 1.5998700564152917,
+    "file_frame": "file_num48_frame_496",
+    "map": "de_mirage",
+    "x": 345,
+    "y": 545,
+    "z": -20
+  },
+  {
+    "angle_h": 5.525308783119235,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_225",
+    "map": "de_mirage",
+    "x": 525,
+    "y": 582,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3836147179981322,
+    "angle_v": 1.593566354115074,
+    "file_frame": "file_num25_frame_753",
+    "map": "de_mirage",
+    "x": 509,
+    "y": 528,
+    "z": -32
+  },
+  {
+    "angle_h": 0.003625094875815859,
+    "angle_v": 1.5871547937907082,
+    "file_frame": "file_num112_frame_70",
+    "map": "de_mirage",
+    "x": 717,
+    "y": 644,
+    "z": -22
+  },
+  {
+    "angle_h": 3.051818824823767,
+    "angle_v": 1.5600403517842845,
+    "file_frame": "file_num112_frame_327",
+    "map": "de_mirage",
+    "x": 639,
+    "y": 635,
+    "z": -20
+  },
+  {
+    "angle_h": 0.43768200303903454,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num166_frame_684",
+    "map": "de_mirage",
+    "x": 519,
+    "y": 430,
+    "z": -20
+  },
+  {
+    "angle_h": 4.085794047524231,
+    "angle_v": 1.6039388339287148,
+    "file_frame": "file_num209_frame_873",
+    "map": "de_mirage",
+    "x": 680,
+    "y": 472,
+    "z": -17
+  },
+  {
+    "angle_h": 3.1172047559073923,
+    "angle_v": 1.538678604048541,
+    "file_frame": "file_num25_frame_845",
+    "map": "de_mirage",
+    "x": 491,
+    "y": 811,
+    "z": -22
+  },
+  {
+    "angle_h": 4.830044241551082,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num88_frame_634",
+    "map": "de_mirage",
+    "x": 520,
+    "y": 577,
+    "z": -20
+  },
+  {
+    "angle_h": 6.05610821367289,
+    "angle_v": 1.5939077713668222,
+    "file_frame": "file_num209_frame_353",
+    "map": "de_mirage",
+    "x": 530,
+    "y": 251,
+    "z": -31
+  },
+  {
+    "angle_h": 1.374770360017979,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_415",
+    "map": "de_mirage",
+    "x": 612,
+    "y": 252,
+    "z": -2
+  },
+  {
+    "angle_h": 5.549127563276685,
+    "angle_v": 1.589389984893612,
+    "file_frame": "file_num88_frame_347",
+    "map": "de_mirage",
+    "x": 631,
+    "y": 690,
+    "z": -20
+  },
+  {
+    "angle_h": 4.530007186820575,
+    "angle_v": 1.5370127967866964,
+    "file_frame": "file_num153_frame_408",
+    "map": "de_mirage",
+    "x": 170,
+    "y": 294,
+    "z": -20
+  },
+  {
+    "angle_h": 3.3549960127955867,
+    "angle_v": 1.594567170052726,
+    "file_frame": "file_num166_frame_494",
+    "map": "de_mirage",
+    "x": 482,
+    "y": 326,
+    "z": -20
+  },
+  {
+    "angle_h": 3.5759190736553275,
+    "angle_v": 1.5359643102655323,
+    "file_frame": "file_num133_frame_835",
+    "map": "de_mirage",
+    "x": 651,
+    "y": 443,
+    "z": -23
+  },
+  {
+    "angle_h": 5.129799533838259,
+    "angle_v": 1.5508425923274778,
+    "file_frame": "file_num133_frame_785",
+    "map": "de_mirage",
+    "x": 511,
+    "y": 536,
+    "z": -30
+  },
+  {
+    "angle_h": 5.410536127516743,
+    "angle_v": 1.5359403418157216,
+    "file_frame": "file_num36_frame_479",
+    "map": "de_mirage",
+    "x": 743,
+    "y": 434,
+    "z": -19
+  },
+  {
+    "angle_h": 1.3093125235849215,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num48_frame_247",
+    "map": "de_mirage",
+    "x": 302,
+    "y": 206,
+    "z": 3
+  },
+  {
+    "angle_h": 4.7646519188808405,
+    "angle_v": 1.5790595830251946,
+    "file_frame": "file_num153_frame_904",
+    "map": "de_mirage",
+    "x": 622,
+    "y": 410,
+    "z": -19
+  },
+  {
+    "angle_h": 3.0391035621991835,
+    "angle_v": 1.5366231763192177,
+    "file_frame": "file_num153_frame_708",
+    "map": "de_mirage",
+    "x": 428,
+    "y": 312,
+    "z": -21
+  },
+  {
+    "angle_h": 2.700932703819832,
+    "angle_v": 1.5553726293417027,
+    "file_frame": "file_num186_frame_502",
+    "map": "de_mirage",
+    "x": 375,
+    "y": 539,
+    "z": -24
+  },
+  {
+    "angle_h": 2.6139631836816593,
+    "angle_v": 1.5480023310249083,
+    "file_frame": "file_num186_frame_492",
+    "map": "de_mirage",
+    "x": 396,
+    "y": 535,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3544990435905684,
+    "angle_v": 1.5623535735071274,
+    "file_frame": "file_num166_frame_624",
+    "map": "de_mirage",
+    "x": 493,
+    "y": 363,
+    "z": -20
+  },
+  {
+    "angle_h": 4.842699583051139,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num186_frame_422",
+    "map": "de_mirage",
+    "x": 411,
+    "y": 474,
+    "z": -20
+  },
+  {
+    "angle_h": 1.209064482251614,
+    "angle_v": 1.5508306081025724,
+    "file_frame": "file_num166_frame_739",
+    "map": "de_mirage",
+    "x": 568,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 3.936135046906138,
+    "angle_v": 1.5757937485804303,
+    "file_frame": "file_num152_frame_420",
+    "map": "de_mirage",
+    "x": 880,
+    "y": 310,
+    "z": -19
+  },
+  {
+    "angle_h": 1.1945995227908484,
+    "angle_v": 1.588892506401985,
+    "file_frame": "file_num54_frame_817",
+    "map": "de_mirage",
+    "x": 486,
+    "y": 337,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5547374654217188,
+    "angle_v": 1.6047476359517718,
+    "file_frame": "file_num78_frame_601",
+    "map": "de_mirage",
+    "x": 190,
+    "y": 246,
+    "z": -20
+  },
+  {
+    "angle_h": 5.328018613772857,
+    "angle_v": 1.5818457821576353,
+    "file_frame": "file_num133_frame_140",
+    "map": "de_mirage",
+    "x": 660,
+    "y": 638,
+    "z": -22
+  },
+  {
+    "angle_h": 4.813332373078617,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_395",
+    "map": "de_mirage",
+    "x": 495,
+    "y": 405,
+    "z": -20
+  },
+  {
+    "angle_h": 3.336402354696871,
+    "angle_v": 1.5619098908695201,
+    "file_frame": "file_num54_frame_374",
+    "map": "de_mirage",
+    "x": 872,
+    "y": 632,
+    "z": -20
+  },
+  {
+    "angle_h": 3.293366736745627,
+    "angle_v": 1.5971317941824723,
+    "file_frame": "file_num138_frame_691",
+    "map": "de_mirage",
+    "x": 587,
+    "y": 461,
+    "z": -39
+  },
+  {
+    "angle_h": 1.4497436710258897,
+    "angle_v": 1.5524546037353029,
+    "file_frame": "file_num25_frame_815",
+    "map": "de_mirage",
+    "x": 557,
+    "y": 782,
+    "z": -23
+  },
+  {
+    "angle_h": 1.293247670099291,
+    "angle_v": 1.541608613879846,
+    "file_frame": "file_num112_frame_0",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 609,
+    "z": -20
+  },
+  {
+    "angle_h": 0.7876272292298446,
+    "angle_v": 1.5955259080451545,
+    "file_frame": "file_num25_frame_151",
+    "map": "de_mirage",
+    "x": 551,
+    "y": 697,
+    "z": -22
+  },
+  {
+    "angle_h": 5.858590077737201,
+    "angle_v": 1.5379235978795034,
+    "file_frame": "file_num138_frame_786",
+    "map": "de_mirage",
+    "x": 526,
+    "y": 256,
+    "z": -32
+  },
+  {
+    "angle_h": 1.0726180895916766,
+    "angle_v": 1.570982215438984,
+    "file_frame": "file_num112_frame_190",
+    "map": "de_mirage",
+    "x": 893,
+    "y": 490,
+    "z": -27
+  },
+  {
+    "angle_h": 4.8804616094118085,
+    "angle_v": 1.535958184995025,
+    "file_frame": "file_num200_frame_956",
+    "map": "de_mirage",
+    "x": 896,
+    "y": 406,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3241489940177529,
+    "angle_v": 1.5548932603454884,
+    "file_frame": "file_num152_frame_859",
+    "map": "de_mirage",
+    "x": 494,
+    "y": 369,
+    "z": -20
+  },
+  {
+    "angle_h": 5.389167988194385,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_485",
+    "map": "de_mirage",
+    "x": 658,
+    "y": 441,
+    "z": -23
+  },
+  {
+    "angle_h": 0.9650776474034594,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_807",
+    "map": "de_mirage",
+    "x": 661,
+    "y": 752,
+    "z": 4
+  },
+  {
+    "angle_h": 4.094943603765307,
+    "angle_v": 1.5970417793376275,
+    "file_frame": "file_num186_frame_50",
+    "map": "de_mirage",
+    "x": 412,
+    "y": 602,
+    "z": -21
+  },
+  {
+    "angle_h": 0.26405455261022853,
+    "angle_v": 1.6042983606758754,
+    "file_frame": "file_num54_frame_587",
+    "map": "de_mirage",
+    "x": 655,
+    "y": 462,
+    "z": -25
+  },
+  {
+    "angle_h": 6.052321198602797,
+    "angle_v": 1.568087891966286,
+    "file_frame": "file_num98_frame_106",
+    "map": "de_mirage",
+    "x": 470,
+    "y": 810,
+    "z": -20
+  },
+  {
+    "angle_h": 3.853018321916982,
+    "angle_v": 1.5848716657881832,
+    "file_frame": "file_num209_frame_368",
+    "map": "de_mirage",
+    "x": 585,
+    "y": 248,
+    "z": -3
+  },
+  {
+    "angle_h": 1.5659726762704906,
+    "angle_v": 1.6044299208337252,
+    "file_frame": "file_num98_frame_35",
+    "map": "de_mirage",
+    "x": 341,
+    "y": 657,
+    "z": -39
+  },
+  {
+    "angle_h": 3.0086516467146724,
+    "angle_v": 1.600085772463588,
+    "file_frame": "file_num48_frame_207",
+    "map": "de_mirage",
+    "x": 355,
+    "y": 197,
+    "z": 3
+  },
+  {
+    "angle_h": 5.316555835808938,
+    "angle_v": 1.6053290040177361,
+    "file_frame": "file_num48_frame_531",
+    "map": "de_mirage",
+    "x": 396,
+    "y": 531,
+    "z": -20
+  },
+  {
+    "angle_h": 3.7592297778076618,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num166_frame_484",
+    "map": "de_mirage",
+    "x": 490,
+    "y": 350,
+    "z": -20
+  },
+  {
+    "angle_h": 1.4903342407803326,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num219_frame_117",
+    "map": "de_mirage",
+    "x": 276,
+    "y": 392,
+    "z": -20
+  },
+  {
+    "angle_h": 6.234367433869562,
+    "angle_v": 1.5746850746186303,
+    "file_frame": "file_num25_frame_50",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 471,
+    "z": -20
+  },
+  {
+    "angle_h": 3.1849814067015823,
+    "angle_v": 1.5523046677659313,
+    "file_frame": "file_num78_frame_772",
+    "map": "de_mirage",
+    "x": 512,
+    "y": 433,
+    "z": -21
+  },
+  {
+    "angle_h": 3.2706089599664634,
+    "angle_v": 1.579017505079971,
+    "file_frame": "file_num126_frame_352",
+    "map": "de_mirage",
+    "x": 247,
+    "y": 277,
+    "z": -19
+  },
+  {
+    "angle_h": 6.046029480527485,
+    "angle_v": 1.5841707217892744,
+    "file_frame": "file_num36_frame_90",
+    "map": "de_mirage",
+    "x": 604,
+    "y": 420,
+    "z": -20
+  },
+  {
+    "angle_h": 4.0456346435502715,
+    "angle_v": 1.5825589766975585,
+    "file_frame": "file_num25_frame_960",
+    "map": "de_mirage",
+    "x": 331,
+    "y": 486,
+    "z": -20
+  },
+  {
+    "angle_h": 5.796955475365061,
+    "angle_v": 1.5707664993906878,
+    "file_frame": "file_num209_frame_753",
+    "map": "de_mirage",
+    "x": 681,
+    "y": 457,
+    "z": -19
+  },
+  {
+    "angle_h": 3.9062581079009746,
+    "angle_v": 1.5910137142102332,
+    "file_frame": "file_num78_frame_75",
+    "map": "de_mirage",
+    "x": 372,
+    "y": 535,
+    "z": -20
+  },
+  {
+    "angle_h": 0.6628714479650827,
+    "angle_v": 1.5594411405390167,
+    "file_frame": "file_num219_frame_967",
+    "map": "de_mirage",
+    "x": 448,
+    "y": 638,
+    "z": -20
+  },
+  {
+    "angle_h": 0.00846086278318174,
+    "angle_v": 1.6021172317431005,
+    "file_frame": "file_num200_frame_553",
+    "map": "de_mirage",
+    "x": 535,
+    "y": 457,
+    "z": -42
+  },
+  {
+    "angle_h": 2.1898894011807117,
+    "angle_v": 1.6026623808182396,
+    "file_frame": "file_num36_frame_650",
+    "map": "de_mirage",
+    "x": 681,
+    "y": 404,
+    "z": -20
+  },
+  {
+    "angle_h": 5.950299491983497,
+    "angle_v": 1.6029500022159682,
+    "file_frame": "file_num209_frame_333",
+    "map": "de_mirage",
+    "x": 446,
+    "y": 272,
+    "z": -60
+  },
+  {
+    "angle_h": 3.4856778601179927,
+    "angle_v": 1.535916373365911,
+    "file_frame": "file_num138_frame_801",
+    "map": "de_mirage",
+    "x": 586,
+    "y": 244,
+    "z": -3
+  },
+  {
+    "angle_h": 6.002125405744765,
+    "angle_v": 1.570544658071884,
+    "file_frame": "file_num98_frame_252",
+    "map": "de_mirage",
+    "x": 519,
+    "y": 496,
+    "z": -39
+  },
+  {
+    "angle_h": 4.71233518453067,
+    "angle_v": 1.5728517545242198,
+    "file_frame": "file_num36_frame_980",
+    "map": "de_mirage",
+    "x": 519,
+    "y": 584,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6920826749495577,
+    "angle_v": 1.5818457821576353,
+    "file_frame": "file_num25_frame_171",
+    "map": "de_mirage",
+    "x": 612,
+    "y": 759,
+    "z": -20
+  },
+  {
+    "angle_h": 4.635719768394617,
+    "angle_v": 1.5369587346165676,
+    "file_frame": "file_num88_frame_262",
+    "map": "de_mirage",
+    "x": 788,
+    "y": 611,
+    "z": -39
+  },
+  {
+    "angle_h": 0.4945351659900461,
+    "angle_v": 1.5507227500784242,
+    "file_frame": "file_num209_frame_788",
+    "map": "de_mirage",
+    "x": 694,
+    "y": 458,
+    "z": -7
+  },
+  {
+    "angle_h": 2.7764453049484836,
+    "angle_v": 1.5796465437294478,
+    "file_frame": "file_num152_frame_597",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 597,
+    "z": -20
+  },
+  {
+    "angle_h": 0.43722660249263096,
+    "angle_v": 1.5882333740321903,
+    "file_frame": "file_num126_frame_744",
+    "map": "de_mirage",
+    "x": 372,
+    "y": 534,
+    "z": -24
+  },
+  {
+    "angle_h": 4.9415635795659325,
+    "angle_v": 1.5990492701673293,
+    "file_frame": "file_num78_frame_5",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 460,
+    "z": -11
+  },
+  {
+    "angle_h": 4.193957269933363,
+    "angle_v": 1.5845062800866245,
+    "file_frame": "file_num152_frame_409",
+    "map": "de_mirage",
+    "x": 908,
+    "y": 344,
+    "z": -20
+  },
+  {
+    "angle_h": 3.682476409927142,
+    "angle_v": 1.5910438079305511,
+    "file_frame": "file_num166_frame_192",
+    "map": "de_mirage",
+    "x": 543,
+    "y": 415,
+    "z": -20
+  },
+  {
+    "angle_h": 0.2648154177336642,
+    "angle_v": 1.5613287891196648,
+    "file_frame": "file_num126_frame_784",
+    "map": "de_mirage",
+    "x": 413,
+    "y": 603,
+    "z": -21
+  },
+  {
+    "angle_h": 3.137488189717763,
+    "angle_v": 1.5805874385425729,
+    "file_frame": "file_num186_frame_936",
+    "map": "de_mirage",
+    "x": 466,
+    "y": 228,
+    "z": -3
+  },
+  {
+    "angle_h": 3.414077708946776,
+    "angle_v": 1.5719766397900197,
+    "file_frame": "file_num126_frame_482",
+    "map": "de_mirage",
+    "x": 404,
+    "y": 302,
+    "z": -21
+  },
+  {
+    "angle_h": 3.1124949555195873,
+    "angle_v": 1.590743935991808,
+    "file_frame": "file_num219_frame_362",
+    "map": "de_mirage",
+    "x": 498,
+    "y": 610,
+    "z": -20
+  },
+  {
+    "angle_h": 3.7006327769748664,
+    "angle_v": 1.5832838891462782,
+    "file_frame": "file_num219_frame_653",
+    "map": "de_mirage",
+    "x": 596,
+    "y": 711,
+    "z": -20
+  },
+  {
+    "angle_h": 5.87118576442884,
+    "angle_v": 1.5421660134959998,
+    "file_frame": "file_num20_frame_584",
+    "map": "de_mirage",
+    "x": 748,
+    "y": 776,
+    "z": 4
+  },
+  {
+    "angle_h": 4.458574814798034,
+    "angle_v": 1.6016975175553039,
+    "file_frame": "file_num219_frame_0",
+    "map": "de_mirage",
+    "x": 483,
+    "y": 394,
+    "z": -19
+  },
+  {
+    "angle_h": 6.149932710456927,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_36",
+    "map": "de_mirage",
+    "x": 533,
+    "y": 262,
+    "z": -30
+  },
+  {
+    "angle_h": 6.022246653044751,
+    "angle_v": 1.5691904406575787,
+    "file_frame": "file_num152_frame_5",
+    "map": "de_mirage",
+    "x": 305,
+    "y": 327,
+    "z": -20
+  },
+  {
+    "angle_h": 6.07308986036378,
+    "angle_v": 1.5962209930896651,
+    "file_frame": "file_num88_frame_357",
+    "map": "de_mirage",
+    "x": 661,
+    "y": 650,
+    "z": -22
+  },
+  {
+    "angle_h": 4.67574122062411,
+    "angle_v": 1.6020213579438578,
+    "file_frame": "file_num54_frame_30",
+    "map": "de_mirage",
+    "x": 521,
+    "y": 588,
+    "z": -20
+  },
+  {
+    "angle_h": 5.45651347320809,
+    "angle_v": 1.5451740539472443,
+    "file_frame": "file_num153_frame_428",
+    "map": "de_mirage",
+    "x": 230,
+    "y": 288,
+    "z": -19
+  },
+  {
+    "angle_h": 5.0283591952849225,
+    "angle_v": 1.6034834333823111,
+    "file_frame": "file_num54_frame_882",
+    "map": "de_mirage",
+    "x": 683,
+    "y": 399,
+    "z": -20
+  },
+  {
+    "angle_h": 3.5505125168559717,
+    "angle_v": 1.5929791270947116,
+    "file_frame": "file_num78_frame_932",
+    "map": "de_mirage",
+    "x": 496,
+    "y": 466,
+    "z": -41
+  },
+  {
+    "angle_h": 3.883350128836331,
+    "angle_v": 1.537204544385182,
+    "file_frame": "file_num112_frame_872",
+    "map": "de_mirage",
+    "x": 513,
+    "y": 497,
+    "z": -39
+  },
+  {
+    "angle_h": 0.63495406289,
+    "angle_v": 1.6014578330571967,
+    "file_frame": "file_num133_frame_55",
+    "map": "de_mirage",
+    "x": 410,
+    "y": 599,
+    "z": -20
+  },
+  {
+    "angle_h": 0.36232519683415243,
+    "angle_v": 1.5863878033967656,
+    "file_frame": "file_num20_frame_363",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 461,
+    "z": -20
+  },
+  {
+    "angle_h": 1.0823612644397314,
+    "angle_v": 1.541902360548082,
+    "file_frame": "file_num98_frame_801",
+    "map": "de_mirage",
+    "x": 687,
+    "y": 459,
+    "z": -7
+  },
+  {
+    "angle_h": 4.689714826863755,
+    "angle_v": 1.5403984734805143,
+    "file_frame": "file_num133_frame_210",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 587,
+    "z": -20
+  },
+  {
+    "angle_h": 2.239857493765541,
+    "angle_v": 1.577465414796673,
+    "file_frame": "file_num88_frame_332",
+    "map": "de_mirage",
+    "x": 629,
+    "y": 693,
+    "z": -20
+  },
+  {
+    "angle_h": 3.0936136760231436,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num209_frame_268",
+    "map": "de_mirage",
+    "x": 548,
+    "y": 458,
+    "z": -42
+  },
+  {
+    "angle_h": 3.8037631575559665,
+    "angle_v": 1.5478286929218352,
+    "file_frame": "file_num153_frame_357",
+    "map": "de_mirage",
+    "x": 234,
+    "y": 454,
+    "z": -20
+  },
+  {
+    "angle_h": 1.0082747860748171,
+    "angle_v": 1.599684167771204,
+    "file_frame": "file_num25_frame_440",
+    "map": "de_mirage",
+    "x": 560,
+    "y": 230,
+    "z": -3
+  },
+  {
+    "angle_h": 3.036419095820384,
+    "angle_v": 1.5537427747545742,
+    "file_frame": "file_num98_frame_826",
+    "map": "de_mirage",
+    "x": 676,
+    "y": 466,
+    "z": -20
+  },
+  {
+    "angle_h": 5.407222356172358,
+    "angle_v": 1.5845243895820371,
+    "file_frame": "file_num25_frame_355",
+    "map": "de_mirage",
+    "x": 554,
+    "y": 257,
+    "z": -16
+  },
+  {
+    "angle_h": 6.153246481801312,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_51",
+    "map": "de_mirage",
+    "x": 582,
+    "y": 254,
+    "z": -3
+  },
+  {
+    "angle_h": 4.5568875369671815,
+    "angle_v": 1.5733249982499269,
+    "file_frame": "file_num153_frame_317",
+    "map": "de_mirage",
+    "x": 312,
+    "y": 529,
+    "z": -25
+  },
+  {
+    "angle_h": 4.777373306775932,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_560",
+    "map": "de_mirage",
+    "x": 712,
+    "y": 304,
+    "z": -38
+  },
+  {
+    "angle_h": 0.2776744910571118,
+    "angle_v": 1.6021768865515182,
+    "file_frame": "file_num209_frame_623",
+    "map": "de_mirage",
+    "x": 660,
+    "y": 448,
+    "z": -23
+  },
+  {
+    "angle_h": 3.080622776225737,
+    "angle_v": 1.5794010002769425,
+    "file_frame": "file_num209_frame_257",
+    "map": "de_mirage",
+    "x": 603,
+    "y": 454,
+    "z": -34
+  },
+  {
+    "angle_h": 3.2413610596107776,
+    "angle_v": 1.5913253040577724,
+    "file_frame": "file_num209_frame_273",
+    "map": "de_mirage",
+    "x": 526,
+    "y": 458,
+    "z": -42
+  },
+  {
+    "angle_h": 0.2755892359235797,
+    "angle_v": 1.6054488462667897,
+    "file_frame": "file_num88_frame_116",
+    "map": "de_mirage",
+    "x": 494,
+    "y": 745,
+    "z": -23
+  },
+  {
+    "angle_h": 5.8102278712896895,
+    "angle_v": 1.5773756662679372,
+    "file_frame": "file_num138_frame_421",
+    "map": "de_mirage",
+    "x": 529,
+    "y": 774,
+    "z": -23
+  },
+  {
+    "angle_h": 1.1390166876798047,
+    "angle_v": 1.5406080642583033,
+    "file_frame": "file_num36_frame_454",
+    "map": "de_mirage",
+    "x": 727,
+    "y": 402,
+    "z": -20
+  },
+  {
+    "angle_h": 4.732546446675499,
+    "angle_v": 1.5369827030663783,
+    "file_frame": "file_num112_frame_847",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 585,
+    "z": -20
+  },
+  {
+    "angle_h": 5.65983783295237,
+    "angle_v": 1.5668894694757503,
+    "file_frame": "file_num88_frame_472",
+    "map": "de_mirage",
+    "x": 888,
+    "y": 432,
+    "z": -22
+  },
+  {
+    "angle_h": 6.229585994448433,
+    "angle_v": 1.5437178374631888,
+    "file_frame": "file_num138_frame_832",
+    "map": "de_mirage",
+    "x": 622,
+    "y": 184,
+    "z": -14
+  },
+  {
+    "angle_h": 4.039666499547404,
+    "angle_v": 1.5442752370793424,
+    "file_frame": "file_num20_frame_870",
+    "map": "de_mirage",
+    "x": 417,
+    "y": 818,
+    "z": -21
+  },
+  {
+    "angle_h": 5.910511865297713,
+    "angle_v": 1.5483080619180496,
+    "file_frame": "file_num98_frame_136",
+    "map": "de_mirage",
+    "x": 564,
+    "y": 754,
+    "z": -23
+  },
+  {
+    "angle_h": 0.27237160469454597,
+    "angle_v": 1.5578235364929027,
+    "file_frame": "file_num36_frame_820",
+    "map": "de_mirage",
+    "x": 604,
+    "y": 720,
+    "z": -20
+  },
+  {
+    "angle_h": 4.551440839905751,
+    "angle_v": 1.5359342165452143,
+    "file_frame": "file_num209_frame_176",
+    "map": "de_mirage",
+    "x": 539,
+    "y": 689,
+    "z": -23
+  },
+  {
+    "angle_h": 4.5671700019359776,
+    "angle_v": 1.6012122896046916,
+    "file_frame": "file_num138_frame_631",
+    "map": "de_mirage",
+    "x": 738,
+    "y": 376,
+    "z": -19
+  },
+  {
+    "angle_h": 1.7605185912715964,
+    "angle_v": 1.5597828241068739,
+    "file_frame": "file_num20_frame_789",
+    "map": "de_mirage",
+    "x": 343,
+    "y": 548,
+    "z": -22
+  },
+  {
+    "angle_h": 2.371803809973517,
+    "angle_v": 1.5399968687881302,
+    "file_frame": "file_num133_frame_560",
+    "map": "de_mirage",
+    "x": 573,
+    "y": 461,
+    "z": -42
+  },
+  {
+    "angle_h": 0.08951017581810823,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_561",
+    "map": "de_mirage",
+    "x": 459,
+    "y": 455,
+    "z": -42
+  },
+  {
+    "angle_h": 3.2303297137434517,
+    "angle_v": 1.5461927130641995,
+    "file_frame": "file_num88_frame_785",
+    "map": "de_mirage",
+    "x": 308,
+    "y": 290,
+    "z": -21
+  },
+  {
+    "angle_h": 3.38118713685208,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_350",
+    "map": "de_mirage",
+    "x": 642,
+    "y": 440,
+    "z": -22
+  },
+  {
+    "angle_h": 0.22721504525116243,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_415",
+    "map": "de_mirage",
+    "x": 507,
+    "y": 404,
+    "z": -19
+  },
+  {
+    "angle_h": 3.5014911780386657,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num209_frame_888",
+    "map": "de_mirage",
+    "x": 653,
+    "y": 446,
+    "z": -23
+  },
+  {
+    "angle_h": 4.955225595958039,
+    "angle_v": 1.6027521293469753,
+    "file_frame": "file_num78_frame_15",
+    "map": "de_mirage",
+    "x": 421,
+    "y": 453,
+    "z": -20
+  },
+  {
+    "angle_h": 2.314483528567306,
+    "angle_v": 1.5408477487564105,
+    "file_frame": "file_num20_frame_0",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 572,
+    "z": -21
+  },
+  {
+    "angle_h": 4.984712648179614,
+    "angle_v": 1.59930679784474,
+    "file_frame": "file_num112_frame_90",
+    "map": "de_mirage",
+    "x": 780,
+    "y": 634,
+    "z": -39
+  },
+  {
+    "angle_h": 4.4603729811660555,
+    "angle_v": 1.555552392715283,
+    "file_frame": "file_num133_frame_885",
+    "map": "de_mirage",
+    "x": 475,
+    "y": 376,
+    "z": -20
+  },
+  {
+    "angle_h": 3.977941882330419,
+    "angle_v": 1.5370189220572037,
+    "file_frame": "file_num36_frame_177",
+    "map": "de_mirage",
+    "x": 824,
+    "y": 234,
+    "z": -37
+  },
+  {
+    "angle_h": 6.282550143259602,
+    "angle_v": 1.5632942020041434,
+    "file_frame": "file_num209_frame_748",
+    "map": "de_mirage",
+    "x": 675,
+    "y": 462,
+    "z": -21
+  },
+  {
+    "angle_h": 0.9966500879166212,
+    "angle_v": 1.6001997557582435,
+    "file_frame": "file_num200_frame_508",
+    "map": "de_mirage",
+    "x": 447,
+    "y": 410,
+    "z": -60
+  },
+  {
+    "angle_h": 5.687113928836961,
+    "angle_v": 1.5392298783941873,
+    "file_frame": "file_num98_frame_490",
+    "map": "de_mirage",
+    "x": 634,
+    "y": 428,
+    "z": -20
+  },
+  {
+    "angle_h": 4.59356512413197,
+    "angle_v": 1.5586262132454525,
+    "file_frame": "file_num112_frame_205",
+    "map": "de_mirage",
+    "x": 885,
+    "y": 428,
+    "z": -21
+  },
+  {
+    "angle_h": 1.4384125863778752,
+    "angle_v": 1.5854170811794315,
+    "file_frame": "file_num25_frame_769",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 584,
+    "z": -20
+  },
+  {
+    "angle_h": 4.674117224991379,
+    "angle_v": 1.537671929156491,
+    "file_frame": "file_num205_frame_235",
+    "map": "de_mirage",
+    "x": 907,
+    "y": 597,
+    "z": -20
+  },
+  {
+    "angle_h": 0.10797200744286453,
+    "angle_v": 1.542016077526628,
+    "file_frame": "file_num186_frame_761",
+    "map": "de_mirage",
+    "x": 690,
+    "y": 449,
+    "z": -20
+  },
+  {
+    "angle_h": 0.47597133529553975,
+    "angle_v": 1.6052869260725127,
+    "file_frame": "file_num200_frame_820",
+    "map": "de_mirage",
+    "x": 730,
+    "y": 649,
+    "z": -32
+  },
+  {
+    "angle_h": 1.7304981078836783,
+    "angle_v": 1.5454195973997493,
+    "file_frame": "file_num112_frame_596",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 596,
+    "z": -20
+  },
+  {
+    "angle_h": 4.791239321307537,
+    "angle_v": 1.5826607094511995,
+    "file_frame": "file_num133_frame_450",
+    "map": "de_mirage",
+    "x": 520,
+    "y": 581,
+    "z": -20
+  },
+  {
+    "angle_h": 1.4555200674302717,
+    "angle_v": 1.570610438150809,
+    "file_frame": "file_num78_frame_253",
+    "map": "de_mirage",
+    "x": 333,
+    "y": 564,
+    "z": -33
+  },
+  {
+    "angle_h": 1.600643038921687,
+    "angle_v": 1.5770161395207767,
+    "file_frame": "file_num138_frame_301",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 433,
+    "z": -20
+  },
+  {
+    "angle_h": 0.3327060518225091,
+    "angle_v": 1.5822172931297014,
+    "file_frame": "file_num20_frame_925",
+    "map": "de_mirage",
+    "x": 349,
+    "y": 758,
+    "z": -38
+  },
+  {
+    "angle_h": 0.45987066229324775,
+    "angle_v": 1.604687714827245,
+    "file_frame": "file_num133_frame_70",
+    "map": "de_mirage",
+    "x": 426,
+    "y": 621,
+    "z": -20
+  },
+  {
+    "angle_h": 1.6951026996257077,
+    "angle_v": 1.5581529695197454,
+    "file_frame": "file_num48_frame_905",
+    "map": "de_mirage",
+    "x": 699,
+    "y": 311,
+    "z": -36
+  },
+  {
+    "angle_h": 3.732186974834561,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_830",
+    "map": "de_mirage",
+    "x": 491,
+    "y": 650,
+    "z": -20
+  },
+  {
+    "angle_h": 6.156745875473676,
+    "angle_v": 1.5808689346697942,
+    "file_frame": "file_num98_frame_86",
+    "map": "de_mirage",
+    "x": 399,
+    "y": 821,
+    "z": -26
+  },
+  {
+    "angle_h": 4.728555433465907,
+    "angle_v": 1.5731873128215699,
+    "file_frame": "file_num36_frame_561",
+    "map": "de_mirage",
+    "x": 700,
+    "y": 367,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5425195481307077,
+    "angle_v": 1.558878148284574,
+    "file_frame": "file_num25_frame_501",
+    "map": "de_mirage",
+    "x": 443,
+    "y": 327,
+    "z": -60
+  },
+  {
+    "angle_h": 4.724073865983521,
+    "angle_v": 1.5991211755167614,
+    "file_frame": "file_num205_frame_886",
+    "map": "de_mirage",
+    "x": 907,
+    "y": 575,
+    "z": -20
+  },
+  {
+    "angle_h": 4.664428112313453,
+    "angle_v": 1.5468278769841834,
+    "file_frame": "file_num98_frame_217",
+    "map": "de_mirage",
+    "x": 527,
+    "y": 629,
+    "z": -20
+  },
+  {
+    "angle_h": 3.2957460048635037,
+    "angle_v": 1.5454195973997493,
+    "file_frame": "file_num205_frame_255",
+    "map": "de_mirage",
+    "x": 904,
+    "y": 513,
+    "z": -20
+  },
+  {
+    "angle_h": 3.100480903210022,
+    "angle_v": 1.5370847021361285,
+    "file_frame": "file_num54_frame_707",
+    "map": "de_mirage",
+    "x": 418,
+    "y": 316,
+    "z": -21
+  },
+  {
+    "angle_h": 3.6710439919996505,
+    "angle_v": 1.561532520943056,
+    "file_frame": "file_num219_frame_683",
+    "map": "de_mirage",
+    "x": 486,
+    "y": 647,
+    "z": -20
+  },
+  {
+    "angle_h": 4.457574531492599,
+    "angle_v": 1.537204544385182,
+    "file_frame": "file_num25_frame_243",
+    "map": "de_mirage",
+    "x": 524,
+    "y": 572,
+    "z": -20
+  },
+  {
+    "angle_h": 3.905275401458735,
+    "angle_v": 1.5941775495852473,
+    "file_frame": "file_num133_frame_940",
+    "map": "de_mirage",
+    "x": 317,
+    "y": 282,
+    "z": -21
+  },
+  {
+    "angle_h": 6.272681267208095,
+    "angle_v": 1.5371744506648641,
+    "file_frame": "file_num20_frame_850",
+    "map": "de_mirage",
+    "x": 386,
+    "y": 823,
+    "z": -28
+  },
+  {
+    "angle_h": 1.2014305309869016,
+    "angle_v": 1.5467200189600352,
+    "file_frame": "file_num36_frame_227",
+    "map": "de_mirage",
+    "x": 747,
+    "y": 174,
+    "z": -8
+  },
+  {
+    "angle_h": 4.510982096625267,
+    "angle_v": 1.5360660430191733,
+    "file_frame": "file_num36_frame_486",
+    "map": "de_mirage",
+    "x": 731,
+    "y": 408,
+    "z": -20
+  },
+  {
+    "angle_h": 3.8679085882038335,
+    "angle_v": 1.5830322204232656,
+    "file_frame": "file_num152_frame_899",
+    "map": "de_mirage",
+    "x": 492,
+    "y": 469,
+    "z": -41
+  },
+  {
+    "angle_h": 5.374379454661175,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num54_frame_110",
+    "map": "de_mirage",
+    "x": 630,
+    "y": 450,
+    "z": -24
+  },
+  {
+    "angle_h": 1.7484624610168078,
+    "angle_v": 1.5587583060355206,
+    "file_frame": "file_num98_frame_711",
+    "map": "de_mirage",
+    "x": 709,
+    "y": 356,
+    "z": -24
+  },
+  {
+    "angle_h": 3.129788192058017,
+    "angle_v": 1.6018115008499594,
+    "file_frame": "file_num166_frame_509",
+    "map": "de_mirage",
+    "x": 454,
+    "y": 313,
+    "z": -21
+  },
+  {
+    "angle_h": 3.6211533974025416,
+    "angle_v": 1.536431428720732,
+    "file_frame": "file_num48_frame_76",
+    "map": "de_mirage",
+    "x": 797,
+    "y": 223,
+    "z": -19
+  },
+  {
+    "angle_h": 5.0760263166879245,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_930",
+    "map": "de_mirage",
+    "x": 419,
+    "y": 494,
+    "z": -10
+  },
+  {
+    "angle_h": 5.772357720588762,
+    "angle_v": 1.536323837012693,
+    "file_frame": "file_num166_frame_991",
+    "map": "de_mirage",
+    "x": 445,
+    "y": 389,
+    "z": -60
+  },
+  {
+    "angle_h": 2.561927679142601,
+    "angle_v": 1.5661224790818076,
+    "file_frame": "file_num166_frame_324",
+    "map": "de_mirage",
+    "x": 673,
+    "y": 488,
+    "z": -21
+  },
+  {
+    "angle_h": 5.020665322895684,
+    "angle_v": 1.6052091617686826,
+    "file_frame": "file_num78_frame_25",
+    "map": "de_mirage",
+    "x": 409,
+    "y": 451,
+    "z": -12
+  },
+  {
+    "angle_h": 1.4569042454068404,
+    "angle_v": 1.5450182590234747,
+    "file_frame": "file_num138_frame_251",
+    "map": "de_mirage",
+    "x": 513,
+    "y": 427,
+    "z": -11
+  },
+  {
+    "angle_h": 4.388449522238503,
+    "angle_v": 1.5875081952673618,
+    "file_frame": "file_num25_frame_661",
+    "map": "de_mirage",
+    "x": 555,
+    "y": 738,
+    "z": -23
+  },
+  {
+    "angle_h": 2.1194820798617418,
+    "angle_v": 1.5572722621472563,
+    "file_frame": "file_num98_frame_410",
+    "map": "de_mirage",
+    "x": 751,
+    "y": 228,
+    "z": -12
+  },
+  {
+    "angle_h": 2.8586451035743243,
+    "angle_v": 1.6041066130773898,
+    "file_frame": "file_num138_frame_671",
+    "map": "de_mirage",
+    "x": 654,
+    "y": 447,
+    "z": -23
+  },
+  {
+    "angle_h": 5.891798631266053,
+    "angle_v": 1.6044661398245503,
+    "file_frame": "file_num186_frame_597",
+    "map": "de_mirage",
+    "x": 419,
+    "y": 812,
+    "z": -22
+  },
+  {
+    "angle_h": 0.22029988116466268,
+    "angle_v": 1.5834996051945744,
+    "file_frame": "file_num20_frame_358",
+    "map": "de_mirage",
+    "x": 418,
+    "y": 466,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5489430926799788,
+    "angle_v": 1.5508007806983637,
+    "file_frame": "file_num186_frame_976",
+    "map": "de_mirage",
+    "x": 529,
+    "y": 237,
+    "z": 6
+  },
+  {
+    "angle_h": 1.410123823488781,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_220",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 586,
+    "z": -20
+  },
+  {
+    "angle_h": 0.20129290046476717,
+    "angle_v": 1.5380016284994429,
+    "file_frame": "file_num152_frame_819",
+    "map": "de_mirage",
+    "x": 393,
+    "y": 293,
+    "z": -20
+  },
+  {
+    "angle_h": 1.1618286597871508,
+    "angle_v": 1.5929852523652188,
+    "file_frame": "file_num133_frame_640",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 612,
+    "z": -20
+  },
+  {
+    "angle_h": 3.4064381650437747,
+    "angle_v": 1.600594968864011,
+    "file_frame": "file_num78_frame_55",
+    "map": "de_mirage",
+    "x": 396,
+    "y": 533,
+    "z": -20
+  },
+  {
+    "angle_h": 4.011773082922132,
+    "angle_v": 1.5435801520348318,
+    "file_frame": "file_num219_frame_713",
+    "map": "de_mirage",
+    "x": 396,
+    "y": 574,
+    "z": -20
+  },
+  {
+    "angle_h": 2.588688453356262,
+    "angle_v": 1.5389182885466481,
+    "file_frame": "file_num152_frame_532",
+    "map": "de_mirage",
+    "x": 660,
+    "y": 442,
+    "z": -22
+  },
+  {
+    "angle_h": 0.2666849568188998,
+    "angle_v": 1.603812866409154,
+    "file_frame": "file_num209_frame_588",
+    "map": "de_mirage",
+    "x": 596,
+    "y": 437,
+    "z": -20
+  },
+  {
+    "angle_h": 4.096525521452814,
+    "angle_v": 1.5381571571071033,
+    "file_frame": "file_num200_frame_976",
+    "map": "de_mirage",
+    "x": 907,
+    "y": 325,
+    "z": -20
+  },
+  {
+    "angle_h": 3.9865103368216404,
+    "angle_v": 1.5421660134959998,
+    "file_frame": "file_num54_frame_460",
+    "map": "de_mirage",
+    "x": 657,
+    "y": 795,
+    "z": 4
+  },
+  {
+    "angle_h": 3.7246012267855795,
+    "angle_v": 1.5832838891462782,
+    "file_frame": "file_num138_frame_711",
+    "map": "de_mirage",
+    "x": 491,
+    "y": 455,
+    "z": -40
+  },
+  {
+    "angle_h": 4.640214119050234,
+    "angle_v": 1.5401047268122783,
+    "file_frame": "file_num166_frame_364",
+    "map": "de_mirage",
+    "x": 625,
+    "y": 486,
+    "z": -31
+  },
+  {
+    "angle_h": 2.3241486727954213,
+    "angle_v": 1.5481040637785493,
+    "file_frame": "file_num205_frame_260",
+    "map": "de_mirage",
+    "x": 904,
+    "y": 491,
+    "z": -20
+  },
+  {
+    "angle_h": 2.080761049192535,
+    "angle_v": 1.560388160622649,
+    "file_frame": "file_num112_frame_505",
+    "map": "de_mirage",
+    "x": 697,
+    "y": 375,
+    "z": -20
+  },
+  {
+    "angle_h": 4.636990096234585,
+    "angle_v": 1.5390141623458908,
+    "file_frame": "file_num112_frame_837",
+    "map": "de_mirage",
+    "x": 524,
+    "y": 613,
+    "z": -20
+  },
+  {
+    "angle_h": 3.0258490094538595,
+    "angle_v": 1.5558519983379169,
+    "file_frame": "file_num112_frame_322",
+    "map": "de_mirage",
+    "x": 653,
+    "y": 630,
+    "z": -14
+  },
+  {
+    "angle_h": 3.5401458959967296,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_345",
+    "map": "de_mirage",
+    "x": 651,
+    "y": 446,
+    "z": -23
+  },
+  {
+    "angle_h": 0.18848788931144816,
+    "angle_v": 1.5359821534448357,
+    "file_frame": "file_num186_frame_731",
+    "map": "de_mirage",
+    "x": 651,
+    "y": 458,
+    "z": -26
+  },
+  {
+    "angle_h": 4.845072459582399,
+    "angle_v": 1.5846319812900762,
+    "file_frame": "file_num88_frame_166",
+    "map": "de_mirage",
+    "x": 509,
+    "y": 638,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3579804609255746,
+    "angle_v": 1.5750387424113927,
+    "file_frame": "file_num25_frame_784",
+    "map": "de_mirage",
+    "x": 525,
+    "y": 646,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5683994818138252,
+    "angle_v": 1.5409135288353353,
+    "file_frame": "file_num152_frame_243",
+    "map": "de_mirage",
+    "x": 899,
+    "y": 345,
+    "z": -20
+  },
+  {
+    "angle_h": 2.702688259610412,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num48_frame_378",
+    "map": "de_mirage",
+    "x": 266,
+    "y": 392,
+    "z": -11
+  },
+  {
+    "angle_h": 6.1322080418219045,
+    "angle_v": 1.5494106106093424,
+    "file_frame": "file_num78_frame_993",
+    "map": "de_mirage",
+    "x": 460,
+    "y": 267,
+    "z": -60
+  },
+  {
+    "angle_h": 2.8980673445585494,
+    "angle_v": 1.542040045976439,
+    "file_frame": "file_num186_frame_991",
+    "map": "de_mirage",
+    "x": 543,
+    "y": 238,
+    "z": -3
+  },
+  {
+    "angle_h": 3.018113059119397,
+    "angle_v": 1.5363177117421858,
+    "file_frame": "file_num153_frame_101",
+    "map": "de_mirage",
+    "x": 499,
+    "y": 229,
+    "z": -3
+  },
+  {
+    "angle_h": 2.469025967676277,
+    "angle_v": 1.58495582167863,
+    "file_frame": "file_num133_frame_335",
+    "map": "de_mirage",
+    "x": 563,
+    "y": 485,
+    "z": -41
+  },
+  {
+    "angle_h": 3.4439306795021287,
+    "angle_v": 1.5408837014311265,
+    "file_frame": "file_num54_frame_125",
+    "map": "de_mirage",
+    "x": 630,
+    "y": 449,
+    "z": -29
+  },
+  {
+    "angle_h": 0.13726731206595416,
+    "angle_v": 1.537102545315432,
+    "file_frame": "file_num88_frame_831",
+    "map": "de_mirage",
+    "x": 302,
+    "y": 293,
+    "z": -20
+  },
+  {
+    "angle_h": 3.235729006537478,
+    "angle_v": 1.577597507586741,
+    "file_frame": "file_num112_frame_352",
+    "map": "de_mirage",
+    "x": 608,
+    "y": 672,
+    "z": -20
+  },
+  {
+    "angle_h": 4.088052940760836,
+    "angle_v": 1.602237073992154,
+    "file_frame": "file_num25_frame_733",
+    "map": "de_mirage",
+    "x": 480,
+    "y": 469,
+    "z": -40
+  },
+  {
+    "angle_h": 1.298946169041788,
+    "angle_v": 1.6041604089314092,
+    "file_frame": "file_num54_frame_277",
+    "map": "de_mirage",
+    "x": 887,
+    "y": 262,
+    "z": -39
+  },
+  {
+    "angle_h": 3.6340244549508944,
+    "angle_v": 1.5369768441119802,
+    "file_frame": "file_num219_frame_733",
+    "map": "de_mirage",
+    "x": 380,
+    "y": 537,
+    "z": -24
+  },
+  {
+    "angle_h": 1.536815057075758,
+    "angle_v": 1.6011222747598468,
+    "file_frame": "file_num54_frame_318",
+    "map": "de_mirage",
+    "x": 898,
+    "y": 423,
+    "z": -20
+  },
+  {
+    "angle_h": 0.03530552657118046,
+    "angle_v": 1.5465282713615496,
+    "file_frame": "file_num138_frame_837",
+    "map": "de_mirage",
+    "x": 646,
+    "y": 182,
+    "z": -14
+  },
+  {
+    "angle_h": 3.0224753169849468,
+    "angle_v": 1.5842724545429154,
+    "file_frame": "file_num25_frame_466",
+    "map": "de_mirage",
+    "x": 531,
+    "y": 265,
+    "z": -30
+  },
+  {
+    "angle_h": 4.58675222543133,
+    "angle_v": 1.539385673317957,
+    "file_frame": "file_num88_frame_272",
+    "map": "de_mirage",
+    "x": 786,
+    "y": 590,
+    "z": -39
+  },
+  {
+    "angle_h": 3.360861891412595,
+    "angle_v": 1.5961970246398545,
+    "file_frame": "file_num78_frame_65",
+    "map": "de_mirage",
+    "x": 378,
+    "y": 536,
+    "z": -24
+  },
+  {
+    "angle_h": 0.31236269688761187,
+    "angle_v": 1.5627967235125164,
+    "file_frame": "file_num209_frame_518",
+    "map": "de_mirage",
+    "x": 419,
+    "y": 309,
+    "z": -21
+  },
+  {
+    "angle_h": 4.333507443685733,
+    "angle_v": 1.5478944730007602,
+    "file_frame": "file_num48_frame_631",
+    "map": "de_mirage",
+    "x": 196,
+    "y": 447,
+    "z": -20
+  },
+  {
+    "angle_h": 2.4870920535630474,
+    "angle_v": 1.604825666571711,
+    "file_frame": "file_num138_frame_646",
+    "map": "de_mirage",
+    "x": 728,
+    "y": 381,
+    "z": -20
+  },
+  {
+    "angle_h": 4.837030778354796,
+    "angle_v": 1.5390679581999105,
+    "file_frame": "file_num166_frame_72",
+    "map": "de_mirage",
+    "x": 498,
+    "y": 736,
+    "z": -23
+  },
+  {
+    "angle_h": 4.212832690475408,
+    "angle_v": 1.5991211755167614,
+    "file_frame": "file_num209_frame_288",
+    "map": "de_mirage",
+    "x": 466,
+    "y": 457,
+    "z": -39
+  },
+  {
+    "angle_h": 5.913999274745172,
+    "angle_v": 1.536167775772814,
+    "file_frame": "file_num20_frame_273",
+    "map": "de_mirage",
+    "x": 383,
+    "y": 535,
+    "z": -24
+  },
+  {
+    "angle_h": 4.161108775783889,
+    "angle_v": 1.5379174726089961,
+    "file_frame": "file_num98_frame_485",
+    "map": "de_mirage",
+    "x": 616,
+    "y": 427,
+    "z": -20
+  },
+  {
+    "angle_h": 3.124221386431424,
+    "angle_v": 1.5888743969065724,
+    "file_frame": "file_num186_frame_926",
+    "map": "de_mirage",
+    "x": 509,
+    "y": 227,
+    "z": -3
+  },
+  {
+    "angle_h": 0.7219115988032674,
+    "angle_v": 1.5857467805223835,
+    "file_frame": "file_num166_frame_294",
+    "map": "de_mirage",
+    "x": 614,
+    "y": 429,
+    "z": -20
+  },
+  {
+    "angle_h": 4.886351989110846,
+    "angle_v": 1.545096289643414,
+    "file_frame": "file_num200_frame_925",
+    "map": "de_mirage",
+    "x": 873,
+    "y": 496,
+    "z": -36
+  },
+  {
+    "angle_h": 5.277942663163879,
+    "angle_v": 1.5916249096804063,
+    "file_frame": "file_num200_frame_280",
+    "map": "de_mirage",
+    "x": 706,
+    "y": 306,
+    "z": -38
+  },
+  {
+    "angle_h": 0.6782591927435605,
+    "angle_v": 1.5993368915650579,
+    "file_frame": "file_num126_frame_442",
+    "map": "de_mirage",
+    "x": 440,
+    "y": 305,
+    "z": -21
+  },
+  {
+    "angle_h": 4.764424484923748,
+    "angle_v": 1.5405361589088713,
+    "file_frame": "file_num209_frame_201",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 585,
+    "z": -20
+  },
+  {
+    "angle_h": 5.043135478277119,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num112_frame_662",
+    "map": "de_mirage",
+    "x": 429,
+    "y": 799,
+    "z": -20
+  },
+  {
+    "angle_h": 2.5354545263266686,
+    "angle_v": 1.6011044315805434,
+    "file_frame": "file_num25_frame_738",
+    "map": "de_mirage",
+    "x": 482,
+    "y": 473,
+    "z": -40
+  },
+  {
+    "angle_h": 1.594237470709774,
+    "angle_v": 1.5391638319991532,
+    "file_frame": "file_num138_frame_191",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 0.9492404941910306,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num126_frame_135",
+    "map": "de_mirage",
+    "x": 684,
+    "y": 451,
+    "z": -19
+  },
+  {
+    "angle_h": 4.902230820794334,
+    "angle_v": 1.5798923534980622,
+    "file_frame": "file_num186_frame_647",
+    "map": "de_mirage",
+    "x": 507,
+    "y": 685,
+    "z": -23
+  },
+  {
+    "angle_h": 3.0266040156228966,
+    "angle_v": 1.5829003939493067,
+    "file_frame": "file_num126_frame_467",
+    "map": "de_mirage",
+    "x": 467,
+    "y": 315,
+    "z": -21
+  },
+  {
+    "angle_h": 4.431886212249914,
+    "angle_v": 1.5404101913893105,
+    "file_frame": "file_num133_frame_260",
+    "map": "de_mirage",
+    "x": 608,
+    "y": 450,
+    "z": -25
+  },
+  {
+    "angle_h": 4.469906032604103,
+    "angle_v": 1.5906302190132617,
+    "file_frame": "file_num152_frame_399",
+    "map": "de_mirage",
+    "x": 906,
+    "y": 383,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3794382156186156,
+    "angle_v": 1.581666018784055,
+    "file_frame": "file_num25_frame_774",
+    "map": "de_mirage",
+    "x": 518,
+    "y": 606,
+    "z": -20
+  },
+  {
+    "angle_h": 1.365105082631809,
+    "angle_v": 1.5532572804878526,
+    "file_frame": "file_num36_frame_429",
+    "map": "de_mirage",
+    "x": 718,
+    "y": 347,
+    "z": -27
+  },
+  {
+    "angle_h": 6.017513150523243,
+    "angle_v": 1.5381331886572926,
+    "file_frame": "file_num88_frame_232",
+    "map": "de_mirage",
+    "x": 709,
+    "y": 649,
+    "z": -22
+  },
+  {
+    "angle_h": 4.218878598782106,
+    "angle_v": 1.541536708530414,
+    "file_frame": "file_num112_frame_887",
+    "map": "de_mirage",
+    "x": 469,
+    "y": 456,
+    "z": -39
+  },
+  {
+    "angle_h": 0.9325524610103216,
+    "angle_v": 1.6047777296720898,
+    "file_frame": "file_num126_frame_115",
+    "map": "de_mirage",
+    "x": 687,
+    "y": 461,
+    "z": -20
+  },
+  {
+    "angle_h": 0.9849774528588039,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num126_frame_125",
+    "map": "de_mirage",
+    "x": 682,
+    "y": 450,
+    "z": -7
+  },
+  {
+    "angle_h": 1.4559095547396959,
+    "angle_v": 1.5954598616501203,
+    "file_frame": "file_num133_frame_720",
+    "map": "de_mirage",
+    "x": 608,
+    "y": 751,
+    "z": -20
+  },
+  {
+    "angle_h": 1.969505497283657,
+    "angle_v": 1.5695499674047395,
+    "file_frame": "file_num166_frame_319",
+    "map": "de_mirage",
+    "x": 653,
+    "y": 486,
+    "z": -25
+  },
+  {
+    "angle_h": 4.792599131360132,
+    "angle_v": 1.5546714190266846,
+    "file_frame": "file_num219_frame_788",
+    "map": "de_mirage",
+    "x": 267,
+    "y": 431,
+    "z": -20
+  },
+  {
+    "angle_h": 0.1445957987536342,
+    "angle_v": 1.5365033340701642,
+    "file_frame": "file_num186_frame_726",
+    "map": "de_mirage",
+    "x": 628,
+    "y": 459,
+    "z": -22
+  },
+  {
+    "angle_h": 3.8575361083901933,
+    "angle_v": 1.536191744222625,
+    "file_frame": "file_num36_frame_182",
+    "map": "de_mirage",
+    "x": 812,
+    "y": 223,
+    "z": -29
+  },
+  {
+    "angle_h": 4.870916307432746,
+    "angle_v": 1.603980645557829,
+    "file_frame": "file_num112_frame_405",
+    "map": "de_mirage",
+    "x": 524,
+    "y": 561,
+    "z": -22
+  },
+  {
+    "angle_h": 4.103206859995605,
+    "angle_v": 1.5489490847924314,
+    "file_frame": "file_num219_frame_703",
+    "map": "de_mirage",
+    "x": 417,
+    "y": 605,
+    "z": -20
+  },
+  {
+    "angle_h": 1.1174510749626154,
+    "angle_v": 1.6056105001449574,
+    "file_frame": "file_num205_frame_641",
+    "map": "de_mirage",
+    "x": 512,
+    "y": 442,
+    "z": -11
+  },
+  {
+    "angle_h": 1.698446298374302,
+    "angle_v": 1.5911034627389686,
+    "file_frame": "file_num88_frame_66",
+    "map": "de_mirage",
+    "x": 516,
+    "y": 575,
+    "z": -21
+  },
+  {
+    "angle_h": 2.1226219467869454,
+    "angle_v": 1.5976947864369149,
+    "file_frame": "file_num138_frame_984",
+    "map": "de_mirage",
+    "x": 884,
+    "y": 489,
+    "z": -24
+  },
+  {
+    "angle_h": 0.07865859332436236,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num20_frame_268",
+    "map": "de_mirage",
+    "x": 375,
+    "y": 536,
+    "z": -24
+  },
+  {
+    "angle_h": 0.013680125887519032,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_586",
+    "map": "de_mirage",
+    "x": 547,
+    "y": 458,
+    "z": -42
+  },
+  {
+    "angle_h": 5.43449845205695,
+    "angle_v": 1.5941775495852473,
+    "file_frame": "file_num209_frame_0",
+    "map": "de_mirage",
+    "x": 348,
+    "y": 560,
+    "z": -25
+  },
+  {
+    "angle_h": 1.4950799938428538,
+    "angle_v": 1.5941775495852473,
+    "file_frame": "file_num98_frame_887",
+    "map": "de_mirage",
+    "x": 522,
+    "y": 577,
+    "z": -21
+  },
+  {
+    "angle_h": 3.9190993380451182,
+    "angle_v": 1.5808449662199835,
+    "file_frame": "file_num219_frame_377",
+    "map": "de_mirage",
+    "x": 441,
+    "y": 619,
+    "z": -20
+  },
+  {
+    "angle_h": 2.4414862188437674,
+    "angle_v": 1.605257098668304,
+    "file_frame": "file_num186_frame_297",
+    "map": "de_mirage",
+    "x": 296,
+    "y": 723,
+    "z": -40
+  },
+  {
+    "angle_h": 3.1185531143672995,
+    "angle_v": 1.5945610447822187,
+    "file_frame": "file_num153_frame_583",
+    "map": "de_mirage",
+    "x": 519,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 0.4676905022020474,
+    "angle_v": 1.57938289078153,
+    "file_frame": "file_num166_frame_599",
+    "map": "de_mirage",
+    "x": 436,
+    "y": 313,
+    "z": -21
+  },
+  {
+    "angle_h": 4.389353931744694,
+    "angle_v": 1.5421660134959998,
+    "file_frame": "file_num219_frame_432",
+    "map": "de_mirage",
+    "x": 335,
+    "y": 520,
+    "z": -23
+  },
+  {
+    "angle_h": 5.796607666526697,
+    "angle_v": 1.5403382860398782,
+    "file_frame": "file_num153_frame_418",
+    "map": "de_mirage",
+    "x": 193,
+    "y": 297,
+    "z": -12
+  },
+  {
+    "angle_h": 5.306998283288861,
+    "angle_v": 1.5837334307382835,
+    "file_frame": "file_num48_frame_466",
+    "map": "de_mirage",
+    "x": 319,
+    "y": 601,
+    "z": -39
+  },
+  {
+    "angle_h": 1.912754200244341,
+    "angle_v": 1.6015180204978328,
+    "file_frame": "file_num138_frame_974",
+    "map": "de_mirage",
+    "x": 894,
+    "y": 462,
+    "z": -20
+  },
+  {
+    "angle_h": 3.135037282566563,
+    "angle_v": 1.6036690557102897,
+    "file_frame": "file_num78_frame_907",
+    "map": "de_mirage",
+    "x": 520,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 1.1089962042918864,
+    "angle_v": 1.5724861025065517,
+    "file_frame": "file_num138_frame_130",
+    "map": "de_mirage",
+    "x": 475,
+    "y": 311,
+    "z": -21
+  },
+  {
+    "angle_h": 1.4876018375019113,
+    "angle_v": 1.591517051656258,
+    "file_frame": "file_num166_frame_799",
+    "map": "de_mirage",
+    "x": 564,
+    "y": 439,
+    "z": -20
+  },
+  {
+    "angle_h": 6.0892507208067075,
+    "angle_v": 1.5553366766669865,
+    "file_frame": "file_num200_frame_40",
+    "map": "de_mirage",
+    "x": 422,
+    "y": 474,
+    "z": -10
+  },
+  {
+    "angle_h": 3.862150301294864,
+    "angle_v": 1.5361438073230034,
+    "file_frame": "file_num138_frame_501",
+    "map": "de_mirage",
+    "x": 596,
+    "y": 735,
+    "z": -20
+  },
+  {
+    "angle_h": 6.266695013709816,
+    "angle_v": 1.5868610471224724,
+    "file_frame": "file_num25_frame_65",
+    "map": "de_mirage",
+    "x": 422,
+    "y": 470,
+    "z": -14
+  },
+  {
+    "angle_h": 4.770189163419333,
+    "angle_v": 1.59974435521184,
+    "file_frame": "file_num54_frame_35",
+    "map": "de_mirage",
+    "x": 523,
+    "y": 562,
+    "z": -24
+  },
+  {
+    "angle_h": 6.0507813588605135,
+    "angle_v": 1.546276602638537,
+    "file_frame": "file_num152_frame_178",
+    "map": "de_mirage",
+    "x": 726,
+    "y": 253,
+    "z": -40
+  },
+  {
+    "angle_h": 0.11497665374199095,
+    "angle_v": 1.6045976999824,
+    "file_frame": "file_num152_frame_85",
+    "map": "de_mirage",
+    "x": 553,
+    "y": 420,
+    "z": -20
+  },
+  {
+    "angle_h": 1.7803764519397722,
+    "angle_v": 1.6040107392781469,
+    "file_frame": "file_num138_frame_964",
+    "map": "de_mirage",
+    "x": 903,
+    "y": 427,
+    "z": -20
+  },
+  {
+    "angle_h": 3.541602112480785,
+    "angle_v": 1.583385621899919,
+    "file_frame": "file_num25_frame_985",
+    "map": "de_mirage",
+    "x": 298,
+    "y": 457,
+    "z": -12
+  },
+  {
+    "angle_h": 0.6065157635056979,
+    "angle_v": 1.5456893756181744,
+    "file_frame": "file_num112_frame_10",
+    "map": "de_mirage",
+    "x": 513,
+    "y": 647,
+    "z": -20
+  },
+  {
+    "angle_h": 5.515481718696843,
+    "angle_v": 1.552963800135726,
+    "file_frame": "file_num186_frame_402",
+    "map": "de_mirage",
+    "x": 387,
+    "y": 534,
+    "z": -20
+  },
+  {
+    "angle_h": 1.5771539581071883,
+    "angle_v": 1.5595252964294632,
+    "file_frame": "file_num48_frame_435",
+    "map": "de_mirage",
+    "x": 320,
+    "y": 559,
+    "z": -32
+  },
+  {
+    "angle_h": 1.2953089567830123,
+    "angle_v": 1.6042621416850502,
+    "file_frame": "file_num25_frame_126",
+    "map": "de_mirage",
+    "x": 519,
+    "y": 604,
+    "z": -20
+  },
+  {
+    "angle_h": 5.733121368248625,
+    "angle_v": 1.6055085010752073,
+    "file_frame": "file_num153_frame_257",
+    "map": "de_mirage",
+    "x": 265,
+    "y": 409,
+    "z": -20
+  },
+  {
+    "angle_h": 3.09728697411469,
+    "angle_v": 1.5752664426845946,
+    "file_frame": "file_num153_frame_613",
+    "map": "de_mirage",
+    "x": 523,
+    "y": 441,
+    "z": -20
+  },
+  {
+    "angle_h": 3.0275688788858326,
+    "angle_v": 1.6055804064246395,
+    "file_frame": "file_num186_frame_15",
+    "map": "de_mirage",
+    "x": 523,
+    "y": 615,
+    "z": -20
+  },
+  {
+    "angle_h": 0.5796109122770634,
+    "angle_v": 1.5744515153910303,
+    "file_frame": "file_num133_frame_10",
+    "map": "de_mirage",
+    "x": 368,
+    "y": 532,
+    "z": -24
+  },
+  {
+    "angle_h": 3.135978177379688,
+    "angle_v": 1.6056824054943895,
+    "file_frame": "file_num78_frame_892",
+    "map": "de_mirage",
+    "x": 509,
+    "y": 430,
+    "z": -12
+  },
+  {
+    "angle_h": 0.18104568564522172,
+    "angle_v": 1.573462683678284,
+    "file_frame": "file_num209_frame_818",
+    "map": "de_mirage",
+    "x": 686,
+    "y": 471,
+    "z": -19
+  },
+  {
+    "angle_h": 0.6264335452984006,
+    "angle_v": 1.5540303961523028,
+    "file_frame": "file_num25_frame_611",
+    "map": "de_mirage",
+    "x": 552,
+    "y": 748,
+    "z": -23
+  },
+  {
+    "angle_h": 6.211603531819891,
+    "angle_v": 1.5637075246053236,
+    "file_frame": "file_num186_frame_956",
+    "map": "de_mirage",
+    "x": 454,
+    "y": 235,
+    "z": 0
+  },
+  {
+    "angle_h": 2.896365584621989,
+    "angle_v": 1.5576975689733419,
+    "file_frame": "file_num166_frame_334",
+    "map": "de_mirage",
+    "x": 641,
+    "y": 513,
+    "z": -20
+  },
+  {
+    "angle_h": 5.5123178833218285,
+    "angle_v": 1.5369888283368858,
+    "file_frame": "file_num138_frame_812",
+    "map": "de_mirage",
+    "x": 612,
+    "y": 219,
+    "z": -1
+  },
+  {
+    "angle_h": 3.1660825503419434,
+    "angle_v": 1.552999752810442,
+    "file_frame": "file_num186_frame_781",
+    "map": "de_mirage",
+    "x": 630,
+    "y": 473,
+    "z": -29
+  },
+  {
+    "angle_h": 2.9126518799522594,
+    "angle_v": 1.5525382269935313,
+    "file_frame": "file_num54_frame_480",
+    "map": "de_mirage",
+    "x": 615,
+    "y": 729,
+    "z": -9
+  },
+  {
+    "angle_h": 0.02228479936956505,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num209_frame_643",
+    "map": "de_mirage",
+    "x": 681,
+    "y": 456,
+    "z": -20
+  },
+  {
+    "angle_h": 3.938932963947375,
+    "angle_v": 1.6056824054943895,
+    "file_frame": "file_num133_frame_976",
+    "map": "de_mirage",
+    "x": 210,
+    "y": 203,
+    "z": -13
+  },
+  {
+    "angle_h": 3.2407144440981064,
+    "angle_v": 1.5762909607559479,
+    "file_frame": "file_num152_frame_889",
+    "map": "de_mirage",
+    "x": 514,
+    "y": 459,
+    "z": -20
+  },
+  {
+    "angle_h": 1.4934860919304414,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num15_frame_30",
+    "map": "de_mirage",
+    "x": 410,
+    "y": 518,
+    "z": -20
+  },
+  {
+    "angle_h": 4.805925589454889,
+    "angle_v": 1.5866336131653798,
+    "file_frame": "file_num78_frame_561",
+    "map": "de_mirage",
+    "x": 218,
+    "y": 196,
+    "z": -13
+  },
+  {
+    "angle_h": 5.207613106148739,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_963",
+    "map": "de_mirage",
+    "x": 773,
+    "y": 642,
+    "z": -39
+  },
+  {
+    "angle_h": 5.965345553194117,
+    "angle_v": 1.5361198388731927,
+    "file_frame": "file_num48_frame_666",
+    "map": "de_mirage",
+    "x": 195,
+    "y": 360,
+    "z": -20
+  },
+  {
+    "angle_h": 3.0517589036992403,
+    "angle_v": 1.5740560359691536,
+    "file_frame": "file_num78_frame_822",
+    "map": "de_mirage",
+    "x": 517,
+    "y": 440,
+    "z": -20
+  },
+  {
+    "angle_h": 1.3332510128333712,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num4_frame_536",
+    "map": "de_mirage",
+    "x": 443,
+    "y": 394,
+    "z": -60
+  },
+  {
+    "angle_h": 3.111943681173941,
+    "angle_v": 1.541836580469157,
+    "file_frame": "file_num48_frame_116",
+    "map": "de_mirage",
+    "x": 701,
+    "y": 186,
+    "z": -14
+  }
+]

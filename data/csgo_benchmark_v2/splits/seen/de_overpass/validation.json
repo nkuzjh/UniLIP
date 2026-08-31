@@ -1,0 +1,4502 @@
+[
+  {
+    "angle_h": 0.7553598368302266,
+    "angle_v": 1.5376000238070588,
+    "file_frame": "file_num56_frame_756",
+    "map": "de_overpass",
+    "x": 383,
+    "y": 521,
+    "z": 96
+  },
+  {
+    "angle_h": 1.2760143546853884,
+    "angle_v": 1.5602502088781827,
+    "file_frame": "file_num131_frame_130",
+    "map": "de_overpass",
+    "x": 426,
+    "y": 44,
+    "z": 86
+  },
+  {
+    "angle_h": 4.576236467551043,
+    "angle_v": 1.5379595505542196,
+    "file_frame": "file_num306_frame_570",
+    "map": "de_overpass",
+    "x": 454,
+    "y": 802,
+    "z": 105
+  },
+  {
+    "angle_h": 3.7348235043137397,
+    "angle_v": 1.5968620159640472,
+    "file_frame": "file_num179_frame_783",
+    "map": "de_overpass",
+    "x": 325,
+    "y": 516,
+    "z": 106
+  },
+  {
+    "angle_h": 5.361250869435411,
+    "angle_v": 1.6051010374284251,
+    "file_frame": "file_num53_frame_438",
+    "map": "de_overpass",
+    "x": 546,
+    "y": 586,
+    "z": 64
+  },
+  {
+    "angle_h": 6.239053532123665,
+    "angle_v": 1.5771058880495121,
+    "file_frame": "file_num154_frame_65",
+    "map": "de_overpass",
+    "x": 467,
+    "y": 755,
+    "z": 103
+  },
+  {
+    "angle_h": 3.580946056528961,
+    "angle_v": 1.5416866444997854,
+    "file_frame": "file_num275_frame_718",
+    "map": "de_overpass",
+    "x": 715,
+    "y": 293,
+    "z": 32
+  },
+  {
+    "angle_h": 1.384699290352067,
+    "angle_v": 1.5467559716347512,
+    "file_frame": "file_num288_frame_260",
+    "map": "de_overpass",
+    "x": 391,
+    "y": 603,
+    "z": 96
+  },
+  {
+    "angle_h": 5.891349089674048,
+    "angle_v": 1.5377976303599425,
+    "file_frame": "file_num53_frame_232",
+    "map": "de_overpass",
+    "x": 427,
+    "y": 615,
+    "z": 96
+  },
+  {
+    "angle_h": 1.525585838339439,
+    "angle_v": 1.5510164967466602,
+    "file_frame": "file_num16_frame_300",
+    "map": "de_overpass",
+    "x": 463,
+    "y": 186,
+    "z": 103
+  },
+  {
+    "angle_h": 4.704730794354058,
+    "angle_v": 1.5363656486418071,
+    "file_frame": "file_num211_frame_45",
+    "map": "de_overpass",
+    "x": 864,
+    "y": 296,
+    "z": 14
+  },
+  {
+    "angle_h": 5.0518301666040095,
+    "angle_v": 1.6052331302184932,
+    "file_frame": "file_num275_frame_893",
+    "map": "de_overpass",
+    "x": 554,
+    "y": 233,
+    "z": 33
+  },
+  {
+    "angle_h": 4.2997598663522485,
+    "angle_v": 1.5452219908468656,
+    "file_frame": "file_num263_frame_930",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 729,
+    "z": 77
+  },
+  {
+    "angle_h": 4.172086325797196,
+    "angle_v": 1.604927399325352,
+    "file_frame": "file_num101_frame_311",
+    "map": "de_overpass",
+    "x": 582,
+    "y": 144,
+    "z": 57
+  },
+  {
+    "angle_h": 2.437878967147255,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num120_frame_120",
+    "map": "de_overpass",
+    "x": 870,
+    "y": 741,
+    "z": 40
+  },
+  {
+    "angle_h": 3.7520632113142582,
+    "angle_v": 1.5763868345551908,
+    "file_frame": "file_num70_frame_741",
+    "map": "de_overpass",
+    "x": 787,
+    "y": 334,
+    "z": 22
+  },
+  {
+    "angle_h": 3.2594455213090696,
+    "angle_v": 1.5666199575734343,
+    "file_frame": "file_num169_frame_516",
+    "map": "de_overpass",
+    "x": 685,
+    "y": 748,
+    "z": 77
+  },
+  {
+    "angle_h": 5.4377040990610785,
+    "angle_v": 1.5715334897846305,
+    "file_frame": "file_num131_frame_927",
+    "map": "de_overpass",
+    "x": 596,
+    "y": 513,
+    "z": 31
+  },
+  {
+    "angle_h": 4.349428885946662,
+    "angle_v": 1.5651277884146628,
+    "file_frame": "file_num217_frame_220",
+    "map": "de_overpass",
+    "x": 458,
+    "y": 149,
+    "z": 105
+  },
+  {
+    "angle_h": 3.9243782559578735,
+    "angle_v": 1.5475469304785048,
+    "file_frame": "file_num154_frame_491",
+    "map": "de_overpass",
+    "x": 297,
+    "y": 769,
+    "z": 103
+  },
+  {
+    "angle_h": 2.344126375712651,
+    "angle_v": 1.5539465065779652,
+    "file_frame": "file_num17_frame_735",
+    "map": "de_overpass",
+    "x": 460,
+    "y": 605,
+    "z": 96
+  },
+  {
+    "angle_h": 3.7004889662760023,
+    "angle_v": 1.5883412320563386,
+    "file_frame": "file_num173_frame_91",
+    "map": "de_overpass",
+    "x": 830,
+    "y": 370,
+    "z": 14
+  },
+  {
+    "angle_h": 1.1151021668811656,
+    "angle_v": 1.590138865792142,
+    "file_frame": "file_num16_frame_885",
+    "map": "de_overpass",
+    "x": 175,
+    "y": 585,
+    "z": 112
+  },
+  {
+    "angle_h": 6.117341743984864,
+    "angle_v": 1.5608494201234506,
+    "file_frame": "file_num3_frame_414",
+    "map": "de_overpass",
+    "x": 676,
+    "y": 768,
+    "z": 77
+  },
+  {
+    "angle_h": 6.2622427409994215,
+    "angle_v": 1.5658947788086057,
+    "file_frame": "file_num120_frame_790",
+    "map": "de_overpass",
+    "x": 681,
+    "y": 291,
+    "z": 15
+  },
+  {
+    "angle_h": 5.087926652018943,
+    "angle_v": 1.6026623808182396,
+    "file_frame": "file_num269_frame_710",
+    "map": "de_overpass",
+    "x": 833,
+    "y": 402,
+    "z": 15
+  },
+  {
+    "angle_h": 2.100888554921081,
+    "angle_v": 1.5562416188053956,
+    "file_frame": "file_num179_frame_838",
+    "map": "de_overpass",
+    "x": 228,
+    "y": 568,
+    "z": 106
+  },
+  {
+    "angle_h": 2.2283347946770955,
+    "angle_v": 1.5612808522200434,
+    "file_frame": "file_num131_frame_755",
+    "map": "de_overpass",
+    "x": 460,
+    "y": 803,
+    "z": 105
+  },
+  {
+    "angle_h": 6.063909944086277,
+    "angle_v": 1.584692168730712,
+    "file_frame": "file_num288_frame_621",
+    "map": "de_overpass",
+    "x": 621,
+    "y": 472,
+    "z": 31
+  },
+  {
+    "angle_h": 2.079850248099728,
+    "angle_v": 1.6056224843698628,
+    "file_frame": "file_num53_frame_841",
+    "map": "de_overpass",
+    "x": 546,
+    "y": 104,
+    "z": 80
+  },
+  {
+    "angle_h": 1.6568250852779987,
+    "angle_v": 1.6016975175553039,
+    "file_frame": "file_num173_frame_976",
+    "map": "de_overpass",
+    "x": 820,
+    "y": 600,
+    "z": 39
+  },
+  {
+    "angle_h": 2.3489261909453005,
+    "angle_v": 1.605358831421945,
+    "file_frame": "file_num216_frame_521",
+    "map": "de_overpass",
+    "x": 784,
+    "y": 872,
+    "z": 53
+  },
+  {
+    "angle_h": 6.137343149035795,
+    "angle_v": 1.5468278769841834,
+    "file_frame": "file_num53_frame_303",
+    "map": "de_overpass",
+    "x": 446,
+    "y": 501,
+    "z": 96
+  },
+  {
+    "angle_h": 3.234758018004035,
+    "angle_v": 1.5998700564152917,
+    "file_frame": "file_num120_frame_294",
+    "map": "de_overpass",
+    "x": 329,
+    "y": 764,
+    "z": 103
+  },
+  {
+    "angle_h": 2.0792510368544597,
+    "angle_v": 1.594644934356556,
+    "file_frame": "file_num271_frame_501",
+    "map": "de_overpass",
+    "x": 238,
+    "y": 505,
+    "z": 107
+  },
+  {
+    "angle_h": 4.386693966447924,
+    "angle_v": 1.6053769409173575,
+    "file_frame": "file_num179_frame_743",
+    "map": "de_overpass",
+    "x": 408,
+    "y": 581,
+    "z": 96
+  },
+  {
+    "angle_h": 4.438753439436792,
+    "angle_v": 1.5971855900364917,
+    "file_frame": "file_num275_frame_553",
+    "map": "de_overpass",
+    "x": 822,
+    "y": 416,
+    "z": 15
+  },
+  {
+    "angle_h": 5.321523163874153,
+    "angle_v": 1.568087891966286,
+    "file_frame": "file_num263_frame_127",
+    "map": "de_overpass",
+    "x": 561,
+    "y": 569,
+    "z": 59
+  },
+  {
+    "angle_h": 5.085595853432905,
+    "angle_v": 1.6044360461042324,
+    "file_frame": "file_num269_frame_965",
+    "map": "de_overpass",
+    "x": 867,
+    "y": 288,
+    "z": 11
+  },
+  {
+    "angle_h": 3.978834573927814,
+    "angle_v": 1.5368090649633053,
+    "file_frame": "file_num101_frame_136",
+    "map": "de_overpass",
+    "x": 553,
+    "y": 140,
+    "z": 105
+  },
+  {
+    "angle_h": 5.447453399179641,
+    "angle_v": 1.581534192310096,
+    "file_frame": "file_num35_frame_969",
+    "map": "de_overpass",
+    "x": 219,
+    "y": 402,
+    "z": 111
+  },
+  {
+    "angle_h": 5.024733834092998,
+    "angle_v": 1.6051431153736484,
+    "file_frame": "file_num154_frame_591",
+    "map": "de_overpass",
+    "x": 176,
+    "y": 586,
+    "z": 111
+  },
+  {
+    "angle_h": 3.996601054191951,
+    "angle_v": 1.5993368915650579,
+    "file_frame": "file_num17_frame_645",
+    "map": "de_overpass",
+    "x": 584,
+    "y": 575,
+    "z": 31
+  },
+  {
+    "angle_h": 3.308167520819851,
+    "angle_v": 1.5524546037353029,
+    "file_frame": "file_num263_frame_900",
+    "map": "de_overpass",
+    "x": 683,
+    "y": 750,
+    "z": 77
+  },
+  {
+    "angle_h": 5.064880987525942,
+    "angle_v": 1.5959690580505435,
+    "file_frame": "file_num14_frame_145",
+    "map": "de_overpass",
+    "x": 423,
+    "y": 579,
+    "z": 96
+  },
+  {
+    "angle_h": 4.94626725468323,
+    "angle_v": 1.5396432009953676,
+    "file_frame": "file_num211_frame_15",
+    "map": "de_overpass",
+    "x": 830,
+    "y": 401,
+    "z": 15
+  },
+  {
+    "angle_h": 3.684843427504005,
+    "angle_v": 1.5816780030089603,
+    "file_frame": "file_num211_frame_440",
+    "map": "de_overpass",
+    "x": 723,
+    "y": 521,
+    "z": 14
+  },
+  {
+    "angle_h": 1.4658804298609525,
+    "angle_v": 1.5715393487390286,
+    "file_frame": "file_num42_frame_225",
+    "map": "de_overpass",
+    "x": 607,
+    "y": 708,
+    "z": 31
+  },
+  {
+    "angle_h": 0.938748305286391,
+    "angle_v": 1.6052927850269108,
+    "file_frame": "file_num17_frame_206",
+    "map": "de_overpass",
+    "x": 249,
+    "y": 699,
+    "z": 109
+  },
+  {
+    "angle_h": 5.3285517786230905,
+    "angle_v": 1.570472752722452,
+    "file_frame": "file_num169_frame_571",
+    "map": "de_overpass",
+    "x": 612,
+    "y": 719,
+    "z": 31
+  },
+  {
+    "angle_h": 3.7263866099803686,
+    "angle_v": 1.570179006054216,
+    "file_frame": "file_num275_frame_823",
+    "map": "de_overpass",
+    "x": 599,
+    "y": 364,
+    "z": 37
+  },
+  {
+    "angle_h": 5.9846582647871545,
+    "angle_v": 1.5370487494614125,
+    "file_frame": "file_num53_frame_237",
+    "map": "de_overpass",
+    "x": 440,
+    "y": 609,
+    "z": 96
+  },
+  {
+    "angle_h": 1.715380008165571,
+    "angle_v": 1.5629884711110023,
+    "file_frame": "file_num120_frame_966",
+    "map": "de_overpass",
+    "x": 826,
+    "y": 746,
+    "z": 40
+  },
+  {
+    "angle_h": 1.8704618705533376,
+    "angle_v": 1.6047415106812644,
+    "file_frame": "file_num169_frame_306",
+    "map": "de_overpass",
+    "x": 440,
+    "y": 593,
+    "z": 96
+  },
+  {
+    "angle_h": 1.5565231149326169,
+    "angle_v": 1.5504950498052226,
+    "file_frame": "file_num263_frame_263",
+    "map": "de_overpass",
+    "x": 795,
+    "y": 606,
+    "z": 40
+  },
+  {
+    "angle_h": 2.5911513447323675,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num68_frame_846",
+    "map": "de_overpass",
+    "x": 547,
+    "y": 126,
+    "z": 80
+  },
+  {
+    "angle_h": 1.7565098680407547,
+    "angle_v": 1.5436760258340747,
+    "file_frame": "file_num120_frame_690",
+    "map": "de_overpass",
+    "x": 557,
+    "y": 262,
+    "z": 33
+  },
+  {
+    "angle_h": 5.1099296889451775,
+    "angle_v": 1.5525083995893225,
+    "file_frame": "file_num200_frame_502",
+    "map": "de_overpass",
+    "x": 792,
+    "y": 803,
+    "z": 40
+  },
+  {
+    "angle_h": 0.4530875909968159,
+    "angle_v": 1.59249363282799,
+    "file_frame": "file_num16_frame_880",
+    "map": "de_overpass",
+    "x": 176,
+    "y": 576,
+    "z": 112
+  },
+  {
+    "angle_h": 5.051230955358742,
+    "angle_v": 1.5363296959670911,
+    "file_frame": "file_num70_frame_858",
+    "map": "de_overpass",
+    "x": 530,
+    "y": 289,
+    "z": 37
+  },
+  {
+    "angle_h": 2.771915267934259,
+    "angle_v": 1.5717609237417232,
+    "file_frame": "file_num14_frame_0",
+    "map": "de_overpass",
+    "x": 677,
+    "y": 767,
+    "z": 77
+  },
+  {
+    "angle_h": 2.8564341472373407,
+    "angle_v": 1.5526463513337887,
+    "file_frame": "file_num179_frame_328",
+    "map": "de_overpass",
+    "x": 546,
+    "y": 356,
+    "z": 37
+  },
+  {
+    "angle_h": 1.0512442244729732,
+    "angle_v": 1.5533174679284887,
+    "file_frame": "file_num154_frame_817",
+    "map": "de_overpass",
+    "x": 199,
+    "y": 626,
+    "z": 107
+  },
+  {
+    "angle_h": 3.56053132887685,
+    "angle_v": 1.5364436792617466,
+    "file_frame": "file_num35_frame_678",
+    "map": "de_overpass",
+    "x": 583,
+    "y": 795,
+    "z": 89
+  },
+  {
+    "angle_h": 3.0412127857825264,
+    "angle_v": 1.5612089468706114,
+    "file_frame": "file_num217_frame_850",
+    "map": "de_overpass",
+    "x": 412,
+    "y": 519,
+    "z": 96
+  },
+  {
+    "angle_h": 4.113201703566672,
+    "angle_v": 1.556697019351799,
+    "file_frame": "file_num101_frame_201",
+    "map": "de_overpass",
+    "x": 564,
+    "y": 152,
+    "z": 105
+  },
+  {
+    "angle_h": 1.8139862106868447,
+    "angle_v": 1.566751517731284,
+    "file_frame": "file_num16_frame_330",
+    "map": "de_overpass",
+    "x": 474,
+    "y": 230,
+    "z": 105
+  },
+  {
+    "angle_h": 4.000046652010295,
+    "angle_v": 1.6103863469277966,
+    "file_frame": "file_num263_frame_960",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 723,
+    "z": 38
+  },
+  {
+    "angle_h": 6.139170876491916,
+    "angle_v": 1.5360780272440786,
+    "file_frame": "file_num173_frame_846",
+    "map": "de_overpass",
+    "x": 660,
+    "y": 291,
+    "z": 16
+  },
+  {
+    "angle_h": 1.9555139147066531,
+    "angle_v": 1.5972154174407005,
+    "file_frame": "file_num101_frame_646",
+    "map": "de_overpass",
+    "x": 562,
+    "y": 107,
+    "z": 92
+  },
+  {
+    "angle_h": 2.0962027229830866,
+    "angle_v": 1.587208855960837,
+    "file_frame": "file_num101_frame_246",
+    "map": "de_overpass",
+    "x": 548,
+    "y": 187,
+    "z": 50
+  },
+  {
+    "angle_h": 4.435445793362914,
+    "angle_v": 1.5957235145980382,
+    "file_frame": "file_num101_frame_30",
+    "map": "de_overpass",
+    "x": 498,
+    "y": 410,
+    "z": 87
+  },
+  {
+    "angle_h": 6.213113544157967,
+    "angle_v": 1.6050531005288038,
+    "file_frame": "file_num274_frame_661",
+    "map": "de_overpass",
+    "x": 679,
+    "y": 765,
+    "z": 77
+  },
+  {
+    "angle_h": 1.6170074980299516,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num17_frame_950",
+    "map": "de_overpass",
+    "x": 771,
+    "y": 889,
+    "z": 43
+  },
+  {
+    "angle_h": 4.976677092222518,
+    "angle_v": 1.5845243895820371,
+    "file_frame": "file_num211_frame_130",
+    "map": "de_overpass",
+    "x": 850,
+    "y": 295,
+    "z": 11
+  },
+  {
+    "angle_h": 0.6195964118318401,
+    "angle_v": 1.5536290577760279,
+    "file_frame": "file_num56_frame_841",
+    "map": "de_overpass",
+    "x": 481,
+    "y": 716,
+    "z": 103
+  },
+  {
+    "angle_h": 3.842400298650836,
+    "angle_v": 1.5360601840647752,
+    "file_frame": "file_num288_frame_836",
+    "map": "de_overpass",
+    "x": 390,
+    "y": 547,
+    "z": 97
+  },
+  {
+    "angle_h": 0.23018713302769087,
+    "angle_v": 1.5863158980473333,
+    "file_frame": "file_num14_frame_560",
+    "map": "de_overpass",
+    "x": 621,
+    "y": 525,
+    "z": 31
+  },
+  {
+    "angle_h": 2.100702799435048,
+    "angle_v": 1.5500215397634063,
+    "file_frame": "file_num169_frame_181",
+    "map": "de_overpass",
+    "x": 492,
+    "y": 211,
+    "z": 103
+  },
+  {
+    "angle_h": 0.045983470961853165,
+    "angle_v": 1.5887726641529314,
+    "file_frame": "file_num200_frame_347",
+    "map": "de_overpass",
+    "x": 687,
+    "y": 761,
+    "z": 77
+  },
+  {
+    "angle_h": 4.662091454773018,
+    "angle_v": 1.5839251783367694,
+    "file_frame": "file_num64_frame_720",
+    "map": "de_overpass",
+    "x": 430,
+    "y": 753,
+    "z": 103
+  },
+  {
+    "angle_h": 5.601528453517303,
+    "angle_v": 1.5361800263138288,
+    "file_frame": "file_num287_frame_583",
+    "map": "de_overpass",
+    "x": 548,
+    "y": 162,
+    "z": 105
+  },
+  {
+    "angle_h": 6.119798243774353,
+    "angle_v": 1.5489131321177154,
+    "file_frame": "file_num275_frame_433",
+    "map": "de_overpass",
+    "x": 875,
+    "y": 292,
+    "z": 10
+  },
+  {
+    "angle_h": 5.4469079837883925,
+    "angle_v": 1.5877121934068619,
+    "file_frame": "file_num154_frame_983",
+    "map": "de_overpass",
+    "x": 422,
+    "y": 588,
+    "z": 96
+  },
+  {
+    "angle_h": 5.627899873579595,
+    "angle_v": 1.589599575671401,
+    "file_frame": "file_num42_frame_976",
+    "map": "de_overpass",
+    "x": 655,
+    "y": 780,
+    "z": 77
+  },
+  {
+    "angle_h": 3.8364859505019884,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num216_frame_821",
+    "map": "de_overpass",
+    "x": 546,
+    "y": 763,
+    "z": 99
+  },
+  {
+    "angle_h": 5.352676289673682,
+    "angle_v": 1.5797605270241033,
+    "file_frame": "file_num216_frame_156",
+    "map": "de_overpass",
+    "x": 536,
+    "y": 178,
+    "z": 105
+  },
+  {
+    "angle_h": 1.0511423585612776,
+    "angle_v": 1.6055564379748286,
+    "file_frame": "file_num14_frame_874",
+    "map": "de_overpass",
+    "x": 371,
+    "y": 842,
+    "z": 104
+  },
+  {
+    "angle_h": 1.7649827150488417,
+    "angle_v": 1.5925176012778008,
+    "file_frame": "file_num12_frame_857",
+    "map": "de_overpass",
+    "x": 765,
+    "y": 817,
+    "z": 43
+  },
+  {
+    "angle_h": 0.5266049518367802,
+    "angle_v": 1.5935365267108652,
+    "file_frame": "file_num101_frame_256",
+    "map": "de_overpass",
+    "x": 527,
+    "y": 202,
+    "z": 62
+  },
+  {
+    "angle_h": 1.3474163666715027,
+    "angle_v": 1.5597766988363666,
+    "file_frame": "file_num277_frame_55",
+    "map": "de_overpass",
+    "x": 223,
+    "y": 637,
+    "z": 107
+  },
+  {
+    "angle_h": 4.262231665535288,
+    "angle_v": 1.5998700564152917,
+    "file_frame": "file_num274_frame_326",
+    "map": "de_overpass",
+    "x": 189,
+    "y": 622,
+    "z": 108
+  },
+  {
+    "angle_h": 1.7734555620569288,
+    "angle_v": 1.574780948417873,
+    "file_frame": "file_num306_frame_966",
+    "map": "de_overpass",
+    "x": 417,
+    "y": 619,
+    "z": 96
+  },
+  {
+    "angle_h": 2.762160108861299,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num288_frame_60",
+    "map": "de_overpass",
+    "x": 476,
+    "y": 593,
+    "z": 96
+  },
+  {
+    "angle_h": 1.543088798813712,
+    "angle_v": 1.5855070960242763,
+    "file_frame": "file_num274_frame_10",
+    "map": "de_overpass",
+    "x": 610,
+    "y": 738,
+    "z": 77
+  },
+  {
+    "angle_h": 0.9258472871757746,
+    "angle_v": 1.5526463513337887,
+    "file_frame": "file_num288_frame_270",
+    "map": "de_overpass",
+    "x": 414,
+    "y": 633,
+    "z": 96
+  },
+  {
+    "angle_h": 2.5469173042905875,
+    "angle_v": 1.5586203542910544,
+    "file_frame": "file_num3_frame_20",
+    "map": "de_overpass",
+    "x": 536,
+    "y": 193,
+    "z": 104
+  },
+  {
+    "angle_h": 4.919338435004786,
+    "angle_v": 1.5791373473290247,
+    "file_frame": "file_num42_frame_833",
+    "map": "de_overpass",
+    "x": 457,
+    "y": 823,
+    "z": 102
+  },
+  {
+    "angle_h": 6.223719583199207,
+    "angle_v": 1.5436280889344531,
+    "file_frame": "file_num287_frame_307",
+    "map": "de_overpass",
+    "x": 432,
+    "y": 750,
+    "z": 103
+  },
+  {
+    "angle_h": 5.436727517889346,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num263_frame_740",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 748,
+    "z": 59
+  },
+  {
+    "angle_h": 1.2099573070070628,
+    "angle_v": 1.5372346381055,
+    "file_frame": "file_num169_frame_767",
+    "map": "de_overpass",
+    "x": 590,
+    "y": 677,
+    "z": 31
+  },
+  {
+    "angle_h": 5.24449442513692,
+    "angle_v": 1.6056405938652754,
+    "file_frame": "file_num306_frame_720",
+    "map": "de_overpass",
+    "x": 553,
+    "y": 589,
+    "z": 60
+  },
+  {
+    "angle_h": 3.1627807632224636,
+    "angle_v": 1.5507227500784242,
+    "file_frame": "file_num14_frame_745",
+    "map": "de_overpass",
+    "x": 535,
+    "y": 588,
+    "z": 70
+  },
+  {
+    "angle_h": 5.791292795939226,
+    "angle_v": 1.564157066197329,
+    "file_frame": "file_num120_frame_60",
+    "map": "de_overpass",
+    "x": 852,
+    "y": 753,
+    "z": 51
+  },
+  {
+    "angle_h": 1.7361007330269325,
+    "angle_v": 1.5363355549214892,
+    "file_frame": "file_num131_frame_700",
+    "map": "de_overpass",
+    "x": 369,
+    "y": 764,
+    "z": 103
+  },
+  {
+    "angle_h": 3.5644259356549823,
+    "angle_v": 1.5504950498052226,
+    "file_frame": "file_num53_frame_700",
+    "map": "de_overpass",
+    "x": 657,
+    "y": 391,
+    "z": 36
+  },
+  {
+    "angle_h": 4.422340910270852,
+    "angle_v": 1.5811448381587265,
+    "file_frame": "file_num277_frame_526",
+    "map": "de_overpass",
+    "x": 436,
+    "y": 685,
+    "z": 103
+  },
+  {
+    "angle_h": 0.9631242187438862,
+    "angle_v": 1.535958184995025,
+    "file_frame": "file_num287_frame_593",
+    "map": "de_overpass",
+    "x": 570,
+    "y": 137,
+    "z": 105
+  },
+  {
+    "angle_h": 1.9418578904269994,
+    "angle_v": 1.5379595505542196,
+    "file_frame": "file_num35_frame_321",
+    "map": "de_overpass",
+    "x": 823,
+    "y": 730,
+    "z": 40
+  },
+  {
+    "angle_h": 5.012887294615998,
+    "angle_v": 1.554779543366942,
+    "file_frame": "file_num306_frame_610",
+    "map": "de_overpass",
+    "x": 341,
+    "y": 810,
+    "z": 103
+  },
+  {
+    "angle_h": 4.1246527636217944,
+    "angle_v": 1.5370546084158105,
+    "file_frame": "file_num277_frame_917",
+    "map": "de_overpass",
+    "x": 787,
+    "y": 801,
+    "z": 40
+  },
+  {
+    "angle_h": 0.867226451051223,
+    "angle_v": 1.599516388622529,
+    "file_frame": "file_num169_frame_321",
+    "map": "de_overpass",
+    "x": 414,
+    "y": 647,
+    "z": 97
+  },
+  {
+    "angle_h": 2.466131910519688,
+    "angle_v": 1.5516335511712314,
+    "file_frame": "file_num3_frame_5",
+    "map": "de_overpass",
+    "x": 562,
+    "y": 164,
+    "z": 105
+  },
+  {
+    "angle_h": 2.054275912151697,
+    "angle_v": 1.5988873499730523,
+    "file_frame": "file_num53_frame_876",
+    "map": "de_overpass",
+    "x": 557,
+    "y": 142,
+    "z": 105
+  },
+  {
+    "angle_h": 5.078543003918049,
+    "angle_v": 1.5372346381055,
+    "file_frame": "file_num120_frame_740",
+    "map": "de_overpass",
+    "x": 610,
+    "y": 354,
+    "z": 37
+  },
+  {
+    "angle_h": 3.4025494172200417,
+    "angle_v": 1.5506987816286135,
+    "file_frame": "file_num217_frame_865",
+    "map": "de_overpass",
+    "x": 362,
+    "y": 528,
+    "z": 101
+  },
+  {
+    "angle_h": 2.0802217590717937,
+    "angle_v": 1.6055804064246395,
+    "file_frame": "file_num16_frame_50",
+    "map": "de_overpass",
+    "x": 615,
+    "y": 302,
+    "z": 24
+  },
+  {
+    "angle_h": 5.565516123992815,
+    "angle_v": 1.582468961852714,
+    "file_frame": "file_num120_frame_35",
+    "map": "de_overpass",
+    "x": 789,
+    "y": 822,
+    "z": 42
+  },
+  {
+    "angle_h": 1.106413603824782,
+    "angle_v": 1.5422317935749246,
+    "file_frame": "file_num16_frame_200",
+    "map": "de_overpass",
+    "x": 526,
+    "y": 109,
+    "z": 81
+  },
+  {
+    "angle_h": 3.4614873026723667,
+    "angle_v": 1.5570325776491492,
+    "file_frame": "file_num274_frame_256",
+    "map": "de_overpass",
+    "x": 331,
+    "y": 763,
+    "z": 103
+  },
+  {
+    "angle_h": 1.7351899319341253,
+    "angle_v": 1.5467320031849405,
+    "file_frame": "file_num287_frame_628",
+    "map": "de_overpass",
+    "x": 547,
+    "y": 194,
+    "z": 51
+  },
+  {
+    "angle_h": 3.4070490941978395,
+    "angle_v": 1.5556602507394313,
+    "file_frame": "file_num263_frame_905",
+    "map": "de_overpass",
+    "x": 664,
+    "y": 746,
+    "z": 77
+  },
+  {
+    "angle_h": 1.6626194580197386,
+    "angle_v": 1.5376000238070588,
+    "file_frame": "file_num131_frame_992",
+    "map": "de_overpass",
+    "x": 597,
+    "y": 511,
+    "z": 31
+  },
+  {
+    "angle_h": 3.818150086396793,
+    "angle_v": 1.5728576134786179,
+    "file_frame": "file_num200_frame_537",
+    "map": "de_overpass",
+    "x": 811,
+    "y": 765,
+    "z": 40
+  },
+  {
+    "angle_h": 3.0434298673900173,
+    "angle_v": 1.573594776468352,
+    "file_frame": "file_num12_frame_431",
+    "map": "de_overpass",
+    "x": 739,
+    "y": 760,
+    "z": 74
+  },
+  {
+    "angle_h": 5.575636668767334,
+    "angle_v": 1.558272811768799,
+    "file_frame": "file_num306_frame_5",
+    "map": "de_overpass",
+    "x": 417,
+    "y": 639,
+    "z": 96
+  },
+  {
+    "angle_h": 6.252194101574334,
+    "angle_v": 1.5683334354187912,
+    "file_frame": "file_num68_frame_210",
+    "map": "de_overpass",
+    "x": 565,
+    "y": 588,
+    "z": 59
+  },
+  {
+    "angle_h": 5.697168693532555,
+    "angle_v": 1.5389063043217428,
+    "file_frame": "file_num53_frame_227",
+    "map": "de_overpass",
+    "x": 418,
+    "y": 628,
+    "z": 96
+  },
+  {
+    "angle_h": 0.5010423337975457,
+    "angle_v": 1.5361438073230034,
+    "file_frame": "file_num120_frame_720",
+    "map": "de_overpass",
+    "x": 556,
+    "y": 329,
+    "z": 37
+  },
+  {
+    "angle_h": 5.460845903669431,
+    "angle_v": 1.536497475115766,
+    "file_frame": "file_num14_frame_305",
+    "map": "de_overpass",
+    "x": 598,
+    "y": 509,
+    "z": 35
+  },
+  {
+    "angle_h": 0.23183483079412287,
+    "angle_v": 1.5584046382427579,
+    "file_frame": "file_num179_frame_338",
+    "map": "de_overpass",
+    "x": 568,
+    "y": 360,
+    "z": 37
+  },
+  {
+    "angle_h": 5.844580785138948,
+    "angle_v": 1.596562410341413,
+    "file_frame": "file_num275_frame_247",
+    "map": "de_overpass",
+    "x": 506,
+    "y": 588,
+    "z": 91
+  },
+  {
+    "angle_h": 5.184609519600961,
+    "angle_v": 1.567824239018368,
+    "file_frame": "file_num275_frame_363",
+    "map": "de_overpass",
+    "x": 731,
+    "y": 446,
+    "z": 31
+  },
+  {
+    "angle_h": 3.6652612040086523,
+    "angle_v": 1.550609033099878,
+    "file_frame": "file_num131_frame_25",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 186,
+    "z": 56
+  },
+  {
+    "angle_h": 3.7834080847122733,
+    "angle_v": 1.5899172907894477,
+    "file_frame": "file_num56_frame_121",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 799,
+    "z": 41
+  },
+  {
+    "angle_h": 3.3978931463701474,
+    "angle_v": 1.5781844682909942,
+    "file_frame": "file_num271_frame_476",
+    "map": "de_overpass",
+    "x": 312,
+    "y": 522,
+    "z": 106
+  },
+  {
+    "angle_h": 3.9367038981149785,
+    "angle_v": 1.5482779681977317,
+    "file_frame": "file_num306_frame_926",
+    "map": "de_overpass",
+    "x": 463,
+    "y": 594,
+    "z": 96
+  },
+  {
+    "angle_h": 3.1711100658477953,
+    "angle_v": 1.5674466027757947,
+    "file_frame": "file_num200_frame_70",
+    "map": "de_overpass",
+    "x": 456,
+    "y": 750,
+    "z": 103
+  },
+  {
+    "angle_h": 1.1476033848244926,
+    "angle_v": 1.6049811951793715,
+    "file_frame": "file_num211_frame_515",
+    "map": "de_overpass",
+    "x": 680,
+    "y": 469,
+    "z": 15
+  },
+  {
+    "angle_h": 4.7728134423574975,
+    "angle_v": 1.5559958090367811,
+    "file_frame": "file_num288_frame_471",
+    "map": "de_overpass",
+    "x": 592,
+    "y": 613,
+    "z": 31
+  },
+  {
+    "angle_h": 2.7968363304668933,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num263_frame_430",
+    "map": "de_overpass",
+    "x": 539,
+    "y": 836,
+    "z": 98
+  },
+  {
+    "angle_h": 5.83458594156788,
+    "angle_v": 1.5875081952673618,
+    "file_frame": "file_num216_frame_166",
+    "map": "de_overpass",
+    "x": 565,
+    "y": 145,
+    "z": 105
+  },
+  {
+    "angle_h": 5.122453203971276,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num53_frame_252",
+    "map": "de_overpass",
+    "x": 471,
+    "y": 591,
+    "z": 96
+  },
+  {
+    "angle_h": 1.9259068870779699,
+    "angle_v": 1.5876163196076192,
+    "file_frame": "file_num17_frame_930",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 836,
+    "z": 42
+  },
+  {
+    "angle_h": 4.035448052380718,
+    "angle_v": 1.5819597654522908,
+    "file_frame": "file_num287_frame_182",
+    "map": "de_overpass",
+    "x": 186,
+    "y": 629,
+    "z": 108
+  },
+  {
+    "angle_h": 1.1537512922009405,
+    "angle_v": 1.5859443870752672,
+    "file_frame": "file_num64_frame_865",
+    "map": "de_overpass",
+    "x": 246,
+    "y": 564,
+    "z": 106
+  },
+  {
+    "angle_h": 0.7061163903780073,
+    "angle_v": 1.6055564379748286,
+    "file_frame": "file_num17_frame_990",
+    "map": "de_overpass",
+    "x": 760,
+    "y": 886,
+    "z": 44
+  },
+  {
+    "angle_h": 4.722126029962237,
+    "angle_v": 1.5873705098390047,
+    "file_frame": "file_num16_frame_110",
+    "map": "de_overpass",
+    "x": 541,
+    "y": 305,
+    "z": 37
+  },
+  {
+    "angle_h": 0.15833557944957102,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num263_frame_213",
+    "map": "de_overpass",
+    "x": 730,
+    "y": 532,
+    "z": 14
+  },
+  {
+    "angle_h": 3.6696474303240127,
+    "angle_v": 1.5447665903004622,
+    "file_frame": "file_num217_frame_555",
+    "map": "de_overpass",
+    "x": 582,
+    "y": 142,
+    "z": 58
+  },
+  {
+    "angle_h": 0.0030738205301694566,
+    "angle_v": 0.1745441104760113,
+    "file_frame": "file_num17_frame_573",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 51
+  },
+  {
+    "angle_h": 0.9936959764774509,
+    "angle_v": 1.5712575862956981,
+    "file_frame": "file_num269_frame_455",
+    "map": "de_overpass",
+    "x": 530,
+    "y": 287,
+    "z": 37
+  },
+  {
+    "angle_h": 4.183201827554969,
+    "angle_v": 1.56469635631807,
+    "file_frame": "file_num68_frame_30",
+    "map": "de_overpass",
+    "x": 488,
+    "y": 447,
+    "z": 87
+  },
+  {
+    "angle_h": 2.070562473798076,
+    "angle_v": 1.5533174679284887,
+    "file_frame": "file_num277_frame_877",
+    "map": "de_overpass",
+    "x": 780,
+    "y": 873,
+    "z": 44
+  },
+  {
+    "angle_h": 1.4832935086484356,
+    "angle_v": 1.5857467805223835,
+    "file_frame": "file_num275_frame_958",
+    "map": "de_overpass",
+    "x": 539,
+    "y": 117,
+    "z": 80
+  },
+  {
+    "angle_h": 3.0707539001742306,
+    "angle_v": 1.5825589766975585,
+    "file_frame": "file_num271_frame_481",
+    "map": "de_overpass",
+    "x": 293,
+    "y": 508,
+    "z": 106
+  },
+  {
+    "angle_h": 0.022674153520934635,
+    "angle_v": 1.548859336263696,
+    "file_frame": "file_num12_frame_772",
+    "map": "de_overpass",
+    "x": 722,
+    "y": 748,
+    "z": 77
+  },
+  {
+    "angle_h": 2.8962276328775225,
+    "angle_v": 1.5995882939719612,
+    "file_frame": "file_num217_frame_470",
+    "map": "de_overpass",
+    "x": 623,
+    "y": 345,
+    "z": 37
+  },
+  {
+    "angle_h": 2.2598232124578654,
+    "angle_v": 1.5445029373525443,
+    "file_frame": "file_num101_frame_736",
+    "map": "de_overpass",
+    "x": 566,
+    "y": 147,
+    "z": 105
+  },
+  {
+    "angle_h": 6.273717769504355,
+    "angle_v": 1.5466302704312995,
+    "file_frame": "file_num12_frame_767",
+    "map": "de_overpass",
+    "x": 705,
+    "y": 748,
+    "z": 77
+  },
+  {
+    "angle_h": 3.5567501727611557,
+    "angle_v": 1.5543539702247473,
+    "file_frame": "file_num169_frame_71",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 168,
+    "z": 105
+  },
+  {
+    "angle_h": 4.944115953154665,
+    "angle_v": 1.5639293659241273,
+    "file_frame": "file_num200_frame_522",
+    "map": "de_overpass",
+    "x": 803,
+    "y": 777,
+    "z": 40
+  },
+  {
+    "angle_h": 2.8194207354590923,
+    "angle_v": 1.564193018872045,
+    "file_frame": "file_num306_frame_951",
+    "map": "de_overpass",
+    "x": 433,
+    "y": 568,
+    "z": 96
+  },
+  {
+    "angle_h": 2.748486108244287,
+    "angle_v": 1.5569066101295883,
+    "file_frame": "file_num216_frame_611",
+    "map": "de_overpass",
+    "x": 768,
+    "y": 887,
+    "z": 43
+  },
+  {
+    "angle_h": 4.612057049477045,
+    "angle_v": 1.571515380289218,
+    "file_frame": "file_num269_frame_130",
+    "map": "de_overpass",
+    "x": 493,
+    "y": 463,
+    "z": 87
+  },
+  {
+    "angle_h": 6.051913734956015,
+    "angle_v": 1.597898784576415,
+    "file_frame": "file_num120_frame_605",
+    "map": "de_overpass",
+    "x": 482,
+    "y": 182,
+    "z": 103
+  },
+  {
+    "angle_h": 5.5046301362030965,
+    "angle_v": 1.5859443870752672,
+    "file_frame": "file_num154_frame_656",
+    "map": "de_overpass",
+    "x": 242,
+    "y": 373,
+    "z": 112
+  },
+  {
+    "angle_h": 4.804457655062038,
+    "angle_v": 1.5365214435655767,
+    "file_frame": "file_num64_frame_980",
+    "map": "de_overpass",
+    "x": 215,
+    "y": 461,
+    "z": 107
+  },
+  {
+    "angle_h": 5.47473535401863,
+    "angle_v": 1.5910198394807404,
+    "file_frame": "file_num154_frame_978",
+    "map": "de_overpass",
+    "x": 414,
+    "y": 596,
+    "z": 96
+  },
+  {
+    "angle_h": 3.4609424199133367,
+    "angle_v": 1.5558519983379169,
+    "file_frame": "file_num35_frame_371",
+    "map": "de_overpass",
+    "x": 784,
+    "y": 761,
+    "z": 59
+  },
+  {
+    "angle_h": 1.5311585029204298,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num274_frame_60",
+    "map": "de_overpass",
+    "x": 787,
+    "y": 772,
+    "z": 59
+  },
+  {
+    "angle_h": 5.397622992023168,
+    "angle_v": 1.5834996051945744,
+    "file_frame": "file_num216_frame_161",
+    "map": "de_overpass",
+    "x": 548,
+    "y": 163,
+    "z": 105
+  },
+  {
+    "angle_h": 3.675340203470166,
+    "angle_v": 1.5681837657655289,
+    "file_frame": "file_num277_frame_231",
+    "map": "de_overpass",
+    "x": 477,
+    "y": 596,
+    "z": 96
+  },
+  {
+    "angle_h": 3.814615006365822,
+    "angle_v": 1.5994684517229076,
+    "file_frame": "file_num271_frame_205",
+    "map": "de_overpass",
+    "x": 467,
+    "y": 595,
+    "z": 96
+  },
+  {
+    "angle_h": 1.365794175563867,
+    "angle_v": 1.5881375002329474,
+    "file_frame": "file_num16_frame_370",
+    "map": "de_overpass",
+    "x": 450,
+    "y": 288,
+    "z": 101
+  },
+  {
+    "angle_h": 2.8043624237074574,
+    "angle_v": 1.6045439041283807,
+    "file_frame": "file_num56_frame_166",
+    "map": "de_overpass",
+    "x": 687,
+    "y": 766,
+    "z": 77
+  },
+  {
+    "angle_h": 4.928746317871599,
+    "angle_v": 1.5909239656814975,
+    "file_frame": "file_num217_frame_185",
+    "map": "de_overpass",
+    "x": 449,
+    "y": 283,
+    "z": 101
+  },
+  {
+    "angle_h": 3.344221928289562,
+    "angle_v": 1.5460188086450173,
+    "file_frame": "file_num53_frame_690",
+    "map": "de_overpass",
+    "x": 683,
+    "y": 393,
+    "z": 32
+  },
+  {
+    "angle_h": 0.0206967564115508,
+    "angle_v": 1.6038608033087753,
+    "file_frame": "file_num14_frame_510",
+    "map": "de_overpass",
+    "x": 619,
+    "y": 524,
+    "z": 31
+  },
+  {
+    "angle_h": 2.8203616302722176,
+    "angle_v": 1.6052091617686826,
+    "file_frame": "file_num200_frame_607",
+    "map": "de_overpass",
+    "x": 663,
+    "y": 772,
+    "z": 77
+  },
+  {
+    "angle_h": 0.04547400824532101,
+    "angle_v": 1.6049873204498788,
+    "file_frame": "file_num101_frame_936",
+    "map": "de_overpass",
+    "x": 482,
+    "y": 589,
+    "z": 96
+  },
+  {
+    "angle_h": 4.327503613324258,
+    "angle_v": 1.6052749418476073,
+    "file_frame": "file_num56_frame_568",
+    "map": "de_overpass",
+    "x": 200,
+    "y": 537,
+    "z": 108
+  },
+  {
+    "angle_h": 2.1336234652500625,
+    "angle_v": 1.569268204961409,
+    "file_frame": "file_num306_frame_801",
+    "map": "de_overpass",
+    "x": 608,
+    "y": 477,
+    "z": 31
+  },
+  {
+    "angle_h": 1.8030446133482543,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num271_frame_541",
+    "map": "de_overpass",
+    "x": 199,
+    "y": 597,
+    "z": 127
+  },
+  {
+    "angle_h": 1.708782692355172,
+    "angle_v": 1.5465823335316782,
+    "file_frame": "file_num306_frame_290",
+    "map": "de_overpass",
+    "x": 429,
+    "y": 601,
+    "z": 96
+  },
+  {
+    "angle_h": 4.882553256131957,
+    "angle_v": 1.5957655925432617,
+    "file_frame": "file_num154_frame_336",
+    "map": "de_overpass",
+    "x": 788,
+    "y": 753,
+    "z": 59
+  },
+  {
+    "angle_h": 2.0564390647471136,
+    "angle_v": 1.5410275121299908,
+    "file_frame": "file_num271_frame_997",
+    "map": "de_overpass",
+    "x": 447,
+    "y": 460,
+    "z": 96
+  },
+  {
+    "angle_h": 5.563892128360084,
+    "angle_v": 1.539385673317957,
+    "file_frame": "file_num287_frame_568",
+    "map": "de_overpass",
+    "x": 502,
+    "y": 192,
+    "z": 103
+  },
+  {
+    "angle_h": 1.1220650015511777,
+    "angle_v": 1.5879039410053477,
+    "file_frame": "file_num306_frame_350",
+    "map": "de_overpass",
+    "x": 542,
+    "y": 763,
+    "z": 103
+  },
+  {
+    "angle_h": 4.989817927989296,
+    "angle_v": 1.5379475663293143,
+    "file_frame": "file_num211_frame_20",
+    "map": "de_overpass",
+    "x": 834,
+    "y": 379,
+    "z": 15
+  },
+  {
+    "angle_h": 5.513216966505839,
+    "angle_v": 1.5727497554544696,
+    "file_frame": "file_num42_frame_45",
+    "map": "de_overpass",
+    "x": 601,
+    "y": 807,
+    "z": 78
+  },
+  {
+    "angle_h": 2.896718986098642,
+    "angle_v": 1.5891082224502815,
+    "file_frame": "file_num306_frame_986",
+    "map": "de_overpass",
+    "x": 407,
+    "y": 693,
+    "z": 103
+  },
+  {
+    "angle_h": 3.817143411504743,
+    "angle_v": 1.6031896867140754,
+    "file_frame": "file_num271_frame_215",
+    "map": "de_overpass",
+    "x": 436,
+    "y": 570,
+    "z": 96
+  },
+  {
+    "angle_h": 0.6176789358469831,
+    "angle_v": 1.59249363282799,
+    "file_frame": "file_num288_frame_105",
+    "map": "de_overpass",
+    "x": 450,
+    "y": 684,
+    "z": 103
+  },
+  {
+    "angle_h": 4.98694171401201,
+    "angle_v": 1.5968859844138579,
+    "file_frame": "file_num269_frame_655",
+    "map": "de_overpass",
+    "x": 808,
+    "y": 600,
+    "z": 40
+  },
+  {
+    "angle_h": 4.789189752532613,
+    "angle_v": 1.5994684517229076,
+    "file_frame": "file_num70_frame_225",
+    "map": "de_overpass",
+    "x": 814,
+    "y": 780,
+    "z": 41
+  },
+  {
+    "angle_h": 1.5027019608826606,
+    "angle_v": 1.5907679044416188,
+    "file_frame": "file_num173_frame_401",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 120,
+    "z": 90
+  },
+  {
+    "angle_h": 1.1724466830532967,
+    "angle_v": 1.5644207191452468,
+    "file_frame": "file_num3_frame_247",
+    "map": "de_overpass",
+    "x": 340,
+    "y": 777,
+    "z": 112
+  },
+  {
+    "angle_h": 2.6948686860177213,
+    "angle_v": 1.541902360548082,
+    "file_frame": "file_num42_frame_370",
+    "map": "de_overpass",
+    "x": 546,
+    "y": 824,
+    "z": 96
+  },
+  {
+    "angle_h": 6.188803410779396,
+    "angle_v": 1.5359643102655323,
+    "file_frame": "file_num64_frame_600",
+    "map": "de_overpass",
+    "x": 237,
+    "y": 686,
+    "z": 107
+  },
+  {
+    "angle_h": 3.5985633997720536,
+    "angle_v": 1.5500215397634063,
+    "file_frame": "file_num269_frame_265",
+    "map": "de_overpass",
+    "x": 425,
+    "y": 74,
+    "z": 104
+  },
+  {
+    "angle_h": 5.0480071988592,
+    "angle_v": 1.5377797871806391,
+    "file_frame": "file_num53_frame_273",
+    "map": "de_overpass",
+    "x": 424,
+    "y": 550,
+    "z": 96
+  },
+  {
+    "angle_h": 1.600571133572255,
+    "angle_v": 1.5434904035060961,
+    "file_frame": "file_num179_frame_308",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 315,
+    "z": 37
+  },
+  {
+    "angle_h": 3.278452502008965,
+    "angle_v": 1.603004064386097,
+    "file_frame": "file_num179_frame_768",
+    "map": "de_overpass",
+    "x": 382,
+    "y": 519,
+    "z": 96
+  },
+  {
+    "angle_h": 3.5912045530479464,
+    "angle_v": 1.6036991494306077,
+    "file_frame": "file_num274_frame_953",
+    "map": "de_overpass",
+    "x": 782,
+    "y": 780,
+    "z": 54
+  },
+  {
+    "angle_h": 2.2103824257688713,
+    "angle_v": 1.589198237295126,
+    "file_frame": "file_num17_frame_670",
+    "map": "de_overpass",
+    "x": 569,
+    "y": 545,
+    "z": 42
+  },
+  {
+    "angle_h": 0.9744672876168062,
+    "angle_v": 1.5590698958830598,
+    "file_frame": "file_num3_frame_257",
+    "map": "de_overpass",
+    "x": 337,
+    "y": 803,
+    "z": 104
+  },
+  {
+    "angle_h": 2.4314016267439644,
+    "angle_v": 1.5802340370659194,
+    "file_frame": "file_num271_frame_170",
+    "map": "de_overpass",
+    "x": 561,
+    "y": 549,
+    "z": 44
+  },
+  {
+    "angle_h": 1.6250489129414458,
+    "angle_v": 1.5413510862024355,
+    "file_frame": "file_num12_frame_296",
+    "map": "de_overpass",
+    "x": 818,
+    "y": 538,
+    "z": 16
+  },
+  {
+    "angle_h": 1.7229180856310402,
+    "angle_v": 1.5838410224463226,
+    "file_frame": "file_num12_frame_596",
+    "map": "de_overpass",
+    "x": 306,
+    "y": 777,
+    "z": 103
+  },
+  {
+    "angle_h": 5.3757579068413985,
+    "angle_v": 1.5901090383879333,
+    "file_frame": "file_num154_frame_878",
+    "map": "de_overpass",
+    "x": 312,
+    "y": 759,
+    "z": 103
+  },
+  {
+    "angle_h": 0.7337221856055507,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num169_frame_116",
+    "map": "de_overpass",
+    "x": 513,
+    "y": 159,
+    "z": 105
+  },
+  {
+    "angle_h": 5.922532042877785,
+    "angle_v": 1.5949205715293793,
+    "file_frame": "file_num275_frame_323",
+    "map": "de_overpass",
+    "x": 619,
+    "y": 479,
+    "z": 41
+  },
+  {
+    "angle_h": 5.0212043467003165,
+    "angle_v": 1.5994506085436042,
+    "file_frame": "file_num277_frame_491",
+    "map": "de_overpass",
+    "x": 530,
+    "y": 756,
+    "z": 104
+  },
+  {
+    "angle_h": 3.3772445931743262,
+    "angle_v": 1.6038189916796612,
+    "file_frame": "file_num271_frame_255",
+    "map": "de_overpass",
+    "x": 352,
+    "y": 517,
+    "z": 102
+  },
+  {
+    "angle_h": 0.2458742171126936,
+    "angle_v": 1.59249363282799,
+    "file_frame": "file_num216_frame_266",
+    "map": "de_overpass",
+    "x": 578,
+    "y": 346,
+    "z": 37
+  },
+  {
+    "angle_h": 6.270086549358031,
+    "angle_v": 1.5963107416184008,
+    "file_frame": "file_num101_frame_261",
+    "map": "de_overpass",
+    "x": 534,
+    "y": 208,
+    "z": 62
+  },
+  {
+    "angle_h": 5.312738727018528,
+    "angle_v": 1.555013102594542,
+    "file_frame": "file_num35_frame_231",
+    "map": "de_overpass",
+    "x": 796,
+    "y": 599,
+    "z": 40
+  },
+  {
+    "angle_h": 6.221916090509005,
+    "angle_v": 1.5820854666557425,
+    "file_frame": "file_num42_frame_991",
+    "map": "de_overpass",
+    "x": 676,
+    "y": 745,
+    "z": 77
+  },
+  {
+    "angle_h": 5.452558678989322,
+    "angle_v": 1.536095870423382,
+    "file_frame": "file_num101_frame_151",
+    "map": "de_overpass",
+    "x": 535,
+    "y": 100,
+    "z": 81
+  },
+  {
+    "angle_h": 1.5822951905915863,
+    "angle_v": 1.5808689346697942,
+    "file_frame": "file_num179_frame_150",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 122,
+    "z": 80
+  },
+  {
+    "angle_h": 1.7251771120257,
+    "angle_v": 1.5996663245919005,
+    "file_frame": "file_num173_frame_971",
+    "map": "de_overpass",
+    "x": 821,
+    "y": 581,
+    "z": 32
+  },
+  {
+    "angle_h": 4.8188147564986545,
+    "angle_v": 1.598665774970358,
+    "file_frame": "file_num306_frame_751",
+    "map": "de_overpass",
+    "x": 599,
+    "y": 512,
+    "z": 31
+  },
+  {
+    "angle_h": 3.161971694883298,
+    "angle_v": 1.5450182590234747,
+    "file_frame": "file_num263_frame_885",
+    "map": "de_overpass",
+    "x": 730,
+    "y": 751,
+    "z": 77
+  },
+  {
+    "angle_h": 5.590059816598985,
+    "angle_v": 1.6054365957257752,
+    "file_frame": "file_num120_frame_565",
+    "map": "de_overpass",
+    "x": 362,
+    "y": 233,
+    "z": 105
+  },
+  {
+    "angle_h": 5.994569218783884,
+    "angle_v": 1.5385646207538854,
+    "file_frame": "file_num211_frame_365",
+    "map": "de_overpass",
+    "x": 846,
+    "y": 580,
+    "z": 21
+  },
+  {
+    "angle_h": 3.8860228773063343,
+    "angle_v": 1.5389720844006676,
+    "file_frame": "file_num263_frame_870",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 749,
+    "z": 59
+  },
+  {
+    "angle_h": 3.2353934482401283,
+    "angle_v": 1.6042323142808415,
+    "file_frame": "file_num12_frame_506",
+    "map": "de_overpass",
+    "x": 544,
+    "y": 766,
+    "z": 100
+  },
+  {
+    "angle_h": 0.45125400458629633,
+    "angle_v": 1.5481040637785493,
+    "file_frame": "file_num68_frame_170",
+    "map": "de_overpass",
+    "x": 472,
+    "y": 571,
+    "z": 96
+  },
+  {
+    "angle_h": 1.5772857845811472,
+    "angle_v": 1.563084344910245,
+    "file_frame": "file_num173_frame_771",
+    "map": "de_overpass",
+    "x": 545,
+    "y": 268,
+    "z": 33
+  },
+  {
+    "angle_h": 1.7487440903020837,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num42_frame_230",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 718,
+    "z": 31
+  },
+  {
+    "angle_h": 4.929950599316533,
+    "angle_v": 1.589503701872158,
+    "file_frame": "file_num42_frame_853",
+    "map": "de_overpass",
+    "x": 459,
+    "y": 811,
+    "z": 102
+  },
+  {
+    "angle_h": 3.799736457987767,
+    "angle_v": 1.5958731842513005,
+    "file_frame": "file_num271_frame_897",
+    "map": "de_overpass",
+    "x": 479,
+    "y": 374,
+    "z": 87
+  },
+  {
+    "angle_h": 0.23943282938411894,
+    "angle_v": 1.5856146877323154,
+    "file_frame": "file_num169_frame_852",
+    "map": "de_overpass",
+    "x": 633,
+    "y": 746,
+    "z": 77
+  },
+  {
+    "angle_h": 0.23683225257965657,
+    "angle_v": 1.562742927658497,
+    "file_frame": "file_num169_frame_381",
+    "map": "de_overpass",
+    "x": 570,
+    "y": 779,
+    "z": 94
+  },
+  {
+    "angle_h": 4.425432840296433,
+    "angle_v": 1.554174206851167,
+    "file_frame": "file_num217_frame_235",
+    "map": "de_overpass",
+    "x": 445,
+    "y": 95,
+    "z": 105
+  },
+  {
+    "angle_h": 6.106082431528227,
+    "angle_v": 1.538043440128557,
+    "file_frame": "file_num169_frame_431",
+    "map": "de_overpass",
+    "x": 695,
+    "y": 754,
+    "z": 77
+  },
+  {
+    "angle_h": 4.942360397364084,
+    "angle_v": 1.5407819686774855,
+    "file_frame": "file_num269_frame_190",
+    "map": "de_overpass",
+    "x": 444,
+    "y": 295,
+    "z": 98
+  },
+  {
+    "angle_h": 2.9117772978502776,
+    "angle_v": 1.5381331886572926,
+    "file_frame": "file_num275_frame_101",
+    "map": "de_overpass",
+    "x": 280,
+    "y": 778,
+    "z": 103
+  },
+  {
+    "angle_h": 4.2802261123887355,
+    "angle_v": 1.5901090383879333,
+    "file_frame": "file_num68_frame_641",
+    "map": "de_overpass",
+    "x": 578,
+    "y": 163,
+    "z": 44
+  },
+  {
+    "angle_h": 5.117401986331722,
+    "angle_v": 1.2486483771140064,
+    "file_frame": "file_num263_frame_955",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 723,
+    "z": 38
+  },
+  {
+    "angle_h": 1.2780816334815623,
+    "angle_v": 1.599241017765815,
+    "file_frame": "file_num179_frame_80",
+    "map": "de_overpass",
+    "x": 528,
+    "y": 111,
+    "z": 81
+  },
+  {
+    "angle_h": 4.563041569614136,
+    "angle_v": 1.5426214140424033,
+    "file_frame": "file_num217_frame_255",
+    "map": "de_overpass",
+    "x": 428,
+    "y": 78,
+    "z": 105
+  },
+  {
+    "angle_h": 2.9560768520548732,
+    "angle_v": 1.5988274288485256,
+    "file_frame": "file_num275_frame_623",
+    "map": "de_overpass",
+    "x": 636,
+    "y": 392,
+    "z": 37
+  },
+  {
+    "angle_h": 1.3418257257531538,
+    "angle_v": 1.5589617715428024,
+    "file_frame": "file_num173_frame_906",
+    "map": "de_overpass",
+    "x": 810,
+    "y": 366,
+    "z": 15
+  },
+  {
+    "angle_h": 5.384644076450667,
+    "angle_v": 1.5998580721903863,
+    "file_frame": "file_num68_frame_275",
+    "map": "de_overpass",
+    "x": 597,
+    "y": 518,
+    "z": 31
+  },
+  {
+    "angle_h": 0.019588082449750813,
+    "angle_v": 1.592523726548308,
+    "file_frame": "file_num277_frame_722",
+    "map": "de_overpass",
+    "x": 419,
+    "y": 763,
+    "z": 103
+  },
+  {
+    "angle_h": 0.06434330351685943,
+    "angle_v": 1.5567867678805347,
+    "file_frame": "file_num216_frame_321",
+    "map": "de_overpass",
+    "x": 688,
+    "y": 285,
+    "z": 15
+  },
+  {
+    "angle_h": 5.448981521013128,
+    "angle_v": 1.5473370733846066,
+    "file_frame": "file_num263_frame_805",
+    "map": "de_overpass",
+    "x": 787,
+    "y": 751,
+    "z": 59
+  },
+  {
+    "angle_h": 4.360016549176382,
+    "angle_v": 1.5375462279530394,
+    "file_frame": "file_num68_frame_525",
+    "map": "de_overpass",
+    "x": 662,
+    "y": 369,
+    "z": 35
+  },
+  {
+    "angle_h": 0.8232203771987536,
+    "angle_v": 1.5494284537886458,
+    "file_frame": "file_num277_frame_346",
+    "map": "de_overpass",
+    "x": 268,
+    "y": 561,
+    "z": 109
+  },
+  {
+    "angle_h": 0.48765009562386424,
+    "angle_v": 1.537168591710466,
+    "file_frame": "file_num200_frame_432",
+    "map": "de_overpass",
+    "x": 756,
+    "y": 901,
+    "z": 56
+  },
+  {
+    "angle_h": 2.554725159974482,
+    "angle_v": 1.5982641702779739,
+    "file_frame": "file_num217_frame_720",
+    "map": "de_overpass",
+    "x": 478,
+    "y": 218,
+    "z": 103
+  },
+  {
+    "angle_h": 5.797410875911464,
+    "angle_v": 1.5749428686121498,
+    "file_frame": "file_num275_frame_353",
+    "map": "de_overpass",
+    "x": 698,
+    "y": 448,
+    "z": 20
+  },
+  {
+    "angle_h": 5.212256860141511,
+    "angle_v": 1.5517294249704743,
+    "file_frame": "file_num53_frame_191",
+    "map": "de_overpass",
+    "x": 387,
+    "y": 718,
+    "z": 103
+  },
+  {
+    "angle_h": 4.884823867277358,
+    "angle_v": 1.5826905368554083,
+    "file_frame": "file_num68_frame_626",
+    "map": "de_overpass",
+    "x": 573,
+    "y": 208,
+    "z": 34
+  },
+  {
+    "angle_h": 1.581851774270088,
+    "angle_v": 1.537372323533857,
+    "file_frame": "file_num42_frame_315",
+    "map": "de_overpass",
+    "x": 631,
+    "y": 755,
+    "z": 77
+  },
+  {
+    "angle_h": 2.1803559502685004,
+    "angle_v": 1.5706226886918235,
+    "file_frame": "file_num70_frame_500",
+    "map": "de_overpass",
+    "x": 883,
+    "y": 529,
+    "z": 16
+  },
+  {
+    "angle_h": 5.3463486189236535,
+    "angle_v": 1.5676985378149164,
+    "file_frame": "file_num35_frame_597",
+    "map": "de_overpass",
+    "x": 784,
+    "y": 751,
+    "z": 59
+  },
+  {
+    "angle_h": 3.8070585530888312,
+    "angle_v": 1.5481163143195638,
+    "file_frame": "file_num35_frame_246",
+    "map": "de_overpass",
+    "x": 788,
+    "y": 601,
+    "z": 40
+  },
+  {
+    "angle_h": 5.483082499823265,
+    "angle_v": 1.576854485642609,
+    "file_frame": "file_num263_frame_112",
+    "map": "de_overpass",
+    "x": 532,
+    "y": 594,
+    "z": 74
+  },
+  {
+    "angle_h": 5.334861606193815,
+    "angle_v": 1.537342229813539,
+    "file_frame": "file_num217_frame_270",
+    "map": "de_overpass",
+    "x": 427,
+    "y": 51,
+    "z": 91
+  },
+  {
+    "angle_h": 4.450312091199954,
+    "angle_v": 1.5971017004621542,
+    "file_frame": "file_num64_frame_355",
+    "map": "de_overpass",
+    "x": 271,
+    "y": 771,
+    "z": 104
+  },
+  {
+    "angle_h": 0.0876707304531905,
+    "angle_v": 1.5369289072123589,
+    "file_frame": "file_num306_frame_565",
+    "map": "de_overpass",
+    "x": 456,
+    "y": 808,
+    "z": 106
+  },
+  {
+    "angle_h": 1.5682976159021298,
+    "angle_v": 1.5360780272440786,
+    "file_frame": "file_num275_frame_438",
+    "map": "de_overpass",
+    "x": 868,
+    "y": 302,
+    "z": 10
+  },
+  {
+    "angle_h": 4.910715652027326,
+    "angle_v": 1.5362338221678482,
+    "file_frame": "file_num120_frame_425",
+    "map": "de_overpass",
+    "x": 184,
+    "y": 617,
+    "z": 116
+  },
+  {
+    "angle_h": 1.5138772506069056,
+    "angle_v": 1.5425375244680657,
+    "file_frame": "file_num200_frame_417",
+    "map": "de_overpass",
+    "x": 756,
+    "y": 897,
+    "z": 53
+  },
+  {
+    "angle_h": 5.797752293163213,
+    "angle_v": 1.5913314293282796,
+    "file_frame": "file_num12_frame_195",
+    "map": "de_overpass",
+    "x": 692,
+    "y": 449,
+    "z": 18
+  },
+  {
+    "angle_h": 5.215504851406971,
+    "angle_v": 1.588227248761683,
+    "file_frame": "file_num277_frame_201",
+    "map": "de_overpass",
+    "x": 549,
+    "y": 593,
+    "z": 62
+  },
+  {
+    "angle_h": 1.490286303880711,
+    "angle_v": 1.6036690557102897,
+    "file_frame": "file_num169_frame_311",
+    "map": "de_overpass",
+    "x": 424,
+    "y": 605,
+    "z": 96
+  },
+  {
+    "angle_h": 5.917007315196416,
+    "angle_v": 1.565499299386729,
+    "file_frame": "file_num306_frame_15",
+    "map": "de_overpass",
+    "x": 435,
+    "y": 612,
+    "z": 96
+  },
+  {
+    "angle_h": 1.5050748374139211,
+    "angle_v": 1.5991869555956864,
+    "file_frame": "file_num200_frame_894",
+    "map": "de_overpass",
+    "x": 418,
+    "y": 591,
+    "z": 96
+  },
+  {
+    "angle_h": 5.756969975810285,
+    "angle_v": 1.6043702660253076,
+    "file_frame": "file_num42_frame_931",
+    "map": "de_overpass",
+    "x": 547,
+    "y": 833,
+    "z": 97
+  },
+  {
+    "angle_h": 3.7669236501969006,
+    "angle_v": 1.6041604089314092,
+    "file_frame": "file_num42_frame_120",
+    "map": "de_overpass",
+    "x": 618,
+    "y": 741,
+    "z": 77
+  },
+  {
+    "angle_h": 1.5840808401024844,
+    "angle_v": 1.5391699572696607,
+    "file_frame": "file_num200_frame_794",
+    "map": "de_overpass",
+    "x": 239,
+    "y": 501,
+    "z": 107
+  },
+  {
+    "angle_h": 3.4107402354686895,
+    "angle_v": 1.5563313673341312,
+    "file_frame": "file_num42_frame_792",
+    "map": "de_overpass",
+    "x": 528,
+    "y": 834,
+    "z": 100
+  },
+  {
+    "angle_h": 0.9240077086528024,
+    "angle_v": 1.6051431153736484,
+    "file_frame": "file_num217_frame_765",
+    "map": "de_overpass",
+    "x": 423,
+    "y": 311,
+    "z": 96
+  },
+  {
+    "angle_h": 4.7802676302486296,
+    "angle_v": 1.5366950816686498,
+    "file_frame": "file_num306_frame_260",
+    "map": "de_overpass",
+    "x": 486,
+    "y": 538,
+    "z": 88
+  },
+  {
+    "angle_h": 1.1886553472377916,
+    "angle_v": 1.5559958090367811,
+    "file_frame": "file_num271_frame_962",
+    "map": "de_overpass",
+    "x": 423,
+    "y": 371,
+    "z": 96
+  },
+  {
+    "angle_h": 3.1058375854266074,
+    "angle_v": 2.6169352714581877,
+    "file_frame": "file_num42_frame_250",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 31
+  },
+  {
+    "angle_h": 1.4742873636320601,
+    "angle_v": 1.5870410768121619,
+    "file_frame": "file_num101_frame_891",
+    "map": "de_overpass",
+    "x": 490,
+    "y": 452,
+    "z": 87
+  },
+  {
+    "angle_h": 6.152808924434212,
+    "angle_v": 1.6055207516162218,
+    "file_frame": "file_num35_frame_502",
+    "map": "de_overpass",
+    "x": 698,
+    "y": 753,
+    "z": 77
+  },
+  {
+    "angle_h": 5.504869820701204,
+    "angle_v": 1.6054666894460932,
+    "file_frame": "file_num269_frame_370",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 166,
+    "z": 105
+  },
+  {
+    "angle_h": 6.16427196871424,
+    "angle_v": 1.5467320031849405,
+    "file_frame": "file_num277_frame_341",
+    "map": "de_overpass",
+    "x": 265,
+    "y": 559,
+    "z": 108
+  },
+  {
+    "angle_h": 3.049793490814762,
+    "angle_v": 1.5366772384893463,
+    "file_frame": "file_num277_frame_291",
+    "map": "de_overpass",
+    "x": 294,
+    "y": 505,
+    "z": 106
+  },
+  {
+    "angle_h": 1.8054234819919674,
+    "angle_v": 1.5706226886918235,
+    "file_frame": "file_num154_frame_737",
+    "map": "de_overpass",
+    "x": 173,
+    "y": 582,
+    "z": 112
+  },
+  {
+    "angle_h": 1.3813137468163037,
+    "angle_v": 1.5534250596365275,
+    "file_frame": "file_num216_frame_616",
+    "map": "de_overpass",
+    "x": 759,
+    "y": 886,
+    "z": 44
+  },
+  {
+    "angle_h": 5.847588559274084,
+    "angle_v": 1.5974071650391863,
+    "file_frame": "file_num306_frame_680",
+    "map": "de_overpass",
+    "x": 426,
+    "y": 616,
+    "z": 96
+  },
+  {
+    "angle_h": 6.050050054825178,
+    "angle_v": 1.6020751537978772,
+    "file_frame": "file_num217_frame_415",
+    "map": "de_overpass",
+    "x": 584,
+    "y": 352,
+    "z": 37
+  },
+  {
+    "angle_h": 3.0536103332890634,
+    "angle_v": 1.5571582788526008,
+    "file_frame": "file_num200_frame_85",
+    "map": "de_overpass",
+    "x": 410,
+    "y": 747,
+    "z": 103
+  },
+  {
+    "angle_h": 1.5782085698988595,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num263_frame_680",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 751,
+    "z": 59
+  },
+  {
+    "angle_h": 3.302373014920057,
+    "angle_v": 1.5395414682417266,
+    "file_frame": "file_num200_frame_753",
+    "map": "de_overpass",
+    "x": 376,
+    "y": 525,
+    "z": 96
+  },
+  {
+    "angle_h": 3.2591520409569426,
+    "angle_v": 1.5951962087022025,
+    "file_frame": "file_num274_frame_933",
+    "map": "de_overpass",
+    "x": 810,
+    "y": 783,
+    "z": 40
+  },
+  {
+    "angle_h": 1.6530919992199802,
+    "angle_v": 1.5440416778517425,
+    "file_frame": "file_num200_frame_412",
+    "map": "de_overpass",
+    "x": 756,
+    "y": 896,
+    "z": 53
+  },
+  {
+    "angle_h": 0.2032945323400707,
+    "angle_v": 1.5936382594645062,
+    "file_frame": "file_num269_frame_335",
+    "map": "de_overpass",
+    "x": 505,
+    "y": 245,
+    "z": 105
+  },
+  {
+    "angle_h": 1.6498562584955339,
+    "angle_v": 1.5588302113849526,
+    "file_frame": "file_num211_frame_720",
+    "map": "de_overpass",
+    "x": 823,
+    "y": 407,
+    "z": 15
+  },
+  {
+    "angle_h": 0.8010255926740333,
+    "angle_v": 1.5710360112930037,
+    "file_frame": "file_num16_frame_920",
+    "map": "de_overpass",
+    "x": 172,
+    "y": 631,
+    "z": 110
+  },
+  {
+    "angle_h": 2.4950256104503934,
+    "angle_v": 1.5927695363169225,
+    "file_frame": "file_num173_frame_631",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 122,
+    "z": 80
+  },
+  {
+    "angle_h": 1.846763065802995,
+    "angle_v": 1.5493264547188956,
+    "file_frame": "file_num68_frame_951",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 115,
+    "z": 80
+  },
+  {
+    "angle_h": 0.035479164674253626,
+    "angle_v": 1.5490148648713564,
+    "file_frame": "file_num211_frame_85",
+    "map": "de_overpass",
+    "x": 840,
+    "y": 273,
+    "z": 11
+  },
+  {
+    "angle_h": 1.779447674509607,
+    "angle_v": 1.6042323142808415,
+    "file_frame": "file_num217_frame_740",
+    "map": "de_overpass",
+    "x": 427,
+    "y": 260,
+    "z": 105
+  },
+  {
+    "angle_h": 1.715991203635744,
+    "angle_v": 1.581875609561844,
+    "file_frame": "file_num131_frame_480",
+    "map": "de_overpass",
+    "x": 494,
+    "y": 438,
+    "z": 87
+  },
+  {
+    "angle_h": 1.6823874370011243,
+    "angle_v": 1.5857406552518762,
+    "file_frame": "file_num12_frame_842",
+    "map": "de_overpass",
+    "x": 777,
+    "y": 777,
+    "z": 57
+  },
+  {
+    "angle_h": 4.781124635487417,
+    "angle_v": 1.5578235364929027,
+    "file_frame": "file_num211_frame_605",
+    "map": "de_overpass",
+    "x": 828,
+    "y": 496,
+    "z": 14
+  },
+  {
+    "angle_h": 5.4032915304034015,
+    "angle_v": 1.5945432016029153,
+    "file_frame": "file_num131_frame_891",
+    "map": "de_overpass",
+    "x": 537,
+    "y": 594,
+    "z": 70
+  },
+  {
+    "angle_h": 3.2887530764731734,
+    "angle_v": 1.5362218379429429,
+    "file_frame": "file_num274_frame_211",
+    "map": "de_overpass",
+    "x": 513,
+    "y": 760,
+    "z": 104
+  },
+  {
+    "angle_h": 5.329810388554262,
+    "angle_v": 1.5359041228248964,
+    "file_frame": "file_num263_frame_850",
+    "map": "de_overpass",
+    "x": 788,
+    "y": 755,
+    "z": 59
+  },
+  {
+    "angle_h": 4.82550834558246,
+    "angle_v": 1.5810606822682798,
+    "file_frame": "file_num42_frame_60",
+    "map": "de_overpass",
+    "x": 625,
+    "y": 802,
+    "z": 77
+  },
+  {
+    "angle_h": 1.486876791895137,
+    "angle_v": 1.5839251783367694,
+    "file_frame": "file_num3_frame_66",
+    "map": "de_overpass",
+    "x": 464,
+    "y": 293,
+    "z": 107
+  },
+  {
+    "angle_h": 5.419236674798032,
+    "angle_v": 1.585866622771437,
+    "file_frame": "file_num287_frame_688",
+    "map": "de_overpass",
+    "x": 525,
+    "y": 220,
+    "z": 62
+  },
+  {
+    "angle_h": 5.8834634696863235,
+    "angle_v": 1.5361139799187946,
+    "file_frame": "file_num288_frame_846",
+    "map": "de_overpass",
+    "x": 422,
+    "y": 553,
+    "z": 96
+  },
+  {
+    "angle_h": 3.8116365270026775,
+    "angle_v": 1.5778190825894356,
+    "file_frame": "file_num306_frame_470",
+    "map": "de_overpass",
+    "x": 394,
+    "y": 649,
+    "z": 96
+  },
+  {
+    "angle_h": 3.9411263434211636,
+    "angle_v": 1.5735228711189198,
+    "file_frame": "file_num42_frame_125",
+    "map": "de_overpass",
+    "x": 612,
+    "y": 736,
+    "z": 77
+  },
+  {
+    "angle_h": 4.861652767897015,
+    "angle_v": 1.5869630461922226,
+    "file_frame": "file_num35_frame_36",
+    "map": "de_overpass",
+    "x": 696,
+    "y": 898,
+    "z": 53
+  },
+  {
+    "angle_h": 3.8502198722435272,
+    "angle_v": 1.5359041228248964,
+    "file_frame": "file_num288_frame_220",
+    "map": "de_overpass",
+    "x": 393,
+    "y": 630,
+    "z": 101
+  },
+  {
+    "angle_h": 1.9404257755508092,
+    "angle_v": 1.5642769084463826,
+    "file_frame": "file_num269_frame_770",
+    "map": "de_overpass",
+    "x": 846,
+    "y": 372,
+    "z": 15
+  },
+  {
+    "angle_h": 6.081826360319785,
+    "angle_v": 1.5830322204232656,
+    "file_frame": "file_num269_frame_745",
+    "map": "de_overpass",
+    "x": 890,
+    "y": 302,
+    "z": 13
+  },
+  {
+    "angle_h": 5.06658887273301,
+    "angle_v": 1.5404581282889318,
+    "file_frame": "file_num217_frame_260",
+    "map": "de_overpass",
+    "x": 419,
+    "y": 65,
+    "z": 101
+  },
+  {
+    "angle_h": 0.15426680193614797,
+    "angle_v": 1.5570325776491492,
+    "file_frame": "file_num120_frame_70",
+    "map": "de_overpass",
+    "x": 874,
+    "y": 737,
+    "z": 50
+  },
+  {
+    "angle_h": 3.372420543175757,
+    "angle_v": 1.5492188630108565,
+    "file_frame": "file_num12_frame_386",
+    "map": "de_overpass",
+    "x": 807,
+    "y": 787,
+    "z": 40
+  },
+  {
+    "angle_h": 0.003882888869335529,
+    "angle_v": 1.565499299386729,
+    "file_frame": "file_num68_frame_205",
+    "map": "de_overpass",
+    "x": 556,
+    "y": 588,
+    "z": 59
+  },
+  {
+    "angle_h": 3.6669150270455915,
+    "angle_v": 1.5389182885466481,
+    "file_frame": "file_num274_frame_536",
+    "map": "de_overpass",
+    "x": 539,
+    "y": 835,
+    "z": 98
+  },
+  {
+    "angle_h": 1.1604265054732241,
+    "angle_v": 1.5880237832544013,
+    "file_frame": "file_num217_frame_385",
+    "map": "de_overpass",
+    "x": 533,
+    "y": 279,
+    "z": 37
+  },
+  {
+    "angle_h": 3.1838788580102895,
+    "angle_v": 1.5423937137692014,
+    "file_frame": "file_num53_frame_680",
+    "map": "de_overpass",
+    "x": 713,
+    "y": 391,
+    "z": 32
+  },
+  {
+    "angle_h": 0.7263159346140404,
+    "angle_v": 1.5928771280249614,
+    "file_frame": "file_num217_frame_395",
+    "map": "de_overpass",
+    "x": 536,
+    "y": 306,
+    "z": 37
+  },
+  {
+    "angle_h": 0.9043775482578283,
+    "angle_v": 1.5801080695463585,
+    "file_frame": "file_num131_frame_605",
+    "map": "de_overpass",
+    "x": 416,
+    "y": 646,
+    "z": 98
+  },
+  {
+    "angle_h": 2.9613978479128518,
+    "angle_v": 1.6044661398245503,
+    "file_frame": "file_num275_frame_603",
+    "map": "de_overpass",
+    "x": 701,
+    "y": 377,
+    "z": 32
+  },
+  {
+    "angle_h": 0.014938203186472461,
+    "angle_v": 1.5499975713135956,
+    "file_frame": "file_num274_frame_466",
+    "map": "de_overpass",
+    "x": 417,
+    "y": 765,
+    "z": 103
+  },
+  {
+    "angle_h": 5.310263851417517,
+    "angle_v": 1.5772558240188836,
+    "file_frame": "file_num216_frame_886",
+    "map": "de_overpass",
+    "x": 436,
+    "y": 591,
+    "z": 96
+  },
+  {
+    "angle_h": 4.688318797820335,
+    "angle_v": 1.5946928712561776,
+    "file_frame": "file_num269_frame_940",
+    "map": "de_overpass",
+    "x": 873,
+    "y": 292,
+    "z": 10
+  },
+  {
+    "angle_h": 0.2617892677870071,
+    "angle_v": 1.5957115303731328,
+    "file_frame": "file_num179_frame_398",
+    "map": "de_overpass",
+    "x": 701,
+    "y": 288,
+    "z": 16
+  },
+  {
+    "angle_h": 3.012750251632305,
+    "angle_v": 1.5568168616008526,
+    "file_frame": "file_num275_frame_803",
+    "map": "de_overpass",
+    "x": 631,
+    "y": 347,
+    "z": 37
+  },
+  {
+    "angle_h": 4.5474620772371726,
+    "angle_v": 1.6000676629681754,
+    "file_frame": "file_num217_frame_165",
+    "map": "de_overpass",
+    "x": 465,
+    "y": 343,
+    "z": 95
+  },
+  {
+    "angle_h": 1.123958509086224,
+    "angle_v": 1.5940816757860043,
+    "file_frame": "file_num42_frame_863",
+    "map": "de_overpass",
+    "x": 458,
+    "y": 811,
+    "z": 102
+  },
+  {
+    "angle_h": 4.460875785979862,
+    "angle_v": 1.5394993902965033,
+    "file_frame": "file_num101_frame_126",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 159,
+    "z": 105
+  },
+  {
+    "angle_h": 1.706325926249574,
+    "angle_v": 1.5410754490296124,
+    "file_frame": "file_num216_frame_406",
+    "map": "de_overpass",
+    "x": 818,
+    "y": 492,
+    "z": 15
+  },
+  {
+    "angle_h": 0.11908724288452825,
+    "angle_v": 1.600457283435654,
+    "file_frame": "file_num211_frame_535",
+    "map": "de_overpass",
+    "x": 694,
+    "y": 524,
+    "z": 13
+  },
+  {
+    "angle_h": 6.146714812911784,
+    "angle_v": 1.577735193015098,
+    "file_frame": "file_num277_frame_697",
+    "map": "de_overpass",
+    "x": 342,
+    "y": 772,
+    "z": 103
+  },
+  {
+    "angle_h": 2.0321889856511244,
+    "angle_v": 1.5690346457338091,
+    "file_frame": "file_num14_frame_780",
+    "map": "de_overpass",
+    "x": 435,
+    "y": 610,
+    "z": 96
+  },
+  {
+    "angle_h": 1.923725758145195,
+    "angle_v": 1.5461146824442602,
+    "file_frame": "file_num211_frame_695",
+    "map": "de_overpass",
+    "x": 850,
+    "y": 333,
+    "z": 14
+  },
+  {
+    "angle_h": 3.9100749503752765,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num70_frame_90",
+    "map": "de_overpass",
+    "x": 778,
+    "y": 749,
+    "z": 59
+  },
+  {
+    "angle_h": 3.985587817820037,
+    "angle_v": 1.6052448481272894,
+    "file_frame": "file_num287_frame_121",
+    "map": "de_overpass",
+    "x": 293,
+    "y": 766,
+    "z": 103
+  },
+  {
+    "angle_h": 0.766601039791451,
+    "angle_v": 1.5365512709697855,
+    "file_frame": "file_num101_frame_156",
+    "map": "de_overpass",
+    "x": 532,
+    "y": 109,
+    "z": 81
+  },
+  {
+    "angle_h": 0.08300274169449962,
+    "angle_v": 1.6042083458310308,
+    "file_frame": "file_num277_frame_476",
+    "map": "de_overpass",
+    "x": 488,
+    "y": 759,
+    "z": 103
+  },
+  {
+    "angle_h": 1.6221726989641603,
+    "angle_v": 1.5629945963815095,
+    "file_frame": "file_num120_frame_660",
+    "map": "de_overpass",
+    "x": 584,
+    "y": 158,
+    "z": 49
+  },
+  {
+    "angle_h": 4.870544530144572,
+    "angle_v": 1.537102545315432,
+    "file_frame": "file_num53_frame_268",
+    "map": "de_overpass",
+    "x": 431,
+    "y": 560,
+    "z": 96
+  },
+  {
+    "angle_h": 3.0371562588101177,
+    "angle_v": 1.5402184437908246,
+    "file_frame": "file_num288_frame_245",
+    "map": "de_overpass",
+    "x": 382,
+    "y": 600,
+    "z": 97
+  },
+  {
+    "angle_h": 5.4285604017744,
+    "angle_v": 1.6056405938652754,
+    "file_frame": "file_num274_frame_351",
+    "map": "de_overpass",
+    "x": 198,
+    "y": 611,
+    "z": 112
+  },
+  {
+    "angle_h": 4.9882477282105855,
+    "angle_v": 1.5612089468706114,
+    "file_frame": "file_num14_frame_994",
+    "map": "de_overpass",
+    "x": 406,
+    "y": 720,
+    "z": 103
+  },
+  {
+    "angle_h": 0.6344986623435965,
+    "angle_v": 1.605592656965654,
+    "file_frame": "file_num269_frame_380",
+    "map": "de_overpass",
+    "x": 568,
+    "y": 139,
+    "z": 105
+  },
+  {
+    "angle_h": 3.4049521211555107,
+    "angle_v": 1.5360122471651536,
+    "file_frame": "file_num35_frame_694",
+    "map": "de_overpass",
+    "x": 543,
+    "y": 768,
+    "z": 101
+  },
+  {
+    "angle_h": 2.018413119122417,
+    "angle_v": 1.5678362232432734,
+    "file_frame": "file_num306_frame_956",
+    "map": "de_overpass",
+    "x": 429,
+    "y": 585,
+    "z": 96
+  },
+  {
+    "angle_h": 3.10175123104999,
+    "angle_v": 1.5533174679284887,
+    "file_frame": "file_num173_frame_146",
+    "map": "de_overpass",
+    "x": 725,
+    "y": 369,
+    "z": 32
+  },
+  {
+    "angle_h": 0.20934629960116677,
+    "angle_v": 1.5923141357705188,
+    "file_frame": "file_num274_frame_20",
+    "map": "de_overpass",
+    "x": 634,
+    "y": 749,
+    "z": 77
+  },
+  {
+    "angle_h": 1.4462922142531471,
+    "angle_v": 1.6023867436454164,
+    "file_frame": "file_num288_frame_976",
+    "map": "de_overpass",
+    "x": 482,
+    "y": 385,
+    "z": 87
+  },
+  {
+    "angle_h": 5.352766038202418,
+    "angle_v": 1.576392959825698,
+    "file_frame": "file_num179_frame_363",
+    "map": "de_overpass",
+    "x": 641,
+    "y": 350,
+    "z": 37
+  },
+  {
+    "angle_h": 1.7009390171546162,
+    "angle_v": 1.5675725702953556,
+    "file_frame": "file_num306_frame_485",
+    "map": "de_overpass",
+    "x": 398,
+    "y": 667,
+    "z": 100
+  },
+  {
+    "angle_h": 5.631273299732398,
+    "angle_v": 1.544592952197389,
+    "file_frame": "file_num17_frame_366",
+    "map": "de_overpass",
+    "x": 627,
+    "y": 797,
+    "z": 77
+  },
+  {
+    "angle_h": 6.266671045260005,
+    "angle_v": 1.5576078204446062,
+    "file_frame": "file_num17_frame_875",
+    "map": "de_overpass",
+    "x": 689,
+    "y": 759,
+    "z": 77
+  },
+  {
+    "angle_h": 4.820492547985404,
+    "angle_v": 1.5650380398859274,
+    "file_frame": "file_num35_frame_602",
+    "map": "de_overpass",
+    "x": 772,
+    "y": 747,
+    "z": 59
+  },
+  {
+    "angle_h": 1.4930966046210172,
+    "angle_v": 1.5526463513337887,
+    "file_frame": "file_num287_frame_958",
+    "map": "de_overpass",
+    "x": 490,
+    "y": 396,
+    "z": 87
+  },
+  {
+    "angle_h": 6.198384931749283,
+    "angle_v": 1.541536708530414,
+    "file_frame": "file_num287_frame_302",
+    "map": "de_overpass",
+    "x": 413,
+    "y": 752,
+    "z": 103
+  },
+  {
+    "angle_h": 2.775774188353784,
+    "angle_v": 1.5444491414985246,
+    "file_frame": "file_num277_frame_962",
+    "map": "de_overpass",
+    "x": 669,
+    "y": 768,
+    "z": 77
+  },
+  {
+    "angle_h": 6.185004677800507,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num169_frame_456",
+    "map": "de_overpass",
+    "x": 784,
+    "y": 743,
+    "z": 59
+  },
+  {
+    "angle_h": 2.8193666732889637,
+    "angle_v": 1.5371387643062573,
+    "file_frame": "file_num306_frame_866",
+    "map": "de_overpass",
+    "x": 559,
+    "y": 569,
+    "z": 58
+  },
+  {
+    "angle_h": 2.1037168319987454,
+    "angle_v": 1.5886528219038778,
+    "file_frame": "file_num200_frame_874",
+    "map": "de_overpass",
+    "x": 411,
+    "y": 522,
+    "z": 96
+  },
+  {
+    "angle_h": 4.399253434148737,
+    "angle_v": 1.5995882939719612,
+    "file_frame": "file_num53_frame_95",
+    "map": "de_overpass",
+    "x": 252,
+    "y": 704,
+    "z": 106
+  },
+  {
+    "angle_h": 2.6157128805178416,
+    "angle_v": 1.5652654738430198,
+    "file_frame": "file_num288_frame_771",
+    "map": "de_overpass",
+    "x": 564,
+    "y": 565,
+    "z": 55
+  },
+  {
+    "angle_h": 2.353240511911229,
+    "angle_v": 1.5792691738029836,
+    "file_frame": "file_num217_frame_685",
+    "map": "de_overpass",
+    "x": 565,
+    "y": 160,
+    "z": 105
+  },
+  {
+    "angle_h": 5.953834838330577,
+    "angle_v": 1.5825589766975585,
+    "file_frame": "file_num274_frame_611",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 836,
+    "z": 98
+  },
+  {
+    "angle_h": 3.0109286494466905,
+    "angle_v": 1.5599087916264347,
+    "file_frame": "file_num42_frame_410",
+    "map": "de_overpass",
+    "x": 456,
+    "y": 869,
+    "z": 103
+  },
+  {
+    "angle_h": 0.16097796788314764,
+    "angle_v": 1.5379475663293143,
+    "file_frame": "file_num14_frame_665",
+    "map": "de_overpass",
+    "x": 621,
+    "y": 515,
+    "z": 32
+  },
+  {
+    "angle_h": 6.172480896458301,
+    "angle_v": 1.5985816190799111,
+    "file_frame": "file_num64_frame_440",
+    "map": "de_overpass",
+    "x": 245,
+    "y": 688,
+    "z": 114
+  },
+  {
+    "angle_h": 6.091959155635318,
+    "angle_v": 1.5766504875031087,
+    "file_frame": "file_num14_frame_185",
+    "map": "de_overpass",
+    "x": 455,
+    "y": 511,
+    "z": 96
+  },
+  {
+    "angle_h": 1.8683286785201842,
+    "angle_v": 1.5379057547002,
+    "file_frame": "file_num217_frame_575",
+    "map": "de_overpass",
+    "x": 553,
+    "y": 101,
+    "z": 82
+  },
+  {
+    "angle_h": 2.675616161865321,
+    "angle_v": 1.5451740539472443,
+    "file_frame": "file_num131_frame_105",
+    "map": "de_overpass",
+    "x": 462,
+    "y": 60,
+    "z": 81
+  },
+  {
+    "angle_h": 5.2608169394580155,
+    "angle_v": 1.5733249982499269,
+    "file_frame": "file_num263_frame_117",
+    "map": "de_overpass",
+    "x": 550,
+    "y": 592,
+    "z": 62
+  },
+  {
+    "angle_h": 3.6745013077267905,
+    "angle_v": 1.5694242662012878,
+    "file_frame": "file_num216_frame_736",
+    "map": "de_overpass",
+    "x": 772,
+    "y": 778,
+    "z": 55
+  },
+  {
+    "angle_h": 1.2050617511332247,
+    "angle_v": 1.5383070930764748,
+    "file_frame": "file_num42_frame_310",
+    "map": "de_overpass",
+    "x": 616,
+    "y": 746,
+    "z": 77
+  },
+  {
+    "angle_h": 4.010742439580271,
+    "angle_v": 1.5442094570004177,
+    "file_frame": "file_num288_frame_185",
+    "map": "de_overpass",
+    "x": 434,
+    "y": 676,
+    "z": 103
+  },
+  {
+    "angle_h": 5.846707851901595,
+    "angle_v": 1.5392117688987748,
+    "file_frame": "file_num263_frame_510",
+    "map": "de_overpass",
+    "x": 540,
+    "y": 836,
+    "z": 98
+  },
+  {
+    "angle_h": 0.9580429073840151,
+    "angle_v": 1.5374503541537965,
+    "file_frame": "file_num35_frame_281",
+    "map": "de_overpass",
+    "x": 772,
+    "y": 628,
+    "z": 41
+  },
+  {
+    "angle_h": 4.272543957908293,
+    "angle_v": 1.5616523631921095,
+    "file_frame": "file_num217_frame_225",
+    "map": "de_overpass",
+    "x": 449,
+    "y": 135,
+    "z": 105
+  },
+  {
+    "angle_h": 1.360616990404753,
+    "angle_v": 1.5367491438387786,
+    "file_frame": "file_num131_frame_997",
+    "map": "de_overpass",
+    "x": 597,
+    "y": 518,
+    "z": 31
+  },
+  {
+    "angle_h": 2.847871285384409,
+    "angle_v": 1.589599575671401,
+    "file_frame": "file_num169_frame_16",
+    "map": "de_overpass",
+    "x": 578,
+    "y": 112,
+    "z": 79
+  },
+  {
+    "angle_h": 5.489553981272158,
+    "angle_v": 1.6024527900404506,
+    "file_frame": "file_num101_frame_276",
+    "map": "de_overpass",
+    "x": 526,
+    "y": 204,
+    "z": 62
+  },
+  {
+    "angle_h": 5.327712882879716,
+    "angle_v": 1.5978447224062864,
+    "file_frame": "file_num154_frame_331",
+    "map": "de_overpass",
+    "x": 788,
+    "y": 753,
+    "z": 59
+  },
+  {
+    "angle_h": 4.026681458704396,
+    "angle_v": 1.6056824054943895,
+    "file_frame": "file_num179_frame_748",
+    "map": "de_overpass",
+    "x": 413,
+    "y": 563,
+    "z": 96
+  },
+  {
+    "angle_h": 5.608868924429888,
+    "angle_v": 1.574780948417873,
+    "file_frame": "file_num287_frame_673",
+    "map": "de_overpass",
+    "x": 579,
+    "y": 239,
+    "z": 62
+  },
+  {
+    "angle_h": 2.3394107163704474,
+    "angle_v": 1.581300366766387,
+    "file_frame": "file_num101_frame_236",
+    "map": "de_overpass",
+    "x": 578,
+    "y": 180,
+    "z": 37
+  },
+  {
+    "angle_h": 0.590990066982754,
+    "angle_v": 1.5802159275705068,
+    "file_frame": "file_num120_frame_635",
+    "map": "de_overpass",
+    "x": 571,
+    "y": 134,
+    "z": 103
+  },
+  {
+    "angle_h": 1.2152004054031564,
+    "angle_v": 1.6054365957257752,
+    "file_frame": "file_num217_frame_750",
+    "map": "de_overpass",
+    "x": 405,
+    "y": 267,
+    "z": 108
+  },
+  {
+    "angle_h": 5.505792606018916,
+    "angle_v": 1.6001456935881149,
+    "file_frame": "file_num269_frame_350",
+    "map": "de_overpass",
+    "x": 493,
+    "y": 212,
+    "z": 103
+  },
+  {
+    "angle_h": 4.628972916089009,
+    "angle_v": 1.5745774829105912,
+    "file_frame": "file_num217_frame_996",
+    "map": "de_overpass",
+    "x": 233,
+    "y": 581,
+    "z": 106
+  },
+  {
+    "angle_h": 1.3534983608109712,
+    "angle_v": 1.5758957476501805,
+    "file_frame": "file_num216_frame_466",
+    "map": "de_overpass",
+    "x": 803,
+    "y": 684,
+    "z": 40
+  },
+  {
+    "angle_h": 6.122105340226689,
+    "angle_v": 0.972933173670866,
+    "file_frame": "file_num17_frame_583",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 32
+  },
+  {
+    "angle_h": 5.8241356974504095,
+    "angle_v": 1.602602459693713,
+    "file_frame": "file_num42_frame_501",
+    "map": "de_overpass",
+    "x": 511,
+    "y": 848,
+    "z": 104
+  },
+  {
+    "angle_h": 0.8836688076213721,
+    "angle_v": 1.5364793656203535,
+    "file_frame": "file_num101_frame_446",
+    "map": "de_overpass",
+    "x": 533,
+    "y": 285,
+    "z": 37
+  },
+  {
+    "angle_h": 4.637828991977959,
+    "angle_v": 1.5358982638704983,
+    "file_frame": "file_num70_frame_848",
+    "map": "de_overpass",
+    "x": 545,
+    "y": 311,
+    "z": 37
+  },
+  {
+    "angle_h": 4.197301134998066,
+    "angle_v": 1.6052091617686826,
+    "file_frame": "file_num70_frame_665",
+    "map": "de_overpass",
+    "x": 862,
+    "y": 531,
+    "z": 14
+  },
+  {
+    "angle_h": 2.938699725942106,
+    "angle_v": 1.542111951325871,
+    "file_frame": "file_num217_frame_560",
+    "map": "de_overpass",
+    "x": 577,
+    "y": 122,
+    "z": 72
+  },
+  {
+    "angle_h": 1.3712589821207097,
+    "angle_v": 1.5365214435655767,
+    "file_frame": "file_num287_frame_598",
+    "map": "de_overpass",
+    "x": 586,
+    "y": 120,
+    "z": 78
+  },
+  {
+    "angle_h": 0.43947963677483803,
+    "angle_v": 1.5722584022333501,
+    "file_frame": "file_num274_frame_596",
+    "map": "de_overpass",
+    "x": 503,
+    "y": 806,
+    "z": 103
+  },
+  {
+    "angle_h": 2.9738555828600246,
+    "angle_v": 1.6054067683215663,
+    "file_frame": "file_num275_frame_583",
+    "map": "de_overpass",
+    "x": 771,
+    "y": 364,
+    "z": 29
+  },
+  {
+    "angle_h": 6.046059574247803,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num269_frame_375",
+    "map": "de_overpass",
+    "x": 562,
+    "y": 155,
+    "z": 105
+  },
+  {
+    "angle_h": 5.2944089881838385,
+    "angle_v": 1.5396013893662535,
+    "file_frame": "file_num211_frame_60",
+    "map": "de_overpass",
+    "x": 858,
+    "y": 282,
+    "z": 10
+  },
+  {
+    "angle_h": 0.926901898967446,
+    "angle_v": 1.5798923534980622,
+    "file_frame": "file_num42_frame_220",
+    "map": "de_overpass",
+    "x": 597,
+    "y": 702,
+    "z": 31
+  },
+  {
+    "angle_h": 5.734373852909289,
+    "angle_v": 1.5870828884412762,
+    "file_frame": "file_num14_frame_165",
+    "map": "de_overpass",
+    "x": 426,
+    "y": 524,
+    "z": 96
+  },
+  {
+    "angle_h": 2.959624182626859,
+    "angle_v": 1.5568107363303454,
+    "file_frame": "file_num70_frame_918",
+    "map": "de_overpass",
+    "x": 577,
+    "y": 119,
+    "z": 74
+  },
+  {
+    "angle_h": 5.133083211462327,
+    "angle_v": 1.5857406552518762,
+    "file_frame": "file_num53_frame_766",
+    "map": "de_overpass",
+    "x": 533,
+    "y": 287,
+    "z": 37
+  },
+  {
+    "angle_h": 1.0435323757463761,
+    "angle_v": 1.5393257521934303,
+    "file_frame": "file_num120_frame_700",
+    "map": "de_overpass",
+    "x": 531,
+    "y": 286,
+    "z": 37
+  },
+  {
+    "angle_h": 2.288022359976279,
+    "angle_v": 1.5685073398379734,
+    "file_frame": "file_num169_frame_832",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 723,
+    "z": 80
+  },
+  {
+    "angle_h": 4.5033244432268535,
+    "angle_v": 1.6012122896046916,
+    "file_frame": "file_num288_frame_35",
+    "map": "de_overpass",
+    "x": 556,
+    "y": 583,
+    "z": 59
+  },
+  {
+    "angle_h": 4.838870490035823,
+    "angle_v": 1.5985278232258917,
+    "file_frame": "file_num53_frame_796",
+    "map": "de_overpass",
+    "x": 572,
+    "y": 208,
+    "z": 34
+  },
+  {
+    "angle_h": 2.008526133575498,
+    "angle_v": 1.5972814638357347,
+    "file_frame": "file_num16_frame_480",
+    "map": "de_overpass",
+    "x": 496,
+    "y": 490,
+    "z": 87
+  },
+  {
+    "angle_h": 3.1445828508617337,
+    "angle_v": 1.5888626789977762,
+    "file_frame": "file_num154_frame_351",
+    "map": "de_overpass",
+    "x": 759,
+    "y": 749,
+    "z": 65
+  },
+  {
+    "angle_h": 3.116443890783957,
+    "angle_v": 2.592421539414281,
+    "file_frame": "file_num263_frame_980",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 79
+  },
+  {
+    "angle_h": 5.427625632231782,
+    "angle_v": 1.5395894051413481,
+    "file_frame": "file_num14_frame_265",
+    "map": "de_overpass",
+    "x": 545,
+    "y": 593,
+    "z": 65
+  },
+  {
+    "angle_h": 0.20333021869867776,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num154_frame_321",
+    "map": "de_overpass",
+    "x": 781,
+    "y": 751,
+    "z": 64
+  },
+  {
+    "angle_h": 1.4003686644158209,
+    "angle_v": 1.6043401723049897,
+    "file_frame": "file_num173_frame_986",
+    "map": "de_overpass",
+    "x": 802,
+    "y": 618,
+    "z": 40
+  },
+  {
+    "angle_h": 0.8939933505353914,
+    "angle_v": 1.545767406238114,
+    "file_frame": "file_num217_frame_320",
+    "map": "de_overpass",
+    "x": 558,
+    "y": 104,
+    "z": 80
+  },
+  {
+    "angle_h": 5.229352490127056,
+    "angle_v": 1.536725175388968,
+    "file_frame": "file_num271_frame_400",
+    "map": "de_overpass",
+    "x": 223,
+    "y": 558,
+    "z": 106
+  },
+  {
+    "angle_h": 4.295655402480219,
+    "angle_v": 1.5962209930896651,
+    "file_frame": "file_num179_frame_713",
+    "map": "de_overpass",
+    "x": 435,
+    "y": 685,
+    "z": 103
+  },
+  {
+    "angle_h": 2.6852932903183415,
+    "angle_v": 1.5708623731899307,
+    "file_frame": "file_num173_frame_121",
+    "map": "de_overpass",
+    "x": 767,
+    "y": 345,
+    "z": 31
+  },
+  {
+    "angle_h": 1.669264710729759,
+    "angle_v": 1.5779810027837124,
+    "file_frame": "file_num70_frame_958",
+    "map": "de_overpass",
+    "x": 539,
+    "y": 109,
+    "z": 80
+  },
+  {
+    "angle_h": 3.7985795808102365,
+    "angle_v": 1.5872746360397618,
+    "file_frame": "file_num200_frame_672",
+    "map": "de_overpass",
+    "x": 501,
+    "y": 723,
+    "z": 104
+  },
+  {
+    "angle_h": 5.89864748264141,
+    "angle_v": 1.5362817590674696,
+    "file_frame": "file_num169_frame_136",
+    "map": "de_overpass",
+    "x": 519,
+    "y": 158,
+    "z": 105
+  },
+  {
+    "angle_h": 4.429950626769644,
+    "angle_v": 1.5579492376963544,
+    "file_frame": "file_num120_frame_360",
+    "map": "de_overpass",
+    "x": 189,
+    "y": 620,
+    "z": 109
+  },
+  {
+    "angle_h": 0.07810731897871596,
+    "angle_v": 0.17458032946683635,
+    "file_frame": "file_num17_frame_563",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 722,
+    "z": 72
+  },
+  {
+    "angle_h": 0.7988804164159744,
+    "angle_v": 1.5469178918290283,
+    "file_frame": "file_num101_frame_826",
+    "map": "de_overpass",
+    "x": 421,
+    "y": 360,
+    "z": 96
+  },
+  {
+    "angle_h": 1.7295513541161551,
+    "angle_v": 1.6031297655895487,
+    "file_frame": "file_num211_frame_205",
+    "map": "de_overpass",
+    "x": 853,
+    "y": 299,
+    "z": 11
+  },
+  {
+    "angle_h": 3.8505676810818916,
+    "angle_v": 1.5574879781955526,
+    "file_frame": "file_num53_frame_715",
+    "map": "de_overpass",
+    "x": 621,
+    "y": 383,
+    "z": 37
+  },
+  {
+    "angle_h": 1.0871489622894215,
+    "angle_v": 1.602806191517104,
+    "file_frame": "file_num17_frame_190",
+    "map": "de_overpass",
+    "x": 230,
+    "y": 665,
+    "z": 106
+  },
+  {
+    "angle_h": 2.149676334510788,
+    "angle_v": 1.5412853061235106,
+    "file_frame": "file_num217_frame_941",
+    "map": "de_overpass",
+    "x": 216,
+    "y": 621,
+    "z": 107
+  },
+  {
+    "angle_h": 5.802797651848368,
+    "angle_v": 1.551615707991928,
+    "file_frame": "file_num131_frame_957",
+    "map": "de_overpass",
+    "x": 621,
+    "y": 481,
+    "z": 37
+  },
+  {
+    "angle_h": 1.4449499810637472,
+    "angle_v": 1.5932845916717435,
+    "file_frame": "file_num306_frame_360",
+    "map": "de_overpass",
+    "x": 548,
+    "y": 779,
+    "z": 99
+  },
+  {
+    "angle_h": 5.2280643191077845,
+    "angle_v": 1.5680580645620772,
+    "file_frame": "file_num211_frame_110",
+    "map": "de_overpass",
+    "x": 854,
+    "y": 280,
+    "z": 10
+  },
+  {
+    "angle_h": 1.773545443743719,
+    "angle_v": 1.5359342165452143,
+    "file_frame": "file_num274_frame_516",
+    "map": "de_overpass",
+    "x": 553,
+    "y": 784,
+    "z": 96
+  },
+  {
+    "angle_h": 5.0442982144090465,
+    "angle_v": 1.5912174460336241,
+    "file_frame": "file_num169_frame_957",
+    "map": "de_overpass",
+    "x": 803,
+    "y": 786,
+    "z": 40
+  },
+  {
+    "angle_h": 2.6547753284387965,
+    "angle_v": 1.5634678401072164,
+    "file_frame": "file_num14_frame_770",
+    "map": "de_overpass",
+    "x": 463,
+    "y": 598,
+    "z": 96
+  },
+  {
+    "angle_h": 3.711310987681648,
+    "angle_v": 1.602237073992154,
+    "file_frame": "file_num269_frame_20",
+    "map": "de_overpass",
+    "x": 517,
+    "y": 726,
+    "z": 104
+  },
+  {
+    "angle_h": 4.149489936580092,
+    "angle_v": 1.536838892367514,
+    "file_frame": "file_num70_frame_833",
+    "map": "de_overpass",
+    "x": 571,
+    "y": 343,
+    "z": 37
+  },
+  {
+    "angle_h": 1.5048890819278882,
+    "angle_v": 1.5628686288619487,
+    "file_frame": "file_num277_frame_551",
+    "map": "de_overpass",
+    "x": 414,
+    "y": 639,
+    "z": 96
+  },
+  {
+    "angle_h": 5.776905600782291,
+    "angle_v": 1.583715321242871,
+    "file_frame": "file_num64_frame_475",
+    "map": "de_overpass",
+    "x": 236,
+    "y": 694,
+    "z": 118
+  },
+  {
+    "angle_h": 1.0262990603324733,
+    "angle_v": 1.5585844016163382,
+    "file_frame": "file_num53_frame_328",
+    "map": "de_overpass",
+    "x": 427,
+    "y": 532,
+    "z": 96
+  },
+  {
+    "angle_h": 1.6188830292276397,
+    "angle_v": 1.5989533963680864,
+    "file_frame": "file_num179_frame_473",
+    "map": "de_overpass",
+    "x": 825,
+    "y": 459,
+    "z": 14
+  },
+  {
+    "angle_h": 4.666639068650436,
+    "angle_v": 1.5393257521934303,
+    "file_frame": "file_num277_frame_907",
+    "map": "de_overpass",
+    "x": 778,
+    "y": 827,
+    "z": 42
+  },
+  {
+    "angle_h": 5.1533786294976025,
+    "angle_v": 1.603788897959343,
+    "file_frame": "file_num101_frame_596",
+    "map": "de_overpass",
+    "x": 541,
+    "y": 261,
+    "z": 33
+  },
+  {
+    "angle_h": 6.251984244480436,
+    "angle_v": 0.1745441104760113,
+    "file_frame": "file_num42_frame_145",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 74
+  },
+  {
+    "angle_h": 4.520048029608115,
+    "angle_v": 1.5707364056703699,
+    "file_frame": "file_num288_frame_591",
+    "map": "de_overpass",
+    "x": 615,
+    "y": 480,
+    "z": 31
+  },
+  {
+    "angle_h": 4.825010867090833,
+    "angle_v": 1.6007449048333826,
+    "file_frame": "file_num14_frame_130",
+    "map": "de_overpass",
+    "x": 417,
+    "y": 623,
+    "z": 96
+  },
+  {
+    "angle_h": 2.261321506887144,
+    "angle_v": 1.5593394077853757,
+    "file_frame": "file_num70_frame_923",
+    "map": "de_overpass",
+    "x": 575,
+    "y": 109,
+    "z": 80
+  },
+  {
+    "angle_h": 6.238855659254672,
+    "angle_v": 1.5668713599803377,
+    "file_frame": "file_num216_frame_136",
+    "map": "de_overpass",
+    "x": 473,
+    "y": 175,
+    "z": 103
+  },
+  {
+    "angle_h": 4.922262585881692,
+    "angle_v": 1.5379955032289356,
+    "file_frame": "file_num3_frame_704",
+    "map": "de_overpass",
+    "x": 802,
+    "y": 615,
+    "z": 40
+  },
+  {
+    "angle_h": 1.139663835824694,
+    "angle_v": 1.569430125155686,
+    "file_frame": "file_num131_frame_145",
+    "map": "de_overpass",
+    "x": 425,
+    "y": 68,
+    "z": 102
+  },
+  {
+    "angle_h": 3.784102637124566,
+    "angle_v": 1.5991211755167614,
+    "file_frame": "file_num42_frame_100",
+    "map": "de_overpass",
+    "x": 645,
+    "y": 760,
+    "z": 77
+  },
+  {
+    "angle_h": 0.1253669767349351,
+    "angle_v": 1.5929852523652188,
+    "file_frame": "file_num169_frame_867",
+    "map": "de_overpass",
+    "x": 678,
+    "y": 755,
+    "z": 77
+  },
+  {
+    "angle_h": 6.236404752103472,
+    "angle_v": 1.5359102480954037,
+    "file_frame": "file_num211_frame_350",
+    "map": "de_overpass",
+    "x": 806,
+    "y": 608,
+    "z": 40
+  },
+  {
+    "angle_h": 1.7304501709840567,
+    "angle_v": 1.5440416778517425,
+    "file_frame": "file_num131_frame_660",
+    "map": "de_overpass",
+    "x": 479,
+    "y": 713,
+    "z": 103
+  },
+  {
+    "angle_h": 0.009491506125042405,
+    "angle_v": 1.570808311019802,
+    "file_frame": "file_num35_frame_542",
+    "map": "de_overpass",
+    "x": 783,
+    "y": 758,
+    "z": 63
+  },
+  {
+    "angle_h": 1.011198936951724,
+    "angle_v": 1.6049393835502574,
+    "file_frame": "file_num179_frame_428",
+    "map": "de_overpass",
+    "x": 795,
+    "y": 323,
+    "z": 19
+  },
+  {
+    "angle_h": 5.295583442224563,
+    "angle_v": 1.5374921657829106,
+    "file_frame": "file_num14_frame_275",
+    "map": "de_overpass",
+    "x": 565,
+    "y": 569,
+    "z": 59
+  },
+  {
+    "angle_h": 0.05285043183262248,
+    "angle_v": 1.5524546037353029,
+    "file_frame": "file_num68_frame_180",
+    "map": "de_overpass",
+    "x": 487,
+    "y": 592,
+    "z": 96
+  },
+  {
+    "angle_h": 3.7749711903789023,
+    "angle_v": 1.5644207191452468,
+    "file_frame": "file_num179_frame_663",
+    "map": "de_overpass",
+    "x": 576,
+    "y": 790,
+    "z": 90
+  },
+  {
+    "angle_h": 5.722209598314244,
+    "angle_v": 1.5894256712522188,
+    "file_frame": "file_num120_frame_25",
+    "map": "de_overpass",
+    "x": 759,
+    "y": 848,
+    "z": 43
+  },
+  {
+    "angle_h": 3.0821807254634335,
+    "angle_v": 1.5663802730753273,
+    "file_frame": "file_num56_frame_287",
+    "map": "de_overpass",
+    "x": 375,
+    "y": 758,
+    "z": 103
+  },
+  {
+    "angle_h": 1.6089960436807207,
+    "angle_v": 1.600457283435654,
+    "file_frame": "file_num269_frame_405",
+    "map": "de_overpass",
+    "x": 590,
+    "y": 153,
+    "z": 52
+  },
+  {
+    "angle_h": 1.2567676894873856,
+    "angle_v": 1.575146600435541,
+    "file_frame": "file_num200_frame_367",
+    "map": "de_overpass",
+    "x": 760,
+    "y": 762,
+    "z": 61
+  },
+  {
+    "angle_h": 0.2159317643447147,
+    "angle_v": 1.5681957499904342,
+    "file_frame": "file_num287_frame_663",
+    "map": "de_overpass",
+    "x": 569,
+    "y": 237,
+    "z": 62
+  },
+  {
+    "angle_h": 0.7383779238232273,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num70_frame_560",
+    "map": "de_overpass",
+    "x": 868,
+    "y": 543,
+    "z": 14
+  },
+  {
+    "angle_h": 1.0499559202956472,
+    "angle_v": 1.536838892367514,
+    "file_frame": "file_num56_frame_761",
+    "map": "de_overpass",
+    "x": 398,
+    "y": 524,
+    "z": 96
+  },
+  {
+    "angle_h": 1.0905944269497114,
+    "angle_v": 1.5719707808356216,
+    "file_frame": "file_num12_frame_231",
+    "map": "de_overpass",
+    "x": 675,
+    "y": 476,
+    "z": 14
+  },
+  {
+    "angle_h": 5.789788908871658,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num120_frame_570",
+    "map": "de_overpass",
+    "x": 372,
+    "y": 214,
+    "z": 105
+  },
+  {
+    "angle_h": 4.798196030707043,
+    "angle_v": 1.6022788856212682,
+    "file_frame": "file_num173_frame_10",
+    "map": "de_overpass",
+    "x": 800,
+    "y": 625,
+    "z": 40
+  },
+  {
+    "angle_h": 5.847420780125409,
+    "angle_v": 1.536833033413116,
+    "file_frame": "file_num3_frame_348",
+    "map": "de_overpass",
+    "x": 520,
+    "y": 841,
+    "z": 104
+  },
+  {
+    "angle_h": 6.107322931963986,
+    "angle_v": 1.6023926025998145,
+    "file_frame": "file_num35_frame_522",
+    "map": "de_overpass",
+    "x": 762,
+    "y": 744,
+    "z": 60
+  },
+  {
+    "angle_h": 5.705941146163276,
+    "angle_v": 1.59383586601739,
+    "file_frame": "file_num3_frame_865",
+    "map": "de_overpass",
+    "x": 890,
+    "y": 299,
+    "z": 21
+  },
+  {
+    "angle_h": 5.274790545697662,
+    "angle_v": 1.5778190825894356,
+    "file_frame": "file_num14_frame_964",
+    "map": "de_overpass",
+    "x": 345,
+    "y": 780,
+    "z": 103
+  },
+  {
+    "angle_h": 4.405868726296494,
+    "angle_v": 1.5392836742482068,
+    "file_frame": "file_num17_frame_45",
+    "map": "de_overpass",
+    "x": 255,
+    "y": 753,
+    "z": 104
+  },
+  {
+    "angle_h": 2.4814536089031316,
+    "angle_v": 1.5821152940599512,
+    "file_frame": "file_num217_frame_690",
+    "map": "de_overpass",
+    "x": 559,
+    "y": 168,
+    "z": 105
+  },
+  {
+    "angle_h": 6.05414865974281,
+    "angle_v": 1.589599575671401,
+    "file_frame": "file_num263_frame_92",
+    "map": "de_overpass",
+    "x": 466,
+    "y": 602,
+    "z": 96
+  },
+  {
+    "angle_h": 0.93375687561331,
+    "angle_v": 1.6023926025998145,
+    "file_frame": "file_num173_frame_696",
+    "map": "de_overpass",
+    "x": 561,
+    "y": 125,
+    "z": 91
+  },
+  {
+    "angle_h": 5.721298797221436,
+    "angle_v": 1.5386306671489196,
+    "file_frame": "file_num12_frame_742",
+    "map": "de_overpass",
+    "x": 649,
+    "y": 791,
+    "z": 77
+  },
+  {
+    "angle_h": 3.189517835302423,
+    "angle_v": 1.5410754490296124,
+    "file_frame": "file_num16_frame_275",
+    "map": "de_overpass",
+    "x": 471,
+    "y": 172,
+    "z": 103
+  },
+  {
+    "angle_h": 4.887957875248164,
+    "angle_v": 1.598803460398715,
+    "file_frame": "file_num275_frame_868",
+    "map": "de_overpass",
+    "x": 537,
+    "y": 298,
+    "z": 37
+  },
+  {
+    "angle_h": 0.9843662573886307,
+    "angle_v": 1.6056885307648967,
+    "file_frame": "file_num217_frame_755",
+    "map": "de_overpass",
+    "x": 407,
+    "y": 286,
+    "z": 106
+  },
+  {
+    "angle_h": 5.93349148339568,
+    "angle_v": 1.5359342165452143,
+    "file_frame": "file_num287_frame_588",
+    "map": "de_overpass",
+    "x": 558,
+    "y": 151,
+    "z": 105
+  },
+  {
+    "angle_h": 3.722839279408383,
+    "angle_v": 1.5360479335237607,
+    "file_frame": "file_num68_frame_500",
+    "map": "de_overpass",
+    "x": 701,
+    "y": 377,
+    "z": 32
+  },
+  {
+    "angle_h": 4.704862887144126,
+    "angle_v": 1.557464009745742,
+    "file_frame": "file_num200_frame_718",
+    "map": "de_overpass",
+    "x": 412,
+    "y": 612,
+    "z": 96
+  },
+  {
+    "angle_h": 2.0233386355585186,
+    "angle_v": 1.410261508917138,
+    "file_frame": "file_num263_frame_985",
+    "map": "de_overpass",
+    "x": 606,
+    "y": 724,
+    "z": 79
+  },
+  {
+    "angle_h": 2.676568774587242,
+    "angle_v": 1.5518431419490206,
+    "file_frame": "file_num35_frame_627",
+    "map": "de_overpass",
+    "x": 700,
+    "y": 761,
+    "z": 77
+  },
+  {
+    "angle_h": 0.2555036749822021,
+    "angle_v": 1.5755420798574178,
+    "file_frame": "file_num200_frame_854",
+    "map": "de_overpass",
+    "x": 345,
+    "y": 527,
+    "z": 103
+  },
+  {
+    "angle_h": 1.4331215510821602,
+    "angle_v": 1.547187403731344,
+    "file_frame": "file_num306_frame_515",
+    "map": "de_overpass",
+    "x": 360,
+    "y": 758,
+    "z": 103
+  },
+  {
+    "angle_h": 2.495672758595283,
+    "angle_v": 1.5401167110371838,
+    "file_frame": "file_num287_frame_613",
+    "map": "de_overpass",
+    "x": 587,
+    "y": 166,
+    "z": 44
+  },
+  {
+    "angle_h": 5.912776883804825,
+    "angle_v": 1.560388160622649,
+    "file_frame": "file_num120_frame_65",
+    "map": "de_overpass",
+    "x": 861,
+    "y": 738,
+    "z": 40
+  },
+  {
+    "angle_h": 1.9162715702540631,
+    "angle_v": 1.5810729328092945,
+    "file_frame": "file_num56_frame_659",
+    "map": "de_overpass",
+    "x": 261,
+    "y": 362,
+    "z": 112
+  },
+  {
+    "angle_h": 2.848278749031191,
+    "angle_v": 1.5707843425699912,
+    "file_frame": "file_num169_frame_797",
+    "map": "de_overpass",
+    "x": 611,
+    "y": 721,
+    "z": 29
+  },
+  {
+    "angle_h": 5.254800858555527,
+    "angle_v": 1.5871907464654242,
+    "file_frame": "file_num35_frame_171",
+    "map": "de_overpass",
+    "x": 795,
+    "y": 597,
+    "z": 40
+  },
+  {
+    "angle_h": 4.5434774556141955,
+    "angle_v": 1.599241017765815,
+    "file_frame": "file_num35_frame_457",
+    "map": "de_overpass",
+    "x": 589,
+    "y": 795,
+    "z": 86
+  },
+  {
+    "angle_h": 1.4809266242296277,
+    "angle_v": 1.5929072217452793,
+    "file_frame": "file_num216_frame_566",
+    "map": "de_overpass",
+    "x": 762,
+    "y": 886,
+    "z": 44
+  }
+]
