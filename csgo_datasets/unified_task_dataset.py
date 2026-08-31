@@ -6,6 +6,7 @@ import numpy as np
 from PIL import Image
 import copy
 from typing import Dict, Sequence, Union, List
+from collections.abc import Mapping
 from dataclasses import dataclass
 
 import torch
@@ -557,6 +558,81 @@ map_to_id_dict = {
 id_to_map_dict = {k: i for i, k in enumerate(map_to_id_dict.keys())}
 
 
+def _benchmark_v2_selection_value(selection, key):
+    if isinstance(selection, Mapping):
+        return selection[key]
+    return getattr(selection, key)
+
+
+def _get_training_benchmark_v2_selection(config, data_args, map_names=None):
+    if not config.get("benchmark_v2_manifest"):
+        return None
+
+    from csgo_datasets.benchmark_v2 import (
+        is_benchmark_v2_config,
+        load_benchmark_v2_selection,
+    )
+
+    if not is_benchmark_v2_config(config):
+        raise ValueError(
+            "benchmark_v2_manifest is configured, but the config is not a valid "
+            "Benchmark v2 config."
+        )
+
+    # CLI overrides are copied into config before dataset construction. The
+    # loader therefore owns support-seed and shot-subset selection.
+    return load_benchmark_v2_selection(
+        config,
+        map_names=map_names,
+        split=config.get("benchmark_v2_split"),
+    )
+
+
+def _benchmark_v2_rows_by_map(selection, map_names):
+    rows = _benchmark_v2_selection_value(selection, "rows")
+    rows_by_map = {map_name: [] for map_name in map_names}
+
+    if isinstance(rows, Mapping):
+        for map_name in map_names:
+            map_rows = rows.get(map_name, [])
+            if isinstance(map_rows, Mapping) and "rows" in map_rows:
+                map_rows = map_rows["rows"]
+            rows_by_map[map_name] = list(map_rows)
+        return rows_by_map
+
+    for row in rows:
+        map_name = row.get("map")
+        if map_name in rows_by_map:
+            rows_by_map[map_name].append(row)
+    return rows_by_map
+
+
+def _benchmark_v2_z_bounds(selection, map_name):
+    z_ranges = _benchmark_v2_selection_value(selection, "z_ranges")
+    z_range = z_ranges[map_name]
+    if isinstance(z_range, Mapping):
+        z_min = z_range.get("z_min", z_range.get("min_z", z_range.get("min")))
+        z_max = z_range.get("z_max", z_range.get("max_z", z_range.get("max")))
+    else:
+        z_min, z_max = z_range
+    if z_min is None or z_max is None:
+        raise ValueError(f"Benchmark v2 selection has no complete z range for {map_name}")
+    return z_min, z_max
+
+
+def _benchmark_v2_radar_path(selection, map_name):
+    radar_paths = _benchmark_v2_selection_value(selection, "radar_paths")
+    return os.fspath(radar_paths[map_name])
+
+
+def _benchmark_v2_fps_path(selection, map_name, file_frame):
+    source_root = os.fspath(_benchmark_v2_selection_value(selection, "source_root"))
+    extension = str(_benchmark_v2_selection_value(selection, "image_extension"))
+    if extension and not extension.startswith("."):
+        extension = "." + extension
+    return os.path.join(source_root, map_name, "imgs", str(file_frame) + extension)
+
+
 
 
 # 任务 A: 定位 (Map + FPS -> Pose)
@@ -722,39 +798,60 @@ class UniLIPMultiTaskDataset(Dataset):
 
         self.data_entries = []
         self.map_z_range = {}
+        self.benchmark_v2_selection = _get_training_benchmark_v2_selection(
+            config,
+            data_args,
+            map_names=config["train_maps"],
+        )
 
         logging.info("🔄 Loading Multi-Task CS2 Dataset...")
 
         # --- 1. 加载数据索引 (逻辑复用 CsgoTrainDataset_IT) ---
-        for map_name in config["train_maps"]:
-            position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
-            if config['debug']:
-                position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
+        if self.benchmark_v2_selection is not None:
+            rows_by_map = _benchmark_v2_rows_by_map(
+                self.benchmark_v2_selection,
+                config["train_maps"],
+            )
+            for map_name in config["train_maps"]:
+                z_min, z_max = _benchmark_v2_z_bounds(
+                    self.benchmark_v2_selection,
+                    map_name,
+                )
+                self.map_z_range[map_name] = {'max_z': z_max, 'min_z': z_min}
+                for pos_data in rows_by_map[map_name]:
+                    self.data_entries.append(
+                        _build_csgo_entry(map_name, pos_data, z_min, z_max)
+                    )
+        else:
+            for map_name in config["train_maps"]:
+                position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
+                if config['debug']:
+                    position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
 
-            logging.info(f"Loading CS2 Data Split {position_data_path}...")
-            with open(position_data_path, "r", encoding="utf-8") as f:
-                positions_data = json.load(f)
+                logging.info(f"Loading CS2 Data Split {position_data_path}...")
+                with open(position_data_path, "r", encoding="utf-8") as f:
+                    positions_data = json.load(f)
 
-            # 计算 Z 轴范围
-            max_z, min_z = -float('inf'), float('inf')
-            for data in positions_data:
-                if data['z'] > max_z: max_z = data['z']
-                if data['z'] < min_z: min_z = data['z']
-            self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+                # 计算 Z 轴范围
+                max_z, min_z = -float('inf'), float('inf')
+                for data in positions_data:
+                    if data['z'] > max_z: max_z = data['z']
+                    if data['z'] < min_z: min_z = data['z']
+                self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
 
-            # 载入数据
-            for pos_data in positions_data:
-                # entry = {
-                #     'map': map_name,
-                #     'file_frame': pos_data['file_frame'],
-                #     'x': pos_data['x'],
-                #     'y': pos_data['y'],
-                #     'z': pos_data['z'],
-                #     'angle_v': pos_data['angle_v'], # Radian
-                #     'angle_h': pos_data['angle_h'], # Radian
-                # }
-                # self.data_entries.append(entry) # GPT优化
-                self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
+                # 载入数据
+                for pos_data in positions_data:
+                    # entry = {
+                    #     'map': map_name,
+                    #     'file_frame': pos_data['file_frame'],
+                    #     'x': pos_data['x'],
+                    #     'y': pos_data['y'],
+                    #     'z': pos_data['z'],
+                    #     'angle_v': pos_data['angle_v'], # Radian
+                    #     'angle_h': pos_data['angle_h'], # Radian
+                    # }
+                    # self.data_entries.append(entry) # GPT优化
+                    self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
 
         # Debug 采样
         if config.get('debug', False):
@@ -771,8 +868,17 @@ class UniLIPMultiTaskDataset(Dataset):
 
         # 预加载所有地图图片到内存
         self.map_images = {}
-        for map_name, filename in map_path_dict.items():
-            path = f"{config['data_dir']}/{map_name}/{filename}"
+        if self.benchmark_v2_selection is not None:
+            radar_paths = {
+                map_name: _benchmark_v2_radar_path(self.benchmark_v2_selection, map_name)
+                for map_name in config["train_maps"]
+            }
+        else:
+            radar_paths = {
+                map_name: f"{config['data_dir']}/{map_name}/{filename}"
+                for map_name, filename in map_path_dict.items()
+            }
+        for map_name, path in radar_paths.items():
             if os.path.exists(path):
                 img = Image.open(path).convert('RGB').resize((448, 448))
                 # 预先做 Resize 以省内存 (如果 processor 需要 448)
@@ -838,8 +944,15 @@ class UniLIPMultiTaskDataset(Dataset):
         # ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         # fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         # fps_img_pil = Image.open(fps_path).convert('RGB') # GPT优化
-        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
-        fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        if self.benchmark_v2_selection is not None:
+            fps_path = _benchmark_v2_fps_path(
+                self.benchmark_v2_selection,
+                map_name,
+                data['file_frame'],
+            )
+        else:
+            ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+            fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
         fps_img_pil_for_external = fps_img_pil.copy()
         external_loc_map_image = self.external_loc_map_tensor_cache[map_name].clone()
@@ -1331,29 +1444,50 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
 
         self.data_entries = []
         self.map_z_range = {}
+        self.benchmark_v2_selection = _get_training_benchmark_v2_selection(
+            config,
+            data_args,
+            map_names=config["train_maps"],
+        )
 
         logging.info("🔄 Loading Multi-Task CS2 Dataset...")
 
         # --- 1. 加载数据索引 (逻辑复用 CsgoTrainDataset_IT) ---
-        for map_name in config["train_maps"]:
-            position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
-            if config['debug']:
-                position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
+        if self.benchmark_v2_selection is not None:
+            rows_by_map = _benchmark_v2_rows_by_map(
+                self.benchmark_v2_selection,
+                config["train_maps"],
+            )
+            for map_name in config["train_maps"]:
+                z_min, z_max = _benchmark_v2_z_bounds(
+                    self.benchmark_v2_selection,
+                    map_name,
+                )
+                self.map_z_range[map_name] = {'max_z': z_max, 'min_z': z_min}
+                for pos_data in rows_by_map[map_name]:
+                    self.data_entries.append(
+                        _build_csgo_entry(map_name, pos_data, z_min, z_max)
+                    )
+        else:
+            for map_name in config["train_maps"]:
+                position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
+                if config['debug']:
+                    position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
 
-            logging.info(f"Loading CS2 Data Split {position_data_path}...")
-            with open(position_data_path, "r", encoding="utf-8") as f:
-                positions_data = json.load(f)
+                logging.info(f"Loading CS2 Data Split {position_data_path}...")
+                with open(position_data_path, "r", encoding="utf-8") as f:
+                    positions_data = json.load(f)
 
-            # 计算 Z 轴范围
-            max_z, min_z = -float('inf'), float('inf')
-            for data in positions_data:
-                if data['z'] > max_z: max_z = data['z']
-                if data['z'] < min_z: min_z = data['z']
-            self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+                # 计算 Z 轴范围
+                max_z, min_z = -float('inf'), float('inf')
+                for data in positions_data:
+                    if data['z'] > max_z: max_z = data['z']
+                    if data['z'] < min_z: min_z = data['z']
+                self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
 
-            # 载入数据
-            for pos_data in positions_data:
-                self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
+                # 载入数据
+                for pos_data in positions_data:
+                    self.data_entries.append(_build_csgo_entry(map_name, pos_data, min_z, max_z))
 
         # Debug 采样
         if config.get('debug', False):
@@ -1369,8 +1503,17 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
 
         # 预加载所有地图图片到内存
         self.map_images = {}
-        for map_name, filename in map_path_dict.items():
-            path = f"{config['data_dir']}/{map_name}/{filename}"
+        if self.benchmark_v2_selection is not None:
+            radar_paths = {
+                map_name: _benchmark_v2_radar_path(self.benchmark_v2_selection, map_name)
+                for map_name in config["train_maps"]
+            }
+        else:
+            radar_paths = {
+                map_name: f"{config['data_dir']}/{map_name}/{filename}"
+                for map_name, filename in map_path_dict.items()
+            }
+        for map_name, path in radar_paths.items():
             if os.path.exists(path):
                 img = Image.open(path).convert('RGB').resize((448, 448))
                 self.map_images[map_name] = img
@@ -1414,8 +1557,15 @@ class UniLIPMultiTaskBalancedDataset(Dataset):
         map_tensor = self.map_tensor_cache_224[map_name] if self.is_resize_224 else map_tensor_448
         external_loc_map_image = self.external_loc_map_tensor_cache[map_name].clone()
 
-        ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
-        fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+        if self.benchmark_v2_selection is not None:
+            fps_path = _benchmark_v2_fps_path(
+                self.benchmark_v2_selection,
+                map_name,
+                data['file_frame'],
+            )
+        else:
+            ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+            fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img_pil = Image.open(fps_path).convert('RGB')
         fps_img_pil_for_external = fps_img_pil.copy()
         external_loc_fps_image = to_external_loc_tensor(fps_img_pil_for_external)

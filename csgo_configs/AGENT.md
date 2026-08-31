@@ -1102,3 +1102,20 @@ repa_spatial_norm_gamma: 1.0
 - `record.md`
 - `train_csgo.py`
 - `unilip/model/language_model/unified_unilip.py`
+
+## Benchmark v2 Experiment Matrix
+
+Benchmark v2 uses the frozen manifest `data/csgo_benchmark_v2/benchmark_manifest.json`. The Seen-10 map order is `cs_agency, cs_italy, de_ancient, de_anubis, de_dust2, de_inferno, de_mirage, de_nuke, de_overpass, de_train`; the CrossMap-4 order is `cs_office, de_golden, de_palacio, de_vertigo`.
+
+| Experiment family | Direct parent | Benchmark v2 training split | Initialization | Purpose |
+|---|---|---|---|---|
+| `exp31`, `exp31_loc`, `exp31_gen` | `exp28_1`, `exp14_3_loc`, `exp14_3_gen` | `seen_train` | `UniLIP-1B` | Seen-10 full-head joint, loc-only, and gen-only baselines |
+| `exp32`, `exp32_loc`, `exp32_gen` | `exp30_2`, `exp14_2_loc`, `exp14_2_gen` | `seen_train` | `UniLIP-1B` | Seen-10 LoRA joint, loc-only, and gen-only baselines |
+| `exp33`, `exp33_loc`, `exp33_gen` | matching `exp31*` | `crossmap_support` | matching Seen-10 root model | 100-shot CrossMap-4 adaptation of the full-head family |
+| `exp34`, `exp34_loc`, `exp34_gen` | matching `exp32*` | `crossmap_support` | matching Seen-10 root model | 100-shot CrossMap-4 adaptation of the LoRA family |
+
+All twelve training configs set `benchmark_v2_manifest`, `benchmark_v2_split`, `data_dir`, and explicit map arrays. CrossMap configs additionally set `benchmark_v2_support_seed: 0` and `benchmark_v2_shots_per_map: 100`; their `finetune_init_ckpt_path` points to the final Seen-10 root `model.safetensors` and is model-only initialization, not resume. Future 50/20/10-shot runs change the shot field and corresponding output/checkpoint directory while retaining the same manifest and seed protocol.
+
+For continuation from a mature loss regime, `exp33` removes the joint loss schedules and uses static `alpha_loc_loss: 20`, `alpha_loc_aux_loss: 2`, and `alpha_loc_perception_loss: 0.1`. `exp34` removes the joint schedules, uses `alpha_loc_loss: 20`, and keeps auxiliary/perception losses disabled. Single-task configs keep their parent loss settings unchanged.
+
+Inference split mapping is: `seen_discrete_test` for discrete Seen-10 evaluation, `seen_continuous` for Seen-10 continuous generation, `crossmap_query_test` for CrossMap-4 discrete evaluation, and `crossmap_continuous` for CrossMap-4 continuous generation. Each family has six inference files: `<family>_loc.yaml`, `<family>_gen.yaml`, `<family>_gen_conti.yaml`, `<family>_loc_loc.yaml`, `<family>_gen_gen.yaml`, and `<family>_gen_gen_conti.yaml` under `csgo_configs/test/` (24 files total). Joint files use the family root checkpoint; `_loc` and `_gen` files use the corresponding single-task checkpoint.

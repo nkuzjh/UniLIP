@@ -1,0 +1,140 @@
+schema_version: 1
+
+benchmark:
+  id: "csgo_benchmark_v2"
+  version: "2.0.0"
+  global_seed: 20260827
+  strict_protocol: true
+  description: "Seen-10 unseen-trajectory and CrossMap-4 zero/100-shot benchmark"
+
+# Relative paths are resolved from the repository working directory. Run all
+# commands from the UniLIP repository root.
+paths:
+  source_root: "data/preprocessed_data"
+  output_root: "data/csgo_benchmark_v2"
+
+calibration:
+  # Freeze per-map exact extrema from the approved full source corpus before
+  # assigning any record to train, support, query, or continuous pools.
+  z:
+    source: "approved_full_corpus"
+    method: "exact_min_max"
+    timing: "before_split"
+    normalize_to: [0.0, 1.0]
+    clamp: false
+    fallback: "error"
+
+source:
+  game: "Counter-Strike 2"
+  snapshot_id: "local_cs2_capture_preprocessed_v1"
+  positions_file: "positions.json"
+  images_dir: "imgs"
+  image_extension: ".jpg"
+  record_regex: "^file_num(?P<record>\\d+)_frame_(?P<frame>\\d+)$"
+  # Paths are relative to source_root and are explicit to prevent unsafe
+  # filename guessing or a fallback to another map's radar.
+  radar_files:
+    cs_agency: "cs_agency/cs_agency_radar_tga.png"
+    cs_italy: "cs_italy/cs_italy_radar_psd.png"
+    cs_office: "maps/cs_office_radar_psd.png"
+    de_ancient: "de_ancient/de_ancient_radar_psd.png"
+    de_anubis: "de_anubis/de_anubis_radar_psd.png"
+    de_dust2: "de_dust2/de_dust2_radar_psd.png"
+    de_golden: "de_golden/de_golden_radar_tga.png"
+    de_inferno: "de_inferno/de_inferno_radar_psd.png"
+    de_mirage: "de_mirage/de_mirage_radar_psd.png"
+    de_nuke: "de_nuke/de_nuke_blended_radar_psd.png"
+    de_overpass: "de_overpass/de_overpass_radar_psd.png"
+    de_palacio: "de_palacio/de_palacio_radar_tga.png"
+    de_train: "de_train/de_train_blended_radar_psd.png"
+    de_vertigo: "de_vertigo/de_vertigo_blended_radar_psd.png"
+  # Legacy captures are not eligible for either benchmark side.
+  forbidden_map_dirs:
+    - "cs_agency_v0"
+    - "cs_italy_v0"
+    - "cs_office_v0"
+
+maps:
+  # Existing development maps stay on the seen side. This prevents the old
+  # de_dust2/de_nuke/de_ancient experiments from being relabeled as unseen.
+  seen:
+    - "cs_agency"
+    - "cs_italy"
+    - "de_ancient"
+    - "de_anubis"
+    - "de_dust2"
+    - "de_inferno"
+    - "de_mirage"
+    - "de_nuke"
+    - "de_overpass"
+    - "de_train"
+  crossmap:
+    - "cs_office"
+    - "de_golden"
+    - "de_palacio"
+    - "de_vertigo"
+
+counts:
+  seen:
+    train: 5000
+    validation: 500
+    discrete_test: 2000
+  crossmap:
+    support: 100
+    query_test: 2000
+    support_seeds: [0, 1, 2, 3, 4]
+  continuous:
+    clips_per_map: 20
+    frames_per_clip: 64
+    max_frame_gap: 2
+    max_clips_per_record: 1
+
+# Pools contain whole file_num records. Ratios are applied to record counts,
+# not frame counts, using deterministic largest-remainder allocation.
+record_pools:
+  seen:
+    train: 0.60
+    validation: 0.10
+    discrete_test: 0.20
+    continuous: 0.10
+  crossmap:
+    support: 0.20
+    query_test: 0.60
+    continuous: 0.20
+
+sampling:
+  # Applies within each record before discrete coverage sampling.
+  min_frame_gap: 5
+  spatial_bins:
+    x: 4
+    y: 4
+    z: 3
+    yaw: 8
+    pitch: 3
+  near_pose_filter:
+    enabled: true
+    xy_tolerance: 8.0
+    z_tolerance: 8.0
+    angle_tolerance_degrees: 5.0
+
+audit:
+  # These are review triggers based on the current radar convention, not
+  # automatic validity limits. Legitimate map geometry may exceed them.
+  coordinate_bounds:
+    x: [0.0, 1024.0]
+    y: [0.0, 1024.0]
+  angle_bounds:
+    angle_h: [0.0, 6.283185307179586]
+    angle_v: [0.0, 3.141592653589793]
+  robust_z_mad_threshold: 12.0
+  # MAD remains a diagnostic statistic; it must not discard valid map layers.
+  z_mad_candidate_enabled: false
+  jump_thresholds:
+    xy: 200.0
+    z: 300.0
+    angle_degrees: 45.0
+  require_images: true
+  candidate_preview_limit: 50
+
+output:
+  indent: 2

@@ -1,6 +1,6 @@
 # UniLIP-CSGO Benchmark Project Entry
 
-Snapshot date: 2026-08-25
+Snapshot date: 2026-08-31
 
 Scope: This document is the high-signal project entry for the UniLIP-CSGO
 localization and generation benchmark in this checkout. It records the task,
@@ -54,7 +54,8 @@ The two benchmark directions are:
   `[x, y, z, pitch, yaw]`.
 - gen: radar/map image + 5DoF pose -> FPS image.
 
-The main maps are `de_dust2`, `de_nuke`, and `de_ancient`. Each map has:
+The current experiment history primarily uses `de_dust2`, `de_nuke`, and
+`de_ancient`. Each of these legacy benchmark maps has:
 
 - 20,000 training samples in `splits_20000_5000/train_split.json`.
 - 5,000 discrete test samples in `splits_20000_5000/test_split.json`.
@@ -77,6 +78,115 @@ entries; disclose both facts when describing continuous generalization.
 Pose normalization is `x / 1024`, `y / 1024`, per-map training-range
 normalization for `z`, and angle division by `2*pi` for pitch/yaw. Evaluation
 must use the training split as the `z`-range reference.
+
+These legacy splits are frame-random after interval sampling. A repository
+audit found that train and discrete test contain all of the same `file_num`
+records on every one of the 14 maps. The old continuous split excludes exact
+training frames but reuses training records and overlaps the discrete test by
+some frames. It is useful for experiment continuity, but it is not a valid
+trajectory-generalization protocol.
+
+Benchmark v2 is the next formal protocol. Its complete contract and manual
+build procedure are in [`CSGO_BENCHMARK_V2.md`](CSGO_BENCHMARK_V2.md). The
+high-level design is:
+
+- Seen-10: `cs_agency`, `cs_italy`, `de_ancient`, `de_anubis`, `de_dust2`,
+  `de_inferno`, `de_mirage`, `de_nuke`, `de_overpass`, and `de_train`.
+- CrossMap-4: `cs_office`, `de_golden`, `de_palacio`, and `de_vertigo`.
+- Seen per map: 5,000 train, 500 validation, 2,000 discrete test, and 20 x
+  64-frame continuous clips.
+- CrossMap per map: a fixed 2,000-frame query, five 100-shot support draws,
+  and 20 x 64-frame continuous clips.
+- All pools are disjoint by parsed `file_num`; continuous clip boundaries are
+  preserved. Until capture-session IDs are available, claims must say
+  `file_num` trajectory-disjoint rather than session-disjoint.
+- Coordinate anomalies require an audit fingerprint and explicit human
+  approval. The builder never silently clips, repairs, or removes them.
+- Each map uses exact `z_min`/`z_max` from every retained row in the approved
+  full capture corpus. This calibration is generated and approved before any
+  record is assigned to Seen or CrossMap pools, and all splits/support seeds
+  share the same frozen values.
+
+The v2 configuration is `csgo_configs/benchmark_v2.yaml`, the approved anomaly
+decision is `csgo_configs/benchmark_v2_anomaly_decisions.yaml`, and the builder
+is `scripts/build_csgo_benchmark_v2.py`. The formal build is complete under
+`data/csgo_benchmark_v2`. The formal runtime bundle is
+`benchmark_manifest.json`, `build_report.json`, `checksums.sha256`,
+`selected_images.sha256`, `aggregate/`, `calibration/`, and `splits/`, plus
+the selected source FPV images and manifest-referenced radar files. The
+released `calibration/z_calibration.json` and
+`calibration/z_extrema_rows.jsonl` are required release/verification metadata
+and must be retained; only `calibration/*.template.yaml` approval templates
+are build-only. The release checksums currently pass independent
+verification.
+
+The `audit/` and `audit_archive/` trees contain audit reports, candidate
+tables, review exports, context/extrema/jump images, PDF visualizations, and
+historical snapshots. They are build-only workspace artifacts intended to be
+excluded by `.gitignore`, and are needed only to re-run audit/review or
+reconstruct/rebuild the benchmark. They are not required for training,
+inference, or metric evaluation after the formal runtime bundle and source
+assets have been verified; this does not make any formal runtime artifact
+disposable.
+
+The v2 consumer path is implemented as an explicit opt-in. Training datasets
+read the manifest-selected rows, frozen full-corpus per-map Z ranges and
+manifest radar paths; training accepts support-seed/shot overrides and
+model-only `finetune_init_ckpt_path`. That initialization is strict and rejects
+checkpoints missing any adaptation-trainable key. Generation/localization inference accepts
+deterministic output/checkpoint/seed overrides plus v2 split/map/support-seed/
+shot overrides, and the v2 metric scripts use manifest-selected coverage,
+frozen Z, and exact continuous clips. Legacy
+configs without `benchmark_v2_manifest` retain their existing behavior. This
+is source-level implementation evidence only: no v2 training, inference, or
+model metric run has been executed in this checkout.
+
+### Benchmark v2 Runtime and Experiments
+
+The runtime split selectors are `seen_train`, `seen_validation`,
+`seen_discrete_test`, `seen_continuous`, `crossmap_support`,
+`crossmap_query_test`, and `crossmap_continuous`. All v2 consumers use the
+manifest's per-map calibration and explicit radar mapping. Continuous consumers
+preserve clip ID and frame order; generation metric coverage is restricted to
+the selected manifest rows.
+
+| Seen-10 experiment | Parent | CrossMap-4 adaptation |
+| --- | --- | --- |
+| `exp31` | `exp28_1`, joint full-head | `exp33` |
+| `exp31_loc` | `exp14_3_loc`, loc full-head | `exp33_loc` |
+| `exp31_gen` | `exp14_3_gen`, gen full-head | `exp33_gen` |
+| `exp32` | `exp30_2`, joint LoRA | `exp34` |
+| `exp32_loc` | `exp14_2_loc`, loc LoRA | `exp34_loc` |
+| `exp32_gen` | `exp14_2_gen`, gen LoRA | `exp34_gen` |
+
+The Seen runs use 50,000 train frames, 5,000 validation frames, 20,000
+discrete-test frames and 200 exact continuous clips. Each adaptation run
+starts from its matching final Seen model, uses 100 support frames per held-out
+map, and is repeated for support seeds 0 through 4. `SHOTS` is parameterized
+for future 50/20/10-shot runs while the provisional fixed adaptation budget is
+`MAX_STEPS=400`. With effective source batch 128 and `drop_last=False`, each
+400-row support epoch is `[128, 128, 128, 16]`, or four updates; 400 updates
+are approximately 100 complete support-set passes. The naive
+`128 * 400 / 400 = 128` calculation is wrong because the final batch has only
+16 rows.
+
+Generation and localization metric JSONs are aggregated with
+`scripts/aggregate_csgo_benchmark_v2_metrics.py`. The `maps` subcommand uses
+`--manifest --split --input_root --kind --output`; it derives the exact map list
+from the manifest and reports an equal-map macro, so it does not accept the
+legacy-style `--input-dir`, `--protocol`, or `--maps` options. The `seeds`
+subcommand uses `--seed_root_pattern --seeds --output`, where the pattern must
+contain the literal `{seed}` and point to one completed map-macro JSON per
+support seed. It reports support-selection mean and 95% Student-t intervals,
+not independent model-training uncertainty. Strict metric aggregation requires
+complete selected coverage and each inference output root's
+`inference_manifest.json`; do not use the debug override flags for reported
+results. Keep inference `--seed 42` fixed across support seeds and pass the
+support draw independently as `--benchmark_v2_support_seed`. Localization
+results are written as strict `benchmark_csgo_v2_loc.json` summaries with an
+equal-map macro and provenance. The `seeds` subcommand validates the rendered
+`{seed}` path against `support_seed` and checks consistent inference RNG and
+other provenance before aggregating either generation or localization results.
 
 For `is_multi_task_balanced: True`,
 `UniLIPMultiTaskBalancedDataset` stores one base data entry per frame and
@@ -107,6 +217,17 @@ The CSGO training and evaluation path is organized as follows:
 - `benchmark_csgo_v1.py`: paired image benchmark metrics and coverage checks.
 - `benchmark_csgo_v1_conti.py`: continuous-track metrics, temporal metrics,
   and FVD evaluation.
+- `scripts/aggregate_csgo_benchmark_v2_metrics.py`: equal-map and
+  support-selection aggregation for strict v2 generation and localization
+  metric JSONs.
+- `CSGO_BENCHMARK_V2.md`: formal Seen-10/CrossMap-4 protocol, anomaly review,
+  output contract, acceptance criteria, and reproducible manual commands.
+- `scripts/build_csgo_benchmark_v2.py`: deterministic `audit`, `calibrate`,
+  `build`, and `validate` commands for benchmark v2.
+- `scripts/export_csgo_benchmark_v2_review.py`: read-only CSV export for the
+  current candidate list and provisional tied Z extrema.
+- `csgo_configs/benchmark_v2.yaml`: frozen map, count, record-pool, sampling,
+  audit, and full-corpus calibration settings for v2.
 - `record.md`: training commands, checkpoint steps, evaluation commands, and
   output references.
 - `csgo_configs/AGENT.md`: detailed experiment history, configuration design,
@@ -126,7 +247,8 @@ Canonical evaluation outputs are:
   `benchmark_csgo_v1.py`.
 - Continuous generation: the discrete metrics plus sequence metrics, temporal
   warping/difference, flicker, optical-flow EPE, and FVD from
-  `benchmark_csgo_v1_conti.py`.
+  `benchmark_csgo_v1_conti.py`. FVD uses 16-frame stride-16 windows inside
+  each exact 64-frame manifest clip; windows never cross clip boundaries.
 
 Treat the `*_v1.py` benchmark scripts as canonical. Older `benchmark_csgo.py`
 and `benchmark_csgo_video.py` paths are legacy unless an experiment explicitly
@@ -301,55 +423,24 @@ evaluation are required for that attribution.
 
 ## Risks and Next Priorities
 
-Priority 1 is to finish and evaluate the three Dust2 factor ablations:
+1. Run the Seen-10 `exp31*` and `exp32*` training/evaluation matrix, recording
+   actual final optimizer steps and checkpoint paths. Use Seen validation only
+   for checkpoint and adaptation-recipe decisions.
+2. Run CrossMap-4 adaptation for `exp33*` and `exp34*` across support seeds
+   0--4, then report per-map results, equal-map macro averages, and support-seed
+   confidence intervals. The 400-step recipe is provisional and must be tuned
+   on simulated Seen episodes, never on CrossMap query data.
+3. Run CrossMap zero-shot inference for the Seen checkpoints with the explicit
+   `crossmap_query_test`/`crossmap_continuous` and CrossMap map-list overrides
+   recorded in `record.md`; adapted retention can use the analogous
+   `seen_discrete_test`/`seen_continuous` overrides.
 
-- `exp28_1_1_dust2`: joint only.
-- `exp28_1_2_dust2`: joint plus aux_loc only.
-- `exp28_1_3_dust2`: joint plus perception only.
-
-Evaluate them at the same optimizer steps as the relevant controls, using the
-same discrete, continuous, localization, seed, and metric settings. The
-comparison should separate the main joint effect from each auxiliary loss.
-
-Priority 2 is to evaluate `exp28_1` at step 16000. This is close to the Dust2
-reference step 15700 and should be treated as the first matched-step
-three-map result. Do not interpret the final 46900-step three-map result as a
-direct comparison with the 15700-step Dust2 result.
-
-Priority 3 is to repair evaluation provenance and paths. Several test
-configs have stale checkpoint paths or refer to output directories that were
-renamed. Fix the path/config pairing before accepting future metrics.
-
-Known examples at this snapshot are:
-
-- `exp28_1` test configs target missing `checkpoint-46900`, while the available
-  matched-step checkpoint is `checkpoint-16000`.
-- `exp28_1_2_dust2` and `exp28_1_3_dust2` test configs target step 12000,
-  which does not yet exist for those incomplete runs.
-- Three-map `exp14_3_gen` / `exp14_3_loc` artifacts live in renamed output
-  directories, while test YAMLs still use the original directory names.
-- `exp14_2_loc` has a flattened final `model.safetensors`, while its test YAML
-  targets a missing `checkpoint-46800/model.safetensors` path.
-
-The generation benchmark JSON currently does not record `ckpt_path`. For now,
-checkpoint provenance depends on `record.md`, the test YAML, and the output
-directory. This is a reproducibility risk and should be fixed before a public
-benchmark report.
-
-The repository still lacks a CSGO benchmark section in `README.md`, `TRAIN.md`,
-and `EVAL.md`. The dataset and the `csgosquare` dependency are supplied through
-symlinks or external paths in the current environment. License, data release,
-and benchmark release documentation are not yet closed.
-
-There is no formal automated test suite for the end-to-end CSGO path. Current
-verification is primarily source inspection, YAML loading, training logs,
-checkpoint presence, and post-hoc evaluation. Add small deterministic tests
-for dataset routing, balanced flattening, loss masks, checkpoint provenance,
-and metric JSON schemas before release.
-
-Continuous evaluation is valuable but must be described carefully: it has no
-overlap with training under the current split check, yet has a small overlap
-with the discrete test population. Report both facts.
+The current metadata exposes `file_num`, not capture-session identity. Public
+claims must therefore remain `file_num` trajectory-disjoint until sessions are
+reconstructed. Exact game/map versions and external-localizer training scope
+also need to be archived with reported results. The formal v2 build is ready,
+but model-level benchmark evidence and independent training-seed replication
+are still outstanding.
 
 ## Operational Notes
 

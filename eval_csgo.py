@@ -11,7 +11,7 @@ from PIL import Image
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset
 import transformers
-from typing import Dict, Optional, Sequence, List
+from typing import Dict, Mapping, Optional, Sequence, List
 from transformers import AutoProcessor
 import matplotlib.pyplot as plt
 from safetensors.torch import load_file as safe_load_file
@@ -24,6 +24,10 @@ from unilip.pipeline_edit import CustomEditPipeline
 from unilip.mm_utils import get_model_name_from_path
 from unilip.model.builder import load_pretrained_model_general
 from unilip.model import *
+from csgo_datasets.benchmark_v2 import (
+    is_benchmark_v2_config,
+    load_benchmark_v2_selection,
+)
 
 
 def set_seed(seed=42):
@@ -129,50 +133,173 @@ def add_template_for_inference(prompt_text, use_short_instruction=False):
 
     return [pos_prompt, cfg_prompt]
 
+
+def _benchmark_v2_value(value, key, default=None):
+    if isinstance(value, Mapping):
+        return value.get(key, default)
+    return getattr(value, key, default)
+
+
+def _is_benchmark_v2_config(config):
+    return is_benchmark_v2_config(config)
+
+
+def _load_benchmark_v2_selection(config):
+    if not _is_benchmark_v2_config(config):
+        return None
+    map_names = config.get("val_maps") or config.get("test_maps")
+    return load_benchmark_v2_selection(config, map_names=map_names)
+
+
+def _benchmark_v2_rows(selection):
+    rows = _benchmark_v2_value(selection, "rows", []) or []
+    if isinstance(rows, Mapping):
+        flattened = []
+        for map_rows in rows.values():
+            flattened.extend(map_rows)
+        return flattened
+    return list(rows)
+
+
+def _benchmark_v2_map_name(row):
+    return _benchmark_v2_value(row, "map", _benchmark_v2_value(row, "map_name"))
+
+
+def _benchmark_v2_z_range(selection, map_name):
+    value = _benchmark_v2_value(selection, "z_ranges", {}).get(map_name)
+    if isinstance(value, (list, tuple)):
+        z_min, z_max = value
+    else:
+        z_min = _benchmark_v2_value(value, "z_min", _benchmark_v2_value(value, "min_z"))
+        z_max = _benchmark_v2_value(value, "z_max", _benchmark_v2_value(value, "max_z"))
+    if z_min is None or z_max is None:
+        raise KeyError(f"Missing Benchmark v2 z range for map {map_name!r}")
+    return {"min_z": float(z_min), "max_z": float(z_max)}
+
+
+def _benchmark_v2_maps(selection, rows):
+    clips_by_map = _benchmark_v2_value(selection, "clips_by_map", {}) or {}
+    if isinstance(clips_by_map, Mapping) and clips_by_map:
+        return list(clips_by_map.keys())
+    maps = []
+    for row in rows:
+        map_name = _benchmark_v2_map_name(row)
+        if map_name not in maps:
+            maps.append(map_name)
+    return maps
+
+
+def _benchmark_v2_entries(config, selection):
+    rows = _benchmark_v2_rows(selection)
+    split = str(config.get("benchmark_v2_split", "")).lower()
+    clips_by_map = _benchmark_v2_value(selection, "clips_by_map", {}) or {}
+    is_continuous = bool(config.get("is_conti_gen")) or "continuous" in split
+    if not is_continuous or not clips_by_map:
+        return [(row, None, None) for row in rows]
+
+    entries = []
+    map_names = _benchmark_v2_maps(selection, rows)
+    for map_name in map_names:
+        for clip_index, clip in enumerate(clips_by_map.get(map_name, [])):
+            clip_id = _benchmark_v2_value(clip, "clip_id", f"{map_name}_continuous_{clip_index:04d}")
+            frames = _benchmark_v2_value(clip, "frames", []) or []
+            for frame_index, row in enumerate(frames):
+                entries.append((row, str(clip_id), frame_index))
+    return entries
+
+
+def _write_inference_manifest(output_dir, config_path, config, maps, sample_count, ckpt_path, seed):
+    payload = {
+        "config_path": os.fspath(config_path),
+        "benchmark_v2_manifest": config.get("benchmark_v2_manifest"),
+        "benchmark_v2_split": config.get("benchmark_v2_split"),
+        "benchmark_v2_support_seed": config.get("benchmark_v2_support_seed"),
+        "benchmark_v2_shots_per_map": config.get("benchmark_v2_shots_per_map"),
+        "maps": list(maps),
+        "sample_count": int(sample_count),
+        "checkpoint": None if ckpt_path is None else os.fspath(ckpt_path),
+        "ckpt_path": None if ckpt_path is None else os.fspath(ckpt_path),
+        "seed": int(seed),
+    }
+    with open(os.path.join(output_dir, "inference_manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
 # ==========================================
 # 2. 轻量级推理数据集 (InferenceDataset)
 # ==========================================
 class CSGOInferenceDataset(Dataset):
     def __init__(self, config, map_path_dict):
         self.config = config
-        self.data_dir = config['data_dir']
-        self.map_names = config['val_maps']
+        self.data_dir = config.get('data_dir', '')
+        self.map_names = config.get('val_maps', [])
         self.map_path_dict = map_path_dict
+        self.is_benchmark_v2 = _is_benchmark_v2_config(config)
+        self.benchmark_v2_selection = None
+        self.image_extension = None
+        self.radar_paths = {}
 
         self.data_entries = []
         self.map_z_range = {}
         print("🔄 Loading Test Data...")
-        for map_name in self.map_names:
-            # 读取测试集 split
-            # 注意：这里强制读取 test_split.json
-            if self.config.get("is_conti_gen", False):
-                split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/continuous_unseen_clips.json"
-            else:
-                split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/test_split.json"
-
-            with open(split_path, "r", encoding="utf-8") as f:
-                positions_data = json.load(f)
-
-            train_split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/train_split.json"
-            if os.path.exists(train_split_path):
-                with open(train_split_path, "r", encoding="utf-8") as f:
-                    z_ref_data = json.load(f)
-            else:
-                z_ref_data = positions_data
-            zs = [d['z'] for d in z_ref_data]
-            self.map_z_range[map_name] = {'max_z': max(zs), 'min_z': min(zs)}
-
-            for pos_data in positions_data:
+        if self.is_benchmark_v2:
+            self.benchmark_v2_selection = _load_benchmark_v2_selection(config)
+            selection = self.benchmark_v2_selection
+            self.data_dir = os.fspath(_benchmark_v2_value(selection, "source_root", self.data_dir))
+            self.image_extension = str(_benchmark_v2_value(selection, "image_extension", ".jpg"))
+            self.map_path_dict = {}
+            for map_name, radar_path in (_benchmark_v2_value(selection, "radar_paths", {}) or {}).items():
+                self.map_path_dict[map_name] = os.fspath(radar_path)
+            entries = _benchmark_v2_entries(config, selection)
+            self.map_names = _benchmark_v2_maps(selection, [row for row, _, _ in entries])
+            for map_name in self.map_names:
+                self.map_z_range[map_name] = _benchmark_v2_z_range(selection, map_name)
+            for pos_data, clip_id, frame_index in entries:
+                map_name = _benchmark_v2_map_name(pos_data)
                 entry = {
                     'map': map_name,
-                    'file_frame': pos_data['file_frame'],
-                    'x': pos_data['x'],
-                    'y': pos_data['y'],
-                    'z': pos_data['z'],
-                    'angle_v': pos_data['angle_v'],
-                    'angle_h': pos_data['angle_h'],
+                    'file_frame': _benchmark_v2_value(pos_data, 'file_frame'),
+                    'x': _benchmark_v2_value(pos_data, 'x'),
+                    'y': _benchmark_v2_value(pos_data, 'y'),
+                    'z': _benchmark_v2_value(pos_data, 'z'),
+                    'angle_v': _benchmark_v2_value(pos_data, 'angle_v'),
+                    'angle_h': _benchmark_v2_value(pos_data, 'angle_h'),
                 }
+                if clip_id is not None:
+                    entry['clip_id'] = clip_id
+                    entry['frame_index'] = int(frame_index)
                 self.data_entries.append(entry)
+        else:
+            for map_name in self.map_names:
+                # 读取测试集 split
+                # 注意：这里强制读取 test_split.json
+                if self.config.get("is_conti_gen", False):
+                    split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/continuous_unseen_clips.json"
+                else:
+                    split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/test_split.json"
+
+                with open(split_path, "r", encoding="utf-8") as f:
+                    positions_data = json.load(f)
+
+                train_split_path = f"{self.data_dir}/{map_name}/splits_20000_5000/train_split.json"
+                if os.path.exists(train_split_path):
+                    with open(train_split_path, "r", encoding="utf-8") as f:
+                        z_ref_data = json.load(f)
+                else:
+                    z_ref_data = positions_data
+                zs = [d['z'] for d in z_ref_data]
+                self.map_z_range[map_name] = {'max_z': max(zs), 'min_z': min(zs)}
+
+                for pos_data in positions_data:
+                    entry = {
+                        'map': map_name,
+                        'file_frame': pos_data['file_frame'],
+                        'x': pos_data['x'],
+                        'y': pos_data['y'],
+                        'z': pos_data['z'],
+                        'angle_v': pos_data['angle_v'],
+                        'angle_h': pos_data['angle_h'],
+                    }
+                    self.data_entries.append(entry)
 
         if config['debug'] and config.get('debug_num_val_data', False):
             sampled_num = config.get('debug_num_val_data', len(self.data_entries))
@@ -199,13 +326,18 @@ class CSGOInferenceDataset(Dataset):
         map_name = data['map']
 
         # 1. 加载 Radar (Input Condition)
-        map_filename = self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
-        radar_path = f"{self.data_dir}/{map_name}/{map_filename}"
+        if self.is_benchmark_v2:
+            radar_path = self.map_path_dict[map_name]
+        else:
+            map_filename = self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
+            radar_path = f"{self.data_dir}/{map_name}/{map_filename}"
         radar_img = Image.open(radar_path).convert('RGB')
 
         # 2. 加载 GT FPS (Ground Truth for Vis)
         # 注意后缀，如果是 preprocessed_data 可能是 .jpg
-        ext = ".jpg" if "preprocessed" in self.data_dir else ".png"
+        ext = self.image_extension if self.is_benchmark_v2 else (
+            ".jpg" if "preprocessed" in self.data_dir else ".png"
+        )
         fps_path = f"{self.data_dir}/{map_name}/imgs/{data['file_frame']}{ext}"
         gt_img = Image.open(fps_path).convert('RGB')
 
@@ -245,7 +377,7 @@ class CSGOInferenceDataset(Dataset):
             if self.config.get("loc_head_type", None) == "lm_st_ext_vocab" else None,
         )
 
-        return {
+        result = {
             "map_name": map_name,
             "radar_img": radar_img,
             "gt_img": gt_img,
@@ -254,6 +386,10 @@ class CSGOInferenceDataset(Dataset):
             "pose_info": pose_dict,
             "actions": actions_norm,
         }
+        if "clip_id" in data:
+            result["clip_id"] = data["clip_id"]
+            result["frame_index"] = data["frame_index"]
+        return result
 
 def collate_fn(batch):
     return batch # 简单的 list 返回，不由 DataLoader 自动 stack tensor
@@ -460,10 +596,27 @@ def run_csgo_generation_from_config(
     *,
     output_dir: Optional[str] = None,
     seed: int = 42,
+    ckpt_path: Optional[str] = None,
+    benchmark_v2_split: Optional[str] = None,
+    benchmark_v2_maps: Optional[Sequence[str]] = None,
+    benchmark_v2_support_seed: Optional[int] = None,
+    benchmark_v2_shots_per_map: Optional[int] = None,
     release_model: bool = False,
 ) -> Dict[str, object]:
     with open(csgo_config_path, 'r') as f:
         csgo_config = yaml.safe_load(f)
+    if ckpt_path is not None:
+        csgo_config['ckpt_path'] = ckpt_path
+    if benchmark_v2_split is not None:
+        csgo_config['benchmark_v2_split'] = benchmark_v2_split
+    if benchmark_v2_maps is not None:
+        selected_maps = list(benchmark_v2_maps)
+        csgo_config['val_maps'] = selected_maps
+        csgo_config['test_maps'] = selected_maps
+    if benchmark_v2_support_seed is not None:
+        csgo_config['benchmark_v2_support_seed'] = benchmark_v2_support_seed
+    if benchmark_v2_shots_per_map is not None:
+        csgo_config['benchmark_v2_shots_per_map'] = benchmark_v2_shots_per_map
     print("csgo_config: ", csgo_config)
 
     # 设置随机种子
@@ -533,18 +686,20 @@ def run_csgo_generation_from_config(
     dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=collate_fn)
 
     # 3. 推理循环
-    generator = torch.Generator(device=model.device).manual_seed(42)
+    generator = torch.Generator(device=model.device).manual_seed(int(seed))
     print("🚀 Starting Inference...")
 
     vis_data = [] # 存储第一批次用于可视化
     is_vis = True
     vis_data_num = 30
+    inference_sample_count = 0
 
     for batch_idx, batch in enumerate(tqdm(dataloader)):
         # 批次内的每个样本逐个处理 (因为 Pipe 接口通常接受 List[Prompt] 但对应单张图片输入)
         # 为了兼容 CustomEditPipeline 的逻辑 (multimodal_prompts list 结构)
 
         for sample in batch:
+            inference_sample_count += 1
             radar_img = sample['radar_img']
             raw_prompt = sample['raw_prompt']
             file_frame = sample['file_frame']
@@ -653,11 +808,20 @@ def run_csgo_generation_from_config(
 
                 is_vis = False
 
+    _write_inference_manifest(
+        output_dir,
+        csgo_config_path,
+        csgo_config,
+        test_dataset.map_names,
+        inference_sample_count,
+        csgo_config.get("ckpt_path"),
+        seed,
+    )
     print(f"✅ Inference finished. Results saved to {output_dir}")
 
     generated_map_dirs = {
         map_name: os.path.join(output_dir, "gen_imgs", map_name)
-        for map_name in (csgo_config.get("val_maps") or csgo_config.get("test_maps", []))
+        for map_name in test_dataset.map_names
     }
 
     if release_model:
@@ -677,8 +841,24 @@ def run_csgo_generation_from_config(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--csgo_config", type=str, required=True)
+    parser.add_argument("--output_dir", type=str, default=None)
+    parser.add_argument("--ckpt_path", type=str, default=None)
+    parser.add_argument("--seed", type=int, default=None)
+    parser.add_argument("--benchmark_v2_split", type=str, default=None)
+    parser.add_argument("--benchmark_v2_maps", nargs="+", default=None)
+    parser.add_argument("--benchmark_v2_support_seed", type=int, default=None)
+    parser.add_argument("--benchmark_v2_shots_per_map", type=int, default=None)
     args = parser.parse_args()
-    run_csgo_generation_from_config(args.csgo_config)
+    run_csgo_generation_from_config(
+        args.csgo_config,
+        output_dir=args.output_dir,
+        ckpt_path=args.ckpt_path,
+        seed=42 if args.seed is None else args.seed,
+        benchmark_v2_split=args.benchmark_v2_split,
+        benchmark_v2_maps=args.benchmark_v2_maps,
+        benchmark_v2_support_seed=args.benchmark_v2_support_seed,
+        benchmark_v2_shots_per_map=args.benchmark_v2_shots_per_map,
+    )
 
 if __name__ == "__main__":
     main()

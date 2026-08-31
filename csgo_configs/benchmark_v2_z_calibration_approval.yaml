@@ -1,0 +1,129 @@
+schema_version: 1
+benchmark_id: csgo_benchmark_v2
+review:
+  status: approved
+  reviewer: 'jiahao'
+  reviewed_at: '202608300444'
+  references: ["data/csgo_benchmark_v2/calibration/z_extrema_rows.jsonl", "Manual review of all tied per-map Z extrema completed"]
+  config_sha256: 42460f9a8c5fff976db6289fa5273a01c67f571fe5db223126f6adb2a0390e19
+  source_sha256: f6f17b8f04b5d8a6fff51af41f3ef31ddca5e22a85b27a6210a90ce95c0f6410
+  audit_report_sha256: b099c773a42086fa3e5675409bac05f40af8d52cc5df9fe0e65a4d3debf2df48
+  decisions_sha256: aee5da25331119d1b0b33fff23a1f76b0eb9378b18958e4e9d7ebf21802e5f3b
+  calibration_sha256: c9648a2b871a173ede6e384da2b8d3a903ee6129fbb311c28ad513bdf740d055
+  calibration_file_sha256: 67436a888e0f79520bf1ab156009f7384b3a1ade7638b44513f31b2a9b6c14ee
+  extrema_file_sha256: 54bcc88f23b5e0b84f539751aa8e13e4299565327752c34a9f5d02950b5e6b5c
+  extrema_file_line_count: 7218
+z_ranges:
+  cs_agency:
+    z_min: 70.0
+    z_max: 395.0
+    span: 325.0
+    retained_row_count: 197920
+    retained_record_count: 217
+    min_row_count: 1688
+    max_row_count: 3
+  cs_italy:
+    z_min: -39.0
+    z_max: 43.0
+    span: 82.0
+    retained_row_count: 208669
+    retained_record_count: 217
+    min_row_count: 53
+    max_row_count: 3
+  de_ancient:
+    z_min: -25.0
+    z_max: 59.0
+    span: 84.0
+    retained_row_count: 212541
+    retained_record_count: 219
+    min_row_count: 12
+    max_row_count: 4
+  de_anubis:
+    z_min: -26.0
+    z_max: 43.0
+    span: 69.0
+    retained_row_count: 216844
+    retained_record_count: 219
+    min_row_count: 1
+    max_row_count: 2
+  de_dust2:
+    z_min: -25.0
+    z_max: 63.0
+    span: 88.0
+    retained_row_count: 188339
+    retained_record_count: 402
+    min_row_count: 5
+    max_row_count: 2
+  de_inferno:
+    z_min: -1.0
+    z_max: 77.0
+    span: 78.0
+    retained_row_count: 215480
+    retained_record_count: 219
+    min_row_count: 199
+    max_row_count: 137
+  de_mirage:
+    z_min: -61.0
+    z_max: 16.0
+    span: 77.0
+    retained_row_count: 211794
+    retained_record_count: 219
+    min_row_count: 4
+    max_row_count: 1
+  de_nuke:
+    z_min: -102.0
+    z_max: 4.0
+    span: 106.0
+    retained_row_count: 216904
+    retained_record_count: 217
+    min_row_count: 1
+    max_row_count: 2
+  de_overpass:
+    z_min: 10.0
+    z_max: 130.0
+    span: 120.0
+    retained_row_count: 314230
+    retained_record_count: 319
+    min_row_count: 705
+    max_row_count: 2
+  de_train:
+    z_min: -74.0
+    z_max: 33.0
+    span: 107.0
+    retained_row_count: 297532
+    retained_record_count: 319
+    min_row_count: 3120
+    max_row_count: 24
+  cs_office:
+    z_min: -70.0
+    z_max: -9.0
+    span: 61.0
+    retained_row_count: 197726
+    retained_record_count: 216
+    min_row_count: 17
+    max_row_count: 354
+  de_golden:
+    z_min: 12.0
+    z_max: 100.0
+    span: 88.0
+    retained_row_count: 211201
+    retained_record_count: 219
+    min_row_count: 14
+    max_row_count: 12
+  de_palacio:
+    z_min: 43.0
+    z_max: 179.0
+    span: 136.0
+    retained_row_count: 202822
+    retained_record_count: 215
+    min_row_count: 3
+    max_row_count: 2
+  de_vertigo:
+    z_min: 2883.0
+    z_max: 2987.0
+    span: 104.0
+    retained_row_count: 195390
+    retained_record_count: 213
+    min_row_count: 845
+    max_row_count: 3
+notes: Review the extrema rows, then set review.status=approved.

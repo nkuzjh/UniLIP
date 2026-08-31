@@ -13,6 +13,7 @@ opencv_python==4.11.0.86
 opencv_python_headless==4.11.0.86
 
 Pillow==10.4.0
+PyYAML==6.0.3
 Requests==2.32.3
 safetensors==0.5.3
 setuptools==78.1.1

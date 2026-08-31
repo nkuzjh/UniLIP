@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
@@ -25,6 +26,15 @@ if str(_FVD_REPO_ROOT) not in sys.path:
 from fvd_metric import compute_fvd as compute_fvd_metric
 
 from benchmark_csgo_v1 import (
+    _row_stem,
+    benchmark_v2_clips,
+    benchmark_v2_enabled,
+    benchmark_v2_image_extension,
+    benchmark_v2_radar_path,
+    benchmark_v2_selection_details,
+    benchmark_v2_selection_rows,
+    benchmark_v2_z_range,
+    collect_benchmark_v2_coverage,
     collect_coverage,
     compute_aesthetic_score,
     compute_boundary_metrics,
@@ -36,7 +46,10 @@ from benchmark_csgo_v1 import (
     compute_pixel_metrics,
     compute_psnr_ssim,
     infer_map_name,
+    load_benchmark_v2_inference_provenance,
+    load_benchmark_v2_selection,
     resolve_eval_output_root,
+    validate_benchmark_v2_coverage,
 )
 
 
@@ -144,6 +157,111 @@ def build_tracks(
         "raw_track_count": len(raw_tracks),
         "dropped_short_track_count": len(dropped_short_tracks),
         "track_summaries": track_summaries,
+    }
+    return tracks, details
+
+
+def _clip_frames(clip: object) -> Sequence[object]:
+    if isinstance(clip, Mapping):
+        frames = clip.get("frames", clip.get("rows", []))
+    else:
+        frames = clip
+    if frames is None or isinstance(frames, (str, bytes)):
+        raise ValueError(f"Benchmark v2 continuous clip has no frame list: {clip!r}")
+    return list(frames)
+
+
+def _clip_frame_record(
+    frame: object,
+    image_extension: str,
+    filename_by_stem: Optional[Mapping[str, str]],
+) -> FrameRecord:
+    raw = frame
+    if isinstance(frame, Mapping):
+        raw = frame.get("file_frame", frame.get("filename", frame.get("stem")))
+        if raw is None:
+            raise ValueError(f"Benchmark v2 clip frame has no file_frame/filename/stem: {frame!r}")
+    stem = _row_stem({"file_frame": raw})
+    filename = filename_by_stem.get(stem) if filename_by_stem is not None else None
+    if filename is None:
+        filename = f"{stem}{image_extension}"
+    parsed = parse_conti_filename(filename)
+    file_num = frame.get("file_num") if isinstance(frame, Mapping) else None
+    frame_id = frame.get("frame_id") if isinstance(frame, Mapping) else None
+    if parsed is not None:
+        file_num, frame_id = parsed
+    if file_num is None or frame_id is None:
+        raise ValueError(f"Unable to recover file_num/frame_id from Benchmark v2 frame: {frame!r}")
+    return FrameRecord(filename=filename, file_num=int(file_num), frame_id=int(frame_id))
+
+
+def build_tracks_from_benchmark_v2_clips(
+    clips_by_map: object,
+    map_name: str,
+    image_extension: str = ".jpg",
+    available_filenames: Optional[Sequence[str]] = None,
+    filename_by_stem: Optional[Mapping[str, str]] = None,
+) -> Tuple[List[List[FrameRecord]], Dict[str, object]]:
+    """Materialize manifest clips exactly as ordered; never regroup by filename."""
+
+    if not image_extension.startswith("."):
+        image_extension = f".{image_extension}"
+    clips = clips_by_map
+    if isinstance(clips_by_map, Mapping) and map_name in clips_by_map:
+        clips = clips_by_map[map_name]
+    if isinstance(clips, Mapping) and "clips" in clips:
+        clips = clips["clips"]
+    if clips is None or isinstance(clips, (str, bytes)):
+        raise ValueError(f"Benchmark v2 continuous clips are missing for map={map_name}")
+    clips = list(clips)
+
+    available = set(available_filenames) if available_filenames is not None else None
+    tracks: List[List[FrameRecord]] = []
+    skipped_clips = []
+    summaries = []
+    for clip_index, clip in enumerate(clips):
+        frames = _clip_frames(clip)
+        if len(frames) == 0:
+            raise ValueError(f"Benchmark v2 continuous clip {clip_index} is empty")
+        track = [
+            _clip_frame_record(frame, image_extension, filename_by_stem)
+            for frame in frames
+        ]
+        missing = [record.filename for record in track if available is not None and record.filename not in available]
+        clip_id = clip.get("clip_id") if isinstance(clip, Mapping) else None
+        summary = {
+            "track_index": len(tracks),
+            "clip_index": clip_index,
+            "clip_id": clip_id,
+            "file_num": track[0].file_num,
+            "length": len(track),
+            "first_frame_id": track[0].frame_id,
+            "last_frame_id": track[-1].frame_id,
+            "first_filename": track[0].filename,
+            "last_filename": track[-1].filename,
+        }
+        if missing:
+            skipped_clips.append({
+                "clip_index": clip_index,
+                "clip_id": clip_id,
+                "missing_files": missing,
+            })
+            continue
+        tracks.append(track)
+        summaries.append(summary)
+
+    details = {
+        "source": "benchmark_v2_manifest",
+        "manifest_clip_count": len(clips),
+        "track_count": len(tracks),
+        "dropped_incomplete_clip_count": len(skipped_clips),
+        "dropped_incomplete_clips": skipped_clips,
+        "parsed_frame_count": sum(len(track) for track in tracks),
+        "unparsed_common_files": [],
+        "unparsed_common_files_count": 0,
+        "raw_track_count": len(tracks),
+        "dropped_short_track_count": 0,
+        "track_summaries": summaries,
     }
     return tracks, details
 
@@ -423,7 +541,11 @@ def compute_fvd_for_tracks(
     batch_size: int,
     device: str,
 ) -> Tuple[Optional[float], int]:
-    clips = build_fvd_clips(tracks, clip_length=clip_length, clip_stride=clip_stride)
+    clips = build_fvd_clips(
+        tracks,
+        clip_length=clip_length,
+        clip_stride=clip_stride,
+    )
     if len(clips) == 0:
         return None, 0
 
@@ -489,6 +611,8 @@ def write_results_json(
     boundary_details: Dict[str, object],
     track_details: Dict[str, object],
     fvd_clip_count: int,
+    benchmark_v2_selection: Optional[Dict[str, int]] = None,
+    inference_provenance: Optional[dict] = None,
 ) -> None:
     payload = {
         "experiment_name": experiment_name,
@@ -531,31 +655,86 @@ def write_results_json(
             "fvd_clip_count": fvd_clip_count,
         },
     }
+    if benchmark_v2_selection is not None:
+        manifest = getattr(args, "benchmark_v2_manifest", None)
+        payload.update({
+            "benchmark_v2_manifest": str(Path(manifest).resolve()) if manifest else None,
+            "benchmark_v2_split": getattr(args, "benchmark_v2_split", None),
+            "benchmark_v2_selection_counts": benchmark_v2_selection,
+            "inference_provenance": inference_provenance,
+        })
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
 
 def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
-    coverage = collect_coverage(args.gt, args.pred)
+    v2_mode = benchmark_v2_enabled(args)
+    if v2_mode:
+        map_name = infer_map_name(args.gt, args.pred, args.map_name)
+        selection = load_benchmark_v2_selection(args, map_name)
+        if selection is None:
+            raise ValueError("Benchmark v2 loader returned no selection")
+        selection_rows = benchmark_v2_selection_rows(selection, map_name)
+        selection_z_range = benchmark_v2_z_range(selection, map_name)
+        selection_radar = benchmark_v2_radar_path(selection, map_name)
+        coverage = collect_benchmark_v2_coverage(
+            args.gt,
+            args.pred,
+            selection_rows,
+            benchmark_v2_image_extension(selection),
+        )
+        selection_details = benchmark_v2_selection_details(
+            selection,
+            map_name,
+            selection_rows,
+            coverage["expected_file_stems"],
+        )
+    else:
+        coverage = collect_coverage(args.gt, args.pred)
+        map_name = infer_map_name(args.gt, args.pred, args.map_name)
+        selection = None
+        selection_rows = None
+        selection_z_range = None
+        selection_radar = None
+        selection_details = None
+    if selection is not None:
+        validate_benchmark_v2_coverage(
+            coverage,
+            allow_incomplete=bool(getattr(args, "allow_incomplete_benchmark_v2", False)),
+        )
     common_files = coverage["common_files"]
     if len(common_files) == 0:
         raise ValueError("No common filenames found between GT and Pred directories.")
 
-    map_name = infer_map_name(args.gt, args.pred, args.map_name)
     output_root, experiment_name, timestamp, _ = resolve_eval_output_root(args.pred, map_name)
-    json_path = output_root / f"benchmark_csgo_v1_conti_{map_name}.json"
+    output_name = "benchmark_csgo_v2_conti" if selection is not None else "benchmark_csgo_v1_conti"
+    json_path = output_root / f"{output_name}_{map_name}.json"
+    inference_provenance = (
+        load_benchmark_v2_inference_provenance(output_root, args, map_name)
+        if selection is not None
+        else None
+    )
 
     print(f"Experiment: {experiment_name}")
     print(f"Timestamp: {timestamp}")
     print(f"Map: {map_name}")
     print(f"Output JSON: {json_path}")
 
-    tracks, track_details = build_tracks(
-        common_files,
-        frame_diff_threshold=args.frame_diff_threshold,
-        min_track_len=args.min_track_len,
-    )
+    if selection is None:
+        tracks, track_details = build_tracks(
+            common_files,
+            frame_diff_threshold=args.frame_diff_threshold,
+            min_track_len=args.min_track_len,
+        )
+    else:
+        tracks, track_details = build_tracks_from_benchmark_v2_clips(
+            benchmark_v2_clips(selection, map_name),
+            map_name=map_name,
+            image_extension=benchmark_v2_image_extension(selection),
+            available_filenames=common_files,
+            filename_by_stem=coverage["gt_filename_by_stem"],
+        )
     seq_frame_count = sum(len(track) for track in tracks)
 
     metrics: Dict[str, object] = {
@@ -596,6 +775,10 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         external_loc_repo_root=args.external_loc_repo_root,
         external_loc_config_path=args.external_loc_config_path,
         external_loc_checkpoint_path=args.external_loc_checkpoint_path,
+        benchmark_v2_rows=selection_rows,
+        benchmark_v2_z_range=selection_z_range,
+        benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
+        benchmark_v2_radar=selection_radar,
     )
     locator_details = {
         "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
@@ -645,9 +828,11 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         boundary_details=boundary_details,
         track_details=track_details,
         fvd_clip_count=fvd_clip_count,
+        benchmark_v2_selection=selection_details,
+        inference_provenance=inference_provenance,
     )
     print(f"Saved JSON: {json_path}")
-    return {
+    result = {
         "json_path": str(json_path),
         "metrics": metrics,
         "map_name": map_name,
@@ -658,6 +843,9 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         "seq_frame_count": int(seq_frame_count),
         "fvd_clip_count": int(fvd_clip_count),
     }
+    if selection_details is not None:
+        result["benchmark_v2_selection_counts"] = selection_details
+    return result
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -683,6 +871,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data_dir", type=str, default="data/preprocessed_data")
     parser.add_argument("--map_name", type=str, default="auto")
     parser.add_argument("--pose_json", type=str, default="auto")
+    parser.add_argument(
+        "--benchmark_v2_manifest",
+        type=str,
+        default=None,
+        help="Optional Benchmark v2 manifest path; enables manifest-driven evaluation.",
+    )
+    parser.add_argument(
+        "--benchmark_v2_split",
+        type=str,
+        default=None,
+        help="Benchmark v2 split selector, used together with --benchmark_v2_manifest.",
+    )
+    parser.add_argument(
+        "--allow_incomplete_benchmark_v2",
+        action="store_true",
+        help="Debug only: compute v2 metrics on available predictions when coverage is incomplete.",
+    )
+    parser.add_argument(
+        "--allow_missing_inference_manifest",
+        action="store_true",
+        help="Debug/external predictions only: allow v2 metrics without inference_manifest.json.",
+    )
     parser.add_argument("--external_loc_repo_root", type=str, default="csgosquare")
     parser.add_argument("--external_loc_config_path", type=str, default="configs_reg_newdata/exp5_2.yaml")
     parser.add_argument(

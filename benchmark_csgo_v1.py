@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -71,6 +72,265 @@ def is_image_file(filename: str) -> bool:
 
 def list_image_files(image_dir: str) -> List[str]:
     return sorted(f for f in os.listdir(image_dir) if is_image_file(f))
+
+
+def _selection_value(selection: object, key: str, default: object = None) -> object:
+    if isinstance(selection, Mapping):
+        return selection.get(key, default)
+    return getattr(selection, key, default)
+
+
+def _map_scoped_selection_value(value: object, map_name: str) -> object:
+    if isinstance(value, Mapping) and map_name in value:
+        return value[map_name]
+    return value
+
+
+def _row_value(row: object, key: str, default: object = None) -> object:
+    if isinstance(row, Mapping):
+        return row.get(key, default)
+    return getattr(row, key, default)
+
+
+def _row_stem(row: object) -> str:
+    raw_value = _row_value(row, "file_frame")
+    if raw_value is None:
+        raw_value = _row_value(row, "filename")
+    if raw_value is None:
+        raw_value = _row_value(row, "stem")
+    if raw_value is None:
+        raise ValueError(f"Benchmark v2 row has no file_frame/filename/stem: {row!r}")
+    return Path(str(raw_value)).stem
+
+
+def benchmark_v2_selection_rows(selection: object, map_name: str) -> List[object]:
+    rows = _selection_value(selection, "rows")
+    rows = _map_scoped_selection_value(rows, map_name)
+    if rows is None or isinstance(rows, (str, bytes)):
+        raise ValueError(f"Benchmark v2 selection has no row list for map={map_name}")
+    try:
+        result = list(rows)  # type: ignore[arg-type]
+    except TypeError as exc:
+        raise ValueError(f"Benchmark v2 selection rows are not iterable for map={map_name}") from exc
+    if len({_row_stem(row) for row in result}) != len(result):
+        raise ValueError(f"Benchmark v2 selection contains duplicate rows for map={map_name}")
+    return result
+
+
+def benchmark_v2_z_range(selection: object, map_name: str) -> Dict[str, float]:
+    z_ranges = _selection_value(selection, "z_ranges")
+    z_range = _map_scoped_selection_value(z_ranges, map_name)
+    if not isinstance(z_range, Mapping):
+        raise ValueError(f"Benchmark v2 selection has no global z range for map={map_name}")
+    try:
+        z_min = float(z_range["z_min"])
+        z_max = float(z_range["z_max"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"Invalid Benchmark v2 z range for map={map_name}: {z_range!r}") from exc
+    if not z_max > z_min:
+        raise ValueError(f"Benchmark v2 z_max must be greater than z_min for map={map_name}")
+    return {"z_min": z_min, "z_max": z_max}
+
+
+def benchmark_v2_clips(selection: object, map_name: str) -> List[object]:
+    clips_by_map = _selection_value(selection, "clips_by_map", {})
+    clips = _map_scoped_selection_value(clips_by_map, map_name)
+    if isinstance(clips, Mapping) and "clips" in clips:
+        clips = clips["clips"]
+    if clips is None:
+        return []
+    if isinstance(clips, (str, bytes)):
+        raise ValueError(f"Benchmark v2 clips are not a list for map={map_name}")
+    return list(clips)  # type: ignore[arg-type]
+
+
+def benchmark_v2_image_extension(selection: object) -> str:
+    extension = _selection_value(selection, "image_extension", ".jpg")
+    extension = str(extension)
+    return extension if extension.startswith(".") else f".{extension}"
+
+
+def benchmark_v2_radar_path(selection: object, map_name: str) -> str:
+    radar_paths = _selection_value(selection, "radar_paths", {})
+    radar_path = _map_scoped_selection_value(radar_paths, map_name)
+    if radar_path is None:
+        raise ValueError(f"Benchmark v2 selection has no radar path for map={map_name}")
+    path = Path(os.fspath(radar_path)).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(f"Benchmark v2 radar does not exist for map={map_name}: {path}")
+    return str(path)
+
+
+def benchmark_v2_selection_details(
+    selection: object,
+    map_name: str,
+    rows: Sequence[object],
+    expected_stems: Sequence[str],
+) -> Dict[str, int]:
+    clips = benchmark_v2_clips(selection, map_name)
+    clip_frame_count = 0
+    for clip in clips:
+        if isinstance(clip, Mapping):
+            frames = clip.get("frames", clip.get("rows", []))
+        else:
+            frames = clip
+        clip_frame_count += len(list(frames)) if frames is not None else 0
+    return {
+        "rows": len(rows),
+        "expected_stems": len(expected_stems),
+        "clips": len(clips),
+        "clip_frames": clip_frame_count,
+    }
+
+
+def benchmark_v2_enabled(args: argparse.Namespace) -> bool:
+    manifest = getattr(args, "benchmark_v2_manifest", None)
+    split = getattr(args, "benchmark_v2_split", None)
+    if bool(manifest) != bool(split):
+        raise ValueError("--benchmark_v2_manifest and --benchmark_v2_split must be provided together")
+    return bool(manifest)
+
+
+def load_benchmark_v2_selection(args: argparse.Namespace, map_name: str) -> object:
+    """Load a map/split selection without importing the v2 loader in legacy mode."""
+
+    if not benchmark_v2_enabled(args):
+        return None
+    try:
+        from csgo_datasets.benchmark_v2 import load_benchmark_v2_selection_from_args
+    except ModuleNotFoundError as exc:
+        raise ImportError(
+            "Benchmark v2 evaluation requires csgo_datasets.benchmark_v2 "
+            "with load_benchmark_v2_selection_from_args(...)."
+        ) from exc
+
+    return load_benchmark_v2_selection_from_args(
+        getattr(args, "benchmark_v2_manifest"),
+        getattr(args, "benchmark_v2_split"),
+        map_names=[map_name],
+        support_seed=getattr(args, "benchmark_v2_support_seed", 0),
+        shots_per_map=getattr(args, "benchmark_v2_shots_per_map", 100),
+        data_dir=getattr(args, "data_dir", None),
+    )
+
+
+def validate_benchmark_v2_coverage(coverage: Mapping[str, object], allow_incomplete: bool) -> None:
+    missing = list(coverage.get("missing_pred_files", []))
+    extra = list(coverage.get("unmatched_pred_files", []))
+    if (missing or extra) and not allow_incomplete:
+        raise ValueError(
+            "Benchmark v2 evaluation requires exactly one prediction set for the "
+            "selected rows; "
+            f"missing={len(missing)}, missing_examples={missing[:20]}, "
+            f"extra={len(extra)}, extra_examples={extra[:20]}. "
+            "Pass --allow_incomplete_benchmark_v2 only for debugging partial outputs."
+        )
+
+
+def load_benchmark_v2_inference_provenance(
+    output_root: Path,
+    args: argparse.Namespace,
+    map_name: str,
+) -> Optional[dict]:
+    path = output_root / "inference_manifest.json"
+    if not path.is_file():
+        if getattr(args, "allow_missing_inference_manifest", False):
+            return None
+        raise FileNotFoundError(
+            f"Benchmark v2 inference provenance is required: {path}. "
+            "Pass --allow_missing_inference_manifest only for external/debug predictions."
+        )
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Invalid inference manifest {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ValueError(f"Inference manifest must be a JSON object: {path}")
+    expected_manifest = Path(args.benchmark_v2_manifest).resolve()
+    recorded_manifest = payload.get("benchmark_v2_manifest")
+    if not recorded_manifest or Path(recorded_manifest).resolve() != expected_manifest:
+        raise ValueError(
+            "Inference/evaluation Benchmark v2 manifest mismatch: "
+            f"recorded={recorded_manifest!r}, expected={str(expected_manifest)!r}"
+        )
+    if payload.get("benchmark_v2_split") != args.benchmark_v2_split:
+        raise ValueError(
+            "Inference/evaluation Benchmark v2 split mismatch: "
+            f"recorded={payload.get('benchmark_v2_split')!r}, "
+            f"expected={args.benchmark_v2_split!r}"
+        )
+    maps = payload.get("maps")
+    if not isinstance(maps, list) or map_name not in maps:
+        raise ValueError(f"Inference manifest does not include map {map_name!r}: {maps!r}")
+    if not payload.get("ckpt_path"):
+        raise ValueError(f"Inference manifest has no checkpoint provenance: {path}")
+    return {"path": str(path.resolve()), "payload": payload}
+
+
+def collect_benchmark_v2_coverage(
+    gt_dir: str,
+    pred_dir: str,
+    rows: Sequence[object],
+    image_extension: str = ".jpg",
+) -> Dict[str, object]:
+    """Compute coverage against manifest stems, never against the whole GT directory."""
+
+    normalized_extension = str(image_extension)
+    if not normalized_extension.startswith("."):
+        normalized_extension = f".{normalized_extension}"
+    expected_stems = [_row_stem(row) for row in rows]
+    if len(set(expected_stems)) != len(expected_stems):
+        raise ValueError("Benchmark v2 expected rows contain duplicate file stems")
+
+    gt_files = list_image_files(gt_dir)
+    pred_files = list_image_files(pred_dir)
+    gt_by_stem: Dict[str, List[str]] = {}
+    pred_by_stem: Dict[str, List[str]] = {}
+    for filename in gt_files:
+        gt_by_stem.setdefault(Path(filename).stem, []).append(filename)
+    for filename in pred_files:
+        pred_by_stem.setdefault(Path(filename).stem, []).append(filename)
+
+    expected_gt_files: List[str] = []
+    for stem in expected_stems:
+        matches = sorted(gt_by_stem.get(stem, []))
+        if len(matches) != 1:
+            raise ValueError(
+                f"Benchmark v2 expected stem must occur exactly once in GT: "
+                f"stem={stem}, matches={matches}"
+            )
+        manifest_filename = f"{stem}{normalized_extension}"
+        expected_gt_files.append(manifest_filename if manifest_filename in matches else matches[0])
+
+    common_files: List[str] = []
+    missing_pred_files: List[str] = []
+    selected_pred_files = set()
+    for stem, gt_filename in zip(expected_stems, expected_gt_files):
+        matches = sorted(pred_by_stem.get(stem, []))
+        if gt_filename in matches:
+            common_files.append(gt_filename)
+            selected_pred_files.add(gt_filename)
+        else:
+            missing_pred_files.append(gt_filename)
+
+    unmatched_pred_files = sorted(set(pred_files) - selected_pred_files)
+    expected_count = len(expected_gt_files)
+    pred_count = len(pred_files)
+    common_count = len(common_files)
+    return {
+        "gt_files": expected_gt_files,
+        "pred_files": pred_files,
+        "common_files": common_files,
+        "missing_pred_files": missing_pred_files,
+        "unmatched_pred_files": unmatched_pred_files,
+        "expected_file_stems": expected_stems,
+        "gt_filename_by_stem": dict(zip(expected_stems, expected_gt_files)),
+        "Coverage_GT": common_count / expected_count if expected_count > 0 else 0.0,
+        "Coverage_Pred": common_count / pred_count if pred_count > 0 else 0.0,
+        "Common_Count": common_count,
+        "GT_Count": expected_count,
+        "Pred_Count": pred_count,
+    }
 
 
 def collect_coverage(gt_dir: str, pred_dir: str) -> Dict[str, object]:
@@ -447,29 +707,58 @@ def resolve_eval_output_root(pred_dir: str, map_name: str):
     return output_root, experiment_name, timestamp, json_path
 
 
-def load_pose_index(data_dir: str, map_name: str, filenames: Sequence[str], pose_json: Optional[str]):
-    candidate_paths = []
-    if pose_json and pose_json != "auto":
-        candidate_paths.append(Path(pose_json))
+def load_pose_index(
+    data_dir: str,
+    map_name: str,
+    filenames: Sequence[str],
+    pose_json: Optional[str],
+    benchmark_v2_rows: Optional[Sequence[object]] = None,
+    benchmark_v2_z_range: Optional[Mapping[str, object]] = None,
+    benchmark_v2_manifest: Optional[str] = None,
+):
+    if benchmark_v2_rows is not None:
+        pose_entries = list(benchmark_v2_rows)
+        pose_index: Dict[str, dict] = {}
+        for entry in pose_entries:
+            entry_map = _row_value(entry, "map", map_name)
+            if entry_map != map_name:
+                continue
+            stem = _row_stem(entry)
+            if stem in pose_index:
+                raise ValueError(f"Duplicate Benchmark v2 pose row for stem={stem}")
+            pose_index[stem] = dict(entry) if isinstance(entry, Mapping) else vars(entry)
+
+        if benchmark_v2_z_range is None:
+            raise ValueError("Benchmark v2 locator evaluation requires manifest z_ranges")
+        z_min = float(benchmark_v2_z_range["z_min"])
+        z_max = float(benchmark_v2_z_range["z_max"])
+        if not z_max > z_min:
+            raise ValueError("Benchmark v2 locator z_max must be greater than z_min")
+        loaded_paths = [str(Path(benchmark_v2_manifest).resolve())] if benchmark_v2_manifest else []
     else:
-        split_dir = Path(data_dir) / map_name / "splits_20000_5000"
-        candidate_paths.extend([
-            split_dir / "test_split.json",
-            split_dir / "continuous_unseen_clips.json",
-        ])
+        candidate_paths = []
+        if pose_json and pose_json != "auto":
+            candidate_paths.append(Path(pose_json))
+        else:
+            split_dir = Path(data_dir) / map_name / "splits_20000_5000"
+            candidate_paths.extend([
+                split_dir / "test_split.json",
+                split_dir / "continuous_unseen_clips.json",
+            ])
 
-    pose_entries = []
-    loaded_paths = []
-    for path in candidate_paths:
-        if path.is_file():
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            pose_entries.extend(data)
-            loaded_paths.append(str(path))
-    if not pose_entries:
-        raise FileNotFoundError(f"No pose json found for map={map_name}: {candidate_paths}")
+        pose_entries = []
+        loaded_paths = []
+        for path in candidate_paths:
+            if path.is_file():
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                pose_entries.extend(data)
+                loaded_paths.append(str(path))
+        if not pose_entries:
+            raise FileNotFoundError(f"No pose json found for map={map_name}: {candidate_paths}")
 
-    pose_index = {entry["file_frame"]: entry for entry in pose_entries if entry.get("map", map_name) == map_name}
+        pose_index = {entry["file_frame"]: entry for entry in pose_entries if entry.get("map", map_name) == map_name}
+
     stems = [Path(name).stem for name in filenames]
     missing_pose = sorted(stem for stem in stems if stem not in pose_index)
     if missing_pose:
@@ -478,16 +767,27 @@ def load_pose_index(data_dir: str, map_name: str, filenames: Sequence[str], pose
             f"Examples: {missing_pose[:20]}"
         )
 
-    matched_entries = [pose_index[stem] for stem in stems]
-    z_values = [entry["z"] for entry in matched_entries]
-    return pose_index, min(z_values), max(z_values), loaded_paths
+    if benchmark_v2_rows is None:
+        matched_entries = [pose_index[stem] for stem in stems]
+        z_values = [entry["z"] for entry in matched_entries]
+        z_min = min(z_values)
+        z_max = max(z_values)
+
+    return pose_index, z_min, z_max, loaded_paths
 
 
-def build_map_tensor(data_dir: str, map_name: str) -> torch.Tensor:
-    map_filename = MAP_PATH_DICT.get(map_name)
-    if map_filename is None:
-        raise ValueError(f"Unknown map_name for locator map image: {map_name}")
-    map_path = Path(data_dir) / map_name / map_filename
+def build_map_tensor(
+    data_dir: str,
+    map_name: str,
+    radar_path: Optional[str] = None,
+) -> torch.Tensor:
+    if radar_path is None:
+        map_filename = MAP_PATH_DICT.get(map_name)
+        if map_filename is None:
+            raise ValueError(f"Unknown map_name for locator map image: {map_name}")
+        map_path = Path(data_dir) / map_name / map_filename
+    else:
+        map_path = Path(radar_path)
     if not map_path.is_file():
         raise FileNotFoundError(f"Map image not found: {map_path}")
     transform = transforms.Compose([
@@ -509,9 +809,21 @@ def compute_external_locator_metrics(
     external_loc_repo_root: str,
     external_loc_config_path: str,
     external_loc_checkpoint_path: str,
+    benchmark_v2_rows: Optional[Sequence[object]] = None,
+    benchmark_v2_z_range: Optional[Mapping[str, object]] = None,
+    benchmark_v2_manifest: Optional[str] = None,
+    benchmark_v2_radar: Optional[str] = None,
 ):
-    pose_index, z_min, z_max, loaded_pose_paths = load_pose_index(data_dir, map_name, filenames, pose_json)
-    map_tensor = build_map_tensor(data_dir, map_name)
+    pose_index, z_min, z_max, loaded_pose_paths = load_pose_index(
+        data_dir,
+        map_name,
+        filenames,
+        pose_json,
+        benchmark_v2_rows=benchmark_v2_rows,
+        benchmark_v2_z_range=benchmark_v2_z_range,
+        benchmark_v2_manifest=benchmark_v2_manifest,
+    )
+    map_tensor = build_map_tensor(data_dir, map_name, radar_path=benchmark_v2_radar)
     dataset = LocatorImageDataset(pred_dir, filenames, pose_index, map_tensor, z_min, z_max)
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=4)
     locator = build_frozen_external_loc_model(
@@ -587,6 +899,8 @@ def write_results_json(
     args: argparse.Namespace,
     locator_details: Dict[str, object],
     boundary_details: Dict[str, object],
+    benchmark_v2_selection: Optional[Dict[str, int]] = None,
+    inference_provenance: Optional[dict] = None,
 ) -> None:
     payload = {
         "experiment_name": experiment_name,
@@ -621,19 +935,67 @@ def write_results_json(
             "boundary": boundary_details,
         },
     }
+    if benchmark_v2_selection is not None:
+        manifest = getattr(args, "benchmark_v2_manifest", None)
+        payload.update({
+            "benchmark_v2_manifest": str(Path(manifest).resolve()) if manifest else None,
+            "benchmark_v2_split": getattr(args, "benchmark_v2_split", None),
+            "benchmark_v2_selection_counts": benchmark_v2_selection,
+            "missing_pred_files": coverage["missing_pred_files"],
+            "inference_provenance": inference_provenance,
+        })
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
 
 def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
-    coverage = collect_coverage(args.gt, args.pred)
+    v2_mode = benchmark_v2_enabled(args)
+    if v2_mode:
+        map_name = infer_map_name(args.gt, args.pred, args.map_name)
+        selection = load_benchmark_v2_selection(args, map_name)
+        if selection is None:
+            raise ValueError("Benchmark v2 loader returned no selection")
+        selection_rows = benchmark_v2_selection_rows(selection, map_name)
+        selection_z_range = benchmark_v2_z_range(selection, map_name)
+        selection_radar = benchmark_v2_radar_path(selection, map_name)
+        coverage = collect_benchmark_v2_coverage(
+            args.gt,
+            args.pred,
+            selection_rows,
+            benchmark_v2_image_extension(selection),
+        )
+        selection_details = benchmark_v2_selection_details(
+            selection,
+            map_name,
+            selection_rows,
+            coverage["expected_file_stems"],
+        )
+    else:
+        coverage = collect_coverage(args.gt, args.pred)
+        map_name = infer_map_name(args.gt, args.pred, args.map_name)
+        selection = None
+        selection_rows = None
+        selection_z_range = None
+        selection_radar = None
+        selection_details = None
+    if selection is not None:
+        validate_benchmark_v2_coverage(
+            coverage,
+            allow_incomplete=bool(getattr(args, "allow_incomplete_benchmark_v2", False)),
+        )
     common_files = coverage["common_files"]
     if len(common_files) == 0:
         raise ValueError("No common filenames found between GT and Pred directories.")
 
-    map_name = infer_map_name(args.gt, args.pred, args.map_name)
     output_root, experiment_name, timestamp, json_path = resolve_eval_output_root(args.pred, map_name)
+    if selection is not None:
+        json_path = output_root / f"benchmark_csgo_v2_{map_name}.json"
+        inference_provenance = load_benchmark_v2_inference_provenance(
+            output_root, args, map_name
+        )
+    else:
+        inference_provenance = None
     print(f"Experiment: {experiment_name}")
     print(f"Timestamp: {timestamp}")
     print(f"Map: {map_name}")
@@ -678,6 +1040,10 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
         external_loc_repo_root=args.external_loc_repo_root,
         external_loc_config_path=args.external_loc_config_path,
         external_loc_checkpoint_path=args.external_loc_checkpoint_path,
+        benchmark_v2_rows=selection_rows,
+        benchmark_v2_z_range=selection_z_range,
+        benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
+        benchmark_v2_radar=selection_radar,
     )
     locator_details = {
         "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
@@ -704,9 +1070,11 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
         args=args,
         locator_details=locator_details,
         boundary_details=boundary_details,
+        benchmark_v2_selection=selection_details,
+        inference_provenance=inference_provenance,
     )
     print(f"Saved JSON: {json_path}")
-    return {
+    result = {
         "json_path": str(json_path),
         "metrics": metrics,
         "map_name": map_name,
@@ -714,6 +1082,9 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
         "pred_dir": str(Path(args.pred).resolve()),
         "common_count": int(coverage["Common_Count"]),
     }
+    if selection_details is not None:
+        result["benchmark_v2_selection_counts"] = selection_details
+    return result
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -728,6 +1099,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data_dir", type=str, default="data/preprocessed_data")
     parser.add_argument("--map_name", type=str, default="auto")
     parser.add_argument("--pose_json", type=str, default="auto")
+    parser.add_argument(
+        "--benchmark_v2_manifest",
+        type=str,
+        default=None,
+        help="Optional Benchmark v2 manifest path; enables manifest-driven evaluation.",
+    )
+    parser.add_argument(
+        "--benchmark_v2_split",
+        type=str,
+        default=None,
+        help="Benchmark v2 split selector, used together with --benchmark_v2_manifest.",
+    )
+    parser.add_argument(
+        "--allow_incomplete_benchmark_v2",
+        action="store_true",
+        help="Debug only: compute v2 metrics on available predictions when coverage is incomplete.",
+    )
+    parser.add_argument(
+        "--allow_missing_inference_manifest",
+        action="store_true",
+        help="Debug/external predictions only: allow v2 metrics without inference_manifest.json.",
+    )
     parser.add_argument("--external_loc_repo_root", type=str, default="csgosquare")
     parser.add_argument("--external_loc_config_path", type=str, default="configs_reg_newdata/exp5_2.yaml")
     parser.add_argument(

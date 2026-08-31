@@ -39,7 +39,16 @@ from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 import numpy as np
 import yaml
 from visual_utils import visualize_dataset_samples_v1, visualize_dataset_samples, visualize_dataset_samples_paired
-from csgo_datasets.unified_task_dataset import UniLIPMultiTaskDataset, DataCollatorForUniLIPMultiTaskDataset, UniLIPMultiTaskBalancedDataset
+from csgo_datasets.unified_task_dataset import (
+    UniLIPMultiTaskDataset,
+    DataCollatorForUniLIPMultiTaskDataset,
+    UniLIPMultiTaskBalancedDataset,
+    _get_training_benchmark_v2_selection,
+    _benchmark_v2_rows_by_map,
+    _benchmark_v2_z_bounds,
+    _benchmark_v2_radar_path,
+    _benchmark_v2_fps_path,
+)
 import datetime
 import wandb
 
@@ -202,6 +211,8 @@ class DataArguments:
     shortcaption_image_folder: Optional[str] = field(default=None)
     data_type: Optional[str] = field(default="mix")
     image_aspect_ratio: str = "square"
+    benchmark_v2_support_seed: Optional[int] = field(default=None)
+    benchmark_v2_shots_per_map: Optional[int] = field(default=None)
 
 
 @dataclass
@@ -629,6 +640,72 @@ def load_partial_checkpoint(model, ckpt_path: str, prefixes: List[str], tag: str
     if shape_mismatch_keys:
         logging.info("Partial checkpoint shape mismatches for %s (showing up to 10): %s", tag, shape_mismatch_keys[:10])
     logging.info(msg)
+
+
+def load_finetune_init_checkpoint(model, ckpt_path: str):
+    """Load model weights only after the complete model/LoRA structure exists."""
+    src_state_dict = smart_matching_state_dict_keys(
+        load_checkpoint_state_dict(ckpt_path),
+        model,
+    )
+    target_state_dict = model.state_dict()
+    loadable_state_dict = {}
+    unexpected_keys = []
+    shape_mismatch_keys = []
+
+    for key, value in src_state_dict.items():
+        if key not in target_state_dict:
+            unexpected_keys.append(key)
+            continue
+        if tuple(target_state_dict[key].shape) != tuple(value.shape):
+            shape_mismatch_keys.append(
+                (key, tuple(value.shape), tuple(target_state_dict[key].shape))
+            )
+            continue
+        loadable_state_dict[key] = value
+
+    if not loadable_state_dict:
+        raise RuntimeError(
+            f"Finetune init checkpoint {ckpt_path} produced 0 loadable keys. "
+            f"source_keys={len(src_state_dict)}, unexpected={len(unexpected_keys)}, "
+            f"shape_mismatch={len(shape_mismatch_keys)}"
+        )
+    if shape_mismatch_keys:
+        raise RuntimeError(
+            f"Finetune init checkpoint {ckpt_path} has shape mismatches; refusing "
+            f"a partial initialization. Showing up to 10: {shape_mismatch_keys[:10]}"
+        )
+
+    missing_trainable_keys = [
+        name
+        for name, parameter in model.named_parameters()
+        if parameter.requires_grad and name not in loadable_state_dict
+    ]
+    if missing_trainable_keys:
+        raise RuntimeError(
+            f"Finetune init checkpoint {ckpt_path} does not cover all parameters "
+            f"that will be trained during adaptation; missing="
+            f"{len(missing_trainable_keys)}. Showing up to 20: "
+            f"{missing_trainable_keys[:20]}"
+        )
+
+    msg = model.load_state_dict(loadable_state_dict, strict=False)
+    missing_keys = list(msg.missing_keys)
+    unexpected_keys = sorted(set(unexpected_keys + list(msg.unexpected_keys)))
+    logging.info(
+        "Loaded finetune model init from %s: loaded=%d, missing=%d, unexpected=%d",
+        ckpt_path,
+        len(loadable_state_dict),
+        len(missing_keys),
+        len(unexpected_keys),
+    )
+    logging.info("Finetune init missing keys (up to 20): %s", missing_keys[:20])
+    logging.info("Finetune init unexpected keys (up to 20): %s", unexpected_keys[:20])
+    model.config.finetune_init_loaded_key_count = len(loadable_state_dict)
+    model.config.finetune_init_missing_keys = missing_keys
+    model.config.finetune_init_unexpected_keys = unexpected_keys
+    model.config.finetune_init_missing_trainable_keys = missing_trainable_keys
+    return msg
 
 
 def get_latest_checkpoint_path(output_dir: str) -> Optional[str]:
@@ -1686,53 +1763,80 @@ class CSGOWorldModelDataset(Dataset):
         # --- A. 加载数据索引 (复用 CsgoTrainDataset_IT 逻辑) ---
         self.data_entries = []
         self.map_z_range = {}
+        self.benchmark_v2_selection = _get_training_benchmark_v2_selection(
+            config,
+            data_args,
+            map_names=config["train_maps"],
+        )
 
         # 你的地图文件映射
         self.map_path_dict = map_path_dict
 
         logging.info("🔄 Loading CS2 Dataset Index...")
-        for map_name in config["train_maps"]:
-            # 1. 确定路径
-            if config['data_dir'] == 'data/preprocessed_data':
-                if config['debug']:
-                    position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
+        if self.benchmark_v2_selection is not None:
+            rows_by_map = _benchmark_v2_rows_by_map(
+                self.benchmark_v2_selection,
+                config["train_maps"],
+            )
+            for map_name in config["train_maps"]:
+                z_min, z_max = _benchmark_v2_z_bounds(
+                    self.benchmark_v2_selection,
+                    map_name,
+                )
+                self.map_z_range[map_name] = {'max_z': z_max, 'min_z': z_min}
+                for pos_data in rows_by_map[map_name]:
+                    self.data_entries.append({
+                        'map': map_name,
+                        'file_frame': pos_data['file_frame'],
+                        'x': pos_data['x'],
+                        'y': pos_data['y'],
+                        'z': pos_data['z'],
+                        'angle_v': pos_data['angle_v'],
+                        'angle_h': pos_data['angle_h'],
+                    })
+        else:
+            for map_name in config["train_maps"]:
+                # 1. 确定路径
+                if config['data_dir'] == 'data/preprocessed_data':
+                    if config['debug']:
+                        position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/test_split.json"
+                    else:
+                        position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
                 else:
-                    position_data_path = f"{config['data_dir']}/{map_name}/splits_20000_5000/train_split.json"
-            else:
-                position_data_path = f"{config['data_dir']}/{map_name}/positions.json"
+                    position_data_path = f"{config['data_dir']}/{map_name}/positions.json"
 
-            # 2. 读取 JSON
-            if not os.path.exists(position_data_path):
-                logging.info(f"⚠️ Warning: Path not found {position_data_path}, skipping.")
-                continue
+                # 2. 读取 JSON
+                if not os.path.exists(position_data_path):
+                    logging.info(f"⚠️ Warning: Path not found {position_data_path}, skipping.")
+                    continue
 
-            logging.info(f"Loading CS2 Data Split {position_data_path}...")
-            with open(position_data_path, "r", encoding="utf-8") as f:
-                positions_data = json.load(f)
+                logging.info(f"Loading CS2 Data Split {position_data_path}...")
+                with open(position_data_path, "r", encoding="utf-8") as f:
+                    positions_data = json.load(f)
 
-            # 3. 计算 Z 轴范围 (用于归一化)
-            max_z, min_z = -float('inf'), float('inf')
-            for data in positions_data:
-                if data['z'] > max_z: max_z = data['z']
-                if data['z'] < min_z: min_z = data['z']
-            self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
+                # 3. 计算 Z 轴范围 (用于归一化)
+                max_z, min_z = -float('inf'), float('inf')
+                for data in positions_data:
+                    if data['z'] > max_z: max_z = data['z']
+                    if data['z'] < min_z: min_z = data['z']
+                self.map_z_range[map_name] = {'max_z': max_z, 'min_z': min_z}
 
-            # 4. 存入 entries
-            for pos_data in positions_data:
-                # 构造 entry
-                entry = {
-                    'map': map_name,
-                    'file_frame': pos_data['file_frame'],
-                    'x': pos_data['x'],
-                    'y': pos_data['y'],
-                    'z': pos_data['z'],
-                    'angle_v': pos_data['angle_v'], # Pitch (Radians usually)
-                    'angle_h': pos_data['angle_h'], # Yaw (Radians usually)
-                }
-                self.data_entries.append(entry)
+                # 4. 存入 entries
+                for pos_data in positions_data:
+                    # 构造 entry
+                    entry = {
+                        'map': map_name,
+                        'file_frame': pos_data['file_frame'],
+                        'x': pos_data['x'],
+                        'y': pos_data['y'],
+                        'z': pos_data['z'],
+                        'angle_v': pos_data['angle_v'], # Pitch (Radians usually)
+                        'angle_h': pos_data['angle_h'], # Yaw (Radians usually)
+                    }
+                    self.data_entries.append(entry)
 
         # 5. 数据过滤 (CSBS/Dust2 only logic)
-        if config['data_dir'] == 'data/processed_data':
+        if self.benchmark_v2_selection is None and config['data_dir'] == 'data/processed_data':
             logging.info(f"📊 Final total entries : {len(self.data_entries)}")
             self.data_entries = [data for data in self.data_entries if (data['map']=='de_dust2' and data['x']!=562 and data['y']!=736) or (data['map']!='de_dust2')]
             logging.info(f"📊 after filter damaged entries: {len(self.data_entries)}")
@@ -1770,13 +1874,26 @@ class CSGOWorldModelDataset(Dataset):
 
                 # --- Step 1: 加载图像 ---
                 # A. Input Condition (Radar Map) -> 对应 UniLIP 的 und_image
-                map_filename = self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
-                map_path = f"{self.config['data_dir']}/{map_name}/{map_filename}"
+                if self.benchmark_v2_selection is not None:
+                    map_path = _benchmark_v2_radar_path(
+                        self.benchmark_v2_selection,
+                        map_name,
+                    )
+                else:
+                    map_filename = self.map_path_dict.get(map_name, 'de_dust2_radar_psd.png')
+                    map_path = f"{self.config['data_dir']}/{map_name}/{map_filename}"
                 input_image = Image.open(map_path).convert('RGB') # Radar
 
                 # B. Output Target (FPS Image) -> 对应 UniLIP 的 gen_image
-                ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
-                fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
+                if self.benchmark_v2_selection is not None:
+                    fps_path = _benchmark_v2_fps_path(
+                        self.benchmark_v2_selection,
+                        map_name,
+                        data['file_frame'],
+                    )
+                else:
+                    ext = ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
+                    fps_path = f"{self.config['data_dir']}/{map_name}/imgs/{data['file_frame']}{ext}"
                 output_image = Image.open(fps_path).convert('RGB') # FPS
 
                 # --- Step 2: 准备 Prompt 数据 ---
@@ -1851,7 +1968,7 @@ class CSGOWorldModelDataset(Dataset):
                 # 分配给 UniLIP 训练脚本识别的 Key
                 # und_image: 输入条件 (Radar)
                 # gen_image: 监督目标 (FPS)
-                if self.config.img_size==224:
+                if self.config.get('img_size', 448)==224:
                     data_dict["und_image"] = process_images[:-1] # [1, C, H, W]
                 else:
                     data_dict["und_image"] = img_resize_transform(process_images[:-1]) # [1, C, H, W]
@@ -2341,6 +2458,13 @@ def train(attn_implementation=None):
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
 
+    # Keep Benchmark v2 sampling in the YAML for reproducibility, while
+    # allowing a CLI override for support-seed and shot-scaling experiments.
+    for key in ("benchmark_v2_support_seed", "benchmark_v2_shots_per_map"):
+        value = getattr(data_args, key, None)
+        if value is not None:
+            csgo_config[key] = value
+
     validate_lm_bin_ce_config(csgo_config)
     model_args.fix_dit = csgo_config.get("fix_dit", model_args.fix_dit)
     model_args.fix_connect = csgo_config.get("fix_connect", model_args.fix_connect)
@@ -2678,6 +2802,7 @@ def train(attn_implementation=None):
     model.config.base_init_ckpt_path = csgo_config.get("base_init_ckpt_path", None)
     model.config.gen_init_ckpt_path = csgo_config.get("gen_init_ckpt_path", None)
     model.config.loc_init_ckpt_path = csgo_config.get("loc_init_ckpt_path", None)
+    model.config.finetune_init_ckpt_path = csgo_config.get("finetune_init_ckpt_path", None)
     model_args.train_mm_projector_only = csgo_config.get(
         "train_mm_projector_only",
         getattr(model_args, "train_mm_projector_only", False),
@@ -3218,13 +3343,27 @@ def train(attn_implementation=None):
     base_init_ckpt_path = csgo_config.get("base_init_ckpt_path", None)
     gen_init_ckpt_path = csgo_config.get("gen_init_ckpt_path", None)
     loc_init_ckpt_path = csgo_config.get("loc_init_ckpt_path", None)
+    finetune_init_ckpt_path = csgo_config.get("finetune_init_ckpt_path", None)
     resume_ckpt_path = csgo_config.get("resume_ckpt_path", None)
     has_selective_init = any([base_init_ckpt_path, gen_init_ckpt_path, loc_init_ckpt_path])
+    has_finetune_init = bool(finetune_init_ckpt_path)
+    has_any_model_init = has_selective_init or has_finetune_init
 
-    if training_args.pretrain_path != 'none' and has_selective_init:
-        raise ValueError("pretrain_path is mutually exclusive with base/gen/loc init_ckpt_path.")
-    if resume_ckpt_path is not None and has_selective_init:
-        raise ValueError("resume_ckpt_path is mutually exclusive with base/gen/loc init_ckpt_path.")
+    if training_args.pretrain_path != 'none' and has_any_model_init:
+        raise ValueError(
+            "pretrain_path is mutually exclusive with finetune_init_ckpt_path "
+            "and base/gen/loc init_ckpt_path."
+        )
+    if resume_ckpt_path is not None and has_any_model_init:
+        raise ValueError(
+            "resume_ckpt_path is mutually exclusive with finetune_init_ckpt_path "
+            "and base/gen/loc init_ckpt_path."
+        )
+    if has_finetune_init and has_selective_init:
+        raise ValueError(
+            "finetune_init_ckpt_path is mutually exclusive with "
+            "base_init_ckpt_path, gen_init_ckpt_path, and loc_init_ckpt_path."
+        )
 
     if training_args.pretrain_path != 'none':
         pretrain_path = training_args.pretrain_path
@@ -3261,6 +3400,26 @@ def train(attn_implementation=None):
             loc_init_ckpt_path=loc_init_ckpt_path,
         )
         logging.info("Updated output_dir for selective init experiment: %s", training_args.output_dir)
+
+    finetune_destination_checkpoint = (
+        get_latest_checkpoint_path(training_args.output_dir)
+        if has_finetune_init
+        else None
+    )
+    if has_finetune_init and finetune_destination_checkpoint is None:
+        load_finetune_init_checkpoint(model, finetune_init_ckpt_path)
+        logging.info(
+            "Finetune init loaded model weights only; optimizer/trainer state is not loaded "
+            "and output_dir remains unchanged: %s",
+            training_args.output_dir,
+        )
+    elif has_finetune_init:
+        logging.info(
+            "Destination checkpoint %s exists; defer model/optimizer/global-step restoration "
+            "to Trainer resume instead of reapplying finetune_init_ckpt_path=%s.",
+            finetune_destination_checkpoint,
+            finetune_init_ckpt_path,
+        )
 
     if getattr(model.config, "is_loc_repa_loss", False):
         loc_repa_teacher_ckpt_path = getattr(model.config, "loc_repa_teacher_ckpt_path", None)
