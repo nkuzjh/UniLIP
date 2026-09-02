@@ -99,4 +99,4 @@ lr_scheduler_kwargs:
   min_lr: 1.0e-5
 
 # ### resume batch-size control
-resume_checkpoint_world_size: 1
+# resume_checkpoint_world_size: 1
