@@ -43,6 +43,7 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
         split: str = "seen_discrete_test",
         kind: str = "discrete",
         values=(1.0, 3.0),
+        asset_provenance=None,
     ) -> None:
         maps = ["map_a", "map_b"] if split.startswith("seen_") else ["map_c", "map_d"]
         prefix = "benchmark_csgo_v2_" if kind == "discrete" else "benchmark_csgo_v2_conti_"
@@ -58,26 +59,31 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
             "ckpt_path": "checkpoint.safetensors",
             "seed": 42,
         }
+        if asset_provenance is not None:
+            inference_payload.update(asset_provenance)
         self._write_json(inference_manifest, inference_payload)
         for map_name, value in zip(maps, values):
+            result_payload = {
+                "map_name": map_name,
+                "benchmark_v2_manifest": str(manifest),
+                "benchmark_v2_split": split,
+                "metrics_ordered": {
+                    "PSNR": value,
+                    "SSIM": value + 10.0,
+                    "Common_Count": int(value),
+                    "not_a_metric": None,
+                    "bool_metric": True,
+                },
+                "inference_provenance": {
+                    "path": str(inference_manifest),
+                    "payload": inference_payload,
+                },
+            }
+            if asset_provenance is not None:
+                result_payload.update(asset_provenance)
             self._write_json(
                 root / f"{prefix}{map_name}.json",
-                {
-                    "map_name": map_name,
-                    "benchmark_v2_manifest": str(manifest),
-                    "benchmark_v2_split": split,
-                    "metrics_ordered": {
-                        "PSNR": value,
-                        "SSIM": value + 10.0,
-                        "Common_Count": int(value),
-                        "not_a_metric": None,
-                        "bool_metric": True,
-                    },
-                    "inference_provenance": {
-                        "path": str(inference_manifest),
-                        "payload": inference_payload,
-                    },
-                },
+                result_payload,
             )
 
     def _write_maps_aggregate(
@@ -92,6 +98,7 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
         support_seed: int | None = None,
         shots_per_map: int | None = None,
         sample_count: int = 8,
+        asset_provenance=None,
     ) -> None:
         maps = ["map_a", "map_b"] if split.startswith("seen_") else ["map_c", "map_d"]
         inference_manifest = path.parent / "inference_manifest.json"
@@ -106,32 +113,45 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
             "ckpt_path": "checkpoint.safetensors",
             "seed": inference_seed,
         }
+        if asset_provenance is not None:
+            inference_payload.update(asset_provenance)
         self._write_json(inference_manifest, inference_payload)
+        aggregate_payload = {
+            "manifest": str(manifest),
+            "split": split,
+            "kind": kind,
+            "maps": maps,
+            "per_map": {},
+            "metrics_macro_map": {
+                "PSNR": values[0],
+                "SSIM": values[1],
+            },
+            "inference_provenance": {
+                "path": str(inference_manifest),
+                "payload": inference_payload,
+            },
+            "checkpoint": "checkpoint.safetensors",
+            "ckpt_path": "checkpoint.safetensors",
+            "inference_seed": inference_seed,
+            "support_seed": support_seed,
+            "shots_per_map": shots_per_map,
+            "sample_count": sample_count,
+            "source_files": {},
+        }
+        if asset_provenance is not None:
+            aggregate_payload.update(asset_provenance)
         self._write_json(
             path,
-            {
-                "manifest": str(manifest),
-                "split": split,
-                "kind": kind,
-                "maps": maps,
-                "per_map": {},
-                "metrics_macro_map": {
-                    "PSNR": values[0],
-                    "SSIM": values[1],
-                },
-                "inference_provenance": {
-                    "path": str(inference_manifest),
-                    "payload": inference_payload,
-                },
-                "checkpoint": "checkpoint.safetensors",
-                "ckpt_path": "checkpoint.safetensors",
-                "inference_seed": inference_seed,
-                "support_seed": support_seed,
-                "shots_per_map": shots_per_map,
-                "sample_count": sample_count,
-                "source_files": {},
-            },
+            aggregate_payload,
         )
+
+    def _minimal_asset_provenance(self, root: Path, suffix: str = "") -> dict:
+        return {
+            "asset_backend": "minimal",
+            "asset_manifest_path": str((root / f"minimal{suffix}.json").resolve()),
+            "asset_manifest_sha256": ("a" * 64),
+            "selected_images_sha256": ("b" * 64),
+        }
 
     def test_maps_equal_map_macro_and_exact_protocol_coverage(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -158,6 +178,9 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
             self.assertIsNone(result["support_seed"])
             self.assertIsNone(result["shots_per_map"])
             self.assertEqual(result["sample_count"], 4)
+            self.assertEqual(result["asset_backend"], "source")
+            self.assertIsNone(result["asset_manifest_path"])
+            self.assertIsNone(result["selected_images_sha256"])
             self.assertEqual(
                 result["inference_provenance"]["path"],
                 str((results_root / "inference_manifest.json").resolve()),
@@ -203,6 +226,143 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
                     input_root=results_root,
                     kind="discrete",
                     output=root / "unused.json",
+                )
+
+    def test_minimal_asset_provenance_is_preserved_by_maps_aggregate(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            results_root = root / "per_map"
+            asset = self._minimal_asset_provenance(root)
+            self._write_per_map_results(
+                results_root,
+                manifest,
+                asset_provenance=asset,
+            )
+
+            result = aggregate_maps(
+                manifest=manifest,
+                split="seen_discrete_test",
+                input_root=results_root,
+                kind="discrete",
+                output=root / "minimal_map_macro.json",
+            )
+
+            for field, value in asset.items():
+                self.assertEqual(result[field], value)
+            self.assertEqual(result["benchmark_v2_asset_backend"], "minimal")
+            self.assertEqual(result["benchmark_v2_selected_images_sha256"], "b" * 64)
+
+    def test_minimal_asset_identity_mismatch_is_rejected_for_each_field(self):
+        for field in (
+            "asset_manifest_sha256",
+            "selected_images_sha256",
+            "asset_backend",
+        ):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                manifest = self._make_manifest(root)
+                results_root = root / "per_map"
+                asset = self._minimal_asset_provenance(root)
+                self._write_per_map_results(
+                    results_root,
+                    manifest,
+                    asset_provenance=asset,
+                )
+                map_path = results_root / "benchmark_csgo_v2_map_a.json"
+                payload = json.loads(map_path.read_text(encoding="utf-8"))
+                payload[field] = "c" * 64 if field != "asset_backend" else "source"
+                self._write_json(map_path, payload)
+
+                with self.assertRaises(AggregationError):
+                    aggregate_maps(
+                        manifest=manifest,
+                        split="seen_discrete_test",
+                        input_root=results_root,
+                        kind="discrete",
+                        output=root / "unused.json",
+                    )
+
+    def test_source_legacy_artifact_rejects_minimal_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            results_root = root / "per_map"
+            self._write_per_map_results(results_root, manifest)
+            map_path = results_root / "benchmark_csgo_v2_map_a.json"
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            payload["asset_manifest_sha256"] = "a" * 64
+            self._write_json(map_path, payload)
+
+            with self.assertRaisesRegex(AggregationError, "source asset backend"):
+                aggregate_maps(
+                    manifest=manifest,
+                    split="seen_discrete_test",
+                    input_root=results_root,
+                    kind="discrete",
+                    output=root / "unused.json",
+                )
+
+    def test_maps_reject_mixed_minimal_asset_bundles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            results_root = root / "per_map"
+            asset_a = self._minimal_asset_provenance(root, "_a")
+            asset_b = {
+                **self._minimal_asset_provenance(root, "_b"),
+                "asset_manifest_sha256": "c" * 64,
+            }
+            self._write_per_map_results(
+                results_root,
+                manifest,
+                asset_provenance=asset_a,
+            )
+            map_b_path = results_root / "benchmark_csgo_v2_map_b.json"
+            map_b = json.loads(map_b_path.read_text(encoding="utf-8"))
+            map_b.update(asset_b)
+            other_inference_path = results_root / "other_inference_manifest.json"
+            other_inference = json.loads(
+                (results_root / "inference_manifest.json").read_text(encoding="utf-8")
+            )
+            other_inference.update(asset_b)
+            self._write_json(other_inference_path, other_inference)
+            map_b["inference_provenance"] = {
+                "path": str(other_inference_path),
+                "payload": other_inference,
+            }
+            self._write_json(map_b_path, map_b)
+
+            with self.assertRaisesRegex(AggregationError, "path/payload"):
+                aggregate_maps(
+                    manifest=manifest,
+                    split="seen_discrete_test",
+                    input_root=results_root,
+                    kind="discrete",
+                    output=root / "unused.json",
+                )
+
+    def test_seeds_reject_mixed_minimal_asset_bundles(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            seed_root = root / "seed_results"
+            for seed in range(5):
+                asset = self._minimal_asset_provenance(root, f"_{seed}")
+                if seed == 1:
+                    asset = {**asset, "asset_manifest_sha256": "c" * 64}
+                self._write_maps_aggregate(
+                    seed_root / f"seed_{seed}" / "map_macro.json",
+                    manifest,
+                    (float(seed + 1), float(10 + seed)),
+                    support_seed=seed,
+                    shots_per_map=100,
+                    asset_provenance=asset,
+                )
+
+            with self.assertRaisesRegex(AggregationError, "asset_manifest_path mismatch"):
+                aggregate_seeds(
+                    seed_root_pattern=str(seed_root / "seed_{seed}" / "map_macro.json")
                 )
 
     def test_maps_reject_nonfinite_metric(self):
@@ -414,6 +574,94 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
                         {"map": "map_a", "file_frame": "frame_a"},
                         {"map": "map_b", "file_frame": "frame_b"},
                     ],
+                )
+
+    def test_localization_summary_protocol_map_subset_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            inference_manifest = root / "singleton_inference_manifest.json"
+            inference_payload = {
+                "benchmark_v2_manifest": str(manifest),
+                "benchmark_v2_split": "seen_discrete_test",
+                "benchmark_v2_support_seed": None,
+                "benchmark_v2_shots_per_map": None,
+                "maps": ["map_a"],
+                "sample_count": 1,
+                "checkpoint": "checkpoint.safetensors",
+                "ckpt_path": "checkpoint.safetensors",
+                "seed": 0,
+            }
+            self._write_json(inference_manifest, inference_payload)
+            common_kwargs = {
+                "manifest": manifest,
+                "split": "seen_discrete_test",
+                "per_map": {"map_a": {"L2_5D": 1.0}},
+                "metrics_macro_map": {"L2_5D": 1.0},
+                "inference_provenance": {
+                    "path": str(inference_manifest),
+                    "payload": inference_payload,
+                },
+                "checkpoint": "checkpoint.safetensors",
+                "seed": 0,
+                "support_seed": None,
+                "shots_per_map": None,
+                "sample_count": 1,
+            }
+
+            with self.assertRaisesRegex(
+                AggregationError, "do not match manifest protocol"
+            ):
+                build_localization_summary(maps=["map_a"], **common_kwargs)
+
+            summary = build_localization_summary(
+                maps=["map_a"],
+                allow_protocol_map_subset=True,
+                **common_kwargs,
+            )
+            self.assertEqual(summary["maps"], ["map_a"])
+            self.assertEqual(summary["per_map"], {"map_a": {"L2_5D": 1.0}})
+
+            with self.assertRaisesRegex(AggregationError, "unknown protocol map"):
+                build_localization_summary(
+                    maps=["map_unknown"],
+                    per_map={"map_unknown": {"L2_5D": 1.0}},
+                    allow_protocol_map_subset=True,
+                    **{
+                        key: value
+                        for key, value in common_kwargs.items()
+                        if key != "per_map"
+                    },
+                )
+
+            ordered_per_map = {
+                "map_a": {"L2_5D": 1.0},
+                "map_b": {"L2_5D": 3.0},
+            }
+            with self.assertRaisesRegex(AggregationError, "preserve manifest protocol order"):
+                build_localization_summary(
+                    maps=["map_b", "map_a"],
+                    per_map=ordered_per_map,
+                    metrics_macro_map={"L2_5D": 2.0},
+                    allow_protocol_map_subset=True,
+                    **{
+                        key: value
+                        for key, value in common_kwargs.items()
+                        if key not in {"per_map", "metrics_macro_map"}
+                    },
+                )
+
+            with self.assertRaisesRegex(AggregationError, "non-empty"):
+                build_localization_summary(
+                    maps=[],
+                    per_map={},
+                    metrics_macro_map={},
+                    allow_protocol_map_subset=True,
+                    **{
+                        key: value
+                        for key, value in common_kwargs.items()
+                        if key not in {"per_map", "metrics_macro_map"}
+                    },
                 )
 
     def test_five_localization_summaries_report_support_selection_ci(self):

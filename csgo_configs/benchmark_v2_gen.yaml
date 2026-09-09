@@ -1,0 +1,152 @@
+schema_version: 1
+
+# Optional. Set this single value to use the portable flat Benchmark v2 bundle.
+# null preserves the historical data/preprocessed_data backend.
+benchmark_v2_asset_manifest: null
+
+protocol:
+  manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+  support_seed: 0
+  shots_per_map: [100, 50, 20, 10]
+  max_steps: 400
+  inference_seed: 42
+  crossmap_maps: [cs_office, de_golden, de_palacio, de_vertigo]
+  expected_samples:
+    crossmap_query_test: 8000
+    crossmap_continuous: 5120
+
+paths:
+  model_root: outputs/csgo_1b
+  generation_root: outputs_eval/benchmark_v2
+  log_root: logs/benchmark_v2_gen
+  results_file: csgo_benchmark_v2_experiments_results.md
+
+evaluation:
+  data_dir: data/preprocessed_data
+  external_loc_repo_root: csgosquare
+  external_loc_config_path: configs_reg_newdata/exp5_2.yaml
+  external_loc_checkpoint_path: checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+  aesthetic_checkpoint: aesthetic_model.pth
+  batch_size: 1
+  paired_size: 448
+  frame_diff_threshold: 2
+  min_track_len: 4
+  clip_length: 16
+  clip_stride: 16
+  fvd_size: 224
+
+scheduling:
+  cuda_device: "0"
+  # Eight covers both experiments at all four shot levels; memory gating still decides launches.
+  max_parallel_few_shot_pipelines: 8
+  minimum_free_memory_mb: 40000
+  launch_settle_seconds: 180
+  poll_seconds: 60
+  stop_launching_on_failure: True
+
+seen:
+  maps:
+    - cs_agency
+    - cs_italy
+    - de_ancient
+    - de_anubis
+    - de_dust2
+    - de_inferno
+    - de_mirage
+    - de_nuke
+    - de_overpass
+    - de_train
+  expected_samples:
+    seen_discrete_test: 20000
+    seen_continuous: 12800
+  experiments:
+    exp31_gen:
+      checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+      discrete_config: csgo_configs/test/exp31_gen_gen.yaml
+      continuous_config: csgo_configs/test/exp31_gen_gen_conti.yaml
+    exp32_gen:
+      checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+      discrete_config: csgo_configs/test/exp32_gen_gen.yaml
+      continuous_config: csgo_configs/test/exp32_gen_gen_conti.yaml
+
+training:
+  train_batch_size_by_shot:
+    100: 128
+    50: 128
+    20: 80
+    10: 40
+  common_args:
+    deepspeed: deepspeed_scripts/zero0.json
+    model_name_or_path: UniLIP-1B
+    unilip_factor: 10.6
+    mllm_hf_path: OpenGVLab/InternVL3-1B-hf
+    version: internvl
+    data_type: mix
+    csgo_image_folder: data/preprocessed_data
+    mm_use_im_start_end: False
+    mm_use_im_patch_token: False
+    bf16: True
+    num_train_epochs: 10
+    per_device_eval_batch_size: 128
+    gradient_accumulation_steps: 1
+    eval_strategy: "no"
+    save_strategy: steps
+    learning_rate: 1.0e-4
+    weight_decay: 0.0
+    warmup_ratio: 0.003
+    lr_scheduler_type: cosine_with_min_lr
+    model_max_length: 1024
+    logging_steps: 1
+    tf32: True
+    gradient_checkpointing: True
+    dataloader_num_workers: 4
+    lazy_preprocess: True
+    n_query: 256
+    n_und_query: 0
+    report_to: wandb
+
+zero_shot:
+  exp31_gen:
+    checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    discrete_config: csgo_configs/test/exp31_gen_gen.yaml
+    continuous_config: csgo_configs/test/exp31_gen_gen_conti.yaml
+  exp32_gen:
+    checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    discrete_config: csgo_configs/test/exp32_gen_gen.yaml
+    continuous_config: csgo_configs/test/exp32_gen_gen_conti.yaml
+
+few_shot:
+  exp33_gen:
+    parent_checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    train_config: csgo_configs/exp33_gen.yaml
+    discrete_config: csgo_configs/test/exp33_gen_gen.yaml
+    continuous_config: csgo_configs/test/exp33_gen_gen_conti.yaml
+    master_ports:
+      100: 29800
+      50: 29850
+      20: 29820
+      10: 29810
+    train_args:
+      save_steps: 4000
+      save_total_limit: 5
+      fix_dit: False
+      fix_connect: False
+      fix_llm: True
+  exp34_gen:
+    parent_checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    train_config: csgo_configs/exp34_gen.yaml
+    discrete_config: csgo_configs/test/exp34_gen_gen.yaml
+    continuous_config: csgo_configs/test/exp34_gen_gen_conti.yaml
+    master_ports:
+      100: 29900
+      50: 29950
+      20: 29920
+      10: 29910
+    train_args:
+      save_steps: 2000
+      save_total_limit: 4
+      fix_dit: False
+      fix_connect: False
+      fix_llm: False
+      lora_r: 32
+      lora_alpha: 64

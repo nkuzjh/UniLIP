@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import os
 import json
 import torch
@@ -6,6 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 import yaml
 import random
+from pathlib import Path
 import datetime
 from PIL import Image, ImageDraw
 from tqdm import tqdm
@@ -20,6 +22,7 @@ from typing import Mapping
 from unilip.utils import disable_torch_init
 from unilip.model import Unified_UniLIP_InternVLForCausalLM
 from csgo_datasets.benchmark_v2 import (
+    benchmark_v2_image_path,
     is_benchmark_v2_config,
     load_benchmark_v2_selection,
 )
@@ -116,7 +119,100 @@ def _benchmark_v2_entries(config, selection):
     return entries
 
 
-def _write_inference_manifest(output_dir, config_path, config, maps, sample_count, ckpt_path, seed):
+def _benchmark_v2_asset_provenance(config, selection):
+    """Return portable asset provenance for minimal Benchmark v2 runs.
+
+    The source backend intentionally returns an empty mapping so existing
+    inference manifests retain their historical schema.  The core loader may
+    expose provenance either as a mapping or as individual selection fields;
+    accept both forms so this evaluator remains decoupled from its concrete
+    selection implementation.
+    """
+    raw_manifest = config.get("benchmark_v2_asset_manifest")
+    if raw_manifest in (None, ""):
+        return {}
+
+    raw = _benchmark_v2_value(selection, "asset_provenance", {})
+    if not isinstance(raw, Mapping):
+        raw = {}
+
+    def _first(*values):
+        for value in values:
+            if value not in (None, ""):
+                return value
+        return None
+
+    manifest_path = _first(
+        raw.get("manifest_path"),
+        raw.get("path"),
+        _benchmark_v2_value(selection, "asset_manifest_path"),
+        raw_manifest,
+    )
+    manifest_sha256 = _first(
+        raw.get("manifest_sha256"),
+        raw.get("sha256"),
+        _benchmark_v2_value(selection, "asset_manifest_sha256"),
+    )
+    if manifest_sha256 is None:
+        try:
+            path = Path(os.fspath(manifest_path)).expanduser()
+            if path.is_file():
+                digest = hashlib.sha256()
+                with path.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                manifest_sha256 = digest.hexdigest()
+        except (OSError, TypeError, ValueError):
+            manifest_sha256 = None
+
+    backend = _first(
+        raw.get("backend"),
+        _benchmark_v2_value(selection, "asset_backend"),
+        "minimal",
+    )
+    asset_root = _first(
+        raw.get("root"),
+        raw.get("asset_root"),
+        _benchmark_v2_value(selection, "asset_root"),
+    )
+    selected_images_sha256 = _first(
+        raw.get("selected_images_sha256"),
+        _benchmark_v2_value(selection, "selected_images_sha256"),
+    )
+    provenance = {
+        "benchmark_v2_asset_manifest": os.fspath(raw_manifest),
+        "benchmark_v2_asset_backend": str(backend),
+        "benchmark_v2_asset": {
+            "manifest": os.fspath(raw_manifest),
+            "backend": str(backend),
+        },
+    }
+    if manifest_sha256 is not None:
+        provenance["benchmark_v2_asset_manifest_sha256"] = str(manifest_sha256)
+        provenance["benchmark_v2_asset"]["sha256"] = str(manifest_sha256)
+    if asset_root is not None:
+        asset_root = os.fspath(asset_root)
+        provenance["benchmark_v2_asset_root"] = asset_root
+        provenance["benchmark_v2_asset"]["root"] = asset_root
+    if selected_images_sha256 is not None:
+        selected_images_sha256 = str(selected_images_sha256)
+        provenance["benchmark_v2_selected_images_sha256"] = selected_images_sha256
+        provenance["benchmark_v2_asset"][
+            "selected_images_sha256"
+        ] = selected_images_sha256
+    return provenance
+
+
+def _write_inference_manifest(
+    output_dir,
+    config_path,
+    config,
+    maps,
+    sample_count,
+    ckpt_path,
+    seed,
+    selection=None,
+):
     payload = {
         "config_path": os.fspath(config_path),
         "benchmark_v2_manifest": config.get("benchmark_v2_manifest"),
@@ -129,6 +225,8 @@ def _write_inference_manifest(output_dir, config_path, config, maps, sample_coun
         "ckpt_path": None if ckpt_path is None else os.fspath(ckpt_path),
         "seed": int(seed),
     }
+    if selection is not None:
+        payload.update(_benchmark_v2_asset_provenance(config, selection))
     manifest_path = os.path.abspath(os.path.join(output_dir, "inference_manifest.json"))
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
@@ -163,6 +261,9 @@ def _write_benchmark_v2_localization_summary(
         seed=seed,
         support_seed=config.get("benchmark_v2_support_seed"),
         shots_per_map=config.get("benchmark_v2_shots_per_map"),
+        allow_protocol_map_subset=bool(
+            config.get("benchmark_v2_allow_map_subset_summary", False)
+        ),
         sample_count=sample_count,
     )
     summary_path = os.path.join(output_dir, "benchmark_csgo_v2_loc.json")
@@ -662,7 +763,14 @@ class CSGOLocInferenceDataset(Dataset):
         ext = self.image_extension if self.is_benchmark_v2 else (
             ".jpg" if self.config['data_dir'] == 'data/preprocessed_data' else ".png"
         )
-        fps_path = f"{self.data_dir}/{map_name}/imgs/{data['file_frame']}{ext}"
+        if self.is_benchmark_v2:
+            fps_path = benchmark_v2_image_path(
+                self.benchmark_v2_selection,
+                map_name,
+                data["file_frame"],
+            )
+        else:
+            fps_path = f"{self.data_dir}/{map_name}/imgs/{data['file_frame']}{ext}"
         fps_img = Image.open(fps_path).convert('RGB')
         fps_tensor_448 = img_process([fps_img], self.image_processor, self.image_aspect_ratio)
         tensor_fps = img_resize_transform(fps_tensor_448) if self.is_resize_224 else fps_tensor_448
@@ -1106,6 +1214,7 @@ def main():
     parser.add_argument("--benchmark_v2_maps", nargs="+", default=None)
     parser.add_argument("--benchmark_v2_support_seed", type=int, default=None)
     parser.add_argument("--benchmark_v2_shots_per_map", type=int, default=None)
+    parser.add_argument("--benchmark_v2_asset_manifest", type=str, default=None)
     args = parser.parse_args()
     with open(args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
@@ -1121,6 +1230,8 @@ def main():
         csgo_config['benchmark_v2_support_seed'] = args.benchmark_v2_support_seed
     if args.benchmark_v2_shots_per_map is not None:
         csgo_config['benchmark_v2_shots_per_map'] = args.benchmark_v2_shots_per_map
+    if args.benchmark_v2_asset_manifest is not None:
+        csgo_config['benchmark_v2_asset_manifest'] = args.benchmark_v2_asset_manifest
     seed = 42 if args.seed is None else args.seed
 
     disable_torch_init()
@@ -1439,6 +1550,7 @@ def main():
             len(results_json),
             ckpt_path,
             seed,
+            selection=test_dataset.benchmark_v2_selection,
         )
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)

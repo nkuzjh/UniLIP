@@ -1,0 +1,81 @@
+schema_version: 1
+
+# Optional. Set this single value to use the portable flat Benchmark v2 bundle.
+# null preserves the historical data/preprocessed_data backend.
+benchmark_v2_asset_manifest: null
+
+protocol:
+  manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+  checkpoint_step: 6000
+  minimum_checkpoint_size_bytes: 1048576
+  inference_seed: 42
+  seen_maps:
+    - cs_agency
+    - cs_italy
+    - de_ancient
+    - de_anubis
+    - de_dust2
+    - de_inferno
+    - de_mirage
+    - de_nuke
+    - de_overpass
+    - de_train
+  splits:
+    localization: seen_discrete_test
+    discrete: seen_discrete_test
+    continuous: seen_continuous
+  expected_samples:
+    seen_discrete_test: 20000
+    seen_continuous: 12800
+
+paths:
+  localization_root: outputs_loc/benchmark_v2
+  generation_root: outputs_eval/benchmark_v2
+  log_root: logs/benchmark_v2_checkpoint_6000
+
+evaluation:
+  data_dir: data/preprocessed_data
+  external_loc_repo_root: csgosquare
+  external_loc_config_path: configs_reg_newdata/exp5_2.yaml
+  external_loc_checkpoint_path: checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+  aesthetic_checkpoint: aesthetic_model.pth
+  batch_size: 1
+  paired_size: 448
+  frame_diff_threshold: 2
+  min_track_len: 4
+  clip_length: 16
+  clip_stride: 16
+  fvd_size: 224
+
+scheduling:
+  cuda_device: "0"
+  max_parallel_pipelines: 6
+  # Conservative default for an 80 GB card; override from the CLI when needed.
+  minimum_free_memory_mb: 40000
+  # The first two launches are localization; every launch is at least 120 s apart.
+  launch_settle_seconds: 120
+  poll_seconds: 60
+  stop_launching_on_failure: true
+  launch_order:
+    - [exp31, localization]
+    - [exp32, localization]
+    - [exp31, discrete]
+    - [exp31, continuous]
+    - [exp32, discrete]
+    - [exp32, continuous]
+
+experiments:
+  exp31:
+    checkpoint: outputs/csgo_1b/exp31/checkpoint-6000/model.safetensors
+    expected_sha256: b56dced04cab9ac35d952a592b6c7b16ff59210c55814605812e5b1996f898c6
+    expected_global_step: 6000
+    localization_config: csgo_configs/test/exp31_loc.yaml
+    discrete_config: csgo_configs/test/exp31_gen.yaml
+    continuous_config: csgo_configs/test/exp31_gen_conti.yaml
+  exp32:
+    checkpoint: outputs/csgo_1b/exp32/checkpoint-6000/model.safetensors
+    expected_sha256: 16642d606c0ae531b99289a44bdfc8b64606c4dbb6a850f935d504ae7bded0d8
+    expected_global_step: 6000
+    localization_config: csgo_configs/test/exp32_loc.yaml
+    discrete_config: csgo_configs/test/exp32_gen.yaml
+    continuous_config: csgo_configs/test/exp32_gen_conti.yaml

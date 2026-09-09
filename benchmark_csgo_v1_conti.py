@@ -29,6 +29,7 @@ from benchmark_csgo_v1 import (
     _row_stem,
     benchmark_v2_clips,
     benchmark_v2_enabled,
+    benchmark_v2_asset_provenance,
     benchmark_v2_image_extension,
     benchmark_v2_radar_path,
     benchmark_v2_selection_details,
@@ -613,6 +614,7 @@ def write_results_json(
     fvd_clip_count: int,
     benchmark_v2_selection: Optional[Dict[str, int]] = None,
     inference_provenance: Optional[dict] = None,
+    asset_provenance: Optional[Mapping[str, object]] = None,
 ) -> None:
     payload = {
         "experiment_name": experiment_name,
@@ -657,11 +659,13 @@ def write_results_json(
     }
     if benchmark_v2_selection is not None:
         manifest = getattr(args, "benchmark_v2_manifest", None)
+        normalized_assets = dict(asset_provenance or benchmark_v2_asset_provenance(args=args))
         payload.update({
             "benchmark_v2_manifest": str(Path(manifest).resolve()) if manifest else None,
             "benchmark_v2_split": getattr(args, "benchmark_v2_split", None),
             "benchmark_v2_selection_counts": benchmark_v2_selection,
             "inference_provenance": inference_provenance,
+            **normalized_assets,
         })
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
@@ -711,7 +715,14 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
     output_name = "benchmark_csgo_v2_conti" if selection is not None else "benchmark_csgo_v1_conti"
     json_path = output_root / f"{output_name}_{map_name}.json"
     inference_provenance = (
-        load_benchmark_v2_inference_provenance(output_root, args, map_name)
+        load_benchmark_v2_inference_provenance(
+            output_root, args, map_name, selection=selection
+        )
+        if selection is not None
+        else None
+    )
+    asset_provenance = (
+        benchmark_v2_asset_provenance(selection, args)
         if selection is not None
         else None
     )
@@ -830,6 +841,7 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         fvd_clip_count=fvd_clip_count,
         benchmark_v2_selection=selection_details,
         inference_provenance=inference_provenance,
+        asset_provenance=asset_provenance,
     )
     print(f"Saved JSON: {json_path}")
     result = {
@@ -882,6 +894,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Benchmark v2 split selector, used together with --benchmark_v2_manifest.",
+    )
+    parser.add_argument(
+        "--benchmark_v2_asset_manifest",
+        type=str,
+        default=None,
+        help=(
+            "Optional verified minimal Benchmark v2 asset manifest. When set, "
+            "the selected images/radars are loaded from that bundle."
+        ),
     )
     parser.add_argument(
         "--allow_incomplete_benchmark_v2",

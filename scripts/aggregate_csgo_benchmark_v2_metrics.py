@@ -9,6 +9,8 @@ evaluators and keeps two kinds of averaging separate:
 * ``seeds`` computes uncertainty over support-set selections.  The seed axis
   is therefore labelled ``support_selection`` and must not be interpreted as
   independent model-training seeds.
+* ``map-models`` computes an equal-map macro when each map was evaluated with
+  a different checkpoint, while retaining that map-specific provenance.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from numbers import Real
@@ -30,9 +33,17 @@ MAP_SPLITS = (
     "crossmap_query_test",
     "crossmap_continuous",
 )
+MAP_MODEL_SPLITS = ("crossmap_query_test", "crossmap_continuous")
 KIND_VALUES = ("discrete", "continuous")
 LOCALIZATION_KIND = "localization"
 SEED_KIND_VALUES = KIND_VALUES + (LOCALIZATION_KIND,)
+ASSET_PROVENANCE_FIELDS = (
+    "asset_backend",
+    "asset_manifest_path",
+    "asset_manifest_sha256",
+    "selected_images_sha256",
+)
+_SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 # Two-sided t critical values for a 95% interval, with df = n - 1.  The
 # n=5 value is kept at the exact value required by the Benchmark v2 protocol.
@@ -202,6 +213,12 @@ def _validate_manifest_provenance(
         split=split,
         expected_maps=expected_maps,
     )
+    asset_context = _normalise_asset_provenance(payload, path=path)
+    for field in ASSET_PROVENANCE_FIELDS:
+        if asset_context[field] != provenance_context[field]:
+            raise AggregationError(
+                f"{path}: metric {field} does not match inference provenance"
+            )
     return checked_metrics, provenance, provenance_context
 
 
@@ -427,6 +444,187 @@ def _nonempty_path_value(value: Any, *, path: Path, field: str) -> str:
     return value_string
 
 
+def _asset_provenance_value(payload: Mapping[str, Any], keys: Sequence[str]) -> Any:
+    nested_values = [payload.get("asset_provenance"), payload.get("benchmark_v2_asset")]
+    for key in keys:
+        value = payload.get(key)
+        if value not in (None, ""):
+            return value
+    for nested in nested_values:
+        if isinstance(nested, Mapping):
+            nested_keys = list(keys)
+            if "asset_manifest_path" in keys:
+                nested_keys.extend(("manifest", "path"))
+            if "asset_manifest_sha256" in keys:
+                nested_keys.extend(("manifest_sha256", "sha256"))
+            for key in nested_keys:
+                value = nested.get(key)
+                if value not in (None, ""):
+                    return value
+    return None
+
+
+def _assert_asset_aliases_consistent(
+    payload: Mapping[str, Any], *, keys: Sequence[str], field: str, path: Path
+) -> None:
+    values: list[Any] = [payload.get(key) for key in keys if payload.get(key) not in (None, "")]
+    for nested in (payload.get("asset_provenance"), payload.get("benchmark_v2_asset")):
+        if isinstance(nested, Mapping):
+            nested_keys = list(keys)
+            if "asset_manifest_path" in keys:
+                nested_keys.extend(("manifest", "path"))
+            if "asset_manifest_sha256" in keys:
+                nested_keys.extend(("manifest_sha256", "sha256"))
+            values.extend(
+                nested.get(key)
+                for key in nested_keys
+                if nested.get(key) not in (None, "")
+            )
+    if len({str(value) for value in values}) > 1:
+        raise AggregationError(f"{path}: conflicting asset provenance aliases for {field}")
+
+
+def _normalise_asset_provenance(
+    payload: Mapping[str, Any], *, path: Path
+) -> dict[str, str | None]:
+    """Normalize the optional source/minimal asset backend contract.
+
+    Artifacts created before the asset backend existed have no asset fields;
+    those are explicitly interpreted as the historical ``source`` backend.
+    Once ``minimal`` is declared, all identity fields are mandatory so an
+    aggregate cannot silently mix different bundles.
+    """
+
+    alias_groups = {
+        "asset_backend": ("asset_backend", "benchmark_v2_asset_backend", "backend"),
+        "asset_manifest_path": (
+            "asset_manifest_path",
+            "benchmark_v2_asset_manifest",
+            "asset_manifest",
+        ),
+        "asset_manifest_sha256": (
+            "asset_manifest_sha256",
+            "benchmark_v2_asset_manifest_sha256",
+            "asset_manifest_hash",
+        ),
+        "selected_images_sha256": (
+            "selected_images_sha256",
+            "benchmark_v2_selected_images_sha256",
+            "selected_image_sha256",
+        ),
+    }
+    for field, keys in alias_groups.items():
+        _assert_asset_aliases_consistent(payload, keys=keys, field=field, path=path)
+
+    raw_backend = _asset_provenance_value(
+        payload,
+        alias_groups["asset_backend"],
+    )
+    raw_manifest = _asset_provenance_value(
+        payload,
+        alias_groups["asset_manifest_path"],
+    )
+    if raw_backend in (None, ""):
+        raw_backend = "minimal" if raw_manifest not in (None, "") else "source"
+    if not isinstance(raw_backend, str) or raw_backend not in {"source", "minimal"}:
+        raise AggregationError(
+            f"{path}: asset_backend must be 'source' or 'minimal', got {raw_backend!r}"
+        )
+
+    manifest_path: str | None = None
+    if raw_manifest not in (None, ""):
+        manifest_value = _nonempty_path_value(
+            raw_manifest, path=path, field="asset_manifest_path"
+        )
+        try:
+            manifest_path = str(Path(manifest_value).expanduser().resolve())
+        except (TypeError, ValueError, OSError) as exc:
+            raise AggregationError(
+                f"{path}: invalid asset_manifest_path {manifest_value!r}"
+            ) from exc
+
+    raw_manifest_hash = _asset_provenance_value(
+        payload,
+        alias_groups["asset_manifest_sha256"],
+    )
+    raw_selected_hash = _asset_provenance_value(
+        payload,
+        alias_groups["selected_images_sha256"],
+    )
+
+    # The inference writer in older minimal runs records the verified report
+    # path/hash but predates the selected-image checksum field.  Recover that
+    # checksum from the same report so those artifacts remain aggregatable,
+    # while still requiring a verified identity for the minimal backend.
+    if raw_selected_hash in (None, "") and manifest_path:
+        try:
+            report = json.loads(Path(manifest_path).read_text(encoding="utf-8"))
+            selected = report.get("selected_images") if isinstance(report, Mapping) else None
+            if isinstance(selected, Mapping):
+                raw_selected_hash = selected.get("sha256")
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            pass
+
+    def normalise_hash(value: Any, field: str) -> str | None:
+        if value in (None, ""):
+            return None
+        if not isinstance(value, str) or _SHA256_RE.fullmatch(value) is None:
+            raise AggregationError(
+                f"{path}: {field} must be a lowercase SHA-256 digest"
+            )
+        return value
+
+    manifest_hash = normalise_hash(raw_manifest_hash, "asset_manifest_sha256")
+    selected_hash = normalise_hash(raw_selected_hash, "selected_images_sha256")
+    if raw_backend == "source":
+        if manifest_path is not None or manifest_hash is not None or selected_hash is not None:
+            raise AggregationError(
+                f"{path}: source asset backend must not carry minimal asset identity"
+            )
+    else:
+        required_asset_values = {
+            "asset_manifest_path": manifest_path,
+            "asset_manifest_sha256": manifest_hash,
+            "selected_images_sha256": selected_hash,
+        }
+        missing = [
+            field for field, value in required_asset_values.items() if value is None
+        ]
+        if missing:
+            raise AggregationError(
+                f"{path}: minimal asset provenance is missing {', '.join(missing)}"
+            )
+
+    return {
+        "asset_backend": raw_backend,
+        "asset_manifest_path": manifest_path,
+        "asset_manifest_sha256": manifest_hash,
+        "selected_images_sha256": selected_hash,
+    }
+
+
+def _asset_provenance_output(context: Mapping[str, Any]) -> dict[str, Any]:
+    """Emit both core and runner spellings in newly written summaries."""
+
+    result = {field: context[field] for field in ASSET_PROVENANCE_FIELDS}
+    result.update(
+        {
+            "benchmark_v2_asset_manifest": context["asset_manifest_path"],
+            "benchmark_v2_asset_backend": context["asset_backend"],
+            "benchmark_v2_asset_manifest_sha256": context["asset_manifest_sha256"],
+            "benchmark_v2_selected_images_sha256": context["selected_images_sha256"],
+        }
+    )
+    if context["asset_backend"] == "minimal":
+        result["benchmark_v2_asset"] = {
+            "manifest": context["asset_manifest_path"],
+            "backend": context["asset_backend"],
+            "sha256": context["asset_manifest_sha256"],
+            "selected_images_sha256": context["selected_images_sha256"],
+        }
+    return result
+
+
 def _required_int(value: Any, *, path: Path, field: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise AggregationError(f"{path}: {field} must be an integer")
@@ -503,6 +701,7 @@ def _validate_inference_payload(
         raise AggregationError(
             f"{path}: benchmark_v2_shots_per_map must be positive or null"
         )
+    asset_context = _normalise_asset_provenance(payload, path=path)
 
     normalized_payload = dict(payload)
     normalized_payload["benchmark_v2_manifest"] = str(manifest_path)
@@ -513,6 +712,7 @@ def _validate_inference_payload(
     normalized_payload["seed"] = inference_seed
     normalized_payload["benchmark_v2_support_seed"] = support_seed
     normalized_payload["benchmark_v2_shots_per_map"] = shots_per_map
+    normalized_payload.update(asset_context)
     return normalized_payload, {
         "checkpoint": checkpoint,
         "ckpt_path": ckpt_path,
@@ -520,6 +720,7 @@ def _validate_inference_payload(
         "inference_seed": inference_seed,
         "support_seed": support_seed,
         "shots_per_map": shots_per_map,
+        **_asset_provenance_output(asset_context),
     }
 
 
@@ -585,8 +786,14 @@ def build_localization_summary(
     support_seed: int | None,
     shots_per_map: int | None,
     sample_count: int,
+    allow_protocol_map_subset: bool = False,
 ) -> dict[str, Any]:
-    """Build the pure-JSON localization summary contract used by ``seeds``."""
+    """Build the pure-JSON localization summary contract used by ``seeds``.
+
+    By default, ``maps`` must be the complete protocol map list.  The
+    optional subset mode is for map-specific evaluation artifacts and still
+    requires a nonempty subset in the manifest's original order.
+    """
 
     manifest_path = _resolve_file(manifest, "manifest")
     if split not in MAP_SPLITS:
@@ -600,7 +807,27 @@ def build_localization_summary(
         raise AggregationError("localization summary maps must contain names")
     if not map_names or len(set(map_names)) != len(map_names):
         raise AggregationError("localization summary maps must be unique and non-empty")
-    if map_names != expected_protocol_maps:
+    if not isinstance(allow_protocol_map_subset, bool):
+        raise AggregationError("allow_protocol_map_subset must be a boolean")
+    if allow_protocol_map_subset:
+        expected_map_set = set(expected_protocol_maps)
+        unknown_maps = [
+            map_name for map_name in map_names if map_name not in expected_map_set
+        ]
+        if unknown_maps:
+            raise AggregationError(
+                "localization summary maps contain unknown protocol map(s): "
+                f"{unknown_maps!r}"
+            )
+        expected_order = [
+            map_name for map_name in expected_protocol_maps if map_name in set(map_names)
+        ]
+        if map_names != expected_order:
+            raise AggregationError(
+                "localization summary map subset must preserve manifest protocol order; "
+                f"expected {expected_order!r}, got {map_names!r}"
+            )
+    elif map_names != expected_protocol_maps:
         raise AggregationError(
             "localization summary maps do not match manifest protocol; "
             f"expected {expected_protocol_maps!r}, got {map_names!r}"
@@ -715,6 +942,19 @@ def build_localization_summary(
             "localization summary provenance sample_count does not match summary"
         )
 
+    asset_context = _normalise_asset_provenance(
+        provenance_payload, path=summary_path
+    )
+    referenced_payload = _read_json_object(Path(provenance["path"]), "inference manifest")
+    referenced_assets = _normalise_asset_provenance(
+        referenced_payload, path=Path(provenance["path"])
+    )
+    if asset_context != referenced_assets:
+        raise AggregationError(
+            "localization summary asset provenance does not match referenced "
+            f"inference manifest {provenance['path']}"
+        )
+
     return {
         "manifest": str(manifest_path),
         "split": split,
@@ -728,6 +968,7 @@ def build_localization_summary(
         "support_seed": normalised_support_seed,
         "shots_per_map": normalised_shots,
         "sample_count": int(sample_count),
+        **_asset_provenance_output(asset_context),
     }
 
 
@@ -874,6 +1115,7 @@ def aggregate_maps(
         "shots_per_map": common_inference_context["shots_per_map"],
         "sample_count": common_inference_context["sample_count"],
         "source_files": source_files,
+        **_asset_provenance_output(common_inference_context),
     }
     output_path = (
         Path(output).expanduser().resolve()
@@ -940,6 +1182,12 @@ def _validate_maps_aggregate(
         split=split,
         expected_maps=maps,
     )
+    asset_context = _normalise_asset_provenance(payload, path=path)
+    for field in ASSET_PROVENANCE_FIELDS:
+        if asset_context[field] != provenance_context[field]:
+            raise AggregationError(
+                f"{path}: maps aggregate {field} does not match inference provenance"
+            )
     checkpoint = _nonempty_path_value(payload["checkpoint"], path=path, field="checkpoint")
     ckpt_path = _nonempty_path_value(payload["ckpt_path"], path=path, field="ckpt_path")
     inference_seed = _required_int(payload["inference_seed"], path=path, field="inference_seed")
@@ -977,6 +1225,7 @@ def _validate_maps_aggregate(
                 f"{path}: inference provenance {field} does not match maps aggregate"
             )
     summary_context["inference_provenance"] = inference_provenance
+    summary_context.update(asset_context)
     return manifest, split, kind, maps, metrics, summary_context
 
 
@@ -984,7 +1233,7 @@ def _validate_localization_summary(
     payload: Mapping[str, Any],
     *,
     path: Path,
-) -> tuple[str, str, str, list[str], dict[str, float]]:
+) -> tuple[str, str, str, list[str], dict[str, float], dict[str, str | None]]:
     required_fields = (
         "manifest",
         "split",
@@ -1022,20 +1271,170 @@ def _validate_localization_summary(
         shots_per_map=payload["shots_per_map"],
         sample_count=payload["sample_count"],
     )
+    payload_assets = _normalise_asset_provenance(payload, path=path)
+    for field in ASSET_PROVENANCE_FIELDS:
+        if payload_assets[field] != summary[field]:
+            raise AggregationError(
+                f"{path}: localization summary {field} does not match "
+                "inference provenance"
+            )
     return (
         summary["manifest"],
         summary["split"],
         summary["kind"],
         summary["maps"],
         summary["metrics_macro_map"],
+        payload_assets,
     )
+
+
+def _validate_localization_summary_for_map(
+    payload: Mapping[str, Any],
+    *,
+    path: Path,
+    manifest_path: Path,
+    target_map: str,
+    split: str,
+) -> dict[str, Any]:
+    """Strictly validate a localization summary containing one target map.
+
+    The regular localization summary contract represents a complete protocol
+    evaluation and therefore requires all protocol maps.  ``map-models``
+    intentionally consumes one summary per target map, so it validates the
+    same fields and provenance contract against ``[target_map]`` here.
+    """
+
+    required_fields = (
+        "manifest",
+        "split",
+        "kind",
+        "maps",
+        "per_map",
+        "metrics_macro_map",
+        "inference_provenance",
+        "checkpoint",
+        "seed",
+        "support_seed",
+        "shots_per_map",
+        "sample_count",
+    )
+    missing = [field for field in required_fields if field not in payload]
+    if missing:
+        raise AggregationError(
+            f"{path}: localization summary missing required field(s): {', '.join(missing)}"
+        )
+    if payload.get("kind") != LOCALIZATION_KIND:
+        raise AggregationError(
+            f"{path}: localization summary kind must be {LOCALIZATION_KIND!r}"
+        )
+
+    raw_manifest = payload.get("manifest")
+    summary_manifest = _resolve_file(raw_manifest, "localization summary manifest")
+    if summary_manifest != manifest_path:
+        raise AggregationError(
+            f"{path}: localization summary manifest mismatch; resolves to "
+            f"{summary_manifest}, expected {manifest_path}"
+        )
+    if payload.get("split") != split:
+        raise AggregationError(
+            f"{path}: localization summary split {payload.get('split')!r} does not "
+            f"match requested split {split!r}"
+        )
+
+    maps = _validate_map_names(payload.get("maps"), path=path, field="summary maps")
+    expected_maps = [target_map]
+    if maps != expected_maps:
+        raise AggregationError(
+            f"{path}: localization summary maps do not match target map; "
+            f"expected {expected_maps!r}, got {maps!r}"
+        )
+
+    normalised_per_map = _normalise_localization_per_map(
+        payload["per_map"], maps=maps, path=path
+    )
+    normalised_macro = _normalise_localization_macro(
+        payload["metrics_macro_map"], path=path
+    )
+    common_metrics = set(normalised_per_map[target_map]) - {"ckpt_path"}
+    if set(normalised_macro) != common_metrics:
+        raise AggregationError(
+            f"{path}: localization summary metric set mismatch; "
+            f"expected {sorted(common_metrics)!r}, got {sorted(normalised_macro)!r}"
+        )
+
+    provenance, provenance_context = _validate_inference_provenance(
+        payload["inference_provenance"],
+        path=path,
+        manifest_path=manifest_path,
+        split=split,
+        expected_maps=expected_maps,
+    )
+    asset_context = _normalise_asset_provenance(payload, path=path)
+    for field in ASSET_PROVENANCE_FIELDS:
+        if asset_context[field] != provenance_context[field]:
+            raise AggregationError(
+                f"{path}: localization summary {field} does not match "
+                "inference provenance"
+            )
+    checkpoint = _nonempty_path_value(
+        payload["checkpoint"], path=path, field="checkpoint"
+    )
+    inference_seed = _required_int(payload["seed"], path=path, field="seed")
+    support_seed = _normalise_optional_int(
+        payload["support_seed"], path=path, field="support_seed"
+    )
+    shots_per_map = _normalise_optional_int(
+        payload["shots_per_map"], path=path, field="shots_per_map"
+    )
+    if shots_per_map is not None and shots_per_map <= 0:
+        raise AggregationError(f"{path}: shots_per_map must be positive or null")
+    sample_count = _required_int(
+        payload["sample_count"], path=path, field="sample_count"
+    )
+    if sample_count <= 0:
+        raise AggregationError(f"{path}: sample_count must be a positive integer")
+
+    summary_context = {
+        "checkpoint": checkpoint,
+        "ckpt_path": provenance_context["ckpt_path"],
+        "inference_seed": inference_seed,
+        "support_seed": support_seed,
+        "shots_per_map": shots_per_map,
+        "sample_count": sample_count,
+        **asset_context,
+    }
+    expected_context = {
+        "checkpoint": provenance_context["checkpoint"],
+        "ckpt_path": provenance_context["ckpt_path"],
+        "inference_seed": provenance_context["inference_seed"],
+        "support_seed": provenance_context["support_seed"],
+        "shots_per_map": provenance_context["shots_per_map"],
+        "sample_count": provenance_context["sample_count"],
+    }
+    for field, expected in expected_context.items():
+        if summary_context[field] != expected:
+            raise AggregationError(
+                f"{path}: localization summary {field} does not match "
+                "inference provenance"
+            )
+
+    return {
+        "manifest": str(manifest_path),
+        "split": split,
+        "kind": LOCALIZATION_KIND,
+        "maps": maps,
+        "per_map": normalised_per_map,
+        "metrics_macro_map": normalised_macro,
+        "inference_provenance": provenance,
+        **summary_context,
+    }
 
 
 def _validate_seed_payload(
     payload: Mapping[str, Any], *, path: Path
 ) -> dict[str, Any]:
     if payload.get("kind") == LOCALIZATION_KIND:
-        manifest, split, kind, maps, metrics = _validate_localization_summary(
+        manifest, split, kind, maps, metrics, asset_context = _validate_localization_summary(
             payload, path=path
         )
         provenance_payload = payload["inference_provenance"]["payload"]
@@ -1052,6 +1451,7 @@ def _validate_seed_payload(
             "sample_count": payload["sample_count"],
             "inference_provenance": payload["inference_provenance"],
             "provenance_ckpt_path": provenance_payload.get("ckpt_path"),
+            **asset_context,
         }
     manifest, split, kind, maps, metrics, context = _validate_maps_aggregate(
         payload, path=path
@@ -1191,6 +1591,12 @@ def aggregate_seeds(
                 f"expected {reference['shots_per_map']!r}, "
                 f"got {current['shots_per_map']!r}"
             )
+        for field in ASSET_PROVENANCE_FIELDS:
+            if current[field] != reference[field]:
+                raise AggregationError(
+                    f"{path}: {field} mismatch for seed {seed}; expected "
+                    f"{reference[field]!r}, got {current[field]!r}"
+                )
 
     t_critical = T_CRITICAL_95[len(seed_values)]
     metrics_support_selection: dict[str, dict[str, float | int]] = {}
@@ -1224,6 +1630,7 @@ def aggregate_seeds(
             for seed, aggregate in zip(seed_values, aggregates)
         },
         "metrics_support_selection": metrics_support_selection,
+        **_asset_provenance_output(reference),
         "source_files": {
             str(seed): str(path) for seed, path in zip(seed_values, paths)
         },
@@ -1233,6 +1640,176 @@ def aggregate_seeds(
         if output is not None
         else _seeds_output_path(paths[0], reference_split, reference_kind)
     )
+    _atomic_write_json(result, output_path)
+    return result
+
+
+def _map_model_input_paths(
+    input_pattern: str | os.PathLike[str], maps: Sequence[str]
+) -> dict[str, Path]:
+    try:
+        pattern = os.fspath(input_pattern)
+    except TypeError as exc:
+        raise AggregationError("--input_pattern must be a path containing '{map}'") from exc
+    if not isinstance(pattern, str) or "{map}" not in pattern:
+        raise AggregationError(
+            "--input_pattern must contain the literal '{map}' placeholder"
+        )
+
+    paths: dict[str, Path] = {}
+    for map_name in maps:
+        rendered = pattern.replace("{map}", map_name)
+        paths[map_name] = _resolve_file(
+            rendered, f"map-models input for map {map_name!r}"
+        )
+    if len(set(paths.values())) != len(paths):
+        raise AggregationError(
+            "--input_pattern resolves multiple protocol maps to the same file"
+        )
+    return paths
+
+
+def aggregate_map_models(
+    *,
+    manifest: str | os.PathLike[str],
+    split: str,
+    kind: str,
+    input_pattern: str | os.PathLike[str],
+    output: str | os.PathLike[str],
+) -> dict[str, Any]:
+    """Aggregate CrossMap results produced by one checkpoint per map.
+
+    Unlike :func:`aggregate_maps`, this mode permits checkpoint and inference
+    provenance to differ across maps.  The inference seed, support seed, shot
+    count, manifest, and split remain protocol-wide invariants.  Checkpoint
+    paths are preserved per map but are not required to be unique, since
+    symlinked or shared storage is valid.
+    """
+
+    if output is None:
+        raise AggregationError("--output is required for map-models")
+    if split not in MAP_MODEL_SPLITS:
+        raise AggregationError(
+            f"unsupported map-models split {split!r}; expected one of "
+            f"{', '.join(MAP_MODEL_SPLITS)}"
+        )
+    if kind not in SEED_KIND_VALUES:
+        raise AggregationError(
+            f"unsupported map-models kind {kind!r}; expected one of "
+            f"{', '.join(SEED_KIND_VALUES)}"
+        )
+    expected_kind_split = {
+        "discrete": "crossmap_query_test",
+        "continuous": "crossmap_continuous",
+        LOCALIZATION_KIND: "crossmap_query_test",
+    }[kind]
+    if split != expected_kind_split:
+        raise AggregationError(
+            f"map-models kind {kind!r} requires split "
+            f"{expected_kind_split!r}; got {split!r}"
+        )
+
+    manifest_path, manifest_data = _load_manifest(manifest)
+    expected_maps = _protocol_maps(manifest_data, split)
+    if not expected_maps:
+        raise AggregationError(
+            f"manifest protocol has no CrossMap maps for split {split!r}"
+        )
+    input_paths = _map_model_input_paths(input_pattern, expected_maps)
+
+    per_map: dict[str, dict[str, Any]] = {}
+    model_context_by_map: dict[str, dict[str, Any]] = {}
+    source_files: dict[str, str] = {}
+    source_paths: dict[str, Path] = {}
+    contexts: dict[str, dict[str, Any]] = {}
+
+    for map_name in expected_maps:
+        path = input_paths[map_name]
+        payload = _read_json_object(path, "map-models input")
+        if kind == LOCALIZATION_KIND:
+            record = _validate_localization_summary_for_map(
+                payload,
+                path=path,
+                manifest_path=manifest_path,
+                target_map=map_name,
+                split=split,
+            )
+            metrics = record["per_map"][map_name]
+            inference_provenance = record["inference_provenance"]
+            context = {
+                "checkpoint": record["checkpoint"],
+                "ckpt_path": record["ckpt_path"],
+                "inference_seed": record["inference_seed"],
+                "support_seed": record["support_seed"],
+                "shots_per_map": record["shots_per_map"],
+                "sample_count": record["sample_count"],
+                **{
+                    field: record[field]
+                    for field in ASSET_PROVENANCE_FIELDS
+                },
+            }
+        else:
+            metrics, inference_provenance, context = _validate_manifest_provenance(
+                payload,
+                path=path,
+                manifest_path=manifest_path,
+                map_name=map_name,
+                split=split,
+                kind=kind,
+                expected_maps=[map_name],
+            )
+
+        per_map[map_name] = metrics
+        source_files[map_name] = str(path)
+        source_paths[map_name] = path
+        contexts[map_name] = context
+        model_context_by_map[map_name] = {
+            "checkpoint": context["checkpoint"],
+            "ckpt_path": context["ckpt_path"],
+            "inference_seed": context["inference_seed"],
+            "support_seed": context["support_seed"],
+            "shots_per_map": context["shots_per_map"],
+            "sample_count": context["sample_count"],
+            "inference_provenance": inference_provenance,
+            **_asset_provenance_output(context),
+        }
+
+    reference_context = contexts[expected_maps[0]]
+    for map_name in expected_maps[1:]:
+        current_context = contexts[map_name]
+        for field in (
+            "inference_seed",
+            "support_seed",
+            "shots_per_map",
+            *ASSET_PROVENANCE_FIELDS,
+        ):
+            if current_context[field] != reference_context[field]:
+                raise AggregationError(
+                    f"{input_paths[map_name]}: {field} mismatch across map-specific "
+                    f"models; expected {reference_context[field]!r}, got "
+                    f"{current_context[field]!r}"
+                )
+
+    metrics_macro_map = _equal_map_macro(per_map, source_paths)
+    result: dict[str, Any] = {
+        "aggregation": "map_specific_models",
+        "manifest": str(manifest_path),
+        "split": split,
+        "kind": kind,
+        "maps": expected_maps,
+        "per_map": per_map,
+        "metrics_macro_map": metrics_macro_map,
+        "inference_seed": reference_context["inference_seed"],
+        "support_seed": reference_context["support_seed"],
+        "shots_per_map": reference_context["shots_per_map"],
+        "model_context_by_map": model_context_by_map,
+        "sample_count": sum(
+            context["sample_count"] for context in contexts.values()
+        ),
+        **_asset_provenance_output(reference_context),
+        "source_files": source_files,
+    }
+    output_path = Path(output).expanduser().resolve()
     _atomic_write_json(result, output_path)
     return result
 
@@ -1258,6 +1835,18 @@ def _build_parser() -> argparse.ArgumentParser:
     seeds_parser.add_argument("--seed_root_pattern", required=True)
     seeds_parser.add_argument("--seeds", nargs="+", type=int, default=[0, 1, 2, 3, 4])
     seeds_parser.add_argument("--output")
+
+    map_models_parser = subparsers.add_parser(
+        "map-models",
+        help="compute an equal-map macro from map-specific model results",
+    )
+    map_models_parser.add_argument("--manifest", required=True)
+    map_models_parser.add_argument("--split", choices=MAP_MODEL_SPLITS, required=True)
+    map_models_parser.add_argument(
+        "--kind", choices=SEED_KIND_VALUES, required=True
+    )
+    map_models_parser.add_argument("--input_pattern", required=True)
+    map_models_parser.add_argument("--output", required=True)
     return parser
 
 
@@ -1274,7 +1863,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 output=args.output,
             )
             output_path = Path(args.output).expanduser().resolve() if args.output else _maps_output_path(Path(args.input_root).expanduser().resolve(), args.split, args.kind)
-        else:
+        elif args.command == "seeds":
             result = aggregate_seeds(
                 seed_root_pattern=args.seed_root_pattern,
                 seeds=args.seeds,
@@ -1282,6 +1871,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             first_path = _seed_result_path(args.seed_root_pattern, args.seeds[0])
             output_path = Path(args.output).expanduser().resolve() if args.output else _seeds_output_path(first_path, result["split"], result["kind"])
+        else:
+            result = aggregate_map_models(
+                manifest=args.manifest,
+                split=args.split,
+                kind=args.kind,
+                input_pattern=args.input_pattern,
+                output=args.output,
+            )
+            output_path = Path(args.output).expanduser().resolve()
     except (AggregationError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

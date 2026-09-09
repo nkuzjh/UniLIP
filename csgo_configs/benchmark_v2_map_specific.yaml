@@ -1,0 +1,409 @@
+schema_version: 1
+
+# Optional. Set this single value to use the portable flat Benchmark v2 bundle.
+# null preserves the historical data/preprocessed_data backend.
+benchmark_v2_asset_manifest: null
+
+protocol:
+  manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+  support_seed: 0
+  shots_per_map: [100, 50, 20, 10]
+  scheduler_shots: [100]
+  max_steps: 400
+  inference_seed: 42
+  crossmap_maps: [cs_office, de_golden, de_palacio, de_vertigo]
+  seen_maps:
+    - cs_agency
+    - cs_italy
+    - de_ancient
+    - de_anubis
+    - de_dust2
+    - de_inferno
+    - de_mirage
+    - de_nuke
+    - de_overpass
+    - de_train
+  expected_samples:
+    crossmap_query_test: 2000
+    crossmap_continuous: 1280
+    seen_discrete_test: 20000
+    seen_continuous: 12800
+
+paths:
+  model_root: outputs/csgo_1b
+  generation_root: outputs_eval/benchmark_v2
+  localization_root: outputs_loc/benchmark_v2
+  log_root: logs/benchmark_v2_map_specific
+  results_file: csgo_benchmark_v2_experiments_results.md
+
+evaluation:
+  data_dir: data/preprocessed_data
+  external_loc_repo_root: csgosquare
+  external_loc_config_path: configs_reg_newdata/exp5_2.yaml
+  external_loc_checkpoint_path: checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+  batch_size: 1
+  paired_size: 448
+  frame_diff_threshold: 2
+  min_track_len: 4
+  clip_length: 16
+  clip_stride: 16
+  fvd_size: 224
+
+artifact_validation:
+  min_model_bytes: 1048576
+  require_trainer_state: true
+  require_inference_manifest: true
+  require_metric_provenance: true
+
+scheduling:
+  cuda_device: "0"
+  # Upper bound; live free-VRAM gates below normally constrain the actual
+  # number of concurrent pipelines on this GPU.
+  max_active_pipelines: 24
+  minimum_free_memory_mb:
+    exp35:
+      joint: 45000
+      gen: 32000
+      loc: 26000
+    exp36:
+      joint: 35000
+      gen: 22000
+      loc: 22000
+  # Lifecycle state and reservations replace time-based startup guessing.
+  # The CLI option remains available for legacy callers that want pacing.
+  launch_settle_seconds: 0
+  launch_memory_confirmation_seconds: 60
+  # Route-specific target GPU budget held for the complete active/adopted
+  # pipeline lifetime. The scheduler deducts max(target - observed process-tree
+  # memory, 0), so memory already included in nvidia-smi free memory is not
+  # deducted twice. An initially invisible pipeline keeps the full target until
+  # it is visible for the configured stable sample count. The legacy field name
+  # is retained for compatibility and falls back to minimum_free_memory_mb.
+  launch_reservation_memory_mb:
+    exp35:
+      joint: 45000
+      gen: 32000
+      loc: 26000
+    exp36:
+      joint: 35000
+      gen: 22000
+      loc: 22000
+  reservation_release_min_gpu_memory_mb: 1024
+  reservation_release_stable_samples: 2
+  # Compatibility names: these values confirm the first visible GPU reading;
+  # they no longer delete the lifetime reservation. A later low/zero reading
+  # restores the remaining reservation toward the complete target.
+  poll_seconds: 60
+  # A transient W&B/network failure is retried inside one scheduler run.
+  pipeline_max_attempts: 3
+  pipeline_retry_backoff_seconds: [30, 60]
+  stop_launching_on_failure: true
+  failure_policy: stop
+
+training:
+  launcher: python_module
+  common_args:
+    deepspeed: deepspeed_scripts/zero0.json
+    model_name_or_path: UniLIP-1B
+    unilip_factor: 10.6
+    mllm_hf_path: OpenGVLab/InternVL3-1B-hf
+    version: internvl
+    data_type: mix
+    csgo_image_folder: data/preprocessed_data
+    mm_use_im_start_end: false
+    mm_use_im_patch_token: false
+    bf16: true
+    num_train_epochs: 10
+    eval_strategy: "no"
+    # 400-step adaptation keeps only the final root model/trainer_state;
+    # avoid redundant DeepSpeed checkpoint-400 directories for every job.
+    save_strategy: "no"
+    learning_rate: 1e-4
+    weight_decay: 0.0
+    warmup_ratio: 0.003
+    lr_scheduler_type: cosine_with_min_lr
+    model_max_length: 1024
+    logging_steps: 1
+    tf32: true
+    gradient_checkpointing: true
+    dataloader_num_workers: 4
+    lazy_preprocess: true
+    n_query: 256
+    n_und_query: 0
+    report_to: wandb
+  routes:
+    joint:
+      train_batch_size: 4
+      per_device_eval_batch_size: 4
+      gradient_accumulation_steps: 32
+    gen:
+      train_batch_size: shots
+      per_device_eval_batch_size: 128
+      gradient_accumulation_steps: 1
+    loc:
+      train_batch_size: shots
+      per_device_eval_batch_size: 128
+      gradient_accumulation_steps: 1
+  family_args:
+    exp35:
+      joint:
+        save_steps: 2000
+        save_total_limit: 3
+        fix_dit: false
+        fix_connect: false
+        fix_llm: true
+      gen:
+        save_steps: 4000
+        save_total_limit: 5
+        fix_dit: false
+        fix_connect: false
+        fix_llm: true
+      loc:
+        save_steps: 4000
+        save_total_limit: 5
+        fix_dit: true
+        fix_connect: true
+        fix_llm: true
+    exp36:
+      joint:
+        save_steps: 2000
+        save_total_limit: 4
+        fix_dit: false
+        fix_connect: false
+        fix_llm: false
+        lora_r: 32
+        lora_alpha: 64
+      gen:
+        save_steps: 2000
+        save_total_limit: 4
+        fix_dit: false
+        fix_connect: false
+        fix_llm: false
+        lora_r: 32
+        lora_alpha: 64
+      loc:
+        save_steps: 2000
+        save_total_limit: 4
+        fix_dit: true
+        fix_connect: true
+        fix_llm: false
+        lora_r: 32
+        lora_alpha: 64
+
+experiments:
+  - name: exp35_cs_office
+    family: exp35
+    route: joint
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp31/model.safetensors
+    train_config: csgo_configs/exp35_cs_office.yaml
+    generation_discrete_config: csgo_configs/test/exp35_cs_office_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_cs_office_gen_conti.yaml
+    localization_config: csgo_configs/test/exp35_cs_office_loc.yaml
+    master_port_base: 30101
+  - name: exp35_gen_cs_office
+    family: exp35
+    route: gen
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    train_config: csgo_configs/exp35_gen_cs_office.yaml
+    generation_discrete_config: csgo_configs/test/exp35_gen_cs_office_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_gen_cs_office_gen_conti.yaml
+    master_port_base: 30102
+  - name: exp35_loc_cs_office
+    family: exp35
+    route: loc
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp31_loc/model.safetensors
+    train_config: csgo_configs/exp35_loc_cs_office.yaml
+    localization_config: csgo_configs/test/exp35_loc_cs_office_loc.yaml
+    master_port_base: 30106
+  - name: exp35_de_golden
+    family: exp35
+    route: joint
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp31/model.safetensors
+    train_config: csgo_configs/exp35_de_golden.yaml
+    generation_discrete_config: csgo_configs/test/exp35_de_golden_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_de_golden_gen_conti.yaml
+    localization_config: csgo_configs/test/exp35_de_golden_loc.yaml
+    master_port_base: 30110
+  - name: exp35_gen_de_golden
+    family: exp35
+    route: gen
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    train_config: csgo_configs/exp35_gen_de_golden.yaml
+    generation_discrete_config: csgo_configs/test/exp35_gen_de_golden_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_gen_de_golden_gen_conti.yaml
+    master_port_base: 30111
+  - name: exp35_loc_de_golden
+    family: exp35
+    route: loc
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp31_loc/model.safetensors
+    train_config: csgo_configs/exp35_loc_de_golden.yaml
+    localization_config: csgo_configs/test/exp35_loc_de_golden_loc.yaml
+    master_port_base: 30115
+  - name: exp35_de_palacio
+    family: exp35
+    route: joint
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp31/model.safetensors
+    train_config: csgo_configs/exp35_de_palacio.yaml
+    generation_discrete_config: csgo_configs/test/exp35_de_palacio_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_de_palacio_gen_conti.yaml
+    localization_config: csgo_configs/test/exp35_de_palacio_loc.yaml
+    master_port_base: 30119
+  - name: exp35_gen_de_palacio
+    family: exp35
+    route: gen
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    train_config: csgo_configs/exp35_gen_de_palacio.yaml
+    generation_discrete_config: csgo_configs/test/exp35_gen_de_palacio_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_gen_de_palacio_gen_conti.yaml
+    master_port_base: 30120
+  - name: exp35_loc_de_palacio
+    family: exp35
+    route: loc
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp31_loc/model.safetensors
+    train_config: csgo_configs/exp35_loc_de_palacio.yaml
+    localization_config: csgo_configs/test/exp35_loc_de_palacio_loc.yaml
+    master_port_base: 30124
+  - name: exp35_de_vertigo
+    family: exp35
+    route: joint
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp31/model.safetensors
+    train_config: csgo_configs/exp35_de_vertigo.yaml
+    generation_discrete_config: csgo_configs/test/exp35_de_vertigo_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_de_vertigo_gen_conti.yaml
+    localization_config: csgo_configs/test/exp35_de_vertigo_loc.yaml
+    master_port_base: 30128
+  - name: exp35_gen_de_vertigo
+    family: exp35
+    route: gen
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp31_gen/model.safetensors
+    train_config: csgo_configs/exp35_gen_de_vertigo.yaml
+    generation_discrete_config: csgo_configs/test/exp35_gen_de_vertigo_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp35_gen_de_vertigo_gen_conti.yaml
+    master_port_base: 30129
+  - name: exp35_loc_de_vertigo
+    family: exp35
+    route: loc
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp31_loc/model.safetensors
+    train_config: csgo_configs/exp35_loc_de_vertigo.yaml
+    localization_config: csgo_configs/test/exp35_loc_de_vertigo_loc.yaml
+    master_port_base: 30133
+  - name: exp36_cs_office
+    family: exp36
+    route: joint
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp32/model.safetensors
+    train_config: csgo_configs/exp36_cs_office.yaml
+    generation_discrete_config: csgo_configs/test/exp36_cs_office_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_cs_office_gen_conti.yaml
+    localization_config: csgo_configs/test/exp36_cs_office_loc.yaml
+    master_port_base: 30137
+  - name: exp36_gen_cs_office
+    family: exp36
+    route: gen
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    train_config: csgo_configs/exp36_gen_cs_office.yaml
+    generation_discrete_config: csgo_configs/test/exp36_gen_cs_office_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_gen_cs_office_gen_conti.yaml
+    master_port_base: 30138
+  - name: exp36_loc_cs_office
+    family: exp36
+    route: loc
+    map: cs_office
+    parent_checkpoint: outputs/csgo_1b/exp32_loc/model.safetensors
+    train_config: csgo_configs/exp36_loc_cs_office.yaml
+    localization_config: csgo_configs/test/exp36_loc_cs_office_loc.yaml
+    master_port_base: 30142
+  - name: exp36_de_golden
+    family: exp36
+    route: joint
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp32/model.safetensors
+    train_config: csgo_configs/exp36_de_golden.yaml
+    generation_discrete_config: csgo_configs/test/exp36_de_golden_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_de_golden_gen_conti.yaml
+    localization_config: csgo_configs/test/exp36_de_golden_loc.yaml
+    master_port_base: 30146
+  - name: exp36_gen_de_golden
+    family: exp36
+    route: gen
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    train_config: csgo_configs/exp36_gen_de_golden.yaml
+    generation_discrete_config: csgo_configs/test/exp36_gen_de_golden_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_gen_de_golden_gen_conti.yaml
+    master_port_base: 30147
+  - name: exp36_loc_de_golden
+    family: exp36
+    route: loc
+    map: de_golden
+    parent_checkpoint: outputs/csgo_1b/exp32_loc/model.safetensors
+    train_config: csgo_configs/exp36_loc_de_golden.yaml
+    localization_config: csgo_configs/test/exp36_loc_de_golden_loc.yaml
+    master_port_base: 30151
+  - name: exp36_de_palacio
+    family: exp36
+    route: joint
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp32/model.safetensors
+    train_config: csgo_configs/exp36_de_palacio.yaml
+    generation_discrete_config: csgo_configs/test/exp36_de_palacio_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_de_palacio_gen_conti.yaml
+    localization_config: csgo_configs/test/exp36_de_palacio_loc.yaml
+    master_port_base: 30155
+  - name: exp36_gen_de_palacio
+    family: exp36
+    route: gen
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    train_config: csgo_configs/exp36_gen_de_palacio.yaml
+    generation_discrete_config: csgo_configs/test/exp36_gen_de_palacio_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_gen_de_palacio_gen_conti.yaml
+    master_port_base: 30156
+  - name: exp36_loc_de_palacio
+    family: exp36
+    route: loc
+    map: de_palacio
+    parent_checkpoint: outputs/csgo_1b/exp32_loc/model.safetensors
+    train_config: csgo_configs/exp36_loc_de_palacio.yaml
+    localization_config: csgo_configs/test/exp36_loc_de_palacio_loc.yaml
+    master_port_base: 30160
+  - name: exp36_de_vertigo
+    family: exp36
+    route: joint
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp32/model.safetensors
+    train_config: csgo_configs/exp36_de_vertigo.yaml
+    generation_discrete_config: csgo_configs/test/exp36_de_vertigo_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_de_vertigo_gen_conti.yaml
+    localization_config: csgo_configs/test/exp36_de_vertigo_loc.yaml
+    master_port_base: 30164
+  - name: exp36_gen_de_vertigo
+    family: exp36
+    route: gen
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp32_gen/model.safetensors
+    train_config: csgo_configs/exp36_gen_de_vertigo.yaml
+    generation_discrete_config: csgo_configs/test/exp36_gen_de_vertigo_gen.yaml
+    generation_continuous_config: csgo_configs/test/exp36_gen_de_vertigo_gen_conti.yaml
+    master_port_base: 30165
+  - name: exp36_loc_de_vertigo
+    family: exp36
+    route: loc
+    map: de_vertigo
+    parent_checkpoint: outputs/csgo_1b/exp32_loc/model.safetensors
+    train_config: csgo_configs/exp36_loc_de_vertigo.yaml
+    localization_config: csgo_configs/test/exp36_loc_de_vertigo_loc.yaml
+    master_port_base: 30169

@@ -47,8 +47,8 @@ from csgo_datasets.unified_task_dataset import (
     _benchmark_v2_rows_by_map,
     _benchmark_v2_z_bounds,
     _benchmark_v2_radar_path,
-    _benchmark_v2_fps_path,
 )
+from csgo_datasets.benchmark_v2 import benchmark_v2_image_path
 import datetime
 import wandb
 
@@ -213,6 +213,7 @@ class DataArguments:
     image_aspect_ratio: str = "square"
     benchmark_v2_support_seed: Optional[int] = field(default=None)
     benchmark_v2_shots_per_map: Optional[int] = field(default=None)
+    benchmark_v2_asset_manifest: Optional[str] = field(default=None)
 
 
 @dataclass
@@ -1886,7 +1887,7 @@ class CSGOWorldModelDataset(Dataset):
 
                 # B. Output Target (FPS Image) -> 对应 UniLIP 的 gen_image
                 if self.benchmark_v2_selection is not None:
-                    fps_path = _benchmark_v2_fps_path(
+                    fps_path = benchmark_v2_image_path(
                         self.benchmark_v2_selection,
                         map_name,
                         data['file_frame'],
@@ -2460,7 +2461,11 @@ def train(attn_implementation=None):
 
     # Keep Benchmark v2 sampling in the YAML for reproducibility, while
     # allowing a CLI override for support-seed and shot-scaling experiments.
-    for key in ("benchmark_v2_support_seed", "benchmark_v2_shots_per_map"):
+    for key in (
+        "benchmark_v2_support_seed",
+        "benchmark_v2_shots_per_map",
+        "benchmark_v2_asset_manifest",
+    ):
         value = getattr(data_args, key, None)
         if value is not None:
             csgo_config[key] = value

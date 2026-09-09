@@ -1,4 +1,6 @@
 import json
+import hashlib
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,6 +9,7 @@ from csgo_datasets.benchmark_v2 import (
     BenchmarkV2Error,
     load_benchmark_v2_selection,
     load_benchmark_v2_selection_from_args,
+    benchmark_v2_image_path,
     is_benchmark_v2_config,
 )
 
@@ -22,6 +25,7 @@ class BenchmarkV2RuntimeTests(unittest.TestCase):
         all_maps = seen_maps + crossmap_maps
 
         radar_files = {}
+        radar_sha256 = {}
         for map_name in all_maps:
             if map_name == "cs_office":
                 relative = "maps/cs_office_radar.png"
@@ -31,6 +35,12 @@ class BenchmarkV2RuntimeTests(unittest.TestCase):
             radar_path.parent.mkdir(parents=True, exist_ok=True)
             radar_path.write_bytes(b"radar")
             radar_files[map_name] = relative
+            radar_sha256[map_name] = hashlib.sha256(b"radar").hexdigest()
+
+        selected_checksum = "".join(
+            f"{'a' * 64}  {map_name}/imgs/file_num0_frame_1.jpg\n"
+            for map_name in all_maps
+        )
 
         def make_row(map_name: str, index: int) -> dict:
             return {
@@ -130,6 +140,12 @@ class BenchmarkV2RuntimeTests(unittest.TestCase):
                 "root": str(source_root),
                 "radar_files": radar_files,
             },
+            "radar_sha256": radar_sha256,
+            "selected_images": {
+                "count": len(all_maps),
+                "file": "selected_images.sha256",
+                "sha256": hashlib.sha256(selected_checksum.encode()).hexdigest(),
+            },
             "counts": counts,
             "continuous_protocol": {
                 "frames_per_clip": 3,
@@ -139,6 +155,102 @@ class BenchmarkV2RuntimeTests(unittest.TestCase):
         manifest_path = benchmark_root / "benchmark_manifest.json"
         self._write_json(manifest_path, manifest)
         return manifest_path
+
+    def _make_minimal_fixture(
+        self, root: Path, manifest_path: Path, source_root: Path
+    ) -> Path:
+        bundle_root = root / "minimal_bundle"
+        images_root = bundle_root / "images"
+        radars_root = bundle_root / "radars"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        maps = [
+            *manifest["protocol"]["seen_maps"],
+            *manifest["protocol"]["crossmap_maps"],
+        ]
+        image_by_map = {}
+        for map_name in maps:
+            image_dir = images_root / map_name
+            image_dir.mkdir(parents=True, exist_ok=True)
+            image_path = image_dir / "file_num0_frame_1.jpg"
+            image_path.write_bytes(b"image")
+            image_by_map[map_name] = {
+                "bytes": image_path.stat().st_size,
+                "count": 1,
+            }
+
+        radar_entries = []
+        radar_by_map = {}
+        for map_name in maps:
+            source_relative = manifest["source"]["radar_files"][map_name]
+            source_path = source_root / source_relative
+            target_path = radars_root / map_name / source_path.name
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source_path, target_path)
+            radar_hash = hashlib.sha256(target_path.read_bytes()).hexdigest()
+            radar_entries.append(
+                {
+                    "bytes": target_path.stat().st_size,
+                    "map": map_name,
+                    "sha256": radar_hash,
+                    "source": source_relative,
+                    "target": f"{map_name}/{target_path.name}",
+                }
+            )
+            radar_by_map[map_name] = {
+                "bytes": target_path.stat().st_size,
+                "count": 1,
+            }
+
+        selected_path = bundle_root / "selected_images.sha256"
+        selected_path.write_text(
+            "".join(
+                f"{'a' * 64}  {map_name}/imgs/file_num0_frame_1.jpg\n"
+                for map_name in maps
+            ),
+            encoding="utf-8",
+        )
+        report = {
+            "benchmark_id": "csgo_benchmark_v2",
+            "copy_mode": "copyfile_not_move",
+            "images": {
+                "by_map": image_by_map,
+                "bytes": sum(value["bytes"] for value in image_by_map.values()),
+                "count": sum(value["count"] for value in image_by_map.values()),
+                "root": "images",
+                "status": "verified",
+                "target_template": "images/{map}/{file_frame}.jpg",
+            },
+            "manifest": {
+                "path": "benchmark_manifest.json",
+                "sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+            },
+            "maps": maps,
+            "radars": {
+                "by_map": radar_by_map,
+                "bytes": sum(value["bytes"] for value in radar_by_map.values()),
+                "count": sum(value["count"] for value in radar_by_map.values()),
+                "entries": radar_entries,
+                "root": "radars",
+                "status": "verified",
+            },
+            "schema_version": 1,
+            "selected_images": {
+                "count": len(maps),
+                "path": "selected_images.sha256",
+                "sha256": hashlib.sha256(selected_path.read_bytes()).hexdigest(),
+            },
+            "status": "verified",
+            "invariants": {
+                "radars_are_separate_from_images": True,
+                "source_exists_after_copy": True,
+                "source_target_samefile": False,
+                "split_derived_set_equals_selected_images": True,
+                "target_contains_only_declared_maps_and_files": True,
+            },
+        }
+        report_path = bundle_root / "minimal_dataset_report.json"
+        self._write_json(report_path, report)
+        return report_path
 
     @staticmethod
     def _write_json(path: Path, value) -> None:
@@ -255,6 +367,116 @@ class BenchmarkV2RuntimeTests(unittest.TestCase):
                 ],
             )
             self.assertEqual(selection.split_files["seen_b"].name, "continuous_clips.json")
+
+    def test_minimal_asset_backend_uses_flat_bundle_without_source_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path = self._make_fixture(root)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["source"]["root"] = "missing-source-root"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            report_path = self._make_minimal_fixture(
+                root, manifest_path, root / "source"
+            )
+            shutil.rmtree(root / "source")
+            selection = load_benchmark_v2_selection(
+                {
+                    "benchmark_v2_manifest": str(manifest_path),
+                    "benchmark_v2_asset_manifest": str(report_path),
+                    "benchmark_v2_split": "seen_train",
+                    "data_dir": str(root / "also-missing-source-root"),
+                },
+                map_names=["seen_a"],
+            )
+            self.assertEqual(selection.asset_backend, "minimal")
+            self.assertEqual(selection.source_root, report_path.parent.resolve())
+            self.assertEqual(
+                selection.benchmark_v2_image_dir("seen_a"),
+                (report_path.parent / "images" / "seen_a").resolve(),
+            )
+            image_path = benchmark_v2_image_path(
+                selection, "seen_a", "file_num0_frame_1"
+            )
+            self.assertTrue(image_path.is_file())
+            self.assertEqual(image_path.parent.name, "seen_a")
+
+    def test_minimal_asset_report_is_bound_to_manifest_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest_path = self._make_fixture(root)
+
+            report_path = self._make_minimal_fixture(
+                root, manifest_path, root / "source"
+            )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["selected_images"]["count"] = 2
+            self._write_json(report_path, report)
+            with self.assertRaisesRegex(
+                BenchmarkV2Error, "selected_images.count"
+            ):
+                load_benchmark_v2_selection(
+                    {
+                        "benchmark_v2_manifest": str(manifest_path),
+                        "benchmark_v2_asset_manifest": str(report_path),
+                        "benchmark_v2_split": "seen_train",
+                    },
+                    map_names=["seen_a"],
+                )
+
+            report_path = self._make_minimal_fixture(
+                root, manifest_path, root / "source"
+            )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["radars"]["entries"][0]["source"] = "wrong/radar.png"
+            self._write_json(report_path, report)
+            with self.assertRaisesRegex(
+                BenchmarkV2Error, "radar source does not match"
+            ):
+                load_benchmark_v2_selection(
+                    {
+                        "benchmark_v2_manifest": str(manifest_path),
+                        "benchmark_v2_asset_manifest": str(report_path),
+                        "benchmark_v2_split": "seen_train",
+                    },
+                    map_names=["seen_a"],
+                )
+
+            report_path = self._make_minimal_fixture(
+                root, manifest_path, root / "source"
+            )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["images"]["bytes"] += 1
+            self._write_json(report_path, report)
+            with self.assertRaisesRegex(
+                BenchmarkV2Error, "images count/bytes"
+            ):
+                load_benchmark_v2_selection(
+                    {
+                        "benchmark_v2_manifest": str(manifest_path),
+                        "benchmark_v2_asset_manifest": str(report_path),
+                        "benchmark_v2_split": "seen_train",
+                    },
+                    map_names=["seen_a"],
+                )
+
+            report_path = self._make_minimal_fixture(
+                root, manifest_path, root / "source"
+            )
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            report["images"]["count"] += 1
+            report["images"]["by_map"]["seen_a"]["count"] += 1
+            self._write_json(report_path, report)
+            with self.assertRaisesRegex(
+                BenchmarkV2Error, "images.count does not match"
+            ):
+                load_benchmark_v2_selection(
+                    {
+                        "benchmark_v2_manifest": str(manifest_path),
+                        "benchmark_v2_asset_manifest": str(report_path),
+                        "benchmark_v2_split": "seen_train",
+                    },
+                    map_names=["seen_a"],
+                )
 
     def test_crossmap_support_is_nested_and_seed_specific(self):
         with tempfile.TemporaryDirectory() as temporary:

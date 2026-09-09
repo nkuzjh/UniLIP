@@ -1,0 +1,206 @@
+\section{Benchmark}
+\label{sec:benchmark}
+
+
+We construct a map-aware benchmark for learning the correspondence among an overhead tactical radar map, a first-person view (FPV), and the camera pose in Counter-Strike 2 (CS2).
+Each example contains a map-specific radar image, an FPV image captured from the running game, and a five-dimensional (5-D) pose consisting of two horizontal coordinates, a vertical coordinate, pitch, and yaw.
+The benchmark supports both directions of the correspondence: localizing the camera from an FPV/radar pair and synthesizing an FPV image from a radar map and a specified pose.
+It also contains ordered short trajectories, allowing image generation to be evaluated on temporally continuous motion rather than only on independently sampled frames.
+
+The construction is a semi-automatic pipeline with manual review: game capture produces paired visual and state observations; map resources provide the radar coordinate system; preprocessing reconciles the two state streams; quality control fixes the retained source samples and per-map height ranges; and the final split is formed from complete map records.
+Figure~\ref{fig:cs2-benchmark-pipeline} summarizes this pipeline.
+
+\begin{figure*}[t]
+    \centering
+    \fbox{\parbox[c][3.35cm][c]{0.94\linewidth}{\centering
+    \textit{Placeholder for the benchmark construction figure.}\\[2pt]
+    The final figure should show, from left to right, the controlled CS2
+    setup and the three capture streams (FPV screenshot, GSI state, and
+    process-memory state), radar extraction and map-coordinate conversion,
+    Mem/GSI consistency filtering, missing-image removal, and audit,
+    full-corpus height calibration, \texttt{file\_num}-record pool assignment,
+    and the final localization and conditional-generation tasks.  It should
+    distinguish individual-frame files from ordered 64-frame continuous
+    clips.}}
+    \caption{Placeholder.  The final figure should visualize the complete
+    data path and identify the artifact produced at each stage, including
+    the point at which record-level isolation is enforced.}
+    \label{fig:cs2-benchmark-pipeline}
+\end{figure*}
+
+
+\subsection{Data Acquisition and Canonical Representation}
+
+\paragraph{Controlled CS2 capture.}
+The data are collected from a CS2 client in a controlled practice mode at a target rate of 16 frames per second.
+We manually launch the game from Steam with \texttt{-console -insecure} and use a windowed 4:3, 1024$\times$768 display.
+We use console commands to hide the selected HUD overlays, weapon and arm models, and crosshair so that the recorded FPV image exposes the game scene without those interface elements.
+The recorder observes the selected player from the spectator view while the game is running.
+
+Under the official Game State Integration (GSI) configuration, the CS2 client sends game state updates to a local endpoint, together with the relevant map and player state.
+GSI provides the player position and game metadata but does not expose the complete camera viewpoint.
+Therefore, the recorder reads the running game process to obtain the position and the pitch/yaw viewpoint fields from the CS2 process memory.
+In each capture-loop iteration, it associates a whole-window screenshot with the most recent GSI payload and a process-memory readout. These observations are then paired by the recorder loop.
+% the implementation does not provide a shared hardware timestamp or claim timestamp-atomic synchronization.
+
+Raw observations are stored in \texttt{record\_N.npy} batches.
+Each entry contains the FPV image path and the memory and GSI dictionaries, while the images are retained as individual JPEG files.
+The resulting identity, \texttt{file\_numN\_frame\_M}, preserves both the record-batch identifier and the frame identifier.
+Here, a record denotes one \texttt{record\_N.npy} batch identified by \texttt{file\_num}; it is not a physical capture-session identifier.
+The complete map--\texttt{file\_num} group is carried through preprocessing and later serves as the atomic split unit.
+
+\paragraph{Radar maps and coordinate transform.}
+The radar image for each map is obtained from the CS2 resource package using Source 2 Viewer. The corresponding map-overview metadata supplies an offset and scale that align game-world positions with the radar image.
+Let $(x_w,y_w,z_w)$ denote the camera position, where $z_w$ is the camera eye height, and let $(offset_x, offset_y, scale)$ denote the map-specific offset and scale.
+We convert the position to the canonical radar coordinates
+\begin{equation}
+    x_r = \frac{x_w-offset_x}{scale}, \qquad
+    y_r = \frac{offset_y-y_w}{scale}, \qquad
+    z_r = \frac{z_w}{scale}.
+\end{equation}
+The reversal in the second equation accounts for image coordinates.
+The implementation casts the transformed coordinates to integer radar units; $x_r$ and $y_r$ are expressed in the coordinate system of a 1024$\times$1024 radar image, while $z_r$ is retained as the vertical coordinate.
+The upper- and lower-floor radar layers are blended for \texttt{de\_nuke}, \texttt{de\_train}, and \texttt{de\_vertigo}, as specified by the multi-layer map assets.
+
+\paragraph{State reconciliation and sample representation.}
+The preprocessing stage independently transforms the memory position and the GSI position into radar coordinates.
+A frame is removed when the Euclidean distance between the two horizontal positions exceeds 3 radar pixels.
+A frame whose referenced FPV image is missing is also removed.
+For every retained frame, the image is assigned a stable name and the metadata are written to the map's \texttt{positions.json}.
+A canonical sample is
+\begin{equation}
+    (x_r,y_r,z_r,\theta_h,\theta_v,\mathrm{map},\mathrm{file\_frame}),
+\end{equation}
+where $\theta_h$ is yaw and $\theta_v$ is pitch, both stored in radians.
+Thus, a sample identifies one FPV image, one map-specific radar image, and one 5-D pose.
+
+
+\subsection{Quality Control}
+\label{subsec:data_filter}
+
+\paragraph{Integrity review.}
+The construction first checks frame identities for duplicates and validates finite pose values, map labels, source images, and radar assets.
+% After that, we filter frames when the Euclidean distance between the GSI and process-memory positions exceeds a fixed threshold of 3 pixel units, accounting for local-machine freezes and network fluctuations.
+It then reports coordinate candidates using out-of-window coordinates and large adjacent-frame changes in position or angle.
+These conditions are manual review triggers rather than unconditional rejection rules, because multi-layer maps and camera motion can produce large valid changes.
+We first identify large changes in horizontal and vertical position and viewing angle and compare them with changes that can arise from player movements within the game.
+Large but valid changes in position and viewing angle can occur during movement on slopes, rapid turning, jumping, crouching, and falls from normal heights.
+Afterwards, we manually review samples that exceed the large valid change ranges and reject unsuitable samples from our dataset.
+Rejected large changes in horizontal and vertical position are mostly associated with random initial positions at the start of the game, respawning at a random location after death, and restarting after the time limit for a single game is exceeded.
+Meanwhile, sudden changes in viewing angle appear to occur mostly when the player dies from a fall beyond the map boundaries or from a height greater than normal, while the recorded image switches from the first-person spectator view to a third-person view of the deceased body.
+
+% The audit reports 10,345 coordinate candidates and no integrity-invalid samples.
+% The manual review retains 9,705 candidate samples under the declared default action and excludes 18,756 samples, including 19 complete map records for conservative data quality.
+% After the review, the source corpus contains 3,087,392 retained samples in 3,430 map records across the 14 maps.
+% Of these samples, 2,280,253 belong to the ten seen maps and 807,139 to the four held-out maps.
+
+\paragraph{Vertical normalization.}
+After the review and before any record is assigned to a split, we compute an exact minimum and maximum of $z_r$ independently for every map over the retained source corpus. This provides a map-specific normalization of the vertical coordinate without relying on a global vertical map asset.
+The task representation uses
+\begin{equation}
+    z' = \frac{z_r-z_{\min,m}}{z_{\max,m}-z_{\min,m}},
+\end{equation}
+where $m$ is the map. Because the calibration is computed before splitting, the same map-specific convention is used for training, few-shot learning, evaluation, and continuous samples.
+% In particular, the supplied calibration for a held-out map is part of the benchmark input; held-out-map results should therefore be interpreted as zero-shot model transfer and few-shot adaptation under fixed map-level calibration, not as calibration-free transfer.
+
+\paragraph{Record-level split construction.}
+The complete map--\texttt{file\_num} group is the atomic split unit.
+All frames from one such record are assigned to one pool before any frame sampling, preventing samples from the same record from entering different pools.
+The record-pool ratios are 60\%/10\%/20\%/10\% for Seen-10 train/validation/discrete-test/continuous and 20\%/60\%/20\% for CrossMap-4 support/query/continuous.
+
+For Seen-10 test selection, near-pose filtering removes candidates close to the selected training or validation poses; for CrossMap-4 query selection, it removes candidates close to the union of all five preconstructed support draws. The tolerances of near-pose filtering are 8 radar units in horizontal-plane Euclidean distance, 8 units in the vertical coordinate, and 5 degrees for each angle, with circular distance for yaw.
+Eligible frames for every discrete split are then ordered within each record, thinned to a minimum gap of five frames, and selected by deterministic coverage sampling over $4\times4\times3\times8\times3$ quantile bins in $(x_r,y_r,z_r,\theta_h,\theta_v)$.
+
+Continuous evaluation clips are selected only from the continuous record pool.
+Each map contributes 20 clips, each clip contains exactly 64 ordered frames, and successive frame identifiers differ by one or two.
+No frame is reused within the continuous evaluation split, and at most one clip is selected from a record.
+
+
+\subsection{Dataset Splits and Statistics}
+\label{subsec:benchmark-splits}
+
+We divide the 14 map sources into a 10-map seen set and a 4-map held-out set according to differences in environment, lighting, texture, art style, and time of day.
+In this setting, Seen-10 contains \texttt{cs\_agency}, \texttt{cs\_italy}, \texttt{de\_ancient}, \texttt{de\_anubis}, \texttt{de\_dust2}, \texttt{de\_inferno}, \texttt{de\_mirage}, \texttt{de\_nuke}, \texttt{de\_overpass}, and \texttt{de\_train}.
+CrossMap-4 contains \texttt{cs\_office}, \texttt{de\_golden}, \texttt{de\_palacio}, and \texttt{de\_vertigo}.
+
+For every Seen-10 map, the final discrete split contains 5,000 training frames, 500 validation frames, and 2,000 discrete test frames.
+% Across the ten maps this gives 50,000 training frames, 5,000 validation frames, and
+% 20,000 discrete test frames.
+The continuous split contributes 20 clips of 64 frames per map, or 1,280 frames per map and 12,800 frames in total.
+
+For every CrossMap-4 map, each preconstructed few-shot support draw contains 100 frames, the fixed discrete evaluation split contains 2,000 frames, and the continuous split contains 20 clips of 64 frames.
+A single support draw therefore contains 400 frames over the four maps, while the discrete set contains 8,000 frames and the continuous set contains 5,120 frames.
+The union of support records is disjoint from the discrete and continuous evaluation records, which are also disjoint from one another.
+% Counting all five support draws separately gives 102,920 manifest row references; overlap among support draws yields 102,780 unique selected FPV images.
+
+The pre-review source snapshot contains 3,106,148 preprocessed samples and 3,449 source records. After quality control, 3,087,392 (3M) samples and 3,430 records remain.
+Specifically, Seen-10 contributes 2,280,253 retained samples and CrossMap-4 contributes 807,139.
+The map-level source and retained counts are reported together with the map-specific $z$ extrema because maps differ in the number of records and vertical span.
+Tables~\ref{tab:benchmark-statistics} and~\ref{tab:benchmark-splits} summarize the map-level corpus and the final task splits, respectively.
+
+\begin{table*}[t]
+    \centering
+    \fbox{\parbox[c][4.05cm][c]{0.94\linewidth}{\centering
+    \textit{Placeholder for the map-level dataset statistics table.}\\[2pt]
+    The final table should contain one row for each of the 14 maps and report
+    its Seen-10/CrossMap-4 role, preprocessed rows, approved-retained rows,
+    source and retained \texttt{file\_num} records, frozen $z_{\min}$ and
+    $z_{\max}$, and the exact radar asset (including blended assets).  An
+    aggregate row should report 3,106,148 source rows, 3,087,392 retained
+    rows, 3,449 source records, and 3,430 retained records.}}
+    \caption{Placeholder.  The final table should make map imbalance,
+    retained-corpus size, vertical calibration ranges, and radar-asset
+    choices auditable.}
+    \label{tab:benchmark-statistics}
+\end{table*}
+
+\begin{table*}[t]
+    \centering
+    \fbox{\parbox[c][3.75cm][c]{0.94\linewidth}{\centering
+    \textit{Placeholder for the final split and task table.}\\[2pt]
+    The final table should report, for Seen-10 and CrossMap-4, the map role,
+    record-pool ratio, number of records, discrete rows or support/query
+    rows, number of continuous clips, frames per clip, preconstructed support
+    draws, the support draw used in the current experiments, and
+    the exact task/evaluation split.  It should explicitly state the
+    5,000/500/2,000 Seen-10 quotas, the 100-shot-per-map CrossMap quota, the
+    five preconstructed support draws, the single \texttt{seed\_0} draw used in the
+    current experiments, and the fixed 64-frame continuous clips.}}
+    \caption{Placeholder.  The final table should connect each split to its
+    intended task and document all quotas and disjointness constraints.}
+    \label{tab:benchmark-splits}
+\end{table*}
+
+
+\subsection{Tasks and Evaluation Protocol}
+\label{subsec:benchmark-tasks}
+
+\paragraph{Task inputs and outputs.}
+The benchmark defines two tasks: localization and generation, with two frame-level directions and one sequence-level evaluation setting.
+For localization, the inputs are the FPV image, the corresponding overhead radar image, and the map identity; the output is the 5-D pose $(x,y,z,\mathrm{pitch},\mathrm{yaw})$.
+For discrete conditional generation, the inputs are the radar image, map identity, and a specified pose; the output is the corresponding FPV image.
+Continuous conditional generation uses the same conditioning variables for each frame but evaluates the generated images in the exact ordered 64-frame clips.
+
+The pose variables are $(x_r,y_r,z_r,\theta_h,\theta_v)$, with yaw represented by $\theta_h$ and pitch represented by $\theta_v$.
+The task serialization uses the normalized 5-D tuple
+\begin{equation}
+    \left(\frac{x_r}{1024},\frac{y_r}{1024},z',
+    \frac{\theta_v}{2\pi},\frac{\theta_h}{2\pi}\right).
+\end{equation}
+The prompt convention defines yaw zero as east with clockwise increase, pitch zero as looking straight down, and pitch $\pi$ as looking straight up.
+
+\paragraph{Seen-10 evaluation.}
+The base model is trained only on the Seen-10 discrete train split.
+Seen-10 validation records are reserved for checkpoint selection and hyperparameter decisions; they are not used to report the final test result.
+Localization, discrete generation, and continuous generation are evaluated on their respective test splits.
+The discrete test samples and continuous clips are record-disjoint from training and validation under the split construction above.
+
+\paragraph{CrossMap-4 transfer.}
+CrossMap-4 maps are excluded from base-model optimization.
+Zero-shot transfer evaluates localization and discrete generation on the fixed discrete samples and evaluates continuous generation on the fixed continuous clips.
+In the few-shot localization setting (100, 50, 20, 10), each shot-count run is independently initialized from the same Seen-10 checkpoint using nested subsets from the single \texttt{seed\_0} support draw.
+Localization adaptation uses exactly 100, 50, 20, or 10 labeled frames per held-out map and is evaluated on the fixed CrossMap-4 discrete set, whereas generation adaptation uses the 100-shot \texttt{seed\_0} support draw and is evaluated on the corresponding discrete and continuous sets.
+Each adapted model is also reevaluated on the corresponding Seen-10 split to assess retention.
+
+All results are reported per map and as an equal-map macro average; few-shot results use a single support draw and do not include a support-selection confidence interval.
+For sequence metrics, the 64-frame clip boundaries are preserved.

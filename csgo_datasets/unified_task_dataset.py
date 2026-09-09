@@ -626,11 +626,9 @@ def _benchmark_v2_radar_path(selection, map_name):
 
 
 def _benchmark_v2_fps_path(selection, map_name, file_frame):
-    source_root = os.fspath(_benchmark_v2_selection_value(selection, "source_root"))
-    extension = str(_benchmark_v2_selection_value(selection, "image_extension"))
-    if extension and not extension.startswith("."):
-        extension = "." + extension
-    return os.path.join(source_root, map_name, "imgs", str(file_frame) + extension)
+    from csgo_datasets.benchmark_v2 import benchmark_v2_image_path
+
+    return os.fspath(benchmark_v2_image_path(selection, map_name, str(file_frame)))
 
 
 

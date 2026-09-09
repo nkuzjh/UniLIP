@@ -113,14 +113,16 @@ Each map contributes:
 | fixed discrete query | 2,000 | 8,000 |
 | fixed continuous query | 20 clips x 64 frames | 80 clips / 5,120 frames |
 
-Five deterministic support draws (`seed_0` through `seed_4`) quantify support
-selection variance. The query and continuous sets are fixed across those
-draws. Support sets may overlap one another, but every support record is from
-a pool disjoint from every query and continuous record.
+The builder publishes five deterministic support draws (`seed_0` through
+`seed_4`) so optional future studies can measure support-selection variance.
+The current `exp33*`/`exp34*` protocol uses only the default draw `seed_0`.
+The query and continuous sets are fixed across all published draws. Support
+sets may overlap one another, but every support record is from a pool disjoint
+from every query and continuous record.
 
-The primary 100-shot result adapts one Seen-10 model jointly on the 400 support
-frames for a seed. A per-map adaptation result can be reported as an optional
-analysis, but it is not interchangeable with the primary protocol.
+The primary 100-shot result adapts one Seen-10 model jointly on the 400
+`seed_0` support frames. A per-map adaptation result can be reported as an
+optional analysis, but it is not interchangeable with the primary protocol.
 
 ## 4. Trajectory Identity and Isolation
 
@@ -272,35 +274,32 @@ Use this order for each model family:
 3. Evaluate Seen-10 discrete and continuous tests.
 4. Evaluate the unchanged base checkpoint on the fixed CrossMap-4 query and
    continuous sets. This is the zero-shot result.
-5. For each support seed, restore the same base checkpoint, adapt on exactly
-   100 frames per CrossMap map (400 total), then evaluate the same fixed
-   CrossMap query and continuous sets.
-6. Re-evaluate Seen-10 after adaptation to report retention/forgetting.
+5. Restore the same base checkpoint, adapt on the default `seed_0` 100-shot
+   support set, then evaluate the fixed CrossMap query and continuous sets.
+6. For the `exp33_loc`/`exp34_loc` scaling study, additionally restore the same
+   Seen-10 parent independently for the nested 50/20/10-shot subsets.
+7. Re-evaluate Seen-10 after every adaptation to report retention/forgetting.
 
 Adaptation initialization is strict: `finetune_init_ckpt_path` rejects a
 checkpoint missing any key that the adaptation run expects to train. The
-initial recipe uses 400 updates at effective source batch 128 with
-`drop_last=False`. Each 400-row support epoch is `[128, 128, 128, 16]`, or
-four updates, so 400 updates are approximately 100 complete support-set
-passes. The naive `128 * 400 / 400 = 128` calculation is wrong because it
-treats the final 16-row batch as a full batch.
+initial localization recipe uses 400 updates. The task-homogeneous sampler
+keeps only complete batches inside each task group, regardless of the
+`dataloader_drop_last=False` argument. The completed 100-shot run used batch
+128 and therefore three batches per epoch from 400 rows. Reduced-shot runs use
+per-device batches 128/80/40 for 50/20/10-shot: respectively one complete batch
+from 200 rows, one from 80, and one from 40. This fixes optimizer-update count,
+not batch cardinality or total example presentations.
 
 Do not tune epochs, learning rate, checkpoint choice, or early stopping on a
-CrossMap query. Tune an adaptation recipe through simulated 100-shot episodes
-inside Seen-10, freeze it, and then apply it to all five CrossMap support
-draws.
+CrossMap query. Tune an adaptation recipe and shot-count policy through
+simulated episodes inside Seen-10, freeze them, and then apply them to the
+default CrossMap support draw (`seed_0`).
 
 Report localization and generation separately, per map and as an equal-map
-macro average. For 100-shot results, report mean and 95% confidence intervals
-over support seeds; model-training seeds should be separated from support-set
-seeds. Continuous generation must include sequence-level metrics and retain
-clip identity rather than treating all frames as one sequence.
-
-For the five support draws, use the two-sided Student-t interval
-`mean +/- t(0.975, 4) * sample_std / sqrt(5)` and label it as support-selection
-uncertainty. It is not a substitute for model-training replication; major
-claims should use at least three independently trained Seen-10 base seeds and
-report that variation separately.
+macro average. The current `exp33*`/`exp34*` 100-shot protocol reports the
+single `seed_0` point estimate and does not claim support-selection confidence
+intervals. Continuous generation must include sequence-level metrics and
+retain clip identity rather than treating all frames as one sequence.
 
 ## 8. Output Contract
 
@@ -393,13 +392,21 @@ only by explicitly selecting the manifest and split. The implemented path:
   seed, shots, and checkpoint.
 
 The implementation has been checked by source compilation, selection/contract
-smoke tests, and artifact checksum verification. This closes the software
-integration gate, not the empirical gate: v2 model results require actual
-training and inference on the commands in `record.md`. The experiment matrix
-and adaptation commands are specified in
-[`CSGO_BENCHMARK_V2_EXPERIMENTS.md`](CSGO_BENCHMARK_V2_EXPERIMENTS.md).
+smoke tests, and artifact checksum verification. The localization empirical
+gate is complete for the `exp33_loc`/`exp34_loc` 100/50/20/10-shot curves;
+other v2 model families still follow the commands in `record.md`. The
+experiment matrix and adaptation protocol are specified in
+[`CSGO_BENCHMARK_V2_TASK_SETTING.md`](CSGO_BENCHMARK_V2_TASK_SETTING.md), and
+current results are tracked in
+[`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md).
 
 ### Metric aggregation
+
+The formal main-table/appendix metric set and Chinese field-by-field
+explanations of the result JSONs are maintained in
+[`CSGO_BENCHMARK_METRICS_ZH.md`](CSGO_BENCHMARK_METRICS_ZH.md). In particular,
+learned external-localizer metrics may remain in historical JSONs but are not
+part of the current formal reporting set.
 
 After strict per-map evaluation has written one v2 JSON result per map, use
 `scripts/aggregate_csgo_benchmark_v2_metrics.py maps` for the single-run
@@ -423,34 +430,18 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
 ```
 
 `eval_csgo_loc.py` already emits the strict localization summary, so
-localization does not use `maps --kind localization`. Run `seeds` directly on
-the five `benchmark_csgo_v2_loc.json` files. The aggregator supports both
-generation and localization summaries, checks that `support_seed` matches the
-literal `{seed}` path, and rejects inconsistent inference RNG or other
-provenance. Keep inference `--seed 42` fixed across support draws and pass the
-support selection separately as `--benchmark_v2_support_seed`.
+localization does not use `maps --kind localization`. For generation, run the
+`maps` subcommand once on the `seed_0` output to produce the equal-map macro.
+Do not run the `seeds` subcommand for `exp33*` or `exp34*`: one support draw
+cannot define support-selection variance or a confidence interval. The generic
+`seeds` subcommand remains available for optional future multi-draw studies.
 
-For five support-selection seeds, first create the map macro in each
-`seed_0` through `seed_4` directory, then aggregate those five JSON files with
-a path containing the literal `{seed}`:
-
-```bash
-python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds \
-  --seed_root_pattern 'outputs_eval/benchmark_v2/exp33/shot_100/seed_{seed}/discrete/summary.json' \
-  --seeds 0 1 2 3 4 \
-  --output outputs_eval/benchmark_v2/exp33/shot_100/summary_across_seeds_discrete.json
-```
-
-Use the same command with `continuous/summary.json` and a continuous output
-name for continuous generation. The seed aggregate measures support-selection
-variation, not five independent model-training runs. These commands do not
-change inference randomness: every CrossMap support-seed inference run must
-keep `--seed 42`, while the selected support draw is passed separately through
-`--benchmark_v2_support_seed`. Continuous FVD uses 16-frame, stride-16 windows
-inside each exact 64-frame manifest clip; a window never crosses a clip
-boundary. The v2 metric scripts and this aggregator reject incomplete coverage
-or a missing `inference_manifest.json` by default; the debug override flags are
-not part of the reported protocol.
+Keep inference `--seed 42` fixed while passing the selected support draw
+separately as `--benchmark_v2_support_seed 0`. Continuous FVD uses 16-frame,
+stride-16 windows inside each exact 64-frame manifest clip; a window never
+crosses a clip boundary. The v2 metric scripts reject incomplete coverage or a
+missing `inference_manifest.json` by default; the debug override flags are not
+part of the reported protocol.
 
 ## 9. Reproducible Build Commands
 
@@ -595,6 +586,7 @@ A v2 build is publishable only when all of the following are true:
   the published per-map Z extrema derived from the complete CrossMap corpus,
   so the precise claim is zero-shot model adaptation under frozen benchmark
   map-level calibration, not target-metadata-free domain generalization.
-- A 100-shot result is a low-shot adaptation result, not evidence of general
-  few-shot scaling. A later 1/5/10/20/50/100-shot curve can strengthen that
-  claim without changing the fixed query protocol.
+- A 100-shot result alone is a low-shot adaptation result, not evidence of
+  general few-shot scaling. The implemented localization protocol adds nested
+  10/20/50-shot points under the same fixed query protocol; 1/5-shot behavior
+  remains outside the current experiment matrix.

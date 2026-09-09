@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import os
+import string
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from numbers import Real
@@ -85,6 +86,28 @@ class BenchmarkV2Selection:
     split_files: dict[str, Path]
     support_seed: int
     shots_per_map: int
+    # ``asset_backend`` is ``source`` for the historical layout and
+    # ``minimal`` for the self-contained flat bundle.  Keeping this explicit
+    # avoids silently selecting a layout based on which directories happen to
+    # exist on a machine.
+    asset_backend: str = "source"
+    asset_manifest_path: Path | None = None
+    asset_manifest_sha256: str | None = None
+    benchmark_manifest_sha256: str | None = None
+    selected_images_sha256: str | None = None
+    asset_root: str | None = None
+    image_dirs: dict[str, Path] | None = None
+    asset_provenance: dict[str, Any] | None = None
+
+    def benchmark_v2_image_dir(self, map_name: str) -> Path:
+        """Return the directory containing v2 FPV frames for ``map_name``."""
+
+        return benchmark_v2_image_dir(self, map_name)
+
+    def benchmark_v2_image_path(self, map_name: str, file_frame: str) -> Path:
+        """Return the v2 FPV frame path for ``map_name`` and ``file_frame``."""
+
+        return benchmark_v2_image_path(self, map_name, file_frame)
 
 
 def _config_value(config: Any, key: str, default: Any = None) -> Any:
@@ -112,7 +135,8 @@ def load_benchmark_v2_selection(
 ) -> BenchmarkV2Selection:
     """Load a selection using flat Benchmark v2 config fields.
 
-    Recognized fields are ``benchmark_v2_manifest``, ``benchmark_v2_split``,
+    Recognized fields are ``benchmark_v2_manifest``,
+    ``benchmark_v2_asset_manifest``, ``benchmark_v2_split``,
     ``benchmark_v2_support_seed``, ``benchmark_v2_shots_per_map``,
     ``benchmark_v2_image_extension``, and the existing optional ``data_dir``.
     An explicit function argument takes precedence over the config value.
@@ -138,11 +162,20 @@ def load_benchmark_v2_selection(
         support_seed=_config_value(config, "benchmark_v2_support_seed", 0),
         shots_per_map=_config_value(config, "benchmark_v2_shots_per_map", 100),
         data_dir=_config_value(config, "data_dir"),
+        asset_manifest_path=_config_value(config, "benchmark_v2_asset_manifest"),
     )
     extension = _normalise_image_extension(
         _config_value(config, "benchmark_v2_image_extension")
     )
     if extension is not None:
+        if (
+            selection.asset_backend == "minimal"
+            and extension != selection.image_extension
+        ):
+            raise BenchmarkV2Error(
+                "benchmark_v2_image_extension does not match the extension in "
+                "benchmark_v2_asset_manifest"
+            )
         selection.image_extension = extension
     return selection
 
@@ -154,13 +187,17 @@ def load_benchmark_v2_selection_from_args(
     support_seed: int = 0,
     shots_per_map: int = 100,
     data_dir: str | os.PathLike[str] | None = None,
+    asset_manifest_path: str | os.PathLike[str] | None = None,
 ) -> BenchmarkV2Selection:
     """Load and validate one Benchmark v2 split without ML dependencies.
 
-    ``data_dir`` overrides ``manifest.source.root``.  Relative paths follow
+    ``data_dir`` overrides ``manifest.source.root`` when the historical source
+    backend is selected.  Relative paths follow
     the repository working directory convention used by the builder; if that
     path does not exist, a relative source path is also tried below the
     manifest directory, which is useful for self-contained test bundles.
+    When ``asset_manifest_path`` is supplied, the validated minimal bundle is
+    used instead and ``data_dir``/``manifest.source.root`` are not accessed.
     """
 
     if split not in SUPPORTED_SPLITS:
@@ -191,14 +228,55 @@ def load_benchmark_v2_selection_from_args(
     _validate_requested_maps(requested_maps, allowed_maps, split)
 
     source = manifest["source"]
-    source_root_value = data_dir if data_dir is not None else source["root"]
-    source_root = _resolve_source_root(source_root_value, manifest_path)
+    asset_manifest_path_resolved = None
+    asset_manifest_sha256 = None
+    benchmark_manifest_sha256 = _sha256_file(manifest_path)
+    selected_images_sha256 = None
+    asset_backend = "source"
+    asset_provenance = None
+    if asset_manifest_path not in (None, ""):
+        asset_backend = "minimal"
+        asset_manifest_path_resolved = _resolve_asset_manifest_path(
+            asset_manifest_path
+        )
+        asset_manifest = _load_json_object(
+            asset_manifest_path_resolved, "Benchmark v2 asset manifest"
+        )
+        (
+            asset_root,
+            image_dirs,
+            radar_paths,
+            image_extension,
+            asset_provenance,
+        ) = _resolve_minimal_assets(
+            asset_manifest,
+            asset_manifest_path_resolved,
+            manifest_path,
+            benchmark_manifest_sha256,
+            protocol["all_maps"],
+            source["radar_files"],
+            manifest.get("radar_sha256", source.get("radar_sha256")),
+            manifest.get("selected_images"),
+        )
+        source_root = asset_root
+        asset_manifest_sha256 = _sha256_file(asset_manifest_path_resolved)
+        selected_images_sha256 = asset_provenance["selected_images_sha256"]
+    else:
+        source_root_value = data_dir if data_dir is not None else source["root"]
+        source_root = _resolve_source_root(source_root_value, manifest_path)
+        radar_paths = _resolve_radar_paths(
+            source["radar_files"], source_root, requested_maps
+        )
+        image_extension = ".jpg"
+        image_dirs = {
+            name: (source_root / name / "imgs").resolve()
+            for name in requested_maps
+        }
     z_ranges = _validate_z_ranges(manifest, protocol["all_maps"])
     selected_z_ranges = {name: z_ranges[name] for name in requested_maps}
-    radar_paths = _resolve_radar_paths(
-        source["radar_files"], source_root, requested_maps
-    )
-    image_extension = ".jpg"
+    if asset_backend == "minimal":
+        radar_paths = {name: radar_paths[name] for name in requested_maps}
+        image_dirs = {name: image_dirs[name] for name in requested_maps}
 
     split_files = _resolve_split_files(
         manifest,
@@ -242,6 +320,14 @@ def load_benchmark_v2_selection_from_args(
         split_files=split_files,
         support_seed=support_seed,
         shots_per_map=shots_per_map,
+        asset_backend=asset_backend,
+        asset_manifest_path=asset_manifest_path_resolved,
+        asset_manifest_sha256=asset_manifest_sha256,
+        benchmark_manifest_sha256=benchmark_manifest_sha256,
+        selected_images_sha256=selected_images_sha256,
+        asset_root=(asset_provenance.get("asset_root") if asset_provenance else None),
+        image_dirs=image_dirs,
+        asset_provenance=asset_provenance,
     )
 
 
@@ -264,6 +350,25 @@ def _resolve_manifest_path(value: str | os.PathLike[str]) -> Path:
     return path
 
 
+def _resolve_asset_manifest_path(value: str | os.PathLike[str]) -> Path:
+    """Resolve the explicit flat-bundle report without consulting source data."""
+
+    try:
+        path = Path(value).expanduser()
+    except (TypeError, ValueError) as exc:
+        raise BenchmarkV2Error(
+            f"invalid benchmark_v2_asset_manifest path: {value!r}"
+        ) from exc
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    path = path.resolve()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Benchmark v2 asset manifest does not exist: {path}"
+        )
+    return path
+
+
 def _load_json_object(path: Path, description: str) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -272,6 +377,69 @@ def _load_json_object(path: Path, description: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise BenchmarkV2Error(f"{description} must be a JSON object: {path}")
     return value
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+    except OSError as exc:
+        raise BenchmarkV2Error(f"could not hash file {path}: {exc}") from exc
+    return digest.hexdigest()
+
+
+def _require_sha256(value: Any, field_name: str) -> str:
+    if (
+        not isinstance(value, str)
+        or len(value) != 64
+        or value.lower() != value
+        or any(char not in "0123456789abcdef" for char in value)
+    ):
+        raise BenchmarkV2Error(
+            f"{field_name} must be a lowercase SHA-256 digest"
+        )
+    return value
+
+
+def _require_nonnegative_int(value: Any, field_name: str) -> int:
+    if type(value) is not int or value < 0:
+        raise BenchmarkV2Error(f"{field_name} must be a non-negative integer")
+    return value
+
+
+def _count_selected_image_checksums(path: Path) -> int:
+    count = 0
+    try:
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            for line_number, raw_line in enumerate(handle, 1):
+                line = raw_line.rstrip("\r\n")
+                if not line:
+                    raise BenchmarkV2Error(
+                        "selected image checksum file contains an empty line at "
+                        f"line {line_number}"
+                    )
+                fields = line.split(maxsplit=1)
+                if len(fields) != 2:
+                    raise BenchmarkV2Error(
+                        "selected image checksum file has an invalid line at "
+                        f"line {line_number}"
+                    )
+                _require_sha256(
+                    fields[0],
+                    f"selected image checksum line {line_number} digest",
+                )
+                _safe_relative_path(
+                    fields[1],
+                    f"selected image checksum line {line_number} path",
+                )
+                count += 1
+    except OSError as exc:
+        raise BenchmarkV2Error(
+            f"could not read selected image checksum file {path}: {exc}"
+        ) from exc
+    return count
 
 
 def _validate_manifest(manifest: Mapping[str, Any]) -> dict[str, Any]:
@@ -471,6 +639,594 @@ def _resolve_radar_paths(
             )
         result[map_name] = path
     return result
+
+
+def _safe_relative_path(value: Any, field_name: str) -> Path:
+    """Validate a bundle-relative path before joining it to the bundle root."""
+
+    if not isinstance(value, (str, os.PathLike)) or not os.fspath(value):
+        raise BenchmarkV2Error(f"{field_name} must be a non-empty relative path")
+    raw_value = os.fspath(value)
+    if not isinstance(raw_value, str):
+        raise BenchmarkV2Error(f"{field_name} must be a text relative path")
+    if "\\" in raw_value:
+        raise BenchmarkV2Error(
+            f"{field_name} must use POSIX-style relative paths, got {value!r}"
+        )
+    path = Path(raw_value)
+    if path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise BenchmarkV2Error(
+            f"{field_name} must be a safe relative path, got {value!r}"
+        )
+    return path
+
+
+def _safe_asset_path(asset_root: Path, relative: Path, field_name: str) -> Path:
+    """Resolve a bundle target and reject traversal or symlink escapes."""
+
+    path = (asset_root / relative).resolve()
+    try:
+        path.relative_to(asset_root)
+    except ValueError as exc:
+        raise BenchmarkV2Error(
+            f"{field_name} escapes the benchmark v2 asset bundle: {relative}"
+        ) from exc
+    return path
+
+
+def _validate_asset_template(template: Any, field_name: str) -> str:
+    if not isinstance(template, str) or not template:
+        raise BenchmarkV2Error(f"{field_name} must be a non-empty path template")
+    if Path(template).is_absolute():
+        raise BenchmarkV2Error(f"{field_name} must be relative")
+    fields: list[str] = []
+    try:
+        for _, field_name_value, format_spec, conversion in string.Formatter().parse(
+            template
+        ):
+            if field_name_value is None:
+                continue
+            if field_name_value not in {"map", "file_frame"}:
+                raise BenchmarkV2Error(
+                    f"{field_name} may only use {{map}} and {{file_frame}}"
+                )
+            if format_spec or conversion:
+                raise BenchmarkV2Error(
+                    f"{field_name} does not allow format specs or conversions"
+                )
+            fields.append(field_name_value)
+    except ValueError as exc:
+        raise BenchmarkV2Error(f"invalid {field_name}: {template!r}") from exc
+    if fields.count("map") != 1 or fields.count("file_frame") != 1:
+        raise BenchmarkV2Error(
+            f"{field_name} must contain exactly one {{map}} and one {{file_frame}}"
+        )
+    return template
+
+
+def _resolve_minimal_assets(
+    asset_manifest: Mapping[str, Any],
+    asset_manifest_path: Path,
+    benchmark_manifest_path: Path,
+    benchmark_manifest_sha256: str,
+    manifest_maps: Sequence[str],
+    manifest_radar_files: Mapping[str, Any],
+    manifest_radar_sha256: Any,
+    manifest_selected_images: Any,
+) -> tuple[
+    Path,
+    dict[str, Path],
+    dict[str, Path],
+    str,
+    dict[str, Any],
+]:
+    """Validate and resolve the copied flat Benchmark v2 bundle.
+
+    The materializer's ``minimal_dataset_report.json`` is intentionally used
+    as the asset contract.  It binds the bundle to the exact benchmark
+    manifest and checksum-list file, while its target paths remain portable
+    relative to the report's directory on another server.
+    """
+
+    expected_maps = list(manifest_maps)
+    if asset_manifest.get("schema_version") != EXPECTED_SCHEMA_VERSION:
+        raise BenchmarkV2Error(
+            f"asset manifest schema_version must be {EXPECTED_SCHEMA_VERSION}"
+        )
+    if asset_manifest.get("benchmark_id") != EXPECTED_BENCHMARK_ID:
+        raise BenchmarkV2Error(
+            f"asset manifest benchmark_id must be {EXPECTED_BENCHMARK_ID!r}"
+        )
+    if asset_manifest.get("status") != "verified":
+        raise BenchmarkV2Error("asset manifest status must be 'verified'")
+    if asset_manifest.get("copy_mode") != "copyfile_not_move":
+        raise BenchmarkV2Error(
+            "asset manifest.copy_mode must be 'copyfile_not_move'"
+        )
+    invariants = asset_manifest.get("invariants")
+    if not isinstance(invariants, Mapping):
+        raise BenchmarkV2Error("asset manifest.invariants must be an object")
+    required_invariants = {
+        "radars_are_separate_from_images": True,
+        "source_exists_after_copy": True,
+        "source_target_samefile": False,
+        "split_derived_set_equals_selected_images": True,
+        "target_contains_only_declared_maps_and_files": True,
+    }
+    for key, expected in required_invariants.items():
+        if type(invariants.get(key)) is not type(expected) or invariants.get(key) != expected:
+            raise BenchmarkV2Error(
+                f"asset manifest.invariants.{key} must be {expected!r}"
+            )
+
+    manifest_info = asset_manifest.get("manifest")
+    if not isinstance(manifest_info, Mapping):
+        raise BenchmarkV2Error("asset manifest.manifest must be an object")
+    expected_manifest_hash = manifest_info.get("sha256")
+    if (
+        not isinstance(expected_manifest_hash, str)
+        or len(expected_manifest_hash) != 64
+        or expected_manifest_hash.lower() != expected_manifest_hash
+        or any(char not in "0123456789abcdef" for char in expected_manifest_hash)
+    ):
+        raise BenchmarkV2Error(
+            "asset manifest.manifest.sha256 must be a lowercase SHA-256 digest"
+        )
+    if expected_manifest_hash != benchmark_manifest_sha256:
+        raise BenchmarkV2Error(
+            "asset manifest is bound to a different benchmark manifest: "
+            f"expected {expected_manifest_hash}, got {benchmark_manifest_sha256}"
+        )
+    manifest_reference = manifest_info.get("path")
+    if manifest_reference is not None:
+        _safe_relative_path(manifest_reference, "asset manifest.manifest.path")
+
+    if not isinstance(manifest_selected_images, Mapping):
+        raise BenchmarkV2Error(
+            "benchmark manifest.selected_images must be an object for the minimal backend"
+        )
+    manifest_selected_file = _safe_relative_path(
+        manifest_selected_images.get("file"),
+        "benchmark manifest.selected_images.file",
+    )
+    manifest_selected_hash = _require_sha256(
+        manifest_selected_images.get("sha256"),
+        "benchmark manifest.selected_images.sha256",
+    )
+    manifest_selected_count = _require_nonnegative_int(
+        manifest_selected_images.get("count"),
+        "benchmark manifest.selected_images.count",
+    )
+
+    report_maps = asset_manifest.get("maps")
+    if not isinstance(report_maps, list) or any(
+        not isinstance(map_name, str) or not map_name for map_name in report_maps
+    ):
+        raise BenchmarkV2Error("asset manifest.maps must be a list of map names")
+    if len(set(report_maps)) != len(report_maps) or set(report_maps) != set(expected_maps):
+        raise BenchmarkV2Error(
+            "asset manifest.maps must exactly match benchmark manifest maps"
+        )
+    if any(
+        Path(map_name).name != map_name
+        or "\\" in map_name
+        or map_name in {".", ".."}
+        for map_name in report_maps
+    ):
+        raise BenchmarkV2Error("asset manifest map names must be single path components")
+
+    asset_root = asset_manifest_path.parent.resolve()
+    images = asset_manifest.get("images")
+    if not isinstance(images, Mapping):
+        raise BenchmarkV2Error("asset manifest.images must be an object")
+    if images.get("status") != "verified":
+        raise BenchmarkV2Error("asset manifest.images.status must be 'verified'")
+    images_root_relative = _safe_relative_path(
+        images.get("root"), "asset manifest.images.root"
+    )
+    images_root = _safe_asset_path(
+        asset_root, images_root_relative, "asset manifest.images.root"
+    )
+    if not images_root.is_dir():
+        raise FileNotFoundError(f"Benchmark v2 image root does not exist: {images_root}")
+    image_by_map = images.get("by_map")
+    if not isinstance(image_by_map, Mapping) or set(image_by_map) != set(expected_maps):
+        raise BenchmarkV2Error(
+            "asset manifest.images.by_map must exactly match benchmark maps"
+        )
+    image_count = _require_nonnegative_int(
+        images.get("count"), "asset manifest.images.count"
+    )
+    image_bytes = _require_nonnegative_int(
+        images.get("bytes"), "asset manifest.images.bytes"
+    )
+    image_count_by_map = 0
+    image_bytes_by_map = 0
+    for map_name in expected_maps:
+        map_summary = image_by_map[map_name]
+        if not isinstance(map_summary, Mapping):
+            raise BenchmarkV2Error(
+                f"asset manifest.images.by_map.{map_name} must be an object"
+            )
+        map_count = _require_nonnegative_int(
+            map_summary.get("count"),
+            f"asset manifest.images.by_map.{map_name}.count",
+        )
+        map_bytes = _require_nonnegative_int(
+            map_summary.get("bytes"),
+            f"asset manifest.images.by_map.{map_name}.bytes",
+        )
+        image_count_by_map += map_count
+        image_bytes_by_map += map_bytes
+    if image_count != image_count_by_map or image_bytes != image_bytes_by_map:
+        raise BenchmarkV2Error(
+            "asset manifest.images count/bytes do not match images.by_map totals"
+        )
+    image_template = _validate_asset_template(
+        images.get("target_template"), "asset manifest.images.target_template"
+    )
+    image_dirs: dict[str, Path] = {}
+    image_extension: str | None = None
+    for map_name in expected_maps:
+        try:
+            rendered = image_template.format(
+                map=map_name, file_frame="__benchmark_v2_frame__"
+            )
+        except (KeyError, ValueError) as exc:
+            raise BenchmarkV2Error(
+                f"could not render image target for map {map_name}"
+            ) from exc
+        rendered_relative = _safe_relative_path(
+            rendered, f"asset manifest image target for {map_name}"
+        )
+        target = _safe_asset_path(
+            asset_root,
+            rendered_relative,
+            f"asset manifest image target for {map_name}",
+        )
+        try:
+            target.relative_to(images_root)
+        except ValueError as exc:
+            raise BenchmarkV2Error(
+                f"image target for {map_name} is outside asset manifest.images.root"
+            ) from exc
+        if target.name != "__benchmark_v2_frame__" + target.suffix:
+            raise BenchmarkV2Error(
+                "asset manifest.images.target_template must end with "
+                "{file_frame} plus an extension"
+            )
+        if image_extension is None:
+            image_extension = target.suffix
+        elif image_extension != target.suffix:
+            raise BenchmarkV2Error(
+                "asset manifest.images.target_template must use one extension"
+            )
+        image_dir = target.parent
+        if not image_dir.is_dir():
+            raise FileNotFoundError(
+                f"Benchmark v2 image directory does not exist for {map_name}: "
+                f"{image_dir}"
+            )
+        image_dirs[map_name] = image_dir
+    if image_extension is None:
+        raise BenchmarkV2Error("asset manifest image extension is empty")
+
+    selected_images = asset_manifest.get("selected_images")
+    if not isinstance(selected_images, Mapping):
+        raise BenchmarkV2Error("asset manifest.selected_images must be an object")
+    checksum_path_relative = _safe_relative_path(
+        selected_images.get("path"), "asset manifest.selected_images.path"
+    )
+    checksum_path = _safe_asset_path(
+        asset_root,
+        checksum_path_relative,
+        "asset manifest.selected_images.path",
+    )
+    if not checksum_path.is_file():
+        raise FileNotFoundError(
+            f"Benchmark v2 selected image checksum file does not exist: {checksum_path}"
+        )
+    checksum_hash = selected_images.get("sha256")
+    checksum_hash = _require_sha256(
+        checksum_hash, "asset manifest.selected_images.sha256"
+    )
+    if checksum_path_relative != manifest_selected_file:
+        raise BenchmarkV2Error(
+            "asset manifest.selected_images.path does not match "
+            "benchmark manifest.selected_images.file"
+        )
+    if checksum_hash != manifest_selected_hash:
+        raise BenchmarkV2Error(
+            "asset manifest.selected_images.sha256 does not match "
+            "benchmark manifest.selected_images.sha256"
+        )
+    selected_count = _require_nonnegative_int(
+        selected_images.get("count"), "asset manifest.selected_images.count"
+    )
+    if selected_count != manifest_selected_count:
+        raise BenchmarkV2Error(
+            "asset manifest.selected_images.count does not match "
+            "benchmark manifest.selected_images.count"
+        )
+    if image_count != selected_count:
+        raise BenchmarkV2Error(
+            "asset manifest.images.count does not match "
+            "asset manifest.selected_images.count"
+        )
+    actual_checksum_hash = _sha256_file(checksum_path)
+    if actual_checksum_hash != checksum_hash:
+        raise BenchmarkV2Error(
+            "asset manifest.selected_images.sha256 does not match checksum file: "
+            f"expected {checksum_hash}, got {actual_checksum_hash}"
+        )
+    actual_selected_count = _count_selected_image_checksums(checksum_path)
+    if actual_selected_count != selected_count:
+        raise BenchmarkV2Error(
+            "selected image checksum entry count does not match "
+            "asset manifest.selected_images.count: "
+            f"expected {selected_count}, got {actual_selected_count}"
+        )
+
+    radars = asset_manifest.get("radars")
+    if not isinstance(radars, Mapping):
+        raise BenchmarkV2Error("asset manifest.radars must be an object")
+    if radars.get("status") != "verified":
+        raise BenchmarkV2Error("asset manifest.radars.status must be 'verified'")
+    radars_root_relative = _safe_relative_path(
+        radars.get("root"), "asset manifest.radars.root"
+    )
+    radars_root = _safe_asset_path(
+        asset_root, radars_root_relative, "asset manifest.radars.root"
+    )
+    if not radars_root.is_dir():
+        raise FileNotFoundError(f"Benchmark v2 radar root does not exist: {radars_root}")
+    radar_by_map = radars.get("by_map")
+    if not isinstance(radar_by_map, Mapping) or set(radar_by_map) != set(expected_maps):
+        raise BenchmarkV2Error(
+            "asset manifest.radars.by_map must exactly match benchmark maps"
+        )
+    radar_count = _require_nonnegative_int(
+        radars.get("count"), "asset manifest.radars.count"
+    )
+    radar_bytes = _require_nonnegative_int(
+        radars.get("bytes"), "asset manifest.radars.bytes"
+    )
+    if not isinstance(manifest_radar_files, Mapping) or set(manifest_radar_files) != set(
+        expected_maps
+    ):
+        raise BenchmarkV2Error(
+            "benchmark manifest.source.radar_files must name exactly every protocol map"
+        )
+    if not isinstance(manifest_radar_sha256, Mapping) or set(manifest_radar_sha256) != set(
+        expected_maps
+    ):
+        raise BenchmarkV2Error(
+            "benchmark manifest.radar_sha256 must name exactly every protocol map"
+        )
+    entries = radars.get("entries")
+    if not isinstance(entries, list) or len(entries) != len(expected_maps):
+        raise BenchmarkV2Error(
+            "asset manifest.radars.entries must contain exactly one entry per map"
+        )
+    radar_paths: dict[str, Path] = {}
+    radar_count_by_map = 0
+    radar_bytes_by_map = 0
+    for entry in entries:
+        if not isinstance(entry, Mapping):
+            raise BenchmarkV2Error("asset manifest radar entry must be an object")
+        map_name = entry.get("map")
+        if (
+            not isinstance(map_name, str)
+            or map_name in radar_paths
+            or map_name not in expected_maps
+        ):
+            raise BenchmarkV2Error(
+                f"asset manifest radar entry has invalid or duplicate map: {map_name!r}"
+            )
+        manifest_source = _safe_relative_path(
+            manifest_radar_files[map_name],
+            f"benchmark manifest.source.radar_files.{map_name}",
+        )
+        entry_source = _safe_relative_path(
+            entry.get("source"), f"asset manifest radar source for {map_name}"
+        )
+        if entry_source != manifest_source:
+            raise BenchmarkV2Error(
+                f"asset manifest radar source does not match benchmark manifest for "
+                f"{map_name}"
+            )
+        target_relative = _safe_relative_path(
+            entry.get("target"), f"asset manifest radar target for {map_name}"
+        )
+        if (
+            len(target_relative.parts) < 2
+            or target_relative.parts[0] != map_name
+            or target_relative.name != manifest_source.name
+        ):
+            raise BenchmarkV2Error(
+                f"asset manifest radar target is inconsistent with map/source for "
+                f"{map_name}"
+            )
+        target = _safe_asset_path(
+            radars_root,
+            target_relative,
+            f"asset manifest radar target for {map_name}",
+        )
+        try:
+            target.relative_to(radars_root)
+        except ValueError as exc:
+            raise BenchmarkV2Error(
+                f"asset manifest radar target for {map_name} escapes radars.root"
+            ) from exc
+        if not target.is_file():
+            raise FileNotFoundError(
+                f"Benchmark v2 radar file does not exist for {map_name}: {target}"
+            )
+        expected_size = _require_nonnegative_int(
+            entry.get("bytes"), f"asset manifest radar bytes for {map_name}"
+        )
+        actual_size = target.stat().st_size
+        if actual_size != expected_size:
+            raise BenchmarkV2Error(
+                f"Benchmark v2 radar size mismatch for {map_name}: "
+                f"expected {expected_size}, got {actual_size}"
+            )
+        expected_hash = _require_sha256(
+            entry.get("sha256"), f"asset manifest radar sha256 for {map_name}"
+        )
+        manifest_hash = _require_sha256(
+            manifest_radar_sha256[map_name],
+            f"benchmark manifest.radar_sha256.{map_name}",
+        )
+        if expected_hash != manifest_hash:
+            raise BenchmarkV2Error(
+                f"asset manifest radar sha256 does not match benchmark manifest for "
+                f"{map_name}"
+            )
+        actual_hash = _sha256_file(target)
+        if actual_hash != expected_hash:
+            raise BenchmarkV2Error(
+                f"Benchmark v2 radar hash mismatch for {map_name}: "
+                f"expected {expected_hash}, got {actual_hash}"
+            )
+        map_summary = radar_by_map[map_name]
+        if not isinstance(map_summary, Mapping):
+            raise BenchmarkV2Error(
+                f"asset manifest.radars.by_map.{map_name} must be an object"
+            )
+        map_count = _require_nonnegative_int(
+            map_summary.get("count"),
+            f"asset manifest.radars.by_map.{map_name}.count",
+        )
+        map_bytes = _require_nonnegative_int(
+            map_summary.get("bytes"),
+            f"asset manifest.radars.by_map.{map_name}.bytes",
+        )
+        if map_count != 1 or map_bytes != expected_size:
+            raise BenchmarkV2Error(
+                f"asset manifest.radars.by_map.{map_name} does not match radar entry"
+            )
+        radar_count_by_map += map_count
+        radar_bytes_by_map += map_bytes
+        radar_paths[map_name] = target
+    if set(radar_paths) != set(expected_maps):
+        missing = sorted(set(expected_maps).difference(radar_paths))
+        extra = sorted(set(radar_paths).difference(expected_maps))
+        raise BenchmarkV2Error(
+            "asset manifest radar maps do not match benchmark maps: "
+            f"missing={missing}, extra={extra}"
+        )
+    if radar_count != radar_count_by_map or radar_bytes != radar_bytes_by_map:
+        raise BenchmarkV2Error(
+            "asset manifest.radars count/bytes do not match radars.by_map totals"
+        )
+
+    return (
+        asset_root,
+        image_dirs,
+        radar_paths,
+        image_extension,
+        {
+            "backend": "minimal",
+            "manifest_path": str(asset_manifest_path),
+            "manifest_sha256": _sha256_file(asset_manifest_path),
+            "root": images_root_relative.as_posix(),
+            "asset_root": images_root_relative.as_posix(),
+            "benchmark_manifest_sha256": benchmark_manifest_sha256,
+            "schema_version": asset_manifest["schema_version"],
+            "asset_manifest_path": str(asset_manifest_path),
+            "asset_manifest_sha256": _sha256_file(asset_manifest_path),
+            "benchmark_manifest_path": str(benchmark_manifest_path),
+            "selected_images_path": str(checksum_path),
+            "selected_images_sha256": checksum_hash,
+            "images_root": str(images_root),
+            "image_target_template": image_template,
+            "radars_root": str(radars_root),
+        },
+    )
+
+
+def benchmark_v2_image_dir(selection: Any, map_name: str) -> Path:
+    """Return the resolved v2 image directory for a selected map.
+
+    Both the historical ``<root>/<map>/imgs`` layout and the flat minimal
+    bundle are represented by ``selection.image_dirs``.  The fallback keeps
+    this helper compatible with older selection-like mappings used by tests.
+    """
+
+    if not isinstance(map_name, str) or not map_name:
+        raise BenchmarkV2Error("map_name must be a non-empty string")
+    image_dirs = (
+        selection.get("image_dirs")
+        if isinstance(selection, Mapping)
+        else getattr(selection, "image_dirs", None)
+    )
+    if image_dirs is not None and map_name in image_dirs:
+        return Path(image_dirs[map_name])
+    source_root = (
+        selection.get("source_root")
+        if isinstance(selection, Mapping)
+        else getattr(selection, "source_root", None)
+    )
+    if source_root is None:
+        raise BenchmarkV2Error(f"no Benchmark v2 image directory for map {map_name}")
+    return Path(source_root) / map_name / "imgs"
+
+
+def benchmark_v2_image_path(selection: Any, map_name: str, file_frame: str) -> Path:
+    """Return a safe v2 FPV image path for a selected frame."""
+
+    if not isinstance(file_frame, str) or not file_frame:
+        raise BenchmarkV2Error("file_frame must be a non-empty string")
+    asset_backend = (
+        selection.get("asset_backend")
+        if isinstance(selection, Mapping)
+        else getattr(selection, "asset_backend", "source")
+    )
+    extension = (
+        selection.get("image_extension")
+        if isinstance(selection, Mapping)
+        else getattr(selection, "image_extension", ".jpg")
+    )
+    extension = str(extension)
+    if extension and not extension.startswith("."):
+        extension = "." + extension
+    if asset_backend == "minimal":
+        provenance = (
+            selection.get("asset_provenance")
+            if isinstance(selection, Mapping)
+            else getattr(selection, "asset_provenance", None)
+        )
+        template = provenance.get("image_target_template") if provenance else None
+        asset_root = (
+            selection.get("source_root")
+            if isinstance(selection, Mapping)
+            else getattr(selection, "source_root", None)
+        )
+        if not isinstance(template, str) or asset_root is None:
+            raise BenchmarkV2Error(
+                "minimal Benchmark v2 selection is missing image asset metadata"
+            )
+        try:
+            rendered = template.format(map=map_name, file_frame=file_frame)
+        except (KeyError, ValueError) as exc:
+            raise BenchmarkV2Error(
+                f"could not render minimal image target for {map_name}:{file_frame}"
+            ) from exc
+        relative = _safe_relative_path(
+            rendered, f"minimal image target for {map_name}:{file_frame}"
+        )
+        path = _safe_asset_path(
+            Path(asset_root).resolve(),
+            relative,
+            f"minimal image target for {map_name}:{file_frame}",
+        )
+        if path.suffix != extension:
+            raise BenchmarkV2Error(
+                f"minimal image target extension mismatch for {map_name}:{file_frame}"
+            )
+        return path
+    return benchmark_v2_image_dir(selection, map_name) / (file_frame + extension)
 
 
 def _normalise_image_extension(value: Any) -> str | None:
@@ -795,6 +1551,8 @@ __all__ = [
     "BenchmarkV2Error",
     "BenchmarkV2Selection",
     "SUPPORTED_SPLITS",
+    "benchmark_v2_image_dir",
+    "benchmark_v2_image_path",
     "is_benchmark_v2_config",
     "load_benchmark_v2_selection",
     "load_benchmark_v2_selection_from_args",

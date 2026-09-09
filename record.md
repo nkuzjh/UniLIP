@@ -3280,540 +3280,2919 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 
 # csgo_benchmark_v2
-- protocol: Seen-10 unseen-trajectory + CrossMap-4 zero/100-shot + trajectory-disjoint continuous evaluation
-- Z calibration: exact per-map min/max over the approved full corpus, before any split
-- formal state: audit, approved anomaly decisions, calibration, calibration approval, deterministic build, manifest, build report, and checksums complete
-- generated root: `data/csgo_benchmark_v2`
-- Seen counts: train `50000`, validation `5000`, discrete test `20000`, continuous `200` clips / `12800` frames
-- CrossMap counts: `400` support frames per seed (`0..4`), `8000` query frames, `80` continuous clips / `5120` frames
-- integrity: `(cd data/csgo_benchmark_v2 && sha256sum -c checksums.sha256)` passes for the current build
-- consumer status: source-level manifest loader, training integration, inference integration, and strict evaluator integration are implemented and verified; no v2 training, inference, or model metric run has been executed
-- detailed protocol: `CSGO_BENCHMARK_V2.md`
-- experiment matrix: `CSGO_BENCHMARK_V2_EXPERIMENTS.md`
-
-The v2 runtime is opt-in through `benchmark_v2_manifest`. Supported split names
-are `seen_train`, `seen_validation`, `seen_discrete_test`,
-`seen_continuous`, `crossmap_support`, `crossmap_query_test`, and
-`crossmap_continuous`. Training supports `--benchmark_v2_support_seed` and
-`--benchmark_v2_shots_per_map`; inference additionally supports
-`--benchmark_v2_split`, `--benchmark_v2_maps`, `--benchmark_v2_support_seed`,
-and `--benchmark_v2_shots_per_map`, plus deterministic `--output_dir`,
-`--ckpt_path`, and `--seed`. The metric scripts accept
-`--benchmark_v2_manifest` and `--benchmark_v2_split` and use strict selected
-frame coverage and exact manifest clips.
-
-**Benchmark v2 command conventions**
-
-Run from the repository root. The following variables are initialized for the
-commands in this section:
-
-```bash
-V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
-SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-```
-
-The stable checkpoint saved by `train_csgo.py` is
-`outputs/csgo_1b/<experiment>/model.safetensors`. CrossMap adaptation uses
-model-weight initialization through `finetune_init_ckpt_path`; it does not
-resume optimizer or Trainer state. The initial adaptation recipe is
-provisional. Tune its learning rate, checkpoint policy, and `MAX_STEPS` only
-from simulated Seen-10 episodes, never from CrossMap query or continuous-query
-results. Initialization is strict: it rejects a checkpoint missing any key
-that the adaptation run expects to train. All adaptation commands use an
-effective source batch of 128 with `drop_last=False`. Each 400-row support
-epoch is therefore `[128, 128, 128, 16]`, or four updates; 400 updates are
-approximately 100 complete support-set passes. The naive
-`128 * 400 / 400 = 128` calculation is wrong because it treats the final
-16-row batch as a full batch.
-
-
 
 ## exp31
-- parent: `exp28_1`
-- setting: Seen-10, balanced joint generation + localization, full-head route
-- v2 change: manifest-driven Seen-10 train split and frozen global per-map Z calibration
-- output checkpoint: `outputs/csgo_1b/exp31/model.safetensors`
-- no model run has been executed
+- parent: `exp28_1`; Seen-10 balanced joint generation + localization, full-head route.
+- v2 change: manifest-driven Seen-10 training with frozen per-map Z calibration; evaluation covers Seen-10 and CrossMap-4 zero-shot.
 
-**train_csgo.py**
+**Training**
 ```bash
-CUDA_VISIBLE_DEVICES=3,5 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
 ```
 
-**Seen inference**
+**Inference**
 ```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31/seen/discrete --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31/seen/continuous --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31/seen --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-### exp31_gen
-- parent: `exp14_3_gen`
-- setting: Seen-10 generation-only, full-head route
-- output checkpoint: `outputs/csgo_1b/exp31_gen/model.safetensors`
-
-**train_csgo.py**
-```bash
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29562 train_csgo.py --csgo_config csgo_configs/exp31_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31_gen --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
-```
-
-**Seen inference**
-```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/seen/discrete --ckpt_path outputs/csgo_1b/exp31_gen/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/seen/continuous --ckpt_path outputs/csgo_1b/exp31_gen/model.safetensors --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-### exp31_loc
-- parent: `exp14_3_loc`
-- setting: Seen-10 localization-only, full-head route
-- output checkpoint: `outputs/csgo_1b/exp31_loc/model.safetensors`
-
-**train_csgo.py**
-```bash
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29563 train_csgo.py --csgo_config csgo_configs/exp31_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31_loc --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True
-```
-
-**Seen inference**
-```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_loc/seen --ckpt_path outputs/csgo_1b/exp31_loc/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-
-
-## exp32
-- parent: `exp30_2`
-- setting: Seen-10, balanced joint generation + localization, LoRA route
-- v2 change: manifest-driven Seen-10 train split and frozen global per-map Z calibration
-- output checkpoint: `outputs/csgo_1b/exp32/model.safetensors`
-- no model run has been executed
-
-**train_csgo.py**
-```bash
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29564 train_csgo.py --csgo_config csgo_configs/exp32.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
-```
-
-**Seen inference**
-```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32/seen/discrete --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32/seen/continuous --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32/seen --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-### exp32_gen
-- parent: `exp14_2_gen`
-- setting: Seen-10 generation-only, LoRA route
-- output checkpoint: `outputs/csgo_1b/exp32_gen/model.safetensors`
-
-**train_csgo.py**
-```bash
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29565 train_csgo.py --csgo_config csgo_configs/exp32_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_gen --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
-```
-
-**Seen inference**
-```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/seen/discrete --ckpt_path outputs/csgo_1b/exp32_gen/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/seen/continuous --ckpt_path outputs/csgo_1b/exp32_gen/model.safetensors --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-### exp32_loc
-- parent: `exp14_2_loc`
-- setting: Seen-10 localization-only, LoRA route
-- output checkpoint: `outputs/csgo_1b/exp32_loc/model.safetensors`
-
-**train_csgo.py**
-```bash
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29566 train_csgo.py --csgo_config csgo_configs/exp32_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_loc --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64
-```
-
-**Seen inference**
-```bash
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_loc/seen --ckpt_path outputs/csgo_1b/exp32_loc/model.safetensors --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
-```
-
-
-
-## exp33
-- initialization: final Seen-10 `exp31` model
-- setting: CrossMap-4 joint full-head adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp33/shot_<N>/seed_<S>/model.safetensors`
-- no model run has been executed
-
-**train_csgo.py**
-```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29567 train_csgo.py   --csgo_config csgo_configs/exp33.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 4   --per_device_eval_batch_size 4   --gradient_accumulation_steps 32   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 3   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-The inference RNG is fixed at `42` for every support seed. The support draw is
-passed independently through `--benchmark_v2_support_seed`.
-
-```bash
-SHOTS=100
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+set -euo pipefail
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
-```
-
-Change only `SHOTS` to run future 50/20/10-shot nested support subsets. Keep
-`MAX_STEPS=400` fixed for the initial comparison.
-
-### exp33_gen
-- initialization: final Seen-10 `exp31_gen` model
-- setting: CrossMap-4 generation-only full-head adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp33_gen/shot_<N>/seed_<S>/model.safetensors`
-
-**train_csgo.py**
-```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29568 train_csgo.py   --csgo_config csgo_configs/exp33_gen.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 128   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 4000   --save_total_limit 5   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-```bash
-SHOTS=100
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp31/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
-```
-
-### exp33_loc
-- initialization: final Seen-10 `exp31_loc` model
-- setting: CrossMap-4 localization-only full-head adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp33_loc/shot_<N>/seed_<S>/model.safetensors`
-
-**train_csgo.py**
-```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29569 train_csgo.py   --csgo_config csgo_configs/exp33_loc.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 128   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 4000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit True   --fix_connect True   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-```bash
-SHOTS=100
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
+CKPT="outputs/csgo_1b/exp31/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
 ```
 
-
-
-## exp34
-- initialization: final Seen-10 `exp32` model
-- setting: CrossMap-4 joint LoRA adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp34/shot_<N>/seed_<S>/model.safetensors`
-- no model run has been executed
-
-**train_csgo.py**
+**Metric**
 ```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29570 train_csgo.py   --csgo_config csgo_configs/exp34.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 4   --per_device_eval_batch_size 4   --gradient_accumulation_steps 32   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003 \
-	  --lr_scheduler_type "cosine_with_min_lr" \
-	  --model_max_length 1024 \
-	  --logging_steps 1 \
-	  --tf32 True \
-	  --gradient_checkpointing True \
-	  --dataloader_num_workers 4 \
-	  --lazy_preprocess True \
-	  --n_query 256 \
-	  --n_und_query 0 \
-	  --report_to wandb \
-	  --fix_dit False \
-	  --fix_connect False \
-	  --fix_llm False \
-	  --lora_r 32 \
-	  --lora_alpha 64 \
-	  --benchmark_v2_support_seed "$SUPPORT_SEED" \
-	  --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-```bash
-SHOTS=100
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
-```
-
-Change only `SHOTS=100` to run future 50/20/10-shot nested support subsets;
-keep `MAX_STEPS=400` fixed for the initial comparison. The inference RNG
-remains fixed at `42` for every support seed.
-
-### exp34_gen
-- initialization: final Seen-10 `exp32_gen` model
-- setting: CrossMap-4 generation-only LoRA adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp34_gen/shot_<N>/seed_<S>/model.safetensors`
-
-**train_csgo.py**
-```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29571 train_csgo.py   --csgo_config csgo_configs/exp34_gen.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 128   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm False   --lora_r 32   --lora_alpha 64   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-```bash
-SHOTS=100
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
-```
-
-### exp34_loc
-- initialization: final Seen-10 `exp32_loc` model
-- setting: CrossMap-4 localization-only LoRA adaptation
-- support: 100 frames per map, support seeds `0..4`
-- output checkpoint: `outputs/csgo_1b/exp34_loc/shot_<N>/seed_<S>/model.safetensors`
-
-**train_csgo.py**
-```bash
-SHOTS=100
-MAX_STEPS=400
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29572 train_csgo.py   --csgo_config csgo_configs/exp34_loc.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size 128   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit True   --fix_connect True   --fix_llm False   --lora_r 32   --lora_alpha 64   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
-done
-```
-
-**CrossMap inference and Seen retention**
-```bash
-SHOTS=100
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
-for SUPPORT_SEED in 0 1 2 3 4; do
-  CKPT="outputs/csgo_1b/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
-  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT" --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
-done
-```
-
-Change only `SHOTS` for future nested support sizes and keep inference
-`--seed 42` fixed across support seeds.
-
-
-
-## Benchmark v2 CrossMap zero-shot
-Use the final Seen-10 checkpoint directly on the fixed CrossMap-4 query pools.
-These commands intentionally use the Seen test configurations and override
-only the v2 split and map list. Zero-shot has no support selection, so do not
-pass `--benchmark_v2_support_seed` or `--benchmark_v2_shots_per_map`. The
-inference RNG is fixed at `--seed 42`.
-
-```bash
-V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
-CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
-
-# exp31: joint full-head
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31/zero_shot/crossmap/discrete --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31/zero_shot/crossmap/continuous --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31/zero_shot/crossmap --ckpt_path outputs/csgo_1b/exp31/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-
-# exp31_gen and exp31_loc: single-task controls
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/zero_shot/crossmap/discrete --ckpt_path outputs/csgo_1b/exp31_gen/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/zero_shot/crossmap/continuous --ckpt_path outputs/csgo_1b/exp31_gen/model.safetensors --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_loc/zero_shot/crossmap --ckpt_path outputs/csgo_1b/exp31_loc/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-
-# exp32: joint LoRA
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32/zero_shot/crossmap/discrete --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32/zero_shot/crossmap/continuous --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32/zero_shot/crossmap --ckpt_path outputs/csgo_1b/exp32/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-
-# exp32_gen and exp32_loc: single-task controls
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/zero_shot/crossmap/discrete --ckpt_path outputs/csgo_1b/exp32_gen/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/zero_shot/crossmap/continuous --ckpt_path outputs/csgo_1b/exp32_gen/model.safetensors --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_loc/zero_shot/crossmap --ckpt_path outputs/csgo_1b/exp32_loc/model.safetensors --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
-```
-
-
-
-## Benchmark v2 metrics and aggregation
-
-Run the metric loops only after the corresponding inference output exists.
-The v2 metric scripts require complete selected-frame coverage and the
-inference-created `inference_manifest.json` in each output root. Do not add
-`--allow_incomplete_benchmark_v2` or `--allow_missing_inference_manifest` to
-paper-result commands. The per-map JSON names are generated by the metric
-scripts as `benchmark_csgo_v2_<map>.json` and
-`benchmark_csgo_v2_conti_<map>.json`. Localization inference writes one strict
-`benchmark_csgo_v2_loc.json` per output root, including equal-map macro metrics
-and inference/checkpoint provenance. Continuous FVD uses 16-frame, stride-16
-windows inside each exact 64-frame manifest clip; no window crosses a clip
-boundary.
-
-```bash
+set -euo pipefail
 V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+EXPERIMENT=exp31
 
-run_v2_discrete_metrics() {
+run_discrete() {
   local input_root="$1"
   local split="$2"
   shift 2
   local map_name
   for map_name in "$@"; do
-    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
   done
 }
 
-run_v2_continuous_metrics() {
+run_continuous() {
   local input_root="$1"
   local split="$2"
   shift 2
   local map_name
   for map_name in "$@"; do
-    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
   done
 }
 
-aggregate_v2_maps() {
+aggregate() {
   local input_root="$1"
   local split="$2"
   local kind="$3"
   python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
 }
 
-aggregate_v2_seeds() {
-  local seed_root_pattern="$1"
-  local output="$2"
-  python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds   --seed_root_pattern "$seed_root_pattern"   --seeds 0 1 2 3 4   --output "$output"
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous continuous
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
+### exp31_gen
+- parent: `exp14_3_gen`; Seen-10 generation-only, full-head route.
+- v2 change: same manifest and Z calibration, with localization head held inactive.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29562 train_csgo.py --csgo_config csgo_configs/exp31_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31_gen --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp31_gen/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_gen/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+EXPERIMENT=exp31_gen
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
 }
 
-# Seen-10 generation: joint and generation-only controls.
-for EXPERIMENT in exp31 exp31_gen exp32 exp32_gen; do
-  run_v2_discrete_metrics   "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete"   seen_discrete_test "${SEEN_MAPS[@]}"
-  aggregate_v2_maps   "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete"   seen_discrete_test discrete
-  run_v2_continuous_metrics   "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous"   seen_continuous "${SEEN_MAPS[@]}"
-  aggregate_v2_maps   "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous"   seen_continuous continuous
-done
-
-# CrossMap-4 zero-shot generation.
-for EXPERIMENT in exp31 exp31_gen exp32 exp32_gen; do
-  run_v2_discrete_metrics   "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete"   crossmap_query_test "${CROSS_MAPS[@]}"
-  aggregate_v2_maps   "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete"   crossmap_query_test discrete
-  run_v2_continuous_metrics   "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous"   crossmap_continuous "${CROSS_MAPS[@]}"
-  aggregate_v2_maps   "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous"   crossmap_continuous continuous
-done
-
-# CrossMap-4 adapted generation and Seen retention. The same fixed inference
-# seed (42) was used by the preceding inference loops for every support seed.
-SHOTS=100
-for EXPERIMENT in exp33 exp33_gen exp34 exp34_gen; do
-  for SUPPORT_SEED in 0 1 2 3 4; do
-    run_v2_discrete_metrics     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"     crossmap_query_test "${CROSS_MAPS[@]}"
-    aggregate_v2_maps     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"     crossmap_query_test discrete
-    run_v2_continuous_metrics     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"     crossmap_continuous "${CROSS_MAPS[@]}"
-    aggregate_v2_maps     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"     crossmap_continuous continuous
-
-    run_v2_discrete_metrics     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"     seen_discrete_test "${SEEN_MAPS[@]}"
-    aggregate_v2_maps     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"     seen_discrete_test discrete
-    run_v2_continuous_metrics     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"     seen_continuous "${SEEN_MAPS[@]}"
-    aggregate_v2_maps     "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"     seen_continuous continuous
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
   done
+}
 
-  aggregate_v2_seeds   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/discrete/summary.json"   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_discrete.json"
-  aggregate_v2_seeds   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/continuous/summary.json"   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_continuous.json"
-  aggregate_v2_seeds   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/seen_retention_discrete/summary.json"   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_seen_retention_discrete.json"
-  aggregate_v2_seeds   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/seen_retention_continuous/summary.json"   "outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_seen_retention_continuous.json"
-done
+aggregate() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
 
-# CrossMap-4 localization summaries. eval_csgo_loc.py already writes the
-# strict equal-map macro; aggregate the five support seeds from those files.
-# Do not add exp33_gen or exp34_gen: they have no localization evaluation.
-for EXPERIMENT in exp33 exp33_loc exp34 exp34_loc; do
-  aggregate_v2_seeds   "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/benchmark_csgo_v2_loc.json"   "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_crossmap_loc.json"
-  aggregate_v2_seeds   "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json"   "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/summary_across_seeds_seen_retention_loc.json"
-done
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous continuous
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
 ```
 
-The exact standalone aggregation forms used inside the loop are:
+### exp31_loc
+- parent: `exp14_3_loc`; Seen-10 localization-only, full-head route.
+- v2 change: same manifest and Z calibration, with generation head held inactive.
 
+**Training**
 ```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29563 train_csgo.py --csgo_config csgo_configs/exp31_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31_loc --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp31_loc/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_loc/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_loc/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+
+## exp32
+- parent: `exp30_2`; Seen-10 balanced joint generation + localization, LoRA route.
+- v2 change: manifest-driven Seen-10 training with frozen per-map Z calibration; evaluation covers Seen-10 and CrossMap-4 zero-shot.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=2,3 torchrun --nproc_per_node=2 --master_port=29564 train_csgo.py --csgo_config csgo_configs/exp32.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp32/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp32/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
 V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+EXPERIMENT=exp32
 
-python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_discrete_test --input_root outputs_eval/benchmark_v2/exp31/seen/discrete --kind discrete --output outputs_eval/benchmark_v2/exp31/seen/discrete/summary.json
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
 
-python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_continuous --input_root outputs_eval/benchmark_v2/exp31/seen/continuous --kind continuous --output outputs_eval/benchmark_v2/exp31/seen/continuous/summary.json
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
 
-python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern 'outputs_eval/benchmark_v2/exp33/shot_100/seed_{seed}/discrete/summary.json' --seeds 0 1 2 3 4 --output outputs_eval/benchmark_v2/exp33/shot_100/summary_across_seeds_discrete.json
+aggregate() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
 
-python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern 'outputs_eval/benchmark_v2/exp33/shot_100/seed_{seed}/continuous/summary.json' --seeds 0 1 2 3 4 --output outputs_eval/benchmark_v2/exp33/shot_100/summary_across_seeds_continuous.json
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous continuous
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
 
-# Localization: eval_csgo_loc.py writes one strict macro/provenance JSON per
-# support seed; aggregate CrossMap query and Seen-retention results separately.
-for EXPERIMENT in exp33 exp33_loc exp34 exp34_loc; do
-  python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds   --seed_root_pattern "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_100/seed_{seed}/benchmark_csgo_v2_loc.json"   --seeds 0 1 2 3 4   --output "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_100/summary_across_seeds_crossmap_loc.json"
-  python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds   --seed_root_pattern "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_100/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json"   --seeds 0 1 2 3 4   --output "outputs_loc/benchmark_v2/${EXPERIMENT}/shot_100/summary_across_seeds_seen_retention_loc.json"
+### exp32_gen
+- parent: `exp14_2_gen`; Seen-10 generation-only, LoRA route.
+- v2 change: same manifest and Z calibration, with localization head held inactive.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29565 train_csgo.py --csgo_config csgo_configs/exp32_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_gen --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp32_gen/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_gen/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+EXPERIMENT=exp32_gen
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous continuous
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
+### exp32_loc
+- parent: `exp14_2_loc`; Seen-10 localization-only, LoRA route.
+- v2 change: same manifest and Z calibration, with generation head held inactive.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29566 train_csgo.py --csgo_config csgo_configs/exp32_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_loc --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp32_loc/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_loc/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_loc/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+
+## exp33
+- initialization: final Seen-10 `exp31` model; CrossMap-4 joint adaptation, full-head route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; evaluate CrossMap query and Seen retention.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50|20|10)
+    BATCH_SIZE=4
+    MASTER_PORT=29567
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp33.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 4   --gradient_accumulation_steps 32   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 3   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
 done
 ```
 
-`maps` is the equal-map macro; it reads the map set from the selected manifest
-split. `seeds` consumes the five completed map-macro JSONs and reports
-support-selection mean and 95% Student-t intervals. For localization, `seeds`
-validates that each summary's `support_seed` matches the `{seed}` path, that
-shots/maps/manifest/checkpoint provenance agree, and that inference RNG is
-consistent. The implemented parser does not use the aliases `--input-dir`,
-`--protocol`, `--maps`, or `--input-pattern`. Change only `SHOTS` for future
-nested 50/20/10-shot runs; keep `MAX_STEPS=400` in the adaptation commands and
-keep inference `--seed 42` independent from
-`--benchmark_v2_support_seed`.
+**Inference**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric (generation)**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+EXPERIMENT=exp33
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  BASE="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}"
+  run_discrete "${BASE}/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/discrete" crossmap_query_test discrete
+  run_continuous "${BASE}/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/continuous" crossmap_continuous continuous
+  run_discrete "${BASE}/seen_retention_discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_discrete" seen_discrete_test discrete
+  run_continuous "${BASE}/seen_retention_continuous" seen_continuous "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_continuous" seen_continuous continuous
+done
+
+SEED_ROOT="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_crossmap_continuous_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_seen_discrete_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_seen_continuous_support_selection.json"
+```
+
+**Metric aggregation (localization)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+SEED_ROOT="outputs_loc/benchmark_v2/exp33/shot_${SHOTS}"
+
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_seen_discrete_test_support_selection.json"
+```
+
+### exp33_gen
+- initialization: final Seen-10 `exp31_gen` model; CrossMap-4 generation-only adaptation, full-head route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; batch policy 100/50=>128, 20=>80, 10=>40.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50)
+    BATCH_SIZE=128
+    MASTER_PORT=29568
+    ;;
+  20)
+    BATCH_SIZE=80
+    MASTER_PORT=29820
+    ;;
+  10)
+    BATCH_SIZE=40
+    MASTER_PORT=29810
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp33_gen.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 4000   --save_total_limit 5   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
+done
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp33_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp33_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+EXPERIMENT=exp33_gen
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  BASE="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}"
+  run_discrete "${BASE}/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/discrete" crossmap_query_test discrete
+  run_continuous "${BASE}/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/continuous" crossmap_continuous continuous
+  run_discrete "${BASE}/seen_retention_discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_discrete" seen_discrete_test discrete
+  run_continuous "${BASE}/seen_retention_continuous" seen_continuous "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_continuous" seen_continuous continuous
+done
+
+SEED_ROOT="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_crossmap_continuous_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_seen_discrete_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_seen_continuous_support_selection.json"
+```
+
+### exp33_loc
+- initialization: final Seen-10 `exp31_loc` model; CrossMap-4 localization-only adaptation, full-head route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; batch policy 100/50=>128, 20=>80, 10=>40.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50)
+    BATCH_SIZE=128
+    MASTER_PORT=29569
+    ;;
+  20)
+    BATCH_SIZE=80
+    MASTER_PORT=29620
+    ;;
+  10)
+    BATCH_SIZE=40
+    MASTER_PORT=29610
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp33_loc.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 4000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit True   --fix_connect True   --fix_llm True   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
+done
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp33_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp33_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric aggregation**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+SEED_ROOT="outputs_loc/benchmark_v2/exp33_loc/shot_${SHOTS}"
+
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_seen_discrete_test_support_selection.json"
+```
+
+## exp34
+- initialization: final Seen-10 `exp32` model; CrossMap-4 joint adaptation, LoRA route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; evaluate CrossMap query and Seen retention.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50|20|10)
+    BATCH_SIZE=4
+    MASTER_PORT=29570
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp34.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 4   --gradient_accumulation_steps 32   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm False   --lora_r 32   --lora_alpha 64   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
+done
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric (generation)**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+EXPERIMENT=exp34
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  BASE="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}"
+  run_discrete "${BASE}/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/discrete" crossmap_query_test discrete
+  run_continuous "${BASE}/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/continuous" crossmap_continuous continuous
+  run_discrete "${BASE}/seen_retention_discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_discrete" seen_discrete_test discrete
+  run_continuous "${BASE}/seen_retention_continuous" seen_continuous "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_continuous" seen_continuous continuous
+done
+
+SEED_ROOT="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_crossmap_continuous_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_seen_discrete_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_seen_continuous_support_selection.json"
+```
+
+**Metric aggregation (localization)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+SEED_ROOT="outputs_loc/benchmark_v2/exp34/shot_${SHOTS}"
+
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_seen_discrete_test_support_selection.json"
+```
+
+### exp34_gen
+- initialization: final Seen-10 `exp32_gen` model; CrossMap-4 generation-only adaptation, LoRA route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; batch policy 100/50=>128, 20=>80, 10=>40.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50)
+    BATCH_SIZE=128
+    MASTER_PORT=29571
+    ;;
+  20)
+    BATCH_SIZE=80
+    MASTER_PORT=29920
+    ;;
+  10)
+    BATCH_SIZE=40
+    MASTER_PORT=29910
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp34_gen.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit False   --fix_connect False   --fix_llm False   --lora_r 32   --lora_alpha 64   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
+done
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_discrete"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo.py   --csgo_config csgo_configs/test/exp34_gen_gen_conti.yaml   --output_dir "outputs_eval/benchmark_v2/exp34_gen/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention_continuous"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_continuous   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+EXPERIMENT=exp34_gen
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  BASE="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}/seed_${SUPPORT_SEED}"
+  run_discrete "${BASE}/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/discrete" crossmap_query_test discrete
+  run_continuous "${BASE}/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+  aggregate_maps "${BASE}/continuous" crossmap_continuous continuous
+  run_discrete "${BASE}/seen_retention_discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_discrete" seen_discrete_test discrete
+  run_continuous "${BASE}/seen_retention_continuous" seen_continuous "${SEEN_MAPS[@]}"
+  aggregate_maps "${BASE}/seen_retention_continuous" seen_continuous continuous
+done
+
+SEED_ROOT="outputs_eval/benchmark_v2/${EXPERIMENT}/shot_${SHOTS}"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_crossmap_continuous_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_discrete/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_discrete_seen_discrete_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention_continuous/summary.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_continuous_seen_continuous_support_selection.json"
+```
+
+### exp34_loc
+- initialization: final Seen-10 `exp32_loc` model; CrossMap-4 localization-only adaptation, LoRA route.
+- protocol: support seeds `0..4`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; batch policy 100/50=>128, 20=>80, 10=>40.
+
+**Training**
+```bash
+set -euo pipefail
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEEDS=(0 1 2 3 4)
+case "$SHOTS" in
+  100|50)
+    BATCH_SIZE=128
+    MASTER_PORT=29572
+    ;;
+  20)
+    BATCH_SIZE=80
+    MASTER_PORT=29720
+    ;;
+  10)
+    BATCH_SIZE=40
+    MASTER_PORT=29710
+    ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 torchrun   --nproc_per_node=1   --master_port="$MASTER_PORT"   train_csgo.py   --csgo_config csgo_configs/exp34_loc.yaml   --deepspeed deepspeed_scripts/zero0.json   --model_name_or_path UniLIP-1B   --unilip_factor 10.6   --mllm_hf_path OpenGVLab/InternVL3-1B-hf   --version internvl   --data_type "mix"   --csgo_image_folder data/preprocessed_data   --mm_use_im_start_end False   --mm_use_im_patch_token False   --bf16 True   --output_dir "outputs/csgo_1b/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --num_train_epochs 10   --per_device_train_batch_size "$BATCH_SIZE"   --per_device_eval_batch_size 128   --gradient_accumulation_steps 1   --max_steps "$MAX_STEPS"   --eval_strategy "no"   --save_strategy "steps"   --save_steps 2000   --save_total_limit 4   --learning_rate 1e-4   --weight_decay 0.   --warmup_ratio 0.003   --lr_scheduler_type "cosine_with_min_lr"   --model_max_length 1024   --logging_steps 1   --tf32 True   --gradient_checkpointing True   --dataloader_num_workers 4   --lazy_preprocess True   --n_query 256   --n_und_query 0   --report_to wandb   --fix_dit True   --fix_connect True   --fix_llm False   --lora_r 32   --lora_alpha 64   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"
+done
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+for SUPPORT_SEED in "${SUPPORT_SEEDS[@]}"; do
+  CKPT="outputs/csgo_1b/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/model.safetensors"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split crossmap_query_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+  CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py   --csgo_config csgo_configs/test/exp34_loc_loc.yaml   --output_dir "outputs_loc/benchmark_v2/exp34_loc/shot_${SHOTS}/seed_${SUPPORT_SEED}/seen_retention"   --ckpt_path "$CKPT"   --seed 42   --benchmark_v2_split seen_discrete_test   --benchmark_v2_support_seed "$SUPPORT_SEED"   --benchmark_v2_shots_per_map "$SHOTS"   --benchmark_v2_maps "${SEEN_MAPS[@]}"
+done
+```
+
+**Metric aggregation**
+```bash
+set -euo pipefail
+SHOTS=100
+SUPPORT_SEEDS=(0 1 2 3 4)
+SEED_ROOT="outputs_loc/benchmark_v2/exp34_loc/shot_${SHOTS}"
+
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_crossmap_query_test_support_selection.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py seeds --seed_root_pattern "${SEED_ROOT}/seed_{seed}/seen_retention/benchmark_csgo_v2_loc.json" --seeds "${SUPPORT_SEEDS[@]}" --output "${SEED_ROOT}/benchmark_v2_localization_seen_discrete_test_support_selection.json"
+```
+
+## exp35_cs_office
+- exp33-style map-specific CrossMap-4 adaptation; full-head route.
+- initialization: final Seen-10 `exp31` model, loaded directly; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30101
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_gen_cs_office
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp31_gen`; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30102 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30103 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30104 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30105 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_gen_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_gen_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_loc_cs_office
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp31_loc`; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30106 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30107 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30108 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30109 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_loc_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp35_de_golden
+- exp33-style map-specific CrossMap-4 adaptation; full-head route.
+- initialization: final Seen-10 `exp31` model, loaded directly; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30110
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_gen_de_golden
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp31_gen`; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30111 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30112 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30113 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30114 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_gen_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_gen_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_loc_de_golden
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp31_loc`; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30115 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30116 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30117 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30118 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_loc_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp35_de_palacio
+- exp33-style map-specific CrossMap-4 adaptation; full-head route.
+- initialization: final Seen-10 `exp31` model, loaded directly; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30119
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_gen_de_palacio
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp31_gen`; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30120 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30121 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30122 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30123 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_gen_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_gen_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_loc_de_palacio
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp31_loc`; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30124 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30125 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30126 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30127 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_loc_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp35_de_vertigo
+- exp33-style map-specific CrossMap-4 adaptation; full-head route.
+- initialization: final Seen-10 `exp31` model, loaded directly; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30128
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_gen_de_vertigo
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp31_gen`; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30129 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30130 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30131 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30132 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_gen_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_gen_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp35_gen_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp35_loc_de_vertigo
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp31_loc`; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30133 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30134 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30135 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30136 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp35_loc_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 5 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm True --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp35_loc_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp36_cs_office
+- exp34-style map-specific CrossMap-4 adaptation; LoRA route.
+- initialization: final Seen-10 `exp32` model, loaded directly; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30137
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_gen_cs_office
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp32_gen`; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30138 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30139 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30140 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30141 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_gen_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_gen_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_loc_cs_office
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp32_loc`; target map only: `cs_office`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_cs_office
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30142 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30143 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30144 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30145 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_loc_cs_office.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_cs_office
+MAP_NAME=cs_office
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp36_de_golden
+- exp34-style map-specific CrossMap-4 adaptation; LoRA route.
+- initialization: final Seen-10 `exp32` model, loaded directly; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30146
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_gen_de_golden
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp32_gen`; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30147 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30148 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30149 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30150 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_gen_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_gen_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_loc_de_golden
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp32_loc`; target map only: `de_golden`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_golden
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30151 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30152 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30153 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30154 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_loc_de_golden.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_golden
+MAP_NAME=de_golden
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp36_de_palacio
+- exp34-style map-specific CrossMap-4 adaptation; LoRA route.
+- initialization: final Seen-10 `exp32` model, loaded directly; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30155
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_gen_de_palacio
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp32_gen`; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30156 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30157 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30158 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30159 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_gen_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_gen_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_loc_de_palacio
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp32_loc`; target map only: `de_palacio`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_palacio
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30160 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30161 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30162 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30163 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_loc_de_palacio.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_palacio
+MAP_NAME=de_palacio
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+## exp36_de_vertigo
+- exp34-style map-specific CrossMap-4 adaptation; LoRA route.
+- initialization: final Seen-10 `exp32` model, loaded directly; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; query is target-map only and Seen-retention covers all Seen-10 maps.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+MASTER_PORT=30164
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Localization inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Generation metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_gen_de_vertigo
+- map-specific generation-only adaptation; direct initialization from final Seen-10 `exp32_gen`; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30165 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30166 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30167 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30168 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_gen_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Generation inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_gen_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen.yaml" --output_dir "$BASE/seen_retention_discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/$EXPERIMENT_gen_conti.yaml" --output_dir "$BASE/seen_retention_continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+EXPERIMENT=exp36_gen_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+BASE="outputs_eval/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  local map_name="$3"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py   --gt "data/preprocessed_data/$map_name/imgs"   --pred "$input_root/gen_imgs/$map_name"   --batch_size 1   --device cuda   --paired_size 448   --data_dir data/preprocessed_data   --map_name "$map_name"   --frame_diff_threshold 2   --min_track_len 4   --clip_length 16   --clip_stride 16   --fvd_size 224   --benchmark_v2_manifest "$V2_MANIFEST"   --benchmark_v2_split "$split"   --external_loc_repo_root "$EXTERNAL_LOC_ROOT"   --external_loc_config_path "$EXTERNAL_LOC_CONFIG"   --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+}
+
+aggregate_maps() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "$input_root/summary.json"
+}
+
+run_discrete "$BASE/discrete" crossmap_query_test "$MAP_NAME"
+run_continuous "$BASE/continuous" crossmap_continuous "$MAP_NAME"
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_discrete "$BASE/seen_retention_discrete" seen_discrete_test "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_discrete" seen_discrete_test discrete
+
+for map_name in "${SEEN_MAPS[@]}"; do
+  run_continuous "$BASE/seen_retention_continuous" seen_continuous "$map_name"
+done
+aggregate_maps "$BASE/seen_retention_continuous" seen_continuous continuous
+```
+### exp36_loc_de_vertigo
+- map-specific localization-only adaptation; direct initialization from final Seen-10 `exp32_loc`; target map only: `de_vertigo`.
+- protocol: `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`; train batch is `SHOTS`, eval batch `128`, accumulation `1`.
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_vertigo
+SHOTS=100
+MAX_STEPS=400
+SUPPORT_SEED=0
+case "$SHOTS" in
+  100) BATCH_SIZE="$SHOTS"; MASTER_PORT=30169 ;;
+  50) BATCH_SIZE="$SHOTS"; MASTER_PORT=30170 ;;
+  20) BATCH_SIZE="$SHOTS"; MASTER_PORT=30171 ;;
+  10) BATCH_SIZE="$SHOTS"; MASTER_PORT=30172 ;;
+  *)
+    printf 'unsupported SHOTS=%s\n' "$SHOTS" >&2
+    exit 2
+    ;;
+esac
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py --csgo_config csgo_configs/exp36_loc_de_vertigo.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir "outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED" --num_train_epochs 10 --per_device_train_batch_size "$BATCH_SIZE" --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --max_steps "$MAX_STEPS" --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS"
+```
+
+**Inference and metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_loc_de_vertigo
+MAP_NAME=de_vertigo
+SHOTS=100
+SUPPORT_SEED=0
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT="outputs/csgo_1b/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED/model.safetensors"
+LOC_BASE="outputs_loc/benchmark_v2/$EXPERIMENT/shot_$SHOTS/seed_$SUPPORT_SEED"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "$MAP_NAME"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/$EXPERIMENT_loc.yaml" --output_dir "$LOC_BASE/seen_retention" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_support_seed "$SUPPORT_SEED" --benchmark_v2_shots_per_map "$SHOTS" --benchmark_v2_maps "${SEEN_MAPS[@]}"
+```
 
 
+
+## exp31_1
+- parent: `exp31`; Seen-10 balanced joint generation + localization (`task_mix_ratio=0.5`), full-head route with the LLM frozen.
+- ablation: preserve `exp31` trainability and main localization schedule; disable only `aux_loc_loss` and `loc_perception_loss`.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29567 train_csgo.py --csgo_config csgo_configs/exp31_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31_1 --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 8000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp31_1/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_1_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_1/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_1_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_1/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_1_gen.yaml --output_dir outputs_eval/benchmark_v2/exp31_1/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp31_1_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp31_1/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+CKPT="outputs/csgo_1b/exp31_1/model.safetensors"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_1_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_1/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp31_1_loc.yaml --output_dir outputs_loc/benchmark_v2/exp31_1/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+EXPERIMENT=exp31_1
+
+run_discrete() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+run_continuous() {
+  local input_root="$1"
+  local split="$2"
+  shift 2
+  local map_name
+  for map_name in "$@"; do
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  done
+}
+
+aggregate() {
+  local input_root="$1"
+  local split="$2"
+  local kind="$3"
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py maps   --manifest "$V2_MANIFEST"   --split "$split"   --input_root "$input_root"   --kind "$kind"   --output "${input_root}/summary.json"
+}
+
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/discrete" seen_discrete_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous "${SEEN_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/seen/continuous" seen_continuous continuous
+run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
+run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
+aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
