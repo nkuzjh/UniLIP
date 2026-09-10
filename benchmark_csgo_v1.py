@@ -270,26 +270,23 @@ def benchmark_v2_asset_provenance(
             args,
             ("asset_backend", "benchmark_v2_asset_backend", "backend"),
         )
-    manifest_value = _asset_provenance_value(
-        selection,
-        (
-            "asset_manifest_path",
-            "benchmark_v2_asset_manifest",
-            "asset_manifest",
-            "manifest_path",
-            "path",
-        ),
+    # ``manifest_path``/``path`` are legacy minimal-asset aliases.  A real
+    # source selection also exposes ``manifest_path``, but that points to the
+    # protocol manifest and must not become asset provenance.
+    asset_manifest_keys = (
+        "asset_manifest_path",
+        "benchmark_v2_asset_manifest",
+        "asset_manifest",
     )
+    legacy_manifest_keys = (*asset_manifest_keys, "manifest_path", "path")
+    manifest_keys = (
+        asset_manifest_keys if backend == "source" else legacy_manifest_keys
+    )
+    manifest_value = _asset_provenance_value(selection, manifest_keys)
     if manifest_value in (None, ""):
         manifest_value = _asset_provenance_value(
             args,
-            (
-                "asset_manifest_path",
-                "benchmark_v2_asset_manifest",
-                "asset_manifest",
-                "manifest_path",
-                "path",
-            ),
+            manifest_keys,
         )
     manifest_path = None
     if manifest_value not in (None, ""):

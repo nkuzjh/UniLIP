@@ -6114,6 +6114,7 @@ CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/
 ## exp31_1
 - parent: `exp31`; Seen-10 balanced joint generation + localization (`task_mix_ratio=0.5`), full-head route with the LLM frozen.
 - ablation: preserve `exp31` trainability and main localization schedule; disable only `aux_loc_loss` and `loc_perception_loss`.
+- exp31_1对应的单独生成和单独定位实际就是exp31_gen和exp31_loc，无需重复设置实验。
 
 **Training**
 ```bash

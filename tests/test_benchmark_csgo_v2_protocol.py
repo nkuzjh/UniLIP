@@ -269,6 +269,56 @@ class BenchmarkV2ProtocolTest(unittest.TestCase):
             self.assertEqual(metric_payload["selected_images_sha256"], selected_hash)
             self.assertEqual(metric_payload["benchmark_v2_asset_backend"], "minimal")
 
+    def test_source_selection_ignores_protocol_manifest_for_asset_identity(self):
+        with TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "benchmark_manifest.json"
+            manifest.write_text(
+                json.dumps({"selected_images": {"sha256": "a" * 64}}),
+                encoding="utf-8",
+            )
+            selection = argparse.Namespace(
+                asset_backend="source",
+                asset_manifest_path=None,
+                manifest_path=manifest,
+            )
+
+            provenance = benchmark_v2_asset_provenance(selection)
+
+            self.assertEqual(provenance["asset_backend"], "source")
+            for field in (
+                "asset_manifest_path",
+                "asset_manifest_sha256",
+                "selected_images_sha256",
+                "benchmark_v2_asset_manifest",
+                "benchmark_v2_asset_manifest_sha256",
+                "benchmark_v2_selected_images_sha256",
+            ):
+                with self.subTest(field=field):
+                    self.assertIsNone(provenance[field])
+            self.assertNotIn("benchmark_v2_asset", provenance)
+
+    def test_legacy_manifest_path_still_identifies_minimal_assets(self):
+        with TemporaryDirectory() as temp_dir:
+            asset_manifest = Path(temp_dir) / "minimal_dataset_report.json"
+            selected_hash = "b" * 64
+            asset_manifest.write_text(
+                json.dumps({"selected_images": {"sha256": selected_hash}}),
+                encoding="utf-8",
+            )
+
+            provenance = benchmark_v2_asset_provenance(
+                {"manifest_path": asset_manifest}
+            )
+
+            self.assertEqual(provenance["asset_backend"], "minimal")
+            self.assertEqual(
+                provenance["asset_manifest_path"], str(asset_manifest.resolve())
+            )
+            self.assertEqual(
+                provenance["selected_images_sha256"], selected_hash
+            )
+
     def test_source_asset_provenance_rejects_minimal_identity(self):
         malformed_source = {
             "benchmark_v2_asset_backend": "source",
