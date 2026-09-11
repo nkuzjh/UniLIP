@@ -1116,8 +1116,9 @@ Benchmark v2 uses the frozen manifest `data/csgo_benchmark_v2/benchmark_manifest
 | `exp34`, `exp34_loc`, `exp34_gen` | matching `exp32*` | `crossmap_support` | matching Seen-10 root model | CrossMap-4 adaptation of the LoRA family; loc curve uses 100/50/20/10-shot |
 | `exp35_<map>`, `exp35_gen_<map>`, `exp35_loc_<map>` | matching `exp31*` | `crossmap_support` restricted to `<map>` | matching Seen-10 root model | One full-head adaptation per CrossMap map |
 | `exp36_<map>`, `exp36_gen_<map>`, `exp36_loc_<map>` | matching `exp32*` | `crossmap_support` restricted to `<map>` | matching Seen-10 root model | One LoRA adaptation per CrossMap map |
+| `exp36_1_<map>` | `exp31_1` | `crossmap_support` restricted to `<map>` | `outputs/csgo_1b/exp31_1/model.safetensors` | Full-head joint-only adaptation per CrossMap map; 100/50/20/10-shot |
 
-All exp31-exp34 training configs, including `exp31_1`, set `benchmark_v2_manifest`, `benchmark_v2_split`, `data_dir`, and explicit map arrays. `exp31_1` keeps `exp31` balanced joint sampling (`task_mix_ratio: 0.5`), full-head trainability, frozen LLM, main localization schedule, effective per-module learning rates, and launch hyperparameters; it disables only aux-loc and localization perception losses and has no CrossMap adaptation child in the current protocol. CrossMap configs additionally set `benchmark_v2_support_seed: 0` and `benchmark_v2_shots_per_map: 100`; their `finetune_init_ckpt_path` points to the final Seen-10 root `model.safetensors` and is model-only initialization, not resume. The `exp33*`/`exp34*` protocol uses only this default support draw and retains the `shot_<N>/seed_0` directory layout. The formal `exp33_loc`/`exp34_loc` curve changes `N` to 50/20/10 while keeping `max_steps=400`, inference seed `42`, and independent initialization from the Seen-10 parent. Because `DistributedTaskTypeBatchSampler` emits only complete task batches, the matrix explicitly uses train batches 128/80/40 for 50/20/10-shot; leaving batch 128 unchanged would give zero batches for 20/10-shot. Its machine-readable matrix is `benchmark_v2_loc_few_shot.yaml`; `scripts/run_csgo_benchmark_v2_loc_few_shot.py` validates, reports status, runs one pipeline, or schedules independent pipelines under a GPU-memory gate.
+All exp31-exp34 training configs, including `exp31_1`, set `benchmark_v2_manifest`, `benchmark_v2_split`, `data_dir`, and explicit map arrays. `exp31_1` keeps `exp31` balanced joint sampling (`task_mix_ratio: 0.5`), full-head trainability, frozen LLM, main localization schedule, effective per-module learning rates, and launch hyperparameters; it disables only aux-loc and localization perception losses. CrossMap configs additionally set `benchmark_v2_support_seed: 0` and `benchmark_v2_shots_per_map: 100`; their `finetune_init_ckpt_path` points to the final Seen-10 root `model.safetensors` and is model-only initialization, not resume. The `exp33*`/`exp34*` protocol uses only this default support draw and retains the `shot_<N>/seed_0` directory layout. The formal `exp33_loc`/`exp34_loc` curve changes `N` to 50/20/10 while keeping `max_steps=400`, inference seed `42`, and independent initialization from the Seen-10 parent. Because `DistributedTaskTypeBatchSampler` emits only complete task batches, the matrix explicitly uses train batches 128/80/40 for 50/20/10-shot; leaving batch 128 unchanged would give zero batches for 20/10-shot. Its machine-readable matrix is `benchmark_v2_loc_few_shot.yaml`; `scripts/run_csgo_benchmark_v2_loc_few_shot.py` validates, reports status, runs one pipeline, or schedules independent pipelines under a GPU-memory gate.
 
 The `exp33_loc`/`exp34_loc` 100/50/20/10-shot localization matrix completed on 2026-09-04. Every point has a 400-step checkpoint plus strict 8,000-row CrossMap and 20,000-row Seen-retention summaries; equal-map macro results are tracked in `csgo_benchmark_v2_experiments_results.md`.
 
@@ -1135,6 +1136,16 @@ and test YAML names use the exact model name, with task suffixes appended as
 described in
 [`CSGO_BENCHMARK_V2_MAP_SPECIFIC_FEWSHOT.md`](../CSGO_BENCHMARK_V2_MAP_SPECIFIC_FEWSHOT.md).
 
+`exp36_1_<map>` is an additional full-head joint-only map-specific family. It
+starts independently from `outputs/csgo_1b/exp31_1/model.safetensors` for each
+map and each of the four shot counts `100/50/20/10`, giving 16 adaptation runs
+in total. It uses only the four CrossMap-4 maps above and the existing
+`crossmap_support` split; the earlier phrase “CrossMap-10” was a typo and does
+not define a new split. There are no `exp36_1_gen_<map>` or
+`exp36_1_loc_<map>` training experiments. Every joint checkpoint is evaluated
+on target-map localization, discrete generation, continuous generation, and
+Seen-10 retention.
+
 Each run uses only its target map's `crossmap_support` rows, `support_seed: 0`,
 `shots_per_map: 100` by default, nested 50/20/10-shot overrides, and
 `MAX_STEPS=400`. A map/shot/task run always loads the matching Seen-10
@@ -1150,4 +1161,18 @@ a new loss or augmentation variant. Map-specific localization test YAMLs
 explicitly set `benchmark_v2_allow_map_subset_summary: True` so the target-map
 CrossMap subset can be passed to `build_localization_summary`; its default
 remains strict (`False`) for complete-protocol evaluation, and exp31-exp34
-behavior is unchanged.
+behavior is unchanged. `exp36_1` is the exception to the exp35/exp36 loss
+inheritance: it keeps `exp31_1` trainability (`is_lora: false`, frozen LLM/ViT,
+trainable connect/DiT and both task heads), keeps aux-loc and perception off,
+and uses static `alpha_loc_loss: 20` for CrossMap adaptation. Its output layout
+is `outputs/csgo_1b/exp36_1_<map>/shot_<N>/seed_0`.
+
+The map-specific matrix registers 28 base model configurations: the existing
+24 exp35/exp36 joint/gen/loc configurations plus four exp36_1 joint-only
+configurations. Run exp36_1 as one ordered cross-shot queue with
+`scripts/run_csgo_benchmark_v2_map_specific.py schedule --families exp36_1
+--routes joint --shots 100 50 20 10`. All jobs from one shot count are launched
+before the scheduler opens the next shot count, but completion is not a barrier:
+later shots may run while earlier pipelines finish inference and metrics. The
+scheduler handles live VRAM concurrency and each child pipeline preserves
+train, inference, metric, and aggregation order.

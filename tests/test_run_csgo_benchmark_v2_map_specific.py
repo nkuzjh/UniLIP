@@ -57,17 +57,17 @@ class MapSpecificRunnerTests(unittest.TestCase):
 
     def test_default_matrix_order_shots_lock_and_family_route_thresholds(self):
         expected = []
-        for family in ("exp35", "exp36"):
+        for family in ("exp35", "exp36", "exp36_1"):
             for map_name in RUNNER.CROSSMAP_MAPS:
-                expected.extend(
-                    (
-                        f"{family}_{map_name}",
-                        f"{family}_gen_{map_name}",
-                        f"{family}_loc_{map_name}",
+                for route in RUNNER.FAMILY_ROUTES[family]:
+                    expected.append(
+                        f"{family}_{map_name}"
+                        if route == "joint"
+                        else f"{family}_{route}_{map_name}"
                     )
-                )
         self.assertEqual(RUNNER.experiment_names(self.matrix), tuple(expected))
-        self.assertEqual(RUNNER.scheduler_shots(self.matrix), [100])
+        self.assertEqual(len(expected), 28)
+        self.assertEqual(RUNNER.scheduler_shots(self.matrix), [100, 50, 20, 10])
         self.assertEqual(RUNNER._shots(self.matrix), [100, 50, 20, 10])
         self.assertEqual(self.matrix["scheduling"]["max_active_pipelines"], 24)
         self.assertEqual(
@@ -85,9 +85,14 @@ class MapSpecificRunnerTests(unittest.TestCase):
             ("exp36", "joint"): 35000,
             ("exp36", "gen"): 22000,
             ("exp36", "loc"): 22000,
+            ("exp36_1", "joint"): 45000,
         }
         for key, value in expected_memory.items():
             self.assertEqual(RUNNER._minimum_free_memory(self.matrix, *key), value)
+        self.assertEqual(
+            RUNNER._launch_reservation_memory(self.matrix, "exp36_1", "joint"),
+            8000,
+        )
 
     def test_multi_shot_family_route_filters_exclude_joint_jobs(self):
         parser = RUNNER._build_parser()
@@ -170,6 +175,41 @@ class MapSpecificRunnerTests(unittest.TestCase):
         self.assertEqual(status.shots, [50, 20, 10])
         self.assertEqual(status.families, ["exp35"])
         self.assertEqual(status.routes, ["loc"])
+
+    def test_exp36_1_is_joint_only_for_all_four_shots(self):
+        jobs = RUNNER._job_order(
+            self.matrix,
+            [100, 50, 20, 10],
+            families=["exp36_1"],
+            routes=["joint", "gen", "loc"],
+        )
+        expected_names = [f"exp36_1_{map_name}" for map_name in RUNNER.CROSSMAP_MAPS]
+        self.assertEqual(len(jobs), 16)
+        self.assertEqual([name for name, shot in jobs if shot == 100], expected_names)
+        self.assertEqual({shot for _, shot in jobs}, {100, 50, 20, 10})
+        self.assertTrue(all("_gen_" not in name and "_loc_" not in name for name, _ in jobs))
+
+        command = RUNNER.build_train_command(
+            self.matrix, "exp36_1_cs_office", 10
+        )
+        self.assertEqual(
+            option(command, "--csgo_config"),
+            "csgo_configs/exp36_1_cs_office.yaml",
+        )
+        self.assertEqual(
+            option(command, "--output_dir"),
+            "outputs/csgo_1b/exp36_1_cs_office/shot_10/seed_0",
+        )
+        self.assertEqual(option(command, "--per_device_train_batch_size"), "4")
+        self.assertEqual(option(command, "--per_device_eval_batch_size"), "4")
+        self.assertEqual(option(command, "--gradient_accumulation_steps"), "32")
+        self.assertEqual(option(command, "--max_steps"), "400")
+        self.assertEqual(option(command, "--fix_llm"), "True")
+        self.assertEqual(option(command, "--master_port"), "30473")
+        with self.assertRaisesRegex(RUNNER.PipelineError, "unsupported family route"):
+            RUNNER.build_map_models_command(
+                self.matrix, "exp36_1", "gen", 100, "discrete"
+            )
 
     def test_schedule_syncs_each_selected_shot_with_filters(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -1782,6 +1822,10 @@ class MapSpecificRunnerTests(unittest.TestCase):
             ["schedule", "--exp35-loc-minimum-free-memory-mb", "27000"]
         )
         self.assertEqual(parsed.exp35_loc_minimum_free_memory_mb, 27000)
+        parsed = parser.parse_args(
+            ["schedule", "--exp36_1-joint-minimum-free-memory-mb", "46000"]
+        )
+        self.assertEqual(parsed.exp36_1_joint_minimum_free_memory_mb, 46000)
         parsed = parser.parse_args(
             ["schedule", "--launch-memory-confirmation-seconds", "0"]
         )

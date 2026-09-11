@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the reproducible, map-specific Benchmark v2 exp35/exp36 matrix.
+"""Run the reproducible, map-specific Benchmark v2 exp35/exp36/exp36_1 matrix.
 
 The scheduler owns a bounded set of map-specific pipeline slots. Each pipeline
 owns its experiment lock and runs every stage serially; the scheduler combines
@@ -31,8 +31,13 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONFIG = REPO_ROOT / "csgo_configs/benchmark_v2_map_specific.yaml"
 
-FAMILIES = ("exp35", "exp36")
+FAMILIES = ("exp35", "exp36", "exp36_1")
 ROUTES = ("joint", "gen", "loc")
+FAMILY_ROUTES = {
+    "exp35": ("joint", "gen", "loc"),
+    "exp36": ("joint", "gen", "loc"),
+    "exp36_1": ("joint",),
+}
 GENERATION_ROUTES = ("joint", "gen")
 LOCALIZATION_ROUTES = ("joint", "loc")
 GENERATION_KINDS = ("discrete", "continuous")
@@ -465,6 +470,16 @@ def _family(spec: Mapping[str, Any]) -> str:
     if family not in FAMILIES:
         raise PipelineError(f"unsupported experiment family: {family!r}")
     return str(family)
+
+
+def _family_route_supported(family: str, route: str) -> bool:
+    return family in FAMILIES and route in FAMILY_ROUTES[family]
+
+
+def _family_routes(family: str) -> tuple[str, ...]:
+    if family not in FAMILIES:
+        raise PipelineError(f"unsupported experiment family: {family!r}")
+    return FAMILY_ROUTES[family]
 
 
 def _map_name(spec: Mapping[str, Any]) -> str:
@@ -1081,6 +1096,8 @@ def build_map_models_command(
 ) -> list[str]:
     if family not in FAMILIES or route not in ROUTES:
         raise PipelineError(f"invalid family route: {family}/{route}")
+    if not _family_route_supported(family, route):
+        raise PipelineError(f"unsupported family route: {family}/{route}")
     family_name = _family_route_name(family, route)
     if kind == "localization":
         if route not in LOCALIZATION_ROUTES:
@@ -2178,7 +2195,7 @@ def _effective_minimum_free_memory(
     effective = {
         (family, route): _minimum_free_memory(matrix, family, route)
         for family in FAMILIES
-        for route in ROUTES
+        for route in _family_routes(family)
     }
     if route_minimums:
         for route, value in route_minimums.items():
@@ -2186,13 +2203,16 @@ def _effective_minimum_free_memory(
                 raise PipelineError(f"unknown route resource override: {route}")
             checked = _integer(value, f"minimum_free_memory_mb.{route}", 1)
             for family in FAMILIES:
-                effective[(family, route)] = checked
+                if _family_route_supported(family, route):
+                    effective[(family, route)] = checked
     if family_route_minimums:
         for (family, route), value in family_route_minimums.items():
             if family not in FAMILIES:
                 raise PipelineError(f"unknown family resource override: {family}")
             if route not in ROUTES:
                 raise PipelineError(f"unknown route resource override: {route}")
+            if not _family_route_supported(family, route):
+                raise PipelineError(f"unsupported family route: {family}/{route}")
             effective[(family, route)] = _integer(
                 value, f"minimum_free_memory_mb.{family}.{route}", 1
             )
@@ -2354,6 +2374,8 @@ def run_family_aggregations(
     selected_routes = _selected_routes(routes)
     for family in selected_families:
         for route in selected_routes:
+            if not _family_route_supported(family, route):
+                continue
             if route in GENERATION_ROUTES and _family_complete(
                 matrix, family, route, shots
             ):
@@ -3321,6 +3343,8 @@ def _new_result_rows(
                 rows.append(("Seen-10 retention", kind, experiment, shots, "seen"))
     for family in selected_families:
         for route in selected_routes:
+            if not _family_route_supported(family, route):
+                continue
             family_name = _family_route_name(family, route)
             if route in LOCALIZATION_ROUTES:
                 rows.append(
@@ -3401,7 +3425,8 @@ def _sync_results_locked(
     _validate_results_structure(lines)
 
     # Progress rows are intentionally one row per model and shot.  The formal
-    # initialization creates exactly the 24 default 100-shot rows; explicit
+    # initialization creates the default 100-shot rows for every registered
+    # model; explicit
     # run --shots 50/20/10 adds only that requested row.
     selected_families = _selected_families(families)
     selected_routes = _selected_routes(routes)
@@ -3534,8 +3559,10 @@ def validate_configuration(matrix: Mapping[str, Any]) -> None:
         raise PipelineError("CrossMap map order does not match Benchmark v2")
     if protocol.get("seen_maps") != list(SEEN_MAPS):
         raise PipelineError("Seen-10 map order does not match Benchmark v2")
-    if scheduler_shots(matrix) != [100]:
-        raise PipelineError("formal scheduler default must be [100]")
+    if scheduler_shots(matrix) != [100, 50, 20, 10]:
+        raise PipelineError(
+            "formal scheduler default must preserve launch order [100, 50, 20, 10]"
+        )
     _paths(matrix)
     _evaluation(matrix)
     scheduling = _scheduling(matrix)
@@ -3552,7 +3579,7 @@ def validate_configuration(matrix: Mapping[str, Any]) -> None:
     _pipeline_retry_backoff_seconds(matrix)
     _integer(scheduling.get("poll_seconds"), "poll_seconds", 0)
     for family in FAMILIES:
-        for route in ROUTES:
+        for route in _family_routes(family):
             _minimum_free_memory(matrix, family, route)
             _launch_reservation_memory(matrix, family, route)
     if scheduling.get("failure_policy") not in ("stop", "continue"):
@@ -3561,19 +3588,23 @@ def validate_configuration(matrix: Mapping[str, Any]) -> None:
     expected_names: list[str] = []
     for family in FAMILIES:
         for map_name in CROSSMAP_MAPS:
-            expected_names.extend(
-                (
-                    f"{family}_{map_name}",
-                    f"{family}_gen_{map_name}",
-                    f"{family}_loc_{map_name}",
+            for route in _family_routes(family):
+                expected_names.append(
+                    f"{family}_{map_name}"
+                    if route == "joint"
+                    else f"{family}_{route}_{map_name}"
                 )
-            )
     if list(experiment_names(matrix)) != expected_names:
         raise PipelineError(
             f"experiment order must be map-section order: expected {expected_names!r}"
         )
-    if len(_spec_list(matrix)) != 24:
-        raise PipelineError("map-specific matrix must contain 24 model experiments")
+    expected_count = sum(
+        len(CROSSMAP_MAPS) * len(_family_routes(family)) for family in FAMILIES
+    )
+    if len(_spec_list(matrix)) != expected_count:
+        raise PipelineError(
+            f"map-specific matrix must contain {expected_count} model experiments"
+        )
 
     ports: set[int] = set()
     for spec in _spec_list(matrix):
@@ -3581,14 +3612,14 @@ def validate_configuration(matrix: Mapping[str, Any]) -> None:
         route = _route(spec)
         map_name = _map_name(spec)
         family = _family(spec)
-        expected_route = (
-            "joint"
-            if experiment == f"{family}_{map_name}"
-            else "gen"
-            if experiment == f"{family}_gen_{map_name}"
-            else "loc"
+        if not _family_route_supported(family, route):
+            raise PipelineError(f"{experiment}: unsupported family/route contract")
+        expected_name = (
+            f"{family}_{map_name}"
+            if route == "joint"
+            else f"{family}_{route}_{map_name}"
         )
-        if route != expected_route:
+        if experiment != expected_name:
             raise PipelineError(f"{experiment}: route/name mismatch")
         parent = _repo_path(_config_value(spec, "parent_checkpoint"))
         train_config = _repo_path(_config_value(spec, "train_config"))
@@ -3777,11 +3808,12 @@ def _build_parser() -> argparse.ArgumentParser:
     schedule_parser.add_argument("--loc-minimum-free-memory-mb", type=int)
     for family in FAMILIES:
         for route in ROUTES:
-            schedule_parser.add_argument(
-                f"--{family}-{route}-minimum-free-memory-mb",
-                dest=f"{family}_{route}_minimum_free_memory_mb",
-                type=int,
-            )
+            if _family_route_supported(family, route):
+                schedule_parser.add_argument(
+                    f"--{family}-{route}-minimum-free-memory-mb",
+                    dest=f"{family}_{route}_minimum_free_memory_mb",
+                    type=int,
+                )
     schedule_parser.add_argument("--launch-settle-seconds", type=int)
     schedule_parser.add_argument("--launch-memory-confirmation-seconds", type=int)
     schedule_parser.add_argument("--poll-seconds", type=int)
@@ -3857,7 +3889,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     route_minimums[route] = value
             family_route_minimums: dict[tuple[str, str], int] = {}
             for family in FAMILIES:
-                for route in ROUTES:
+                for route in _family_routes(family):
                     value = getattr(args, f"{family}_{route}_minimum_free_memory_mb")
                     if value is not None:
                         family_route_minimums[(family, route)] = value

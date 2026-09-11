@@ -3288,7 +3288,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
 ```
 
 **Inference**
@@ -6196,4 +6196,71 @@ run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discret
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
 run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
+## exp36_1 CrossMap-4 map-specific few-shot
+- parent: final Seen-10 `exp31_1`, loaded independently from `outputs/csgo_1b/exp31_1/model.safetensors` for every map/shot.
+- experiments: `exp36_1_cs_office`, `exp36_1_de_golden`, `exp36_1_de_palacio`, `exp36_1_de_vertigo`.
+- protocol: joint-only full-head adaptation, `support_seed=0`, `SHOTS=100/50/20/10`, `MAX_STEPS=400`, train/eval/accumulation batch `4/4/32`.
+- loss: static `alpha_loc_loss=20`; aux-loc and perception loss remain disabled.
+- each joint checkpoint runs target-map localization, discrete generation, continuous generation, and Seen-10 retention. There are no `exp36_1_gen_<map>` or `exp36_1_loc_<map>` training routes.
+
+**Validate configuration**
+```bash
+set -euo pipefail
+test -s outputs/csgo_1b/exp31_1/model.safetensors
+python scripts/run_csgo_benchmark_v2_map_specific.py validate
+python scripts/run_csgo_benchmark_v2_map_specific.py status \
+  --families exp36_1 \
+  --routes joint \
+  --shots 100 50 20 10
+```
+
+**Run the complete matrix in launch-order priority**
+
+The queue launches all 100-shot jobs before 50-shot, then 20-shot, then 10-shot.
+Finishing every pipeline in the preceding shot is not a barrier, so later-shot
+training may overlap earlier-shot inference and metrics when the live VRAM gate
+permits. Every individual map pipeline keeps `train ->
+localization/discrete/continuous inference -> metric -> aggregation` strictly
+serial.
+
+```bash
+set -euo pipefail
+python scripts/run_csgo_benchmark_v2_map_specific.py schedule \
+  --families exp36_1 \
+  --routes joint \
+  --shots 100 50 20 10 \
+  --cuda-device 0
+```
+
+**Run or resume one map/shot pipeline**
+```bash
+set -euo pipefail
+EXPERIMENT=exp36_1_cs_office
+SHOTS=100
+python scripts/run_csgo_benchmark_v2_map_specific.py run \
+  --experiment "$EXPERIMENT" \
+  --shots "$SHOTS" \
+  --families exp36_1 \
+  --routes joint \
+  --cuda-device 0
+```
+
+Valid `EXPERIMENT` values are:
+
+```text
+exp36_1_cs_office
+exp36_1_de_golden
+exp36_1_de_palacio
+exp36_1_de_vertigo
+```
+
+Outputs use the existing map-specific layout:
+
+```text
+outputs/csgo_1b/exp36_1_<map>/shot_<N>/seed_0/
+outputs_eval/benchmark_v2/exp36_1_<map>/shot_<N>/seed_0/
+outputs_loc/benchmark_v2/exp36_1_<map>/shot_<N>/seed_0/
+logs/benchmark_v2_map_specific/exp36_1_<map>/shot_<N>/seed_0/
 ```
