@@ -5,6 +5,12 @@ import os
 import textwrap
 
 
+def _bounded_visualization_sample_count(dataset, num_samples):
+    if isinstance(num_samples, bool) or not isinstance(num_samples, int) or num_samples < 1:
+        raise ValueError("num_samples must be a positive integer")
+    return min(num_samples, len(dataset))
+
+
 
 def visualize_dataset_samples_v1(dataset, processor, num_samples=20, save_path="_debug_dataset_samples.jpg", is_multi_task=True):
     """
@@ -17,6 +23,10 @@ def visualize_dataset_samples_v1(dataset, processor, num_samples=20, save_path="
         save_path: 图片保存路径
         is_multi_task: 是否为多任务(强制开启4列显示)
     """
+    num_samples = _bounded_visualization_sample_count(dataset, num_samples)
+    if num_samples == 0:
+        print("Skipping visualization because the dataset is empty.")
+        return
     print(f"👀 Visualizing first {num_samples} samples from dataset...")
 
     # 获取反归一化所需的均值和方差
@@ -142,6 +152,10 @@ def visualize_dataset_samples(dataset, processor, num_samples=20, save_path="_de
         num_samples: 抽样数量
         save_path: 图片保存路径
     """
+    num_samples = _bounded_visualization_sample_count(dataset, num_samples)
+    if num_samples == 0:
+        print("Skipping visualization because the dataset is empty.")
+        return
     print(f"👀 Visualizing first {num_samples} samples from dataset...")
 
     # 获取反归一化所需的均值和方差
@@ -276,6 +290,10 @@ def visualize_dataset_samples_paired(dataset, processor, num_samples=5, save_pat
         dataset: 返回 [sample_loc, sample_gen] 的 Dataset
         processor: ImageProcessor (用于反归一化)
     """
+    num_samples = _bounded_visualization_sample_count(dataset, num_samples)
+    if num_samples == 0:
+        print("Skipping visualization because the dataset is empty.")
+        return
     print(f"👀 Visualizing first {num_samples} pairs from dataset...")
 
     # 1. 获取反归一化参数

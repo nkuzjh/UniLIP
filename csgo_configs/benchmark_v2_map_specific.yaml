@@ -94,7 +94,7 @@ scheduling:
       # Training still uses the 45 GB launch gate above. After launch, keep a
       # smaller lifetime reserve so completed-training inference pipelines do
       # not prevent another map from using otherwise idle VRAM.
-      joint: 8000
+      joint: 6000
   reservation_release_min_gpu_memory_mb: 1024
   reservation_release_stable_samples: 2
   # Compatibility names: these values confirm the first visible GPU reading;

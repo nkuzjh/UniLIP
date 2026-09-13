@@ -3288,7 +3288,7 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 2 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
 ```
 
 **Inference**
@@ -6196,6 +6196,207 @@ run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discret
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
 run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
+## exp31_3maps
+- Benchmark v2 Seen-3 balanced joint ablation on `de_ancient`, `de_dust2`, and `de_nuke`.
+- full loss arm: exp-sigma combined aux-loc and attention-weighted vision-tower perception are enabled.
+- full-head route with frozen ViT/LLM; schedules are scaled by `0.3`; no CrossMap evaluation.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29568 train_csgo.py \
+  --csgo_config csgo_configs/exp31_3maps.yaml \
+  --deepspeed deepspeed_scripts/zero0.json \
+  --model_name_or_path UniLIP-1B \
+  --unilip_factor 10.6 \
+  --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
+  --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
+  --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
+  --output_dir outputs/csgo_1b/exp31_3maps --num_train_epochs 50 \
+  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 \
+  --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" \
+  --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. \
+  --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" \
+  --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True \
+  --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 \
+  --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_3maps
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+CKPT="outputs/csgo_1b/$EXPERIMENT/model.safetensors"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/${EXPERIMENT}_loc.yaml" --output_dir "outputs_loc/benchmark_v2/$EXPERIMENT/seen3" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen_conti.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_3maps
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+for MAP_NAME in "${SEEN3_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_discrete_test --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224 --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_continuous --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --kind discrete --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/summary.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --kind continuous --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/summary.json"
+```
+
+## exp31_1_3maps
+- Benchmark v2 Seen-3 balanced joint-only control on `de_ancient`, `de_dust2`, and `de_nuke`.
+- aux-loc and perception are both disabled; every other model, data, optimizer, and launch setting matches `exp31_3maps`.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29569 train_csgo.py \
+  --csgo_config csgo_configs/exp31_1_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
+  --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
+  --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
+  --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
+  --output_dir outputs/csgo_1b/exp31_1_3maps --num_train_epochs 50 \
+  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 \
+  --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 \
+  --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
+  --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
+  --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True \
+  --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_1_3maps
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+CKPT="outputs/csgo_1b/$EXPERIMENT/model.safetensors"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/${EXPERIMENT}_loc.yaml" --output_dir "outputs_loc/benchmark_v2/$EXPERIMENT/seen3" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen_conti.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_1_3maps
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+for MAP_NAME in "${SEEN3_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_discrete_test --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224 --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_continuous --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --kind discrete --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/summary.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --kind continuous --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/summary.json"
+```
+
+## exp31_2_3maps
+- Benchmark v2 Seen-3 aux-only arm on `de_ancient`, `de_dust2`, and `de_nuke`.
+- exp-sigma combined aux-loc is enabled; perception is disabled; all other settings match `exp31_3maps`.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29570 train_csgo.py \
+  --csgo_config csgo_configs/exp31_2_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
+  --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
+  --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
+  --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
+  --output_dir outputs/csgo_1b/exp31_2_3maps --num_train_epochs 50 \
+  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 \
+  --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 \
+  --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
+  --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
+  --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True \
+  --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_2_3maps
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+CKPT="outputs/csgo_1b/$EXPERIMENT/model.safetensors"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/${EXPERIMENT}_loc.yaml" --output_dir "outputs_loc/benchmark_v2/$EXPERIMENT/seen3" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen_conti.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_2_3maps
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+for MAP_NAME in "${SEEN3_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_discrete_test --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224 --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_continuous --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --kind discrete --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/summary.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --kind continuous --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/summary.json"
+```
+
+## exp31_3_3maps
+- Benchmark v2 Seen-3 perception-only arm on `de_ancient`, `de_dust2`, and `de_nuke`.
+- attention-weighted vision-tower perception is enabled; aux-loc is disabled; all other settings match `exp31_3maps`.
+
+**Training**
+```bash
+set -euo pipefail
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29571 train_csgo.py \
+  --csgo_config csgo_configs/exp31_3_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
+  --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
+  --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
+  --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
+  --output_dir outputs/csgo_1b/exp31_3_3maps --num_train_epochs 50 \
+  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 \
+  --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 \
+  --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
+  --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
+  --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True \
+  --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_3_3maps
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+CKPT="outputs/csgo_1b/$EXPERIMENT/model.safetensors"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config "csgo_configs/test/${EXPERIMENT}_loc.yaml" --output_dir "outputs_loc/benchmark_v2/$EXPERIMENT/seen3" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config "csgo_configs/test/${EXPERIMENT}_gen_conti.yaml" --output_dir "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN3_MAPS[@]}"
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp31_3_3maps
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+SEEN3_MAPS=(de_ancient de_dust2 de_nuke)
+EXTERNAL_LOC_ROOT=csgosquare
+EXTERNAL_LOC_CONFIG=configs_reg_newdata/exp5_2.yaml
+EXTERNAL_LOC_CKPT=checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
+for MAP_NAME in "${SEEN3_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_discrete_test --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py --gt "data/preprocessed_data/$MAP_NAME/imgs" --pred "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/gen_imgs/$MAP_NAME" --batch_size 1 --device cuda --paired_size 448 --data_dir data/preprocessed_data --map_name "$MAP_NAME" --frame_diff_threshold 2 --min_track_len 4 --clip_length 16 --clip_stride 16 --fvd_size 224 --benchmark_v2_manifest "$V2_MANIFEST" --benchmark_v2_split seen_continuous --external_loc_repo_root "$EXTERNAL_LOC_ROOT" --external_loc_config_path "$EXTERNAL_LOC_CONFIG" --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete" --kind discrete --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/discrete/summary.json"
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN3_MAPS[@]}" --input_root "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous" --kind continuous --output "outputs_eval/benchmark_v2/$EXPERIMENT/seen3/continuous/summary.json"
 ```
 
 ## exp36_1 CrossMap-4 map-specific few-shot

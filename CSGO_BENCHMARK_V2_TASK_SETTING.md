@@ -1,7 +1,8 @@
 # UniLIP-CS2 Benchmark v2 Baseline Experiments
 
 Status: implemented protocol for the `exp31` through `exp34` baseline families,
-including the `exp31_1` loss-only ablation.
+including the `exp31_1` loss-only ablation and the four-arm Seen-3 loss
+ablation defined in `CSGO_BENCHMARK_V2_SEEN3_ABLATION.md`.
 The `exp33_loc`/`exp34_loc` localization 100/50/20/10-shot curves, including
 CrossMap and Seen-retention metrics, completed on 2026-09-04. Other joint and
 generation experiments retain their independently tracked status.
@@ -13,7 +14,9 @@ frozen Benchmark v2 protocol without changing their model architecture,
 trainable modules, losses, data augmentation, prompt form, or inference
 post-processing. `exp31_1` is the deliberate exception for loss ablation: it
 keeps the `exp31` architecture and trainability fixed while removing two loss
-terms.
+terms. The separate `exp31*_3maps` family repeats the complete `2 x 2`
+aux-loc/perception matrix on a fixed three-map subset to reduce experiment
+cost; it is not a replacement for the formal Seen-10 protocol.
 
 The two base-training families are:
 
@@ -21,6 +24,10 @@ The two base-training families are:
 | --- | --- | --- | --- |
 | `exp31` | `exp28_1` | joint gen + loc, full-head | Seen-10 train |
 | `exp31_1` | `exp31` | joint gen + loc, full-head; no aux-loc/perception | Seen-10 train |
+| `exp31_3maps` | `exp31` method | joint gen + loc, aux-loc + perception | Seen-3 train |
+| `exp31_1_3maps` | `exp31_1` method | joint gen + loc, no aux-loc/perception | Seen-3 train |
+| `exp31_2_3maps` | Seen-3 matrix | joint gen + loc, aux-loc only | Seen-3 train |
+| `exp31_3_3maps` | Seen-3 matrix | joint gen + loc, perception only | Seen-3 train |
 | `exp31_loc` | `exp14_3_loc` | loc only, full-head | Seen-10 train |
 | `exp31_gen` | `exp14_3_gen` | gen only, full-head | Seen-10 train |
 | `exp32` | `exp30_2` | joint gen + loc, LoRA | Seen-10 train |
@@ -102,6 +109,27 @@ v2 results must record the actual final global step and checkpoint path.
 Seen validation is the only legal Benchmark v2 split for base-model checkpoint
 selection or hyperparameter tuning. Seen discrete and continuous test splits
 are report-only.
+
+## 3.1 Seen-3 Loss Ablation
+
+The fixed Seen-3 subset is `de_ancient, de_dust2, de_nuke` in manifest order.
+Every arm independently starts from `UniLIP-1B`, uses 15,000 source frames,
+balanced joint sampling, a frozen vision tower and LLM, full task heads, two
+GPUs, per-device batch 4, gradient accumulation 16, and 50 epochs. This gives
+an expected 5,900 optimizer steps at effective global batch 128 because the
+Trainer rounds the final gradient-accumulation group up once per epoch.
+
+The main, aux-loc, and perception schedule steps are scaled by 0.3 relative to
+Seen-10. The four arms are full (`exp31_3maps`), neither loss
+(`exp31_1_3maps`), aux-only (`exp31_2_3maps`), and perception-only
+(`exp31_3_3maps`). Inference is restricted to 6,000 Seen-3 localization and
+discrete-generation rows plus 3,840 Seen-3 continuous-generation rows. There
+is no CrossMap evaluation or adaptation in this protocol. Generation metrics
+must aggregate the explicit ordered map subset, while localization enables
+`benchmark_v2_allow_map_subset_summary: True`.
+
+The complete contract, output layout, and interpretation rules are in
+`CSGO_BENCHMARK_V2_SEEN3_ABLATION.md`.
 
 ## 4. CrossMap Few-Shot Adaptation
 

@@ -70,8 +70,15 @@ EXPECTED_RESULT_SUBHEADINGS = (
     "## 离散生成",
     "## 连续生成",
 )
+ABLATION_RESULTS_HEADING = "ablation 3 maps表"
+ABLATION_RESULTS_UNDERLINE = "===================="
 MAIN_RESULTS_HEADING = "# csgo benchmark v2 主表"
 SUPPLEMENT_RESULTS_HEADING = "# csgo benchmark v2 补充表格"
+RESULT_PARENT_HEADINGS = (MAIN_RESULTS_HEADING, SUPPLEMENT_RESULTS_HEADING)
+MUTABLE_RESULT_PARENT_HEADINGS = (
+    MAIN_RESULTS_HEADING,
+    SUPPLEMENT_RESULTS_HEADING,
+)
 RESULT_MAIN_SHOT = 100
 RESULT_SECTION_BY_KIND = {
     "localization": "## 定位",
@@ -3045,22 +3052,71 @@ def _result_headings(lines: Sequence[str]) -> list[str]:
     return [line.rstrip("\r\n") for line in lines if _heading_level(line) == 1]
 
 
+def _ablation_section_bounds(lines: Sequence[str]) -> tuple[int, int]:
+    """Locate the required Setext ablation block without treating it as ATX."""
+
+    bodies = [line.rstrip("\r\n") for line in lines]
+    title_indices = [
+        index
+        for index, body in enumerate(bodies)
+        if body == ABLATION_RESULTS_HEADING
+    ]
+    underline_indices = [
+        index
+        for index, body in enumerate(bodies)
+        if body == ABLATION_RESULTS_UNDERLINE
+    ]
+    marker_indices = [
+        index
+        for index in title_indices
+        if index + 1 < len(bodies)
+        and bodies[index + 1] == ABLATION_RESULTS_UNDERLINE
+    ]
+    if (
+        len(title_indices) != 1
+        or len(underline_indices) != 1
+        or len(marker_indices) != 1
+    ):
+        raise PipelineError(
+            "results file must contain exactly one Setext ablation marker"
+        )
+
+    progress_index = bodies.index(EXPECTED_HEADINGS[0])
+    main_index = bodies.index(MAIN_RESULTS_HEADING)
+    marker_index = marker_indices[0]
+    if not progress_index < marker_index < main_index:
+        raise PipelineError(
+            "Setext ablation marker must be between experiment progress and main results"
+        )
+    return marker_index, main_index
+
+
+def _validate_result_subheadings(
+    lines: Sequence[str], start: int, end: int, parent: str
+) -> None:
+    headings = []
+    for line in lines[start:end]:
+        level = _heading_level(line)
+        if level >= 2:
+            headings.append(line.rstrip("\r\n"))
+    if headings != list(EXPECTED_RESULT_SUBHEADINGS):
+        raise PipelineError(
+            f"results file subsections changed under {parent}; refusing to rewrite"
+        )
+
+
 def _validate_results_structure(lines: Sequence[str]) -> None:
     if _result_headings(lines) != list(EXPECTED_HEADINGS):
         raise PipelineError(
             "results file top-level headings changed; refusing to rewrite"
         )
-    for parent in (MAIN_RESULTS_HEADING, SUPPLEMENT_RESULTS_HEADING):
+    ablation_start, main_start = _ablation_section_bounds(lines)
+    _validate_result_subheadings(
+        lines, ablation_start + 2, main_start, ABLATION_RESULTS_HEADING
+    )
+    for parent in RESULT_PARENT_HEADINGS:
         start, end = _section_bounds(lines, parent)
-        subheadings = [
-            line.rstrip("\r\n")
-            for line in lines[start + 1 : end]
-            if _heading_level(line) == 2
-        ]
-        if subheadings != list(EXPECTED_RESULT_SUBHEADINGS):
-            raise PipelineError(
-                f"results file subsections changed under {parent}; refusing to rewrite"
-            )
+        _validate_result_subheadings(lines, start + 1, end, parent)
 
 
 def _line_ending(lines: Sequence[str]) -> str:
@@ -3142,6 +3198,58 @@ def _insert_or_replace_table_row(
         raise PipelineError(f"results table is missing under {heading}")
     insert_at = row_indices[-1] + 1
     lines.insert(insert_at, replacement + ending)
+    return True
+
+
+def _insert_or_replace_result_row(
+    lines: list[str],
+    heading: str,
+    prefix: str,
+    replacement: str | Callable[[str], str],
+    *,
+    shots: int,
+    initialize: bool,
+) -> bool:
+    """Update a result row wherever it currently lives.
+
+    Users may manually move non-100-shot rows into the main result table.  A
+    result sync must honor that placement, while newly initialized rows retain
+    the historical default of 100-shot in the main table and other shots in
+    the supplement table.
+    """
+
+    def render(parent_heading: str) -> str:
+        return replacement(parent_heading) if callable(replacement) else replacement
+
+    ending = _line_ending(lines)
+    found = False
+    for parent_heading in MUTABLE_RESULT_PARENT_HEADINGS:
+        start, end = _section_bounds(lines, heading, parent_heading=parent_heading)
+        matches = [
+            index
+            for index in range(start + 1, end)
+            if lines[index].rstrip("\r\n").startswith(prefix)
+        ]
+        if matches:
+            found = True
+            rendered = render(parent_heading)
+            for index in matches:
+                lines[index] = rendered + ending
+
+    if found:
+        return True
+
+    if not initialize:
+        return False
+    parent_heading = _results_parent_heading(shots)
+    _insert_or_replace_table_row(
+        lines,
+        heading,
+        prefix,
+        render(parent_heading),
+        initialize=True,
+        parent_heading=parent_heading,
+    )
     return True
 
 
@@ -3453,38 +3561,39 @@ def _sync_results_locked(
         routes=selected_routes,
     ):
         values = _result_payload(matrix, setting, kind, experiment, shot, row_type)
-        checkpoint_step = (
-            str(_protocol(matrix)["max_steps"])
-            if shot == RESULT_MAIN_SHOT and values is not None
-            else "-"
-            if shot == RESULT_MAIN_SHOT
-            else None
-        )
-        row = (
-            _result_row(
+
+        def render_result_row(parent_heading: str) -> str:
+            checkpoint_step = (
+                str(_protocol(matrix)["max_steps"])
+                if parent_heading == MAIN_RESULTS_HEADING and values is not None
+                else "-"
+                if parent_heading == MAIN_RESULTS_HEADING
+                else None
+            )
+            if values is not None:
+                return _result_row(
+                    setting,
+                    kind,
+                    experiment,
+                    shot,
+                    values,
+                    checkpoint_step=checkpoint_step,
+                )
+            return _blank_result_row(
                 setting,
                 kind,
                 experiment,
                 shot,
-                values,
                 checkpoint_step=checkpoint_step,
             )
-            if values is not None
-            else _blank_result_row(
-                setting,
-                kind,
-                experiment,
-                shot,
-                checkpoint_step=checkpoint_step,
-            )
-        )
-        _insert_or_replace_table_row(
+
+        _insert_or_replace_result_row(
             lines,
             RESULT_SECTION_BY_KIND[kind],
             _row_prefix(setting, kind, experiment, shot),
-            row,
+            render_result_row,
+            shots=shot,
             initialize=initialize,
-            parent_heading=_results_parent_heading(shot),
         )
 
     _validate_results_structure(lines)
