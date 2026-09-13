@@ -6194,7 +6194,9 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         actions: Optional[torch.Tensor] = None,
     ):
         dit_path = self.model.config.dit_path
-        scheduler = DPMSolverMultistepScheduler.from_pretrained(dit_path, subfolder="scheduler")
+        scheduler = DPMSolverMultistepScheduler.from_pretrained(
+            dit_path, subfolder="scheduler", local_files_only=True
+        )
 
         N_QUERY = self.get_n_query()
         inputs = tokenizer(text, padding="longest", return_tensors="pt")

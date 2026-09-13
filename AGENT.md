@@ -87,7 +87,8 @@ some frames. It is useful for experiment continuity, but it is not a valid
 trajectory-generalization protocol.
 
 Benchmark v2 is the next formal protocol. Its complete contract and manual
-build procedure are in [`CSGO_BENCHMARK_V2.md`](CSGO_BENCHMARK_V2.md). The
+build procedure are in
+[`CSGO_BENCHMARK_V2_CONSTRUCTION.md`](CSGO_BENCHMARK_V2_CONSTRUCTION.md). The
 high-level design is:
 
 - Seen-10: `cs_agency`, `cs_italy`, `de_ancient`, `de_anubis`, `de_dust2`,
@@ -95,8 +96,10 @@ high-level design is:
 - CrossMap-4: `cs_office`, `de_golden`, `de_palacio`, and `de_vertigo`.
 - Seen per map: 5,000 train, 500 validation, 2,000 discrete test, and 20 x
   64-frame continuous clips.
-- CrossMap per map: a fixed 2,000-frame query, five 100-shot support draws,
-  and 20 x 64-frame continuous clips.
+- CrossMap per map: a fixed 2,000-frame query, five built 100-shot support
+  draws, and 20 x 64-frame continuous clips. Current `exp33*`/`exp34*` runs use
+  only the default draw `seed_0`; the others remain available for optional
+  future analysis.
 - All pools are disjoint by parsed `file_num`; continuous clip boundaries are
   preserved. Until capture-session IDs are available, claims must say
   `file_num` trajectory-disjoint rather than session-disjoint.
@@ -113,7 +116,10 @@ is `scripts/build_csgo_benchmark_v2.py`. The formal build is complete under
 `data/csgo_benchmark_v2`. The formal runtime bundle is
 `benchmark_manifest.json`, `build_report.json`, `checksums.sha256`,
 `selected_images.sha256`, `aggregate/`, `calibration/`, and `splits/`, plus
-the selected source FPV images and manifest-referenced radar files. The
+`minimal_dataset_report.json`, the selected flat FPV images under
+`images/<map>/`, and the copied manifest-referenced radar files under
+`radars/<map>/`. The original `data/preprocessed_data/` paths are not part of
+the migration bundle. The
 released `calibration/z_calibration.json` and
 `calibration/z_extrema_rows.jsonl` are required release/verification metadata
 and must be retained; only `calibration/*.template.yaml` approval templates
@@ -137,9 +143,13 @@ checkpoints missing any adaptation-trainable key. Generation/localization infere
 deterministic output/checkpoint/seed overrides plus v2 split/map/support-seed/
 shot overrides, and the v2 metric scripts use manifest-selected coverage,
 frozen Z, and exact continuous clips. Legacy
-configs without `benchmark_v2_manifest` retain their existing behavior. This
-is source-level implementation evidence only: no v2 training, inference, or
-model metric run has been executed in this checkout.
+configs without `benchmark_v2_manifest` retain their existing behavior.
+Benchmark v2 model execution is in progress overall. The localization branch
+has completed the Seen-10 baselines and the full nested 100/50/20/10-shot
+`exp33_loc`/`exp34_loc` adaptation curves, including all CrossMap-4 and
+Seen-retention summaries. Current empirical status and equal-map macro results
+are recorded in
+[`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md).
 
 ### Benchmark v2 Runtime and Experiments
 
@@ -153,40 +163,70 @@ the selected manifest rows.
 | Seen-10 experiment | Parent | CrossMap-4 adaptation |
 | --- | --- | --- |
 | `exp31` | `exp28_1`, joint full-head | `exp33` |
+| `exp31_1` | `exp31`, strict loss-only ablation without aux-loc/perception | none in the current protocol |
 | `exp31_loc` | `exp14_3_loc`, loc full-head | `exp33_loc` |
 | `exp31_gen` | `exp14_3_gen`, gen full-head | `exp33_gen` |
 | `exp32` | `exp30_2`, joint LoRA | `exp34` |
 | `exp32_loc` | `exp14_2_loc`, loc LoRA | `exp34_loc` |
 | `exp32_gen` | `exp14_2_gen`, gen LoRA | `exp34_gen` |
+| `exp35_<map>` / `exp35_gen_<map>` / `exp35_loc_<map>` | matching `exp31*` Seen-10 checkpoint | map-specific CrossMap-4 full-head adaptation |
+| `exp36_<map>` / `exp36_gen_<map>` / `exp36_loc_<map>` | matching `exp32*` Seen-10 checkpoint | map-specific CrossMap-4 LoRA adaptation |
+
+`exp31_1` keeps the `exp31` balanced joint sampling (`task_mix_ratio=0.5`),
+full-head trainability, frozen LLM, main localization-loss schedule, effective
+per-module learning rates, and launch hyperparameters. Its only method change
+is disabling auxiliary localization and localization perception losses, so
+`exp31` versus `exp31_1` isolates those losses without mixing in the
+LoRA/full-head difference carried by `exp32`.
 
 The Seen runs use 50,000 train frames, 5,000 validation frames, 20,000
-discrete-test frames and 200 exact continuous clips. Each adaptation run
-starts from its matching final Seen model, uses 100 support frames per held-out
-map, and is repeated for support seeds 0 through 4. `SHOTS` is parameterized
-for future 50/20/10-shot runs while the provisional fixed adaptation budget is
-`MAX_STEPS=400`. With effective source batch 128 and `drop_last=False`, each
-400-row support epoch is `[128, 128, 128, 16]`, or four updates; 400 updates
-are approximately 100 complete support-set passes. The naive
-`128 * 400 / 400 = 128` calculation is wrong because the final batch has only
-16 rows.
+discrete-test frames and 200 exact continuous clips. Each adaptation point
+starts independently from its matching final Seen model and runs once with the
+default frozen support draw (`seed_0`). The localization curve uses nested
+100/50/20/10-shot subsets and the provisional fixed budget
+`MAX_STEPS=400`. The task-homogeneous sampler emits only complete batches. The
+completed 100-shot run used batch 128 (three batches per epoch); the reduced
+50/20/10-shot runs use batches 128/80/40 so every dataset has at least one
+batch. The protocol therefore fixes optimizer updates, not examples per update
+or total example presentations.
+
+The machine-readable localization matrix is
+`csgo_configs/benchmark_v2_loc_few_shot.yaml`. Its runner,
+`scripts/run_csgo_benchmark_v2_loc_few_shot.py`, exposes `validate`, `status`,
+single-pipeline `run`, and resource-gated `schedule` commands. The scheduler
+does not launch reduced-shot jobs until both 100-shot CrossMap and Seen
+retention summaries pass strict provenance checks. Independent jobs may share
+one GPU only when the configured free-memory threshold allows it; training and
+the two inference/metric stages within a job remain serial.
 
 Generation and localization metric JSONs are aggregated with
 `scripts/aggregate_csgo_benchmark_v2_metrics.py`. The `maps` subcommand uses
 `--manifest --split --input_root --kind --output`; it derives the exact map list
 from the manifest and reports an equal-map macro, so it does not accept the
-legacy-style `--input-dir`, `--protocol`, or `--maps` options. The `seeds`
-subcommand uses `--seed_root_pattern --seeds --output`, where the pattern must
-contain the literal `{seed}` and point to one completed map-macro JSON per
-support seed. It reports support-selection mean and 95% Student-t intervals,
-not independent model-training uncertainty. Strict metric aggregation requires
-complete selected coverage and each inference output root's
-`inference_manifest.json`; do not use the debug override flags for reported
-results. Keep inference `--seed 42` fixed across support seeds and pass the
-support draw independently as `--benchmark_v2_support_seed`. Localization
-results are written as strict `benchmark_csgo_v2_loc.json` summaries with an
-equal-map macro and provenance. The `seeds` subcommand validates the rendered
-`{seed}` path against `support_seed` and checks consistent inference RNG and
-other provenance before aggregating either generation or localization results.
+legacy-style `--input-dir`, `--protocol`, or `--maps` options. Strict metric
+aggregation requires complete selected coverage and each inference output
+root's `inference_manifest.json`; do not use the debug override flags for
+reported results. Keep inference `--seed 42` fixed and pass support seed `0`
+independently as `--benchmark_v2_support_seed 0`. Localization results are
+written as strict `benchmark_csgo_v2_loc.json` summaries with an equal-map
+macro and provenance. The generic `seeds` subcommand remains implemented for
+optional future multi-draw analysis, but it is not used by the single-draw
+`exp33*`/`exp34*` protocol and no support-selection confidence interval is
+reported.
+
+The map-specific few-shot line targets `cs_office`, `de_golden`, `de_palacio`,
+and `de_vertigo`. Each `<map>` run trains only that map's
+`crossmap_support` rows with `support_seed=0`, `SHOTS=100` by default
+(parameterized for 50/20/10), and `MAX_STEPS=400`. Every map, shot, and task
+starts independently from its matching Seen-10 checkpoint; `exp35*` never
+initializes from `exp33*`, and `exp36*` never initializes from `exp34*`.
+Joint adaptation keeps the exp33/exp34 batch contract `4/4/32`; single-task
+adaptation sets `BATCH_SIZE=SHOTS` for 100/50/20/10 because the one-map
+support set would otherwise be smaller than the sampler's batch and be
+dropped as an incomplete task-homogeneous batch. Query inference is restricted to
+the target map, while Seen-retention inference covers all Seen-10 maps with
+inference seed `42`. The detailed matrix and command contract are in
+[`CSGO_BENCHMARK_V2_MAP_SPECIFIC_FEWSHOT.md`](CSGO_BENCHMARK_V2_MAP_SPECIFIC_FEWSHOT.md).
 
 For `is_multi_task_balanced: True`,
 `UniLIPMultiTaskBalancedDataset` stores one base data entry per frame and
@@ -217,11 +257,20 @@ The CSGO training and evaluation path is organized as follows:
 - `benchmark_csgo_v1.py`: paired image benchmark metrics and coverage checks.
 - `benchmark_csgo_v1_conti.py`: continuous-track metrics, temporal metrics,
   and FVD evaluation.
+- `CSGO_BENCHMARK_METRICS_ZH.md`: Chinese reporting-metric selection and
+  field-by-field definitions for the localization, discrete-generation, and
+  continuous-generation result JSONs.
 - `scripts/aggregate_csgo_benchmark_v2_metrics.py`: equal-map and
   support-selection aggregation for strict v2 generation and localization
   metric JSONs.
-- `CSGO_BENCHMARK_V2.md`: formal Seen-10/CrossMap-4 protocol, anomaly review,
-  output contract, acceptance criteria, and reproducible manual commands.
+- `CSGO_BENCHMARK_V2_CONSTRUCTION.md`: formal Seen-10/CrossMap-4 construction
+  protocol, anomaly review, output contract, and acceptance criteria.
+- `CSGO_BENCHMARK_V2_TASK_SETTING.md`: Benchmark v2 baseline inheritance,
+  training/evaluation protocol, and output layout.
+- `CSGO_BENCHMARK_V2_MAP_SPECIFIC_FEWSHOT.md`: map-specific CrossMap-4
+  few-shot matrix, naming contract, fairness caveat, and aggregation commands.
+- `csgo_benchmark_v2_experiments_results.md`: current execution status and
+  equal-map macro result tables.
 - `scripts/build_csgo_benchmark_v2.py`: deterministic `audit`, `calibrate`,
   `build`, and `validate` commands for benchmark v2.
 - `scripts/export_csgo_benchmark_v2_review.py`: read-only CSV export for the
@@ -252,7 +301,9 @@ Canonical evaluation outputs are:
 
 Treat the `*_v1.py` benchmark scripts as canonical. Older `benchmark_csgo.py`
 and `benchmark_csgo_video.py` paths are legacy unless an experiment explicitly
-records their use.
+records their use. Use [`CSGO_BENCHMARK_METRICS_ZH.md`](CSGO_BENCHMARK_METRICS_ZH.md)
+for the formal main-table/appendix metric set and the Chinese definitions of
+every metric retained in current or historical result JSONs.
 
 ## Model Branches
 
@@ -423,13 +474,14 @@ evaluation are required for that attribution.
 
 ## Risks and Next Priorities
 
-1. Run the Seen-10 `exp31*` and `exp32*` training/evaluation matrix, recording
+1. Run the Seen-10 `exp31*` (including `exp31_1`) and `exp32*`
+   training/evaluation matrix, recording
    actual final optimizer steps and checkpoint paths. Use Seen validation only
    for checkpoint and adaptation-recipe decisions.
-2. Run CrossMap-4 adaptation for `exp33*` and `exp34*` across support seeds
-   0--4, then report per-map results, equal-map macro averages, and support-seed
-   confidence intervals. The 400-step recipe is provisional and must be tuned
-   on simulated Seen episodes, never on CrossMap query data.
+2. Run CrossMap-4 adaptation for `exp33*` and `exp34*` once with default
+   support seed `0`, then report per-map results and equal-map macro averages.
+   The 400-step recipe is provisional and must be tuned on simulated Seen
+   episodes, never on CrossMap query data.
 3. Run CrossMap zero-shot inference for the Seen checkpoints with the explicit
    `crossmap_query_test`/`crossmap_continuous` and CrossMap map-list overrides
    recorded in `record.md`; adapted retention can use the analogous

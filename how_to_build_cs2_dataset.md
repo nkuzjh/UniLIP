@@ -279,9 +279,140 @@ audit
 - 接受但保留的 coordinate candidates：`9,705`
 - 被正式 split 引用的唯一 FPS 图片：`102,780`
 
-本次从 `data/csgo_benchmark_v2` 目录重新执行 `sha256sum -c checksums.sha256`，82 个 bundle 条目全部 `OK`。这验证了生成的 JSON、manifest、report、calibration 和 checksum 文件；本次没有重新哈希外部软链接中的全部 102,780 张源图片，因此不把 bundle 校验夸大为完整外部图片复验。
+本次从 `data/csgo_benchmark_v2` 目录重新执行 `sha256sum -c checksums.sha256`，82 个 bundle 条目全部 `OK`；随后又对复制后的 102,780 张图片和 14 张 radar 做了完整的源/目标 SHA-256 复验。因此这里同时区分 bundle 元数据校验和实际 flat asset 内容校验。
 
-训练和推理通过 `benchmark_v2_manifest` 显式启用，否则继续走 legacy。低层选择器支持七种 split，并加载冻结 Z、显式 radar 和连续 clip 边界，见 [benchmark_v2.py](/home/jiahao/task/UniLIP/csgo_datasets/benchmark_v2.py:22)及 [训练接入](/home/jiahao/task/UniLIP/csgo_datasets/unified_task_dataset.py:567)。
+训练、推理和评测通过 `benchmark_v2_manifest` 显式启用 benchmark v2 协议；低层选择器支持七种 split，并加载冻结 Z、显式 radar 和连续 clip 边界，见 [benchmark_v2.py](/home/jiahao/task/UniLIP/csgo_datasets/benchmark_v2.py:22)及 [训练接入](/home/jiahao/task/UniLIP/csgo_datasets/unified_task_dataset.py:567)。数据资产位置由单独的显式开关 `benchmark_v2_asset_manifest` 控制：
+
+- 缺失或为 `null` 时，保持旧行为，按 `data_dir/<map>/imgs/<file>.jpg` 读取图片，并使用旧 `data_dir` 下的 radar；因此当前 `exp31`--`exp36` 配置无需修改即可继续运行。
+- 设置为 `data/csgo_benchmark_v2/minimal_dataset_report.json` 时，训练、生成推理、定位推理以及离散/连续 metric 的 runner 全链使用本节的扁平 `images/<map>/` 和 `radars/<map>/`。此模式从 asset report 解析目标路径并忽略 `data_dir`，不需要也不会创建软链接、硬链接或移动原始图片。
+
+四个 benchmark v2 matrix runner（`run_csgo_benchmark_v2_gen.py`、
+`run_csgo_benchmark_v2_loc_few_shot.py`、`run_csgo_benchmark_v2_map_specific.py`、
+`run_csgo_benchmark_v2_checkpoint_eval.py`）都支持顶层
+`benchmark_v2_asset_manifest`，也支持同名 CLI override。直接调用时，
+`train_csgo.py`、`eval_csgo.py` 和 `eval_csgo_loc.py` 可从任务 YAML 读取该字段，也可用
+同名 CLI 覆盖；两个 metric 脚本使用同名 CLI 参数。独立 metric 的 `--gt` 由 runner
+按当前资产后端自动生成，不应手工指向旧的 `data_dir`。runner 中的优先级为 CLI
+override > matrix，任务 YAML 应省略该字段或与 matrix 一致，否则立即报冲突；直接
+train/eval 的优先级为 CLI > 任务 YAML > source 默认值。代码不自动探测数据后端。
+启用 minimal 时原任务 YAML 中保留 `data_dir` 是正常且推荐的：它会被忽略，并不算
+混用两套后端。
+
+资产 report、selected checksum 和 radar 内容由 runtime selector 校验；完整的目标 JPG
+内容由下述 `verify-target` 校验。metric 聚合器负责核对各推理/metric 产物记录的资产
+identity 是否一致，不替代对迁移数据包本身的 `verify-target` 验收。
+
+### benchmarkV2 最小同步数据包（2026-09-07）
+
+当前已将所有正式 split 实际引用的 FPV 图片复制为以下扁平同步布局：
+
+```text
+data/csgo_benchmark_v2/
+├── benchmark_manifest.json
+├── splits/
+├── images/<map>/file_num<record>_frame_<frame>.jpg
+├── radars/<map>/<manifest 指定的 radar 文件>
+├── selected_images.sha256
+└── minimal_dataset_report.json
+```
+
+`images/` 只包含 14 张正式地图和 split 引用的 JPG；radar 单独保存，避免污染帧集合。复制工具为
+[`scripts/materialize_csgo_benchmark_v2.py`](/home/jiahao/task/UniLIP/scripts/materialize_csgo_benchmark_v2.py)，重复验收命令是：
+
+```bash
+python scripts/materialize_csgo_benchmark_v2.py verify
+```
+
+上面的 `verify` 是在仍可访问原始 source corpus 时做的 source/target 双向复验。
+新服务器只同步最小迁移集时使用不访问 source 的 target-only 验收：
+
+```bash
+python scripts/materialize_csgo_benchmark_v2.py verify-target
+```
+
+该命令读取 `data/csgo_benchmark_v2/` 内的 manifest、split、selected checksum、
+asset report、flat images、radars，以及 report 绑定的 `build_report.json`（当前正式
+包中存在）；还会读取仓库内的 `csgo_configs/benchmark_v2.yaml` 并核对其 hash。它检查
+目标文件的完整 hash、数量、地图集合、普通文件及单链接约束，但不要求
+`data/preprocessed_data/` 存在。因此计划在新服务器执行 `verify-target` 时，应同步下表
+的正式最小迁移集及该 config；只保留执行层最小集仍可运行 consumer，但不满足当前
+正式 report 的完整发布验收合同。
+
+帧集合不是按文件夹猜测，而是从 `splits/` 独立重建后再与
+`selected_images.sha256` 双向比对。Seen-10 每图包含 5,000 train、500
+validation、2,000 discrete-test 和 1,280 continuous 帧，共 8,780 张唯一
+JPG。CrossMap-4 每图包含 2,000 query、1,280 continuous，以及五个
+100-shot support seed 的并集；四图的 support 唯一并集分别为 457、470、464、469。
+虽然当前 `exp33`--`exp36` 正式运行固定使用 `seed_0`，这里按迁移要求保留了
+`seed_0`--`seed_4` 的全部候选帧。最终是 87,800 张 Seen 图片和 14,980 张
+CrossMap 图片，总计 102,780 张。
+
+下面的“逻辑大小”是文件内容字节数；文件系统实际占用由 `du` 统计。执行层最小集是
+当前训练、推理和 metric consumer 真正会读取的文件，包含 `selected_images.sha256`
+和 `minimal_dataset_report.json`，因为 asset backend 会用它们绑定选择集合和目标路径。
+正式迁移推荐保留完整发布集，它只比执行层最小集多约 23.68 MiB，却保留了发布校验与
+重建 provenance。
+
+| 层级 / 路径 | 说明 | 文件数或样本数 | 逻辑大小 |
+|---|---|---:|---:|
+| `images/` | 两个任务共用的已选 FPV JPG | 102,780 | 9,732,747,719 B（9.064 GiB） |
+| `radars/` | manifest 明确指定的每图一张 radar | 14 | 3,103,923 B（2.960 MiB） |
+| `splits/` | Seen 四类及 CrossMap 五 seed support/query/continuous | 68 JSON | 20,057,770 B（19.129 MiB） |
+| `benchmark_manifest.json` | split、map、冻结 Z、源与 radar 指纹 | 1 | 66,312 B（64.758 KiB） |
+| `selected_images.sha256` | split 派生图片集合的内容清单 | 1 | 10,940,220 B（10.434 MiB） |
+| `minimal_dataset_report.json` | 扁平目标路径、计数、校验与复制摘要 | 1 | 7,886 B |
+| **执行层最小集** | images、radars、splits、manifest 及上述两个绑定文件 | **102,865 个文件** | **9,766,923,830 B（9.096 GiB）** |
+| `aggregate/` | per-map split 缺失时的离散 fallback；正式发布保留 | 9 JSON | 15,729,141 B（15.000 MiB） |
+| `calibration/z_calibration.json` | 发布 Z 标定记录 | 1 | 7,303 B |
+| `calibration/z_extrema_rows.jsonl` | Z 极值行验证元数据 | 1 | 1,445,822 B（1.379 MiB） |
+| `build_report.json` | 构建决策与统计 provenance | 1 | 7,638,336 B（7.285 MiB） |
+| `checksums.sha256` | 82 个正式 bundle 条目的校验清单 | 1 | 8,712 B |
+| **正式最小迁移集** | 执行层最小集加全部发布/验证元数据 | 102,878 个文件 | **9,791,753,144 B（9.119 GiB）** |
+
+正式最小迁移集当前在 ext4 上的实际占用是 10,007,040,000 B（9.320 GiB）。
+上表只统计 benchmark 数据包；项目代码、`csgo_configs/exp31*`--`exp36*` 与 test
+配置、模型基座/checkpoint、推理输出和外部 metric 依赖不计入数据集容量，并需按具体
+实验另外同步。
+各地图 FPV 的逻辑大小如下；精确计数和 radar 映射同时记录在
+[`minimal_dataset_report.json`](/home/jiahao/task/UniLIP/data/csgo_benchmark_v2/minimal_dataset_report.json)。
+
+| 地图 | 唯一 JPG | 逻辑大小 |
+|---|---:|---:|
+| `cs_agency` | 8,780 | 516,745,774 B |
+| `cs_italy` | 8,780 | 857,211,528 B |
+| `de_ancient` | 8,780 | 875,461,558 B |
+| `de_anubis` | 8,780 | 753,538,936 B |
+| `de_dust2` | 8,780 | 1,223,909,837 B |
+| `de_inferno` | 8,780 | 933,049,221 B |
+| `de_mirage` | 8,780 | 836,945,349 B |
+| `de_nuke` | 8,780 | 758,773,878 B |
+| `de_overpass` | 8,780 | 897,790,354 B |
+| `de_train` | 8,780 | 798,312,349 B |
+| `cs_office` | 3,737 | 234,459,033 B |
+| `de_golden` | 3,750 | 359,407,117 B |
+| `de_palacio` | 3,744 | 398,227,290 B |
+| `de_vertigo` | 3,749 | 288,915,495 B |
+
+复制后的独立验收结果是：目标与 split 集合无缺失、无额外 JPG；源和目标
+102,780 张图片的 SHA-256 全部匹配；14 张 radar 全部匹配；源文件复制后仍存在；
+源位于设备 `2065`、目标位于设备 `2050`，目标均为单链接普通文件，因此不是移动、
+符号链接或硬链接。原 14 图目录共有 3,132,847 张 JPG、289,227,831,398 B；
+同步 FPV 仅占其 3.365%，减少 96.635% 的逻辑容量。
+
+`audit/`（17,497,914,029 B）、`audit_archive/`（134,456,551 B）和
+`calibration/*.template.yaml` 是 build-only，不属于最小运行/迁移集；原始
+`positions.json` 和未被 split 选中的 JPG 也不需要同步。扁平
+`images/<map>` 是正式的服务器间同步布局；迁移后启用最小集只需在 matrix 或直接
+脚本配置中设置 `benchmark_v2_asset_manifest`，不能把 `data_dir` 直接改为
+`images/`，也不应把扁平目录重新映射或搬回旧 `<data_dir>/<map>/imgs/` 布局。
+
+在另一台服务器上保持仓库相对路径不变时，只需同步正式最小迁移集、代码、相关 v2
+配置和实验所需 checkpoint/模型依赖。复现 `exp31`--`exp36` 的旧 source 运行仍
+使用原配置；若服务器只包含最小集，或要让旧实验改用最小集，则只增加/覆盖一个
+`benchmark_v2_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json`
+参数。原配置中的 `data_dir` 可以原样保留，minimal 模式会明确忽略它；不要依赖自动
+探测，也不要在 minimal 运行中复用 source 后端生成的旧推理或 metric 产物，provenance
+校验会拒绝这种混用。
 
 ## 五、旧 benchmark 与 v2 的实质区别
 

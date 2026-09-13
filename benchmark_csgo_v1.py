@@ -1,4 +1,6 @@
 import argparse
+import hashlib
+import inspect
 import json
 import os
 from collections.abc import Mapping
@@ -186,9 +188,199 @@ def benchmark_v2_selection_details(
 def benchmark_v2_enabled(args: argparse.Namespace) -> bool:
     manifest = getattr(args, "benchmark_v2_manifest", None)
     split = getattr(args, "benchmark_v2_split", None)
+    asset_manifest = getattr(args, "benchmark_v2_asset_manifest", None)
     if bool(manifest) != bool(split):
         raise ValueError("--benchmark_v2_manifest and --benchmark_v2_split must be provided together")
+    if asset_manifest and not manifest:
+        raise ValueError("--benchmark_v2_asset_manifest requires --benchmark_v2_manifest")
     return bool(manifest)
+
+
+def _asset_provenance_value(source: object, keys: Sequence[str]) -> object:
+    """Read an asset provenance field from selection-like objects.
+
+    The core selection currently exposes ``asset_*`` fields, while older
+    evaluator artifacts may use the ``benchmark_v2_*`` spelling.  Keeping the
+    lookup here makes metric code tolerant of either representation without
+    changing the legacy source backend.
+    """
+
+    if source is None:
+        return None
+    nested_values = [
+        _selection_value(source, "asset_provenance"),
+        _selection_value(source, "benchmark_v2_asset"),
+    ]
+    for key in keys:
+        value = _selection_value(source, key)
+        if value not in (None, ""):
+            return value
+    for nested in nested_values:
+        if isinstance(nested, Mapping):
+            for key in keys:
+                value = nested.get(key)
+                if value not in (None, ""):
+                    return value
+    return None
+
+
+def _sha256_file(path: Path) -> str | None:
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+    except (OSError, ValueError):
+        return None
+
+
+def _asset_report_selected_hash(path: Path) -> str | None:
+    """Best-effort fallback for reports produced before Selection hashes."""
+
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, Mapping):
+        return None
+    selected = payload.get("selected_images")
+    if isinstance(selected, Mapping):
+        value = selected.get("sha256")
+        return str(value) if value not in (None, "") else None
+    return None
+
+
+def benchmark_v2_asset_provenance(
+    selection: object = None,
+    args: object = None,
+) -> Dict[str, object]:
+    """Return the canonical asset provenance emitted by v2 metric artifacts.
+
+    Missing fields mean the historical source backend.  This is intentional:
+    exp31--36 artifacts predate the asset backend and must remain readable.
+    """
+
+    backend = _asset_provenance_value(
+        selection,
+        ("asset_backend", "benchmark_v2_asset_backend", "backend"),
+    )
+    if backend in (None, ""):
+        backend = _asset_provenance_value(
+            args,
+            ("asset_backend", "benchmark_v2_asset_backend", "backend"),
+        )
+    # ``manifest_path``/``path`` are legacy minimal-asset aliases.  A real
+    # source selection also exposes ``manifest_path``, but that points to the
+    # protocol manifest and must not become asset provenance.
+    asset_manifest_keys = (
+        "asset_manifest_path",
+        "benchmark_v2_asset_manifest",
+        "asset_manifest",
+    )
+    legacy_manifest_keys = (*asset_manifest_keys, "manifest_path", "path")
+    manifest_keys = (
+        asset_manifest_keys if backend == "source" else legacy_manifest_keys
+    )
+    manifest_value = _asset_provenance_value(selection, manifest_keys)
+    if manifest_value in (None, ""):
+        manifest_value = _asset_provenance_value(
+            args,
+            manifest_keys,
+        )
+    manifest_path = None
+    if manifest_value not in (None, ""):
+        manifest_path = str(Path(os.fspath(manifest_value)).expanduser().resolve())
+    if backend in (None, ""):
+        backend = "minimal" if manifest_path else "source"
+    backend = str(backend)
+    if backend not in {"source", "minimal"}:
+        raise ValueError(
+            "Benchmark v2 asset backend must be 'source' or 'minimal', "
+            f"got {backend!r}"
+        )
+
+    manifest_hash = _asset_provenance_value(
+        selection,
+        (
+            "asset_manifest_sha256",
+            "benchmark_v2_asset_manifest_sha256",
+            "asset_manifest_hash",
+            "manifest_sha256",
+            "sha256",
+        ),
+    )
+    if manifest_hash in (None, ""):
+        manifest_hash = _asset_provenance_value(
+            args,
+            (
+                "asset_manifest_sha256",
+                "benchmark_v2_asset_manifest_sha256",
+                "asset_manifest_hash",
+                "manifest_sha256",
+                "sha256",
+            ),
+        )
+    if manifest_hash in (None, "") and manifest_path:
+        manifest_hash = _sha256_file(Path(manifest_path))
+
+    selected_hash = _asset_provenance_value(
+        selection,
+        (
+            "selected_images_sha256",
+            "benchmark_v2_selected_images_sha256",
+            "selected_image_sha256",
+            "selected_images_hash",
+        ),
+    )
+    if selected_hash in (None, ""):
+        selected_hash = _asset_provenance_value(
+            args,
+            (
+                "selected_images_sha256",
+                "benchmark_v2_selected_images_sha256",
+                "selected_image_sha256",
+            ),
+        )
+    if selected_hash in (None, "") and manifest_path:
+        selected_hash = _asset_report_selected_hash(Path(manifest_path))
+
+    if backend == "source" and any(
+        value not in (None, "")
+        for value in (manifest_path, manifest_hash, selected_hash)
+    ):
+        raise ValueError(
+            "Benchmark v2 source provenance cannot carry a minimal asset "
+            "manifest or checksum identity"
+        )
+    if backend == "source":
+        manifest_path = None
+        manifest_hash = None
+        selected_hash = None
+    canonical = {
+        "asset_backend": backend,
+        "asset_manifest_path": manifest_path,
+        "asset_manifest_sha256": str(manifest_hash) if manifest_hash else None,
+        "selected_images_sha256": str(selected_hash) if selected_hash else None,
+    }
+    # The runner's persisted inference contract uses the benchmark-prefixed
+    # names.  Keep the core Selection spellings as well so this evaluator can
+    # consume either contract during a rolling upgrade.
+    provenance = {
+        **canonical,
+        "benchmark_v2_asset_manifest": manifest_path,
+        "benchmark_v2_asset_backend": backend,
+        "benchmark_v2_asset_manifest_sha256": canonical["asset_manifest_sha256"],
+        "benchmark_v2_selected_images_sha256": canonical["selected_images_sha256"],
+    }
+    if backend == "minimal":
+        provenance["benchmark_v2_asset"] = {
+            "manifest": manifest_path,
+            "backend": backend,
+            "sha256": canonical["asset_manifest_sha256"],
+            "selected_images_sha256": canonical["selected_images_sha256"],
+        }
+    return provenance
 
 
 def load_benchmark_v2_selection(args: argparse.Namespace, map_name: str) -> object:
@@ -204,14 +396,45 @@ def load_benchmark_v2_selection(args: argparse.Namespace, map_name: str) -> obje
             "with load_benchmark_v2_selection_from_args(...)."
         ) from exc
 
-    return load_benchmark_v2_selection_from_args(
+    loader_kwargs = {
+        "map_names": [map_name],
+        "support_seed": getattr(args, "benchmark_v2_support_seed", 0),
+        "shots_per_map": getattr(args, "benchmark_v2_shots_per_map", 100),
+        "data_dir": getattr(args, "data_dir", None),
+    }
+    asset_manifest = getattr(args, "benchmark_v2_asset_manifest", None)
+    if asset_manifest not in (None, ""):
+        # ``asset_manifest_path`` is the current core spelling.  The
+        # signature check keeps this wrapper usable with a source-only core
+        # during a rolling deployment, while failing clearly if minimal mode
+        # is requested before the core supports it.
+        try:
+            parameters = inspect.signature(load_benchmark_v2_selection_from_args).parameters
+        except (TypeError, ValueError):
+            parameters = {}
+        if "asset_manifest_path" in parameters or any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD
+            for parameter in parameters.values()
+        ):
+            loader_kwargs["asset_manifest_path"] = asset_manifest
+        elif "benchmark_v2_asset_manifest" in parameters:
+            loader_kwargs["benchmark_v2_asset_manifest"] = asset_manifest
+        else:
+            raise ValueError(
+                "Benchmark v2 core loader does not support --benchmark_v2_asset_manifest"
+            )
+    selection = load_benchmark_v2_selection_from_args(
         getattr(args, "benchmark_v2_manifest"),
         getattr(args, "benchmark_v2_split"),
-        map_names=[map_name],
-        support_seed=getattr(args, "benchmark_v2_support_seed", 0),
-        shots_per_map=getattr(args, "benchmark_v2_shots_per_map", 100),
-        data_dir=getattr(args, "data_dir", None),
+        **loader_kwargs,
     )
+    if asset_manifest not in (None, ""):
+        backend = _selection_value(selection, "asset_backend", "source")
+        if backend != "minimal":
+            raise ValueError(
+                "Benchmark v2 core loader did not activate the minimal asset backend"
+            )
+    return selection
 
 
 def validate_benchmark_v2_coverage(coverage: Mapping[str, object], allow_incomplete: bool) -> None:
@@ -231,6 +454,7 @@ def load_benchmark_v2_inference_provenance(
     output_root: Path,
     args: argparse.Namespace,
     map_name: str,
+    selection: object = None,
 ) -> Optional[dict]:
     path = output_root / "inference_manifest.json"
     if not path.is_file():
@@ -264,6 +488,14 @@ def load_benchmark_v2_inference_provenance(
         raise ValueError(f"Inference manifest does not include map {map_name!r}: {maps!r}")
     if not payload.get("ckpt_path"):
         raise ValueError(f"Inference manifest has no checkpoint provenance: {path}")
+    if selection is not None:
+        expected_assets = benchmark_v2_asset_provenance(selection, args)
+        recorded_assets = benchmark_v2_asset_provenance(payload)
+        if expected_assets != recorded_assets:
+            raise ValueError(
+                "Inference/evaluation Benchmark v2 asset provenance mismatch: "
+                f"recorded={recorded_assets!r}, expected={expected_assets!r}"
+            )
     return {"path": str(path.resolve()), "payload": payload}
 
 
@@ -901,6 +1133,7 @@ def write_results_json(
     boundary_details: Dict[str, object],
     benchmark_v2_selection: Optional[Dict[str, int]] = None,
     inference_provenance: Optional[dict] = None,
+    asset_provenance: Optional[Mapping[str, object]] = None,
 ) -> None:
     payload = {
         "experiment_name": experiment_name,
@@ -937,12 +1170,14 @@ def write_results_json(
     }
     if benchmark_v2_selection is not None:
         manifest = getattr(args, "benchmark_v2_manifest", None)
+        normalized_assets = dict(asset_provenance or benchmark_v2_asset_provenance(args=args))
         payload.update({
             "benchmark_v2_manifest": str(Path(manifest).resolve()) if manifest else None,
             "benchmark_v2_split": getattr(args, "benchmark_v2_split", None),
             "benchmark_v2_selection_counts": benchmark_v2_selection,
             "missing_pred_files": coverage["missing_pred_files"],
             "inference_provenance": inference_provenance,
+            **normalized_assets,
         })
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with open(json_path, "w", encoding="utf-8") as f:
@@ -992,10 +1227,12 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
     if selection is not None:
         json_path = output_root / f"benchmark_csgo_v2_{map_name}.json"
         inference_provenance = load_benchmark_v2_inference_provenance(
-            output_root, args, map_name
+            output_root, args, map_name, selection=selection
         )
+        asset_provenance = benchmark_v2_asset_provenance(selection, args)
     else:
         inference_provenance = None
+        asset_provenance = None
     print(f"Experiment: {experiment_name}")
     print(f"Timestamp: {timestamp}")
     print(f"Map: {map_name}")
@@ -1072,6 +1309,7 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
         boundary_details=boundary_details,
         benchmark_v2_selection=selection_details,
         inference_provenance=inference_provenance,
+        asset_provenance=asset_provenance,
     )
     print(f"Saved JSON: {json_path}")
     result = {
@@ -1110,6 +1348,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
         type=str,
         default=None,
         help="Benchmark v2 split selector, used together with --benchmark_v2_manifest.",
+    )
+    parser.add_argument(
+        "--benchmark_v2_asset_manifest",
+        type=str,
+        default=None,
+        help=(
+            "Optional verified minimal Benchmark v2 asset manifest. When set, "
+            "the selected images/radars are loaded from that bundle."
+        ),
     )
     parser.add_argument(
         "--allow_incomplete_benchmark_v2",
