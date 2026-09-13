@@ -44,8 +44,12 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
         kind: str = "discrete",
         values=(1.0, 3.0),
         asset_provenance=None,
+        maps=None,
     ) -> None:
-        maps = ["map_a", "map_b"] if split.startswith("seen_") else ["map_c", "map_d"]
+        if maps is None:
+            maps = ["map_a", "map_b"] if split.startswith("seen_") else ["map_c", "map_d"]
+        else:
+            maps = list(maps)
         prefix = "benchmark_csgo_v2_" if kind == "discrete" else "benchmark_csgo_v2_conti_"
         inference_manifest = root / "inference_manifest.json"
         inference_payload = {
@@ -205,6 +209,135 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
                     kind="discrete",
                     output=root / "unused.json",
                 )
+
+    def test_maps_supports_seen_protocol_subset_and_preserves_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            results_root = root / "per_map"
+            self._write_per_map_results(
+                results_root,
+                manifest,
+                maps=["map_a"],
+            )
+
+            result = aggregate_maps(
+                manifest=manifest,
+                split="seen_discrete_test",
+                input_root=results_root,
+                kind="discrete",
+                maps=["map_a"],
+                output=root / "subset_map_macro.json",
+            )
+
+            self.assertEqual(result["maps"], ["map_a"])
+            self.assertEqual(result["per_map"], {"map_a": {
+                "PSNR": 1.0,
+                "SSIM": 11.0,
+                "Common_Count": 1,
+                "not_a_metric": None,
+                "bool_metric": True,
+            }})
+            self.assertEqual(result["metrics_macro_map"]["PSNR"], 1.0)
+            self.assertEqual(result["metrics_macro_map"]["SSIM"], 11.0)
+            self.assertEqual(result["sample_count"], 4)
+            self.assertEqual(
+                result["inference_provenance"]["payload"]["maps"], ["map_a"]
+            )
+
+    def test_maps_subset_rejects_unknown_duplicate_and_out_of_order_maps(self):
+        cases = (
+            (["map_unknown"], "unknown protocol map"),
+            (["map_a", "map_a"], "unique"),
+            (["map_b", "map_a"], "preserve manifest protocol order"),
+        )
+        for selected_maps, message in cases:
+            with self.subTest(maps=selected_maps), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                manifest = self._make_manifest(root)
+                with self.assertRaisesRegex(AggregationError, message):
+                    aggregate_maps(
+                        manifest=manifest,
+                        split="seen_discrete_test",
+                        input_root=root / "per_map",
+                        kind="discrete",
+                        maps=selected_maps,
+                        output=root / "unused.json",
+                    )
+
+    def test_maps_subset_rejects_missing_and_extra_results(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            missing_root = root / "missing"
+            self._write_per_map_results(
+                missing_root,
+                manifest,
+                maps=["map_a"],
+            )
+            with self.assertRaisesRegex(AggregationError, "missing per-map"):
+                aggregate_maps(
+                    manifest=manifest,
+                    split="seen_discrete_test",
+                    input_root=missing_root,
+                    kind="discrete",
+                    maps=["map_a", "map_b"],
+                    output=root / "missing_output.json",
+                )
+
+            extra_root = root / "extra"
+            self._write_per_map_results(
+                extra_root,
+                manifest,
+                maps=["map_a", "map_b"],
+            )
+            with self.assertRaisesRegex(AggregationError, "extra per-map"):
+                aggregate_maps(
+                    manifest=manifest,
+                    split="seen_discrete_test",
+                    input_root=extra_root,
+                    kind="discrete",
+                    maps=["map_a"],
+                    output=root / "extra_output.json",
+                )
+
+    def test_maps_without_subset_keeps_complete_protocol_behavior(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = self._make_manifest(root)
+            results_root = root / "per_map"
+            self._write_per_map_results(results_root, manifest)
+
+            result = aggregate_maps(
+                manifest=manifest,
+                split="seen_discrete_test",
+                input_root=results_root,
+                kind="discrete",
+                output=root / "complete_map_macro.json",
+            )
+
+            self.assertEqual(result["maps"], ["map_a", "map_b"])
+            self.assertEqual(result["metrics_macro_map"]["PSNR"], 2.0)
+            self.assertEqual(result["metrics_macro_map"]["SSIM"], 12.0)
+            self.assertEqual(result["sample_count"], 4)
+
+    def test_maps_cli_accepts_optional_map_subset(self):
+        args = _build_parser().parse_args(
+            [
+                "maps",
+                "--manifest",
+                "manifest.json",
+                "--split",
+                "seen_discrete_test",
+                "--input_root",
+                "results",
+                "--kind",
+                "discrete",
+                "--maps",
+                "map_a",
+            ]
+        )
+        self.assertEqual(args.maps, ["map_a"])
 
     def test_maps_reject_manifest_provenance_mismatch(self):
         with tempfile.TemporaryDirectory() as temporary:

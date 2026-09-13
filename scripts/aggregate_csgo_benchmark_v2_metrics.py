@@ -108,6 +108,45 @@ def _protocol_maps(manifest: Mapping[str, Any], split: str) -> list[str]:
     return list(maps)
 
 
+def _select_protocol_maps(
+    manifest: Mapping[str, Any], split: str, maps: Sequence[str] | None
+) -> list[str]:
+    protocol_maps = _protocol_maps(manifest, split)
+    if maps is None:
+        return protocol_maps
+    if isinstance(maps, (str, bytes)) or not isinstance(maps, Sequence):
+        raise AggregationError("maps must be a sequence of map names")
+
+    selected_maps = list(maps)
+    if not selected_maps or any(
+        not isinstance(map_name, str) or not map_name for map_name in selected_maps
+    ):
+        raise AggregationError("maps must be a non-empty sequence of map names")
+    if len(set(selected_maps)) != len(selected_maps):
+        raise AggregationError(
+            f"maps must be unique; duplicate map name(s): {selected_maps!r}"
+        )
+
+    protocol_map_set = set(protocol_maps)
+    unknown_maps = [
+        map_name for map_name in selected_maps if map_name not in protocol_map_set
+    ]
+    if unknown_maps:
+        raise AggregationError(
+            f"maps contain unknown protocol map(s): {unknown_maps!r}"
+        )
+
+    expected_order = [
+        map_name for map_name in protocol_maps if map_name in set(selected_maps)
+    ]
+    if selected_maps != expected_order:
+        raise AggregationError(
+            "maps must preserve manifest protocol order; "
+            f"expected {expected_order!r}, got {selected_maps!r}"
+        )
+    return selected_maps
+
+
 def _result_prefix(kind: str) -> str:
     if kind not in KIND_VALUES:
         raise AggregationError(
@@ -1047,11 +1086,12 @@ def aggregate_maps(
     input_root: str | os.PathLike[str],
     kind: str,
     output: str | os.PathLike[str] | None = None,
+    maps: Sequence[str] | None = None,
 ) -> dict[str, Any]:
-    """Aggregate one exact per-map result for every protocol map."""
+    """Aggregate one exact per-map result for every selected protocol map."""
 
     manifest_path, manifest_data = _load_manifest(manifest)
-    expected_maps = _protocol_maps(manifest_data, split)
+    expected_maps = _select_protocol_maps(manifest_data, split, maps)
     input_path = Path(input_root).expanduser().resolve()
     result_files = _discover_result_files(input_path, kind)
     expected_set = set(expected_maps)
@@ -1827,6 +1867,7 @@ def _build_parser() -> argparse.ArgumentParser:
     maps_parser.add_argument("--split", choices=MAP_SPLITS, required=True)
     maps_parser.add_argument("--input_root", required=True)
     maps_parser.add_argument("--kind", choices=KIND_VALUES, required=True)
+    maps_parser.add_argument("--maps", nargs="+")
     maps_parser.add_argument("--output")
 
     seeds_parser = subparsers.add_parser(
@@ -1861,6 +1902,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 input_root=args.input_root,
                 kind=args.kind,
                 output=args.output,
+                maps=args.maps,
             )
             output_path = Path(args.output).expanduser().resolve() if args.output else _maps_output_path(Path(args.input_root).expanduser().resolve(), args.split, args.kind)
         elif args.command == "seeds":

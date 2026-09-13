@@ -53,6 +53,43 @@ SETTING_SPLITS = {
     },
 }
 
+# This is the canonical ATX heading projection of the results document.  The
+# ablation results title is intentionally absent: it is a Setext heading and
+# is validated separately below.
+RESULTS_ATX_HEADINGS = (
+    "## 1. exp31~exp36 实验设计定位",
+    "## 2. 实验归属与表格对应",
+    "## 3. 排序保护",
+    "## 4. 新实验加入流程",
+    "# csgo benchmark v2 实验进度",
+    "## ablation 3 maps实验进度表",
+    "## 主线实验进度表",
+    "## 暂停的支线实验进度表",
+    "## 定位",
+    "## 离散生成",
+    "## 连续生成",
+    "# csgo benchmark v2 主表",
+    "## 定位",
+    "## 离散生成",
+    "## 连续生成",
+    "# csgo benchmark v2 补充表格",
+    "## 定位",
+    "## 离散生成",
+    "## 连续生成",
+)
+RESULTS_ABLATION_SETEXT_TITLE = "ablation 3 maps表"
+RESULTS_ABLATION_SETEXT_MARKER = "===================="
+RESULTS_ABLATION_CHILD_HEADINGS = ("## 定位", "## 离散生成", "## 连续生成")
+RESULTS_SETEXT_HEADINGS = (
+    ("csgo benchmark v2 实验设计与表格维护规则", "==========================================="),
+    (RESULTS_ABLATION_SETEXT_TITLE, RESULTS_ABLATION_SETEXT_MARKER),
+)
+RESULTS_PROGRESS_HEADING = "# csgo benchmark v2 实验进度"
+RESULTS_MAIN_HEADING = "# csgo benchmark v2 主表"
+RESULTS_SUPPLEMENT_HEADING = "# csgo benchmark v2 补充表格"
+RESULTS_MAIN_PROGRESS_HEADING = "## 主线实验进度表"
+RESULTS_PAUSED_PROGRESS_HEADING = "## 暂停的支线实验进度表"
+
 
 class PipelineError(RuntimeError):
     """Raised when a pipeline contract or stage fails."""
@@ -1211,20 +1248,218 @@ def _status_cells(
     return train, inference, metric
 
 
-def _replace_row(lines: list[str], prefix: str, replacement: str) -> bool:
-    for index, line in enumerate(lines):
-        if line.startswith(prefix):
-            lines[index] = replacement
-            return True
-    return False
+def _split_line_ending(line: str) -> tuple[str, str]:
+    if line.endswith("\r\n"):
+        return line[:-2], "\r\n"
+    if line.endswith(("\n", "\r")):
+        return line[:-1], line[-1]
+    return line, ""
 
 
-def _insert_rows_before_blank(lines: list[str], anchor_prefix: str, rows: list[str]) -> None:
-    for index, line in enumerate(lines):
-        if line.startswith(anchor_prefix):
-            lines[index + 1:index + 1] = rows
-            return
-    raise PipelineError(f"results table anchor is missing: {anchor_prefix}")
+def _unique_line_index(lines: Sequence[str], value: str, description: str) -> int:
+    matches = [index for index, line in enumerate(lines) if line == value]
+    if len(matches) != 1:
+        raise PipelineError(
+            f"results file must contain exactly one {description}; found {len(matches)}"
+        )
+    return matches[0]
+
+
+def _is_setext_marker(line: str) -> bool:
+    stripped = line.strip()
+    return bool(stripped) and (set(stripped) == {"="} or set(stripped) == {"-"})
+
+
+def _validate_results_structure(text: str) -> list[str]:
+    raw_lines = text.splitlines(keepends=True)
+    lines = [_split_line_ending(line)[0] for line in raw_lines]
+    headings = [line for line in lines if line.startswith("#")]
+    if tuple(headings) != RESULTS_ATX_HEADINGS:
+        raise PipelineError("results file headings changed; refusing to rewrite")
+
+    setext_headings = [
+        (lines[index], lines[index + 1])
+        for index in range(len(lines) - 1)
+        if lines[index].strip() and _is_setext_marker(lines[index + 1])
+    ]
+    if tuple(setext_headings) != RESULTS_SETEXT_HEADINGS:
+        raise PipelineError("results file Setext headings changed; refusing to rewrite")
+
+    title_indices = [
+        index for index, line in enumerate(lines) if line == RESULTS_ABLATION_SETEXT_TITLE
+    ]
+    marker_indices = [
+        index for index, line in enumerate(lines) if line == RESULTS_ABLATION_SETEXT_MARKER
+    ]
+    if len(title_indices) != 1:
+        raise PipelineError(
+            "results file must contain exactly one ablation Setext title"
+        )
+    if len(marker_indices) != 1:
+        raise PipelineError(
+            "results file must contain exactly one ablation Setext marker"
+        )
+    title_index = title_indices[0]
+    marker_index = marker_indices[0]
+    if marker_index != title_index + 1:
+        raise PipelineError("ablation Setext marker is not directly below its title")
+
+    progress_index = _unique_line_index(
+        lines, RESULTS_PROGRESS_HEADING, "the progress heading"
+    )
+    paused_progress_index = _unique_line_index(
+        lines, RESULTS_PAUSED_PROGRESS_HEADING, "the paused progress heading"
+    )
+    main_index = _unique_line_index(lines, RESULTS_MAIN_HEADING, "the main-table heading")
+    document_title_index = _unique_line_index(
+        lines, RESULTS_SETEXT_HEADINGS[0][0], "the document Setext title"
+    )
+    if not document_title_index < progress_index < paused_progress_index < title_index < main_index:
+        raise PipelineError("ablation Setext block is in the wrong position")
+
+    previous_nonempty = next(
+        (
+            lines[index]
+            for index in range(title_index - 1, paused_progress_index, -1)
+            if lines[index].strip()
+        ),
+        None,
+    )
+    if previous_nonempty is None or not previous_nonempty.startswith("|"):
+        raise PipelineError("ablation Setext block does not follow the progress table")
+
+    ablation_headings = [
+        line
+        for line in lines[marker_index + 1 : main_index]
+        if line.startswith("#")
+    ]
+    if tuple(ablation_headings) != RESULTS_ABLATION_CHILD_HEADINGS:
+        raise PipelineError("ablation Setext block must contain its three ordered sections")
+    return lines
+
+
+def _table_section_bounds(
+    lines: Sequence[str], parent_heading: str, child_heading: str
+) -> tuple[int, int]:
+    parent_index = _unique_line_index(lines, parent_heading, parent_heading)
+    parent_end = next(
+        (
+            index
+            for index in range(parent_index + 1, len(lines))
+            if lines[index].startswith("# ")
+        ),
+        len(lines),
+    )
+    child_indices = [
+        index
+        for index in range(parent_index + 1, parent_end)
+        if lines[index] == child_heading
+    ]
+    if len(child_indices) != 1:
+        raise PipelineError(
+            f"{parent_heading}: expected exactly one {child_heading}; "
+            f"found {len(child_indices)}"
+        )
+    child_index = child_indices[0]
+    child_end = next(
+        (
+            index
+            for index in range(child_index + 1, parent_end)
+            if lines[index].startswith("## ") or lines[index].startswith("# ")
+        ),
+        parent_end,
+    )
+    return child_index, child_end
+
+
+def _replace_row_in_range(
+    raw_lines: list[str],
+    lines: list[str],
+    start: int,
+    end: int,
+    prefix: str,
+    replacement: str,
+) -> int:
+    matches = [
+        index
+        for index in range(start, end)
+        if lines[index].startswith(prefix)
+    ]
+    if len(matches) != 1:
+        raise PipelineError(
+            f"results table must contain exactly one row starting with {prefix!r}; "
+            f"found {len(matches)} in scoped section"
+        )
+    index = matches[0]
+    _, line_ending = _split_line_ending(raw_lines[index])
+    raw_lines[index] = replacement + line_ending
+    lines[index] = replacement
+    return index
+
+
+def _generation_metric_values(
+    summary: Mapping[str, Any] | None, kind: str
+) -> list[str]:
+    if summary is None:
+        return [""] * (5 if kind == "discrete" else 6)
+    if kind == "discrete":
+        return [
+            _metric_value(summary, "PSNR", 3),
+            _metric_value(summary, "SSIM", 4),
+            _metric_value(summary, "LPIPS", 4),
+            _metric_value(summary, "Boundary_F1", 4),
+            _metric_value(summary, "FID", 3),
+        ]
+    return [
+        _metric_value(summary, "PSNR", 3),
+        _metric_value(summary, "SSIM", 4),
+        _metric_value(summary, "LPIPS", 4),
+        _metric_value(summary, "Temporal_Warping_Error", 3),
+        _metric_value(summary, "Temporal_Difference_Error", 3),
+        _metric_value(summary, "FVD", 3),
+    ]
+
+
+def _replace_generation_result_row(
+    raw_lines: list[str],
+    lines: list[str],
+    start: int,
+    end: int,
+    setting_label: str,
+    experiment: str,
+    shot: str,
+    kind: str,
+    summary: Mapping[str, Any] | None,
+    include_checkpoint: bool,
+) -> None:
+    task_label = "Discrete generation" if kind == "discrete" else "Continuous generation"
+    prefix = f"| {setting_label} | {task_label} | {experiment} | {shot} |"
+    matches = [
+        index
+        for index in range(start, end)
+        if lines[index].startswith(prefix)
+    ]
+    if len(matches) != 1:
+        raise PipelineError(
+            f"results table must contain exactly one row starting with {prefix!r}; "
+            f"found {len(matches)} in scoped section"
+        )
+    index = matches[0]
+    values = _generation_metric_values(summary, kind)
+    replacement = (
+        f"| {setting_label} | {task_label} | {experiment} | {shot} | "
+        + " | ".join(values)
+    )
+    if include_checkpoint:
+        fields = lines[index].split("|")
+        if len(fields) < 3:
+            raise PipelineError(f"malformed results row for {experiment}/{kind}")
+        checkpoint = fields[-2].strip()
+        replacement += f" | {checkpoint}"
+    replacement += " |"
+    _, line_ending = _split_line_ending(raw_lines[index])
+    raw_lines[index] = replacement + line_ending
+    lines[index] = replacement
 
 
 def sync_results(matrix: Mapping[str, Any]) -> None:
@@ -1233,68 +1468,79 @@ def sync_results(matrix: Mapping[str, Any]) -> None:
         raise PipelineError(f"results file does not exist: {path}")
     lock_path = path.with_suffix(path.suffix + ".lock")
     with _exclusive_lock(lock_path):
-        text = path.read_text(encoding="utf-8")
-        headings = [line for line in text.splitlines() if line.startswith("#")]
-        expected_headings = [
-            "# csgo benchmark v2 实验进度",
-            "# csgo benchmark v2 主表",
-            "## 定位",
-            "## 离散生成",
-            "## 连续生成",
-        ]
-        if headings != expected_headings:
-            raise PipelineError("results file headings changed; refusing to rewrite")
-        lines = text.splitlines()
+        with path.open("r", encoding="utf-8", newline="") as handle:
+            text = handle.read()
+        lines = text.splitlines(keepends=True)
+        heading_lines = _validate_results_structure(text)
+
+        progress_main_start = _unique_line_index(
+            heading_lines, RESULTS_MAIN_PROGRESS_HEADING, "the main progress heading"
+        )
+        progress_paused_start = _unique_line_index(
+            heading_lines, RESULTS_PAUSED_PROGRESS_HEADING, "the paused progress heading"
+        )
+        ablation_title_index = _unique_line_index(
+            heading_lines, RESULTS_ABLATION_SETEXT_TITLE, "the ablation Setext title"
+        )
+        main_table_index = _unique_line_index(
+            heading_lines, RESULTS_MAIN_HEADING, "the main-table heading"
+        )
+
+        progress_main_end = progress_paused_start
+        progress_paused_end = ablation_title_index
         for experiment in ZERO_SHOT_EXPERIMENTS:
             train, inference, metric = _status_cells(matrix, experiment, None)
-            if not _replace_row(lines, f"| `{experiment}` |", f"| `{experiment}` | {train} | {inference} | {metric} |"):
-                raise PipelineError(f"missing progress row for {experiment}")
+            progress_start, progress_end = progress_main_start, progress_main_end
+            _replace_row_in_range(
+                lines,
+                heading_lines,
+                progress_start,
+                progress_end,
+                f"| `{experiment}` |",
+                f"| `{experiment}` | {train} | {inference} | {metric} |",
+            )
         for experiment in FEW_SHOT_EXPERIMENTS:
-            old_prefix = f"| `{experiment}` |"
-            old_index = next((index for index, line in enumerate(lines) if line.startswith(old_prefix)), None)
-            if old_index is not None:
-                del lines[old_index]
             for shots in _shots(matrix):
                 train, inference, metric = _status_cells(matrix, experiment, shots)
                 row = f"| `{experiment}` {shots}-shot | {train} | {inference} | {metric} |"
                 prefix = f"| `{experiment}` {shots}-shot |"
-                if not _replace_row(lines, prefix, row):
-                    anchor = "| `exp33_loc` 10-shot |" if experiment == "exp33_gen" else "| `exp34_loc` 10-shot |"
-                    anchor_index = next((index for index, line in enumerate(lines) if line.startswith(anchor)), None)
-                    if anchor_index is None:
-                        raise PipelineError(f"missing progress anchor for {experiment}")
-                    while anchor_index + 1 < len(lines) and lines[anchor_index + 1].startswith(f"| `{experiment}` "):
-                        anchor_index += 1
-                    lines.insert(anchor_index + 1, row)
+                _replace_row_in_range(
+                    lines,
+                    heading_lines,
+                    progress_paused_start,
+                    progress_paused_end,
+                    prefix,
+                    row,
+                )
 
-        for kind, heading in (("discrete", "## 离散生成"), ("continuous", "## 连续生成")):
-            section_start = lines.index(heading)
-            section_end = next((i for i in range(section_start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+        for kind, heading in (
+            ("discrete", "## 离散生成"),
+            ("continuous", "## 连续生成"),
+        ):
+            main_start, main_end = _table_section_bounds(
+                heading_lines, RESULTS_MAIN_HEADING, heading
+            )
+            supplement_start, supplement_end = _table_section_bounds(
+                heading_lines, RESULTS_SUPPLEMENT_HEADING, heading
+            )
             for experiment in ZERO_SHOT_EXPERIMENTS:
-                summary = _validate_summary(matrix, experiment, None, kind) if _summary_complete(matrix, experiment, None, kind) else None
-                shot = "-"
-                if kind == "discrete":
-                    values = [
-                        _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                        _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Boundary_F1", 4),
-                        _metric_value(summary, "FID", 3),
-                    ] if summary else [""] * 5
-                else:
-                    values = [
-                        _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                        _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Temporal_Warping_Error", 3),
-                        _metric_value(summary, "Temporal_Difference_Error", 3), _metric_value(summary, "FVD", 3),
-                    ] if summary else [""] * 6
-                row = f"| CrossMap-4 zero-shot | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} | {shot} | " + " | ".join(values) + " |"
-                prefix = f"| CrossMap-4 zero-shot | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} |"
-                found = False
-                for index in range(section_start, section_end):
-                    if lines[index].startswith(prefix):
-                        lines[index] = row
-                        found = True
-                        break
-                if not found:
-                    raise PipelineError(f"missing main-table row for {experiment}/{kind}")
+                summary = (
+                    _validate_summary(matrix, experiment, None, kind)
+                    if _summary_complete(matrix, experiment, None, kind)
+                    else None
+                )
+                _replace_generation_result_row(
+                    lines,
+                    heading_lines,
+                    main_start,
+                    main_end,
+                    "CrossMap-4 zero-shot",
+                    experiment,
+                    "-",
+                    kind,
+                    summary,
+                    True,
+                )
 
             for experiment in SEEN_EXPERIMENTS:
                 summary = (
@@ -1302,63 +1548,44 @@ def sync_results(matrix: Mapping[str, Any]) -> None:
                     if _summary_complete(matrix, experiment, None, kind, "seen")
                     else None
                 )
-                if kind == "discrete":
-                    values = [
-                        _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                        _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Boundary_F1", 4),
-                        _metric_value(summary, "FID", 3),
-                    ] if summary else [""] * 5
-                else:
-                    values = [
-                        _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                        _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Temporal_Warping_Error", 3),
-                        _metric_value(summary, "Temporal_Difference_Error", 3), _metric_value(summary, "FVD", 3),
-                    ] if summary else [""] * 6
-                row = f"| Seen-10 | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} | - | " + " | ".join(values) + " |"
-                prefix = f"| Seen-10 | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} |"
-                found = False
-                for index in range(section_start, section_end):
-                    if lines[index].startswith(prefix):
-                        lines[index] = row
-                        found = True
-                        break
-                if not found:
-                    raise PipelineError(f"missing Seen-10 main-table row for {experiment}/{kind}")
+                _replace_generation_result_row(
+                    lines,
+                    heading_lines,
+                    main_start,
+                    main_end,
+                    "Seen-10",
+                    experiment,
+                    "-",
+                    kind,
+                    summary,
+                    True,
+                )
 
-            existing_prefixes = tuple(f"| CrossMap-4 few-shot | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} |" for experiment in FEW_SHOT_EXPERIMENTS)
-            lines = [line for line in lines if not line.startswith(existing_prefixes)]
-            section_start = lines.index(heading)
-            section_end = next((i for i in range(section_start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
-            insert_at = section_end
-            while insert_at > section_start and lines[insert_at - 1] == "":
-                insert_at -= 1
-            new_rows: list[str] = []
             for experiment in FEW_SHOT_EXPERIMENTS:
                 for shots in _shots(matrix):
-                    summary = _validate_summary(matrix, experiment, shots, kind) if _summary_complete(matrix, experiment, shots, kind) else None
-                    if kind == "discrete":
-                        values = [
-                            _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                            _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Boundary_F1", 4),
-                            _metric_value(summary, "FID", 3),
-                        ] if summary else [""] * 5
-                    else:
-                        values = [
-                            _metric_value(summary, "PSNR", 3), _metric_value(summary, "SSIM", 4),
-                            _metric_value(summary, "LPIPS", 4), _metric_value(summary, "Temporal_Warping_Error", 3),
-                            _metric_value(summary, "Temporal_Difference_Error", 3), _metric_value(summary, "FVD", 3),
-                        ] if summary else [""] * 6
-                    new_rows.append(
-                        f"| CrossMap-4 few-shot | {'Discrete' if kind == 'discrete' else 'Continuous'} generation | {experiment} | {shots} | "
-                        + " | ".join(values) + " |"
+                    summary = (
+                        _validate_summary(matrix, experiment, shots, kind)
+                        if _summary_complete(matrix, experiment, shots, kind)
+                        else None
                     )
-            lines[insert_at:insert_at] = new_rows
+                    _replace_generation_result_row(
+                        lines,
+                        heading_lines,
+                        supplement_start,
+                        supplement_end,
+                        "CrossMap-4 few-shot",
+                        experiment,
+                        str(shots),
+                        kind,
+                        summary,
+                        False,
+                    )
 
-        rendered = "\n".join(lines).rstrip() + "\n"
-        new_headings = [line for line in rendered.splitlines() if line.startswith("#")]
-        if new_headings != expected_headings:
-            raise PipelineError("results rewrite would add or remove headings")
-        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, delete=False) as handle:
+        rendered = "".join(lines)
+        _validate_results_structure(rendered)
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", newline="", dir=path.parent, delete=False
+        ) as handle:
             handle.write(rendered)
             temp_path = Path(handle.name)
         os.replace(temp_path, path)

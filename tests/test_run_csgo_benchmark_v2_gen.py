@@ -14,6 +14,30 @@ RUNNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RUNNER)
 
 
+def _setext_results_fixture(source: str) -> str:
+    atx = "# ablation 3 maps表\n"
+    setext = "ablation 3 maps表\n====================\n"
+    if setext in source:
+        return source
+    if atx not in source:
+        raise AssertionError("results fixture has no ablation heading to convert")
+    return source.replace(atx, setext, 1)
+
+
+def _ablation_bytes(payload: bytes) -> bytes:
+    start_marker = "ablation 3 maps表\n".encode("utf-8")
+    end_marker = "# csgo benchmark v2 主表".encode("utf-8")
+    start = payload.index(start_marker)
+    end = payload.index(end_marker, start)
+    return payload[start:end]
+
+
+def _text_block(source: str, start_heading: str, end_heading: str) -> str:
+    start = source.index(start_heading)
+    end = source.index(end_heading, start)
+    return source[start:end]
+
+
 class BenchmarkV2GenerationRunnerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -294,26 +318,127 @@ class BenchmarkV2GenerationRunnerTest(unittest.TestCase):
                     matrix, "exp32_gen", None, "discrete", "seen"
                 )
 
+    def test_results_sync_requires_the_exact_setext_ablation_structure(self):
+        source = _setext_results_fixture(
+            (REPO_ROOT / "csgo_benchmark_v2_experiments_results.md").read_text(
+                encoding="utf-8"
+            )
+        )
+        setext = "ablation 3 maps表\n====================\n"
+        ablation_start = source.index("ablation 3 maps表")
+        main_start = source.index("# csgo benchmark v2 主表", ablation_start)
+        ablation_block = source[ablation_start:main_start]
+        malformed = {
+            "atx ablation title": source.replace(
+                setext, "# ablation 3 maps表\n", 1
+            ),
+            "duplicate marker": source.replace(
+                "====================\n",
+                "====================\n====================\n",
+                1,
+            ),
+            "detached marker": source.replace(
+                setext, "ablation 3 maps表\n\n====================\n", 1
+            ),
+            "wrong position": source.replace(setext, "", 1) + ablation_block,
+            "unknown child": source.replace(
+                "## 离散生成\n", "## unexpected\n", 1
+            ),
+            "missing child": source.replace("## 连续生成\n", "", 1),
+            "unknown Setext heading": source + "unexpected heading\n-----------------\n",
+        }
+
+        for name, fixture in malformed.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                temp_path = Path(temporary) / "results.md"
+                temp_path.write_text(fixture, encoding="utf-8")
+                matrix = copy.deepcopy(self.matrix)
+                matrix["paths"]["results_file"] = str(temp_path)
+                with self.assertRaises(RUNNER.PipelineError):
+                    RUNNER.sync_results(matrix)
+
+    def test_results_sync_scopes_progress_and_result_tables_and_preserves_ablation_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            temp_path = Path(temporary) / "results.md"
+            source = _setext_results_fixture(
+                (REPO_ROOT / "csgo_benchmark_v2_experiments_results.md").read_text(
+                    encoding="utf-8"
+                )
+            )
+            temp_path.write_text(source, encoding="utf-8")
+            before_ablation = _ablation_bytes(temp_path.read_bytes())
+            matrix = copy.deepcopy(self.matrix)
+            matrix["paths"]["results_file"] = str(temp_path)
+
+            RUNNER.sync_results(matrix)
+
+            after_bytes = temp_path.read_bytes()
+            rendered = after_bytes.decode("utf-8")
+            self.assertEqual(_ablation_bytes(after_bytes), before_ablation)
+            self.assertEqual(
+                [line for line in rendered.splitlines() if line.startswith("#")],
+                list(RUNNER.RESULTS_ATX_HEADINGS),
+            )
+            RUNNER._validate_results_structure(rendered)
+
+            progress = _text_block(
+                rendered,
+                RUNNER.RESULTS_PROGRESS_HEADING,
+                "ablation 3 maps表",
+            )
+            main_progress = _text_block(
+                progress,
+                RUNNER.RESULTS_MAIN_PROGRESS_HEADING,
+                RUNNER.RESULTS_PAUSED_PROGRESS_HEADING,
+            )
+            paused_progress = progress[progress.index(RUNNER.RESULTS_PAUSED_PROGRESS_HEADING) :]
+            self.assertEqual(main_progress.count("`exp32_gen`"), 1)
+            self.assertEqual(paused_progress.count("`exp32_gen`"), 0)
+            self.assertEqual(paused_progress.count("`exp33_gen`"), 4)
+            self.assertEqual(paused_progress.count("`exp34_gen`"), 4)
+
+            main = _text_block(
+                rendered,
+                RUNNER.RESULTS_MAIN_HEADING,
+                RUNNER.RESULTS_SUPPLEMENT_HEADING,
+            )
+            supplement = rendered[rendered.index(RUNNER.RESULTS_SUPPLEMENT_HEADING) :]
+            for kind_label in ("Discrete generation", "Continuous generation"):
+                for experiment in RUNNER.ZERO_SHOT_EXPERIMENTS:
+                    target = f"| CrossMap-4 zero-shot | {kind_label} | {experiment} |"
+                    seen_target = f"| Seen-10 | {kind_label} | {experiment} |"
+                    self.assertEqual(main.count(target), 1)
+                    self.assertEqual(main.count(seen_target), 1)
+                    self.assertEqual(supplement.count(target), 0)
+                    self.assertEqual(supplement.count(seen_target), 0)
+                for experiment in RUNNER.FEW_SHOT_EXPERIMENTS:
+                    target = f"| CrossMap-4 few-shot | {kind_label} | {experiment} |"
+                    self.assertEqual(main.count(target), 0)
+                    self.assertEqual(supplement.count(target), 4)
+
+            self.assertIn(
+                "| CrossMap-4 zero-shot | Discrete generation | exp32_gen | - | 11.081 | 0.3690 | 0.7210 | 0.4592 | 79.887 | 19500 |",
+                main,
+            )
+            self.assertIn(
+                "| CrossMap-4 few-shot | Discrete generation | exp33_gen | 100 | 13.520 | 0.4413 | 0.6475 | 0.4867 | 35.407 |",
+                supplement,
+            )
+
     def test_results_sync_only_updates_existing_tables(self):
         with tempfile.TemporaryDirectory() as temporary:
             temp_path = Path(temporary) / "results.md"
             source = REPO_ROOT / "csgo_benchmark_v2_experiments_results.md"
-            temp_path.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+            temp_path.write_text(
+                _setext_results_fixture(source.read_text(encoding="utf-8")),
+                encoding="utf-8",
+            )
             matrix = copy.deepcopy(self.matrix)
             matrix["paths"]["results_file"] = str(temp_path)
             RUNNER.sync_results(matrix)
             rendered = temp_path.read_text(encoding="utf-8")
             headings = [line for line in rendered.splitlines() if line.startswith("#")]
-            self.assertEqual(
-                headings,
-                [
-                    "# csgo benchmark v2 实验进度",
-                    "# csgo benchmark v2 主表",
-                    "## 定位",
-                    "## 离散生成",
-                    "## 连续生成",
-                ],
-            )
+            self.assertEqual(headings, list(RUNNER.RESULTS_ATX_HEADINGS))
             for experiment in RUNNER.FEW_SHOT_EXPERIMENTS:
                 for shots in (100, 50, 20, 10):
                     self.assertIn(f"| `{experiment}` {shots}-shot |", rendered)

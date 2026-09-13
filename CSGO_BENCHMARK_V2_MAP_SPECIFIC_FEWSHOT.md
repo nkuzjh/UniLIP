@@ -2,8 +2,8 @@
 
 本文档定义 Benchmark v2 的 map-specific CrossMap-4 few-shot 实验。这里
 的 map-specific 指每个模型只适配一张目标地图，而不是用一个模型同时
-适配四张 CrossMap 地图。本文档只增加 exp35/exp36 实验协议，不改变
-exp31-exp34 的训练、推理、评测或已有记录。
+适配四张 CrossMap 地图。本文档记录 exp35/exp36 以及新增的 exp36_1
+实验协议，不改变 exp31-exp34 的训练、推理、评测或已有记录。
 
 ## 1. 研究目的
 
@@ -14,6 +14,13 @@ exp33/exp34 使用一个模型同时读取四张 CrossMap 地图的 support（�
 1. 在相同 Seen-10 初始化和相同优化步数下，单地图适配是否比四地图
    联合适配具有更好的目标地图质量；
 2. 这种提升是否值得额外的模型数量、训练次数、存储和推理成本。
+
+`exp36_1` 是 `exp31_1` Seen-10 joint full-head 权重到 CrossMap-4 的
+map-specific few-shot 适配。它只保留 joint 路由，不建立
+`exp36_1_gen_<map>` 或 `exp36_1_loc_<map>` 训练实验；每个适配后的
+joint checkpoint 同时评测目标地图的定位、离散生成、连续生成以及
+Seen-10 retention。此前出现的 “CrossMap-10” 是笔误，本文统一使用
+“CrossMap-4 的 100/50/20/10-shot”。
 
 这里的 `support` 是 few-shot 训练样本，`query` 是只用于最终评测的
 测试样本，`Seen-retention` 是适配后回到 Seen-10 地图测试以检查遗忘。
@@ -26,12 +33,13 @@ CrossMap-4 固定为：
 cs_office, de_golden, de_palacio, de_vertigo
 ```
 
-对每个 `<map>` 都建立以下六个精确模型名：
+每个 `<map>` 的训练 route 如下；`exp36_1` 只建立 joint 模型：
 
 | 方法族 | 联合任务 | generation-only | localization-only |
 | --- | --- | --- | --- |
 | exp35 full-head | `exp35_<map>` | `exp35_gen_<map>` | `exp35_loc_<map>` |
 | exp36 LoRA | `exp36_<map>` | `exp36_gen_<map>` | `exp36_loc_<map>` |
+| exp36_1 full-head | `exp36_1_<map>` | 不建立 | 不建立 |
 
 模型名完整展开为：
 
@@ -45,6 +53,11 @@ exp36_cs_office       exp36_gen_cs_office       exp36_loc_cs_office
 exp36_de_golden       exp36_gen_de_golden       exp36_loc_de_golden
 exp36_de_palacio      exp36_gen_de_palacio      exp36_loc_de_palacio
 exp36_de_vertigo      exp36_gen_de_vertigo      exp36_loc_de_vertigo
+
+exp36_1_cs_office
+exp36_1_de_golden
+exp36_1_de_palacio
+exp36_1_de_vertigo
 ```
 
 初始化关系必须保持如下：
@@ -57,6 +70,7 @@ exp36_de_vertigo      exp36_gen_de_vertigo      exp36_loc_de_vertigo
 | `exp36_<map>` | Seen-10 `exp32` | `exp34` 或其他已适配 checkpoint |
 | `exp36_gen_<map>` | Seen-10 `exp32_gen` | `exp34_gen` 或其他已适配 checkpoint |
 | `exp36_loc_<map>` | Seen-10 `exp32_loc` | `exp34_loc` 或其他已适配 checkpoint |
+| `exp36_1_<map>` | Seen-10 `exp31_1` | `exp35`、`exp36` 或其他已适配 checkpoint |
 
 `finetune_init_ckpt_path` 表示只加载模型权重并重新建立 optimizer、
 scheduler 和 global step，不是继续恢复原训练的 Trainer 状态。
@@ -83,7 +97,9 @@ scheduler 和 global step，不是继续恢复原训练的 Trainer 状态。
 
 每一个 map、task 和 shot count 都必须从对应的 Seen-10 checkpoint
 独立开始。50-shot、20-shot 和 10-shot 不能从 100-shot 的适配模型
-继续训练；四张地图之间也不能互相加载适配后的 checkpoint。
+继续训练；四张地图之间也不能互相加载适配后的 checkpoint。对
+`exp36_1`，这意味着四张地图乘四种 shot 共 16 个独立 joint 训练点，
+每个点都直接从 `outputs/csgo_1b/exp31_1/model.safetensors` 初始化。
 
 `SHOTS` 是每张地图的 support 样本数，而不是四张地图合计样本数。默认
 `SHOTS=100` 时，每个 map-specific 模型只看 100 行 support；四个模型
@@ -104,6 +120,27 @@ exp36 继承 exp34 的 LoRA 设计、loss、数据增强、prompt 和后处理�
 localization-head LoRA。gen-only 和 loc-only 使用 exp32_gen、exp32_loc
 的对应 LoRA gating。
 
+### exp36_1 full-head joint-only
+
+`exp36_1_<map>` 严格继承 `exp31_1` 的可学习模块、数据增强、prompt 和
+后处理：`is_lora=False`，LLM 和 ViT frozen，connect、DiT、generation
+head 和 localization head 可训练。`aux_loc_loss`、`loc_perception_loss`
+以及其他 aux/perception 变体均关闭；CrossMap 适配时定位主损失固定为
+`alpha_loc_loss=20`。这只是从 `exp31_1` Seen-10 权重开始的
+map-specific adaptation，不引入新的 split 或其他模型设计。
+
+`exp36_1` 的直接初始化路径固定为：
+
+```text
+outputs/csgo_1b/exp31_1/model.safetensors
+```
+
+每个 shot 都重新建立 optimizer、scheduler 和 global step，输出路径为：
+
+```text
+outputs/csgo_1b/exp36_1_<map>/shot_<N>/seed_0/
+```
+
 ### 训练 YAML 命名
 
 每个模型的训练配置使用精确模型名：
@@ -115,18 +152,20 @@ csgo_configs/exp35_loc_<map>.yaml
 csgo_configs/exp36_<map>.yaml
 csgo_configs/exp36_gen_<map>.yaml
 csgo_configs/exp36_loc_<map>.yaml
+csgo_configs/exp36_1_<map>.yaml
 ```
 
-这些配置已实现并完成契约检查：训练配置将
+现有 exp35/exp36 配置已实现并完成契约检查：训练配置将
 `finetune_init_ckpt_path` 指向上表的直接 Seen-10 checkpoint，并把
 Benchmark v2 的 map arrays 限制为一个目标地图；24 个训练 YAML 和 48 个
 推理 YAML 的命名、继承关系、目标地图、shot/step、batch 与输出路径均已按
 本节约束核对。正式运行前仍需将实际 Seen-10 checkpoint 路径与服务器环境
-确认一致。
+确认一致。`exp36_1` 新增 4 个训练 YAML 和 12 个 joint 推理 YAML；
+配置存在不代表对应训练或评测已经完成。
 
 ### 推理 YAML 命名
 
-对联合模型 `NAME=exp35_<map>` 或 `exp36_<map>`，推理配置为：
+对联合模型 `NAME=exp35_<map>`、`exp36_<map>` 或 `exp36_1_<map>`，推理配置为：
 
 ```text
 csgo_configs/test/NAME_gen.yaml
@@ -160,7 +199,10 @@ map-specific 评测只输入一个目标地图时，允许
 `exp35_cs_office_gen.yaml`、`exp35_cs_office_gen_conti.yaml` 和
 `exp35_cs_office_loc.yaml`；`exp35_gen_cs_office` 的两个生成配置是
 `exp35_gen_cs_office_gen.yaml` 和
-`exp35_gen_cs_office_gen_conti.yaml`。
+`exp35_gen_cs_office_gen_conti.yaml`。`exp36_1_cs_office` 的三个 joint
+推理配置是 `exp36_1_cs_office_gen.yaml`、
+`exp36_1_cs_office_gen_conti.yaml` 和 `exp36_1_cs_office_loc.yaml`；
+其他三张地图遵循同一命名规则。
 
 ## 5. Batch 和训练命令约定
 
@@ -172,7 +214,8 @@ per_device_eval_batch_size=4
 gradient_accumulation_steps=32
 ```
 
-这与 exp33/exp34 的联合适配命令一致。gen-only 和 loc-only 使用：
+这与 exp33/exp34 的联合适配命令一致，`exp36_1` 也使用同样的
+`4/4/32` 设置。gen-only 和 loc-only 使用：
 
 ```text
 BATCH_SIZE=SHOTS       # 100、50、20 或 10
@@ -194,6 +237,23 @@ outputs/csgo_1b/<NAME>/shot_${SHOTS}/seed_0/
 详细、可直接执行的逐实验命令位于
 [`record.md`](record.md) 的 `# csgo_benchmark_v2` 章节末尾。
 
+`exp36_1` 的正式顺序命令使用 shot 级屏障：
+
+```bash
+for SHOTS in 100 50 20 10; do
+  python scripts/run_csgo_benchmark_v2_map_specific.py schedule \
+    --families exp36_1 \
+    --routes joint \
+    --shots "$SHOTS" \
+    --cuda-device 0
+done
+```
+
+一次 `schedule` 内，四张地图按实时空闲显存尽量并行；同一地图模型内部的
+训练、三类推理、metric 和汇总保持串行。外层循环只有在当前 shot 的四图
+pipeline 与 family macro 全部完成后才进入下一个 shot，因此不会提前启动
+50/20/10-shot。
+
 ## 6. 推理和评测
 
 ### CrossMap query
@@ -203,7 +263,8 @@ outputs/csgo_1b/<NAME>/shot_${SHOTS}/seed_0/
 - `crossmap_query_test`，只传入它对应的目标地图；
 - `crossmap_continuous`，只传入它对应的目标地图。
 
-联合模型和 gen-only 模型执行离散及连续生成。loc-only 模型只执行
+联合模型（包括 `exp36_1_<map>`）和 gen-only 模型执行离散及连续生成。
+loc-only 模型只执行
 `crossmap_query_test` 定位推理；定位没有单独的连续生成阶段。
 
 每个模型的生成输出放在：
@@ -255,8 +316,8 @@ set -euo pipefail
 V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
 SHOTS=100
 SUPPORT_SEED=0
-GENERATION_FAMILIES=(exp35 exp35_gen exp36 exp36_gen)
-LOCALIZATION_FAMILIES=(exp35 exp35_loc exp36 exp36_loc)
+GENERATION_FAMILIES=(exp35 exp35_gen exp36 exp36_gen exp36_1)
+LOCALIZATION_FAMILIES=(exp35 exp35_loc exp36 exp36_loc exp36_1)
 
 for FAMILY in "${GENERATION_FAMILIES[@]}"; do
   for KIND in discrete continuous; do
@@ -296,8 +357,9 @@ done
 
 exp35/exp36 的每个 task route 都需要四个模型，约为 exp33/exp34 一个
 四地图模型的 4 倍 CrossMap adaptation runs；如果联合、gen-only、
-loc-only 三条 route 全部运行，则是 12 个 map-specific 模型，而不是
-3 个共享四地图模型。因此比较必须同时报告：
+loc-only 三条 route 全部运行，则是 12 个 map-specific 模型。`exp36_1`
+另外为每种 shot 运行 4 个 joint map-specific 模型，因此四种 shot 合计
+16 个独立适配点，而不是 4 个共享四地图模型。因此比较必须同时报告：
 
 1. 每张目标地图的质量和四地图等权 macro；
 2. 训练 GPU hours、optimizer steps、support 样本数和 wall-clock time；
@@ -314,9 +376,15 @@ map-specific 结果在目标地图上更好，只能说明专门化模型的目�
 
 - 模型名、地图名和训练 YAML 名字完全一致；
 - `finetune_init_ckpt_path` 是对应 exp31* 或 exp32* 的 Seen-10 权重；
+- `exp36_1` 的 parent 是 `outputs/csgo_1b/exp31_1/model.safetensors`，
+  `is_lora=False`，LLM/ViT frozen，connect/DiT 与 gen/loc heads 可训练；
 - `benchmark_v2_split=crossmap_support`、`support_seed=0`、`SHOTS=100`；
 - 目标地图是唯一的 train/validation/test map；
 - `MAX_STEPS=400`，联合 batch 为 `4/4/32`，单任务 batch 为 `SHOTS/128/1`；
+- `exp36_1` 只使用 joint 路由；不存在 `exp36_1_gen_<map>` 或
+  `exp36_1_loc_<map>` 训练名；
+- `exp36_1` 的 aux-loc/perception loss 关闭，CrossMap 定位主损失固定为
+  `alpha_loc_loss=20`；
 - 推理使用 `seed=42`，CrossMap query 只包含目标地图；
 - Seen-retention 使用全部 Seen-10 地图；
 - metric 输入的 manifest、split、support metadata 和 checkpoint provenance

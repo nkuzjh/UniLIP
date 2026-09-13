@@ -24,6 +24,7 @@ SHOTS = (100, 50, 20, 10)
 FILE_FRAME_RE = re.compile(r"^file_num\d+_frame_\d+$")
 MAP_SUBSET_SUMMARY_FLAG = "benchmark_v2_allow_map_subset_summary"
 LOC_TEST_SOURCE_KEYS = frozenset({"joint_loc", "loc_loc"})
+EXP36_1_PARENT = "outputs/csgo_1b/exp31_1/model.safetensors"
 
 FAMILIES = {
     "exp35": {
@@ -161,7 +162,7 @@ class CSGOBenchmarkV2MapSpecificExperimentConfigTest(unittest.TestCase):
         runtime["benchmark_v2_shots_per_map"] = shots
         return runtime
 
-    def test_all_24_training_and_48_inference_configs_exist(self):
+    def test_all_28_training_and_60_inference_configs_exist(self):
         train_names = [spec[-1] for spec in training_specs()]
         test_names = [spec[4] for spec in test_specs()]
         self.assertEqual(len(train_names), 24)
@@ -325,6 +326,92 @@ class CSGOBenchmarkV2MapSpecificExperimentConfigTest(unittest.TestCase):
                         split_file = selection.split_files[map_name]
                         self.assertEqual(split_file.parent.name, map_name)
                         self.assertEqual(split_file.parent.parent.name, "crossmap")
+
+    def test_exp36_1_joint_only_configs_inherit_exp31_1_contract(self):
+        source = self._load_training("exp31_1.yaml")
+        for map_name in MAPS:
+            name = f"exp36_1_{map_name}.yaml"
+            with self.subTest(config=name):
+                actual = self._load_training(name)
+                expected = dict(source)
+                expected["alpha_loc_loss"] = 20
+                expected.pop("alpha_loc_schedule_steps")
+                expected.pop("alpha_loc_schedule_values")
+                expected["benchmark_v2_split"] = "crossmap_support"
+                expected["benchmark_v2_support_seed"] = 0
+                expected["benchmark_v2_shots_per_map"] = 100
+                expected["finetune_init_ckpt_path"] = EXP36_1_PARENT
+                for key in MAP_FIELDS:
+                    expected[key] = [map_name]
+                self.assertEqual(actual, expected)
+                self.assertIs(actual["is_lora"], False)
+                self.assertEqual(actual["llm_train_mode"], "frozen")
+                self.assertIs(actual["fix_vit"], True)
+                self.assertIs(actual["fix_llm"], True)
+                self.assertIs(actual["fix_connect"], False)
+                self.assertIs(actual["fix_dit"], False)
+                self.assertIs(actual["freeze_gen_head"], False)
+                self.assertIs(actual["freeze_loc_head"], False)
+                self.assertIs(actual["is_loc_aux_loss"], False)
+                self.assertIs(actual["is_loc_perception_loss"], False)
+
+                selection_100 = load_benchmark_v2_selection(
+                    self._runtime_config(actual, 100),
+                    map_names=actual["train_maps"],
+                )
+                ids_100 = [row["file_frame"] for row in selection_100.rows]
+                self.assertEqual(len(ids_100), 100)
+                for shots in SHOTS[1:]:
+                    selection = load_benchmark_v2_selection(
+                        self._runtime_config(actual, shots),
+                        map_names=actual["train_maps"],
+                    )
+                    self.assertEqual(len(selection.rows), shots)
+                    self.assertEqual(
+                        [row["file_frame"] for row in selection.rows],
+                        ids_100[:shots],
+                    )
+
+    def test_exp36_1_has_three_joint_inference_configs_per_map(self):
+        source_names = {
+            "gen": "exp31_1_gen.yaml",
+            "gen_conti": "exp31_1_gen_conti.yaml",
+            "loc": "exp31_1_loc.yaml",
+        }
+        for map_name in MAPS:
+            experiment = f"exp36_1_{map_name}"
+            for kind, source_name in source_names.items():
+                name = f"{experiment}_{kind}.yaml"
+                with self.subTest(config=name):
+                    actual = self._load_test(name)
+                    expected = self._load_test(source_name)
+                    expected["alpha_loc_loss"] = 20
+                    expected.pop("alpha_loc_schedule_steps")
+                    expected.pop("alpha_loc_schedule_values")
+                    expected["benchmark_v2_split"] = (
+                        "crossmap_continuous"
+                        if kind == "gen_conti"
+                        else "crossmap_query_test"
+                    )
+                    expected["benchmark_v2_support_seed"] = 0
+                    expected["benchmark_v2_shots_per_map"] = 100
+                    expected["ckpt_path"] = (
+                        f"outputs/csgo_1b/{experiment}/shot_100/seed_0/"
+                        "model.safetensors"
+                    )
+                    for key in MAP_FIELDS:
+                        expected[key] = [map_name]
+                    if kind == "loc":
+                        expected[MAP_SUBSET_SUMMARY_FLAG] = True
+                    self.assertEqual(actual, expected)
+                    self.assertEqual(actual["test_maps"], [map_name])
+                    self.assertIs(actual["is_lora"], False)
+                    if kind == "loc":
+                        self.assertIs(
+                            actual[MAP_SUBSET_SUMMARY_FLAG], True
+                        )
+                    else:
+                        self.assertNotIn(MAP_SUBSET_SUMMARY_FLAG, actual)
 
 
 if __name__ == "__main__":

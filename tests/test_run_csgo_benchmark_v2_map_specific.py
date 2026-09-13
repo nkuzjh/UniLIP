@@ -57,17 +57,17 @@ class MapSpecificRunnerTests(unittest.TestCase):
 
     def test_default_matrix_order_shots_lock_and_family_route_thresholds(self):
         expected = []
-        for family in ("exp35", "exp36"):
+        for family in ("exp35", "exp36", "exp36_1"):
             for map_name in RUNNER.CROSSMAP_MAPS:
-                expected.extend(
-                    (
-                        f"{family}_{map_name}",
-                        f"{family}_gen_{map_name}",
-                        f"{family}_loc_{map_name}",
+                for route in RUNNER.FAMILY_ROUTES[family]:
+                    expected.append(
+                        f"{family}_{map_name}"
+                        if route == "joint"
+                        else f"{family}_{route}_{map_name}"
                     )
-                )
         self.assertEqual(RUNNER.experiment_names(self.matrix), tuple(expected))
-        self.assertEqual(RUNNER.scheduler_shots(self.matrix), [100])
+        self.assertEqual(len(expected), 28)
+        self.assertEqual(RUNNER.scheduler_shots(self.matrix), [100, 50, 20, 10])
         self.assertEqual(RUNNER._shots(self.matrix), [100, 50, 20, 10])
         self.assertEqual(self.matrix["scheduling"]["max_active_pipelines"], 24)
         self.assertEqual(
@@ -85,9 +85,14 @@ class MapSpecificRunnerTests(unittest.TestCase):
             ("exp36", "joint"): 35000,
             ("exp36", "gen"): 22000,
             ("exp36", "loc"): 22000,
+            ("exp36_1", "joint"): 45000,
         }
         for key, value in expected_memory.items():
             self.assertEqual(RUNNER._minimum_free_memory(self.matrix, *key), value)
+        self.assertEqual(
+            RUNNER._launch_reservation_memory(self.matrix, "exp36_1", "joint"),
+            6000,
+        )
 
     def test_multi_shot_family_route_filters_exclude_joint_jobs(self):
         parser = RUNNER._build_parser()
@@ -170,6 +175,41 @@ class MapSpecificRunnerTests(unittest.TestCase):
         self.assertEqual(status.shots, [50, 20, 10])
         self.assertEqual(status.families, ["exp35"])
         self.assertEqual(status.routes, ["loc"])
+
+    def test_exp36_1_is_joint_only_for_all_four_shots(self):
+        jobs = RUNNER._job_order(
+            self.matrix,
+            [100, 50, 20, 10],
+            families=["exp36_1"],
+            routes=["joint", "gen", "loc"],
+        )
+        expected_names = [f"exp36_1_{map_name}" for map_name in RUNNER.CROSSMAP_MAPS]
+        self.assertEqual(len(jobs), 16)
+        self.assertEqual([name for name, shot in jobs if shot == 100], expected_names)
+        self.assertEqual({shot for _, shot in jobs}, {100, 50, 20, 10})
+        self.assertTrue(all("_gen_" not in name and "_loc_" not in name for name, _ in jobs))
+
+        command = RUNNER.build_train_command(
+            self.matrix, "exp36_1_cs_office", 10
+        )
+        self.assertEqual(
+            option(command, "--csgo_config"),
+            "csgo_configs/exp36_1_cs_office.yaml",
+        )
+        self.assertEqual(
+            option(command, "--output_dir"),
+            "outputs/csgo_1b/exp36_1_cs_office/shot_10/seed_0",
+        )
+        self.assertEqual(option(command, "--per_device_train_batch_size"), "4")
+        self.assertEqual(option(command, "--per_device_eval_batch_size"), "4")
+        self.assertEqual(option(command, "--gradient_accumulation_steps"), "32")
+        self.assertEqual(option(command, "--max_steps"), "400")
+        self.assertEqual(option(command, "--fix_llm"), "True")
+        self.assertEqual(option(command, "--master_port"), "30473")
+        with self.assertRaisesRegex(RUNNER.PipelineError, "unsupported family route"):
+            RUNNER.build_map_models_command(
+                self.matrix, "exp36_1", "gen", 100, "discrete"
+            )
 
     def test_schedule_syncs_each_selected_shot_with_filters(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -1622,6 +1662,171 @@ class MapSpecificRunnerTests(unittest.TestCase):
             },
         )
 
+    def real_results_document_text(self):
+        """Use the repository document while tolerating its pending marker migration."""
+
+        text = (
+            REPO_ROOT / "csgo_benchmark_v2_experiments_results.md"
+        ).read_text(encoding="utf-8")
+        legacy_marker = "# ablation 3 maps表\n"
+        setext_marker = "ablation 3 maps表\n====================\n"
+        if legacy_marker in text:
+            text = text.replace(legacy_marker, setext_marker, 1)
+        return text
+
+    def ablation_block(self, text):
+        lines = text.splitlines(keepends=True)
+        start, end = RUNNER._ablation_section_bounds(lines)
+        return "".join(lines[start:end])
+
+    def result_document_lines(self, main_discrete=(), supplement_discrete=()):
+        return [
+            "# csgo benchmark v2 实验进度\n",
+            "ablation 3 maps表\n",
+            "====================\n",
+            "## 定位\n",
+            "| header |\n",
+            "## 离散生成\n",
+            "| header |\n",
+            "## 连续生成\n",
+            "| header |\n",
+            "# csgo benchmark v2 主表\n",
+            "## 定位\n",
+            "| header |\n",
+            "## 离散生成\n",
+            "| header |\n",
+            *main_discrete,
+            "## 连续生成\n",
+            "| header |\n",
+            "# csgo benchmark v2 补充表格\n",
+            "## 定位\n",
+            "| header |\n",
+            "## 离散生成\n",
+            "| header |\n",
+            *supplement_discrete,
+            "## 连续生成\n",
+            "| header |\n",
+        ]
+
+    def test_result_sync_replaces_non_100_shot_row_in_main_without_inserting_supplement(
+        self,
+    ):
+        prefix = (
+            "| CrossMap-4 few-shot | Discrete generation | "
+            "exp35_gen_cs_office | 50 |"
+        )
+        old_row = prefix + " old-main |\n"
+        new_row = prefix + " new-main |"
+        lines = self.result_document_lines(main_discrete=(old_row,))
+
+        self.assertTrue(
+            RUNNER._insert_or_replace_result_row(
+                lines,
+                "## 离散生成",
+                prefix,
+                new_row,
+                shots=50,
+                initialize=True,
+            )
+        )
+
+        main_start, main_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.MAIN_RESULTS_HEADING,
+        )
+        supplement_start, supplement_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.SUPPLEMENT_RESULTS_HEADING,
+        )
+        main_section = lines[main_start:main_end]
+        supplement_section = lines[supplement_start:supplement_end]
+        self.assertIn(new_row + "\n", main_section)
+        self.assertNotIn(old_row, main_section)
+        self.assertFalse(any(line.startswith(prefix) for line in supplement_section))
+
+    def test_result_sync_replaces_existing_supplement_row_in_place(self):
+        prefix = (
+            "| CrossMap-4 few-shot | Discrete generation | "
+            "exp35_gen_cs_office | 50 |"
+        )
+        old_row = prefix + " old-supplement |\n"
+        new_row = prefix + " new-supplement |"
+        lines = self.result_document_lines(supplement_discrete=(old_row,))
+
+        self.assertTrue(
+            RUNNER._insert_or_replace_result_row(
+                lines,
+                "## 离散生成",
+                prefix,
+                new_row,
+                shots=50,
+                initialize=True,
+            )
+        )
+
+        main_start, main_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.MAIN_RESULTS_HEADING,
+        )
+        supplement_start, supplement_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.SUPPLEMENT_RESULTS_HEADING,
+        )
+        main_section = lines[main_start:main_end]
+        supplement_section = lines[supplement_start:supplement_end]
+        self.assertFalse(any(line.startswith(prefix) for line in main_section))
+        self.assertIn(new_row + "\n", supplement_section)
+        self.assertNotIn(old_row, supplement_section)
+
+    def test_result_sync_initializes_missing_non_100_shot_row_in_default_supplement_position(
+        self,
+    ):
+        prefix = (
+            "| CrossMap-4 few-shot | Discrete generation | "
+            "exp35_gen_cs_office | 20 |"
+        )
+        new_row = prefix + " initialized |"
+        existing_row = "| existing row |\n"
+        lines = self.result_document_lines(supplement_discrete=(existing_row,))
+
+        self.assertTrue(
+            RUNNER._insert_or_replace_result_row(
+                lines,
+                "## 离散生成",
+                prefix,
+                new_row,
+                shots=20,
+                initialize=True,
+            )
+        )
+
+        main_start, main_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.MAIN_RESULTS_HEADING,
+        )
+        supplement_start, supplement_end = RUNNER._section_bounds(
+            lines,
+            "## 离散生成",
+            parent_heading=RUNNER.SUPPLEMENT_RESULTS_HEADING,
+        )
+        supplement_continuous_start, _ = RUNNER._section_bounds(
+            lines,
+            "## 连续生成",
+            parent_heading=RUNNER.SUPPLEMENT_RESULTS_HEADING,
+        )
+        main_section = lines[main_start:main_end]
+        supplement_section = lines[supplement_start:supplement_end]
+        inserted_index = lines.index(new_row + "\n")
+        self.assertFalse(any(line.startswith(prefix) for line in main_section))
+        self.assertIn(new_row + "\n", supplement_section)
+        self.assertEqual(lines[inserted_index - 1], existing_row)
+        self.assertLess(inserted_index, supplement_continuous_start)
+
     def test_sync_results_initializes_rows_extracts_metrics_and_preserves_headings(
         self,
     ):
@@ -1629,8 +1834,10 @@ class MapSpecificRunnerTests(unittest.TestCase):
             root = Path(temporary)
             matrix = self.temporary_matrix(root)
             original = (
-                REPO_ROOT / "csgo_benchmark_v2_experiments_results.md"
-            ).read_text(encoding="utf-8")
+                self.real_results_document_text()
+            )
+            ablation_before = self.ablation_block(original)
+            maintenance_prefix = original[: original.index(RUNNER.EXPECTED_HEADINGS[0])]
             original = original.replace(
                 "| CrossMap-4 few-shot | Discrete generation | exp33_gen | 100 |",
                 "| Custom unknown row | keep |\n| CrossMap-4 few-shot | Discrete generation | exp33_gen | 100 |",
@@ -1646,6 +1853,8 @@ class MapSpecificRunnerTests(unittest.TestCase):
                 RUNNER.sync_results(matrix, shots=50, initialize=True)
             self.assertTrue(exclusive_lock.call_args.kwargs["blocking"])
             rendered = Path(matrix["paths"]["results_file"]).read_text(encoding="utf-8")
+            self.assertTrue(rendered.startswith(maintenance_prefix))
+            self.assertEqual(self.ablation_block(rendered), ablation_before)
             self.assertEqual(
                 RUNNER._result_headings(rendered.splitlines(True)),
                 list(RUNNER.EXPECTED_HEADINGS),
@@ -1656,7 +1865,7 @@ class MapSpecificRunnerTests(unittest.TestCase):
                 rendered,
             )
             self.assertIn(
-                "| CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 50 | 13.500 | 0.4567 | 0.7890 | 0.6543 | 22.200 |",
+                "| CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 50 | 13.500 | 0.4567 | 0.7890 | 0.6543 | 22.200 | 400 |",
                 rendered,
             )
             self.assertIn(
@@ -1684,8 +1893,20 @@ class MapSpecificRunnerTests(unittest.TestCase):
                 rendered.splitlines(True)[supplement_start:supplement_end]
             )
             self.assertIn("| exp35_gen_cs_office | 100 |", main_section)
-            self.assertNotIn("| exp35_gen_cs_office | 50 |", main_section)
-            self.assertIn("| exp35_gen_cs_office | 50 |", supplement_section)
+            self.assertIn(
+                "| exp35_gen_cs_office | 50 | 13.500 | 0.4567 | 0.7890 | 0.6543 | 22.200 | 400 |",
+                main_section,
+            )
+            self.assertNotIn(
+                "| CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 50 |",
+                supplement_section,
+            )
+            self.assertEqual(
+                rendered.count(
+                    "| CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 50 |"
+                ),
+                1,
+            )
             self.assertNotIn(
                 "| exp35_gen_cs_office | 50 |", rendered.splitlines(True)[0:main_start]
             )
@@ -1698,9 +1919,7 @@ class MapSpecificRunnerTests(unittest.TestCase):
             matrix = self.temporary_matrix(root)
             results = Path(matrix["paths"]["results_file"])
             results.write_text(
-                (REPO_ROOT / "csgo_benchmark_v2_experiments_results.md").read_text(
-                    encoding="utf-8"
-                )
+                self.real_results_document_text()
                 + "\n# unexpected heading\n",
                 encoding="utf-8",
             )
@@ -1709,17 +1928,126 @@ class MapSpecificRunnerTests(unittest.TestCase):
                 RUNNER.sync_results(matrix, shots=100, initialize=True)
             self.assertEqual(results.read_bytes(), before)
 
+    def test_sync_results_rejects_invalid_subheadings_in_every_result_parent(self):
+        original = self.real_results_document_text()
+        original_lines = original.splitlines(keepends=True)
+        parents = (
+            RUNNER.ABLATION_RESULTS_HEADING,
+            RUNNER.MAIN_RESULTS_HEADING,
+            RUNNER.SUPPLEMENT_RESULTS_HEADING,
+        )
+
+        for parent in parents:
+            if parent == RUNNER.ABLATION_RESULTS_HEADING:
+                parent_start, parent_end = RUNNER._ablation_section_bounds(
+                    original_lines
+                )
+                child_start = parent_start + 2
+            else:
+                parent_start, parent_end = RUNNER._section_bounds(
+                    original_lines, parent
+                )
+                child_start = parent_start + 1
+            child_indices = [
+                index
+                for index in range(child_start, parent_end)
+                if RUNNER._heading_level(original_lines[index]) == 2
+            ]
+            self.assertEqual(
+                [original_lines[index].strip() for index in child_indices],
+                list(RUNNER.EXPECTED_RESULT_SUBHEADINGS),
+            )
+
+            mutations = {
+                "unknown": lambda lines: lines.__setitem__(
+                    child_indices[0], "## 未知结果分组\n"
+                ),
+                "missing": lambda lines: lines.pop(child_indices[0]),
+                "reordered": lambda lines: lines.__setitem__(
+                    slice(child_indices[0], child_indices[1] + 1),
+                    [lines[child_indices[1]], lines[child_indices[0]]],
+                ),
+            }
+            for mutation_name, mutate in mutations.items():
+                with self.subTest(parent=parent, mutation=mutation_name):
+                    with tempfile.TemporaryDirectory(dir=REPO_ROOT) as temporary:
+                        root = Path(temporary)
+                        matrix = self.temporary_matrix(root)
+                        results = Path(matrix["paths"]["results_file"])
+                        bad_lines = list(original_lines)
+                        mutate(bad_lines)
+                        results.write_text("".join(bad_lines), encoding="utf-8")
+                        before = results.read_bytes()
+                        with self.assertRaises(RUNNER.PipelineError):
+                            RUNNER.sync_results(matrix, shots=100, initialize=True)
+                        self.assertEqual(results.read_bytes(), before)
+
+    def test_sync_results_rejects_invalid_setext_ablation_marker_without_rewriting(
+        self,
+    ):
+        original = self.real_results_document_text()
+        original_lines = original.splitlines(keepends=True)
+        ablation_start, ablation_end = RUNNER._ablation_section_bounds(original_lines)
+        ablation_block = original_lines[ablation_start:ablation_end]
+
+        duplicate = list(original_lines) + ablation_block
+        misplaced = original_lines[:ablation_start] + original_lines[ablation_end:]
+        supplement_index = next(
+            index
+            for index, line in enumerate(misplaced)
+            if line.rstrip("\r\n") == RUNNER.SUPPLEMENT_RESULTS_HEADING
+        )
+        misplaced[supplement_index:supplement_index] = ablation_block
+        malformed = list(original_lines)
+        malformed[ablation_start + 1] = "--------------------\n"
+
+        for name, bad_lines in (
+            ("duplicate", duplicate),
+            ("misplaced", misplaced),
+            ("malformed", malformed),
+        ):
+            with self.subTest(marker=name):
+                with tempfile.TemporaryDirectory(dir=REPO_ROOT) as temporary:
+                    root = Path(temporary)
+                    matrix = self.temporary_matrix(root)
+                    results = Path(matrix["paths"]["results_file"])
+                    results.write_text("".join(bad_lines), encoding="utf-8")
+                    before = results.read_bytes()
+                    with self.assertRaises(RUNNER.PipelineError):
+                        RUNNER.sync_results(matrix, shots=100, initialize=True)
+                    self.assertEqual(results.read_bytes(), before)
+
     def test_filtered_sync_does_not_initialize_joint_shot_rows(self):
         with tempfile.TemporaryDirectory(dir=REPO_ROOT) as temporary:
             root = Path(temporary)
             matrix = self.temporary_matrix(root)
             results = Path(matrix["paths"]["results_file"])
-            results.write_text(
-                (REPO_ROOT / "csgo_benchmark_v2_experiments_results.md").read_text(
-                    encoding="utf-8"
-                ),
-                encoding="utf-8",
+            original = (
+                self.real_results_document_text()
             )
+            maintenance_prefix = original[: original.index(RUNNER.EXPECTED_HEADINGS[0])]
+            ablation_before = self.ablation_block(original)
+            results.write_text(original, encoding="utf-8")
+
+            joint_names = {
+                "exp35",
+                *(f"exp35_{map_name}" for map_name in RUNNER.CROSSMAP_MAPS),
+            }
+
+            def joint_rows(text):
+                rows = []
+                for line in text.splitlines():
+                    fields = [field.strip() for field in line.split("|")]
+                    if (
+                        len(fields) >= 6
+                        and fields[3] in joint_names
+                        and fields[4] == "50"
+                    ):
+                        rows.append(line)
+                return rows
+
+            joint_rows_before = joint_rows(original)
+            self.assertTrue(joint_rows_before)
 
             RUNNER.sync_results(
                 matrix,
@@ -1729,16 +2057,9 @@ class MapSpecificRunnerTests(unittest.TestCase):
                 routes=["gen", "loc"],
             )
             rendered = results.read_text(encoding="utf-8")
-            self.assertNotIn("| `exp35_cs_office` 50-shot |", rendered)
-            self.assertNotIn(
-                "| CrossMap-4 few-shot | Localization | exp35_cs_office | 50 |",
-                rendered,
-            )
-            self.assertNotIn(
-                "| CrossMap-4 few-shot | Discrete generation | exp35_cs_office | 50 |",
-                rendered,
-            )
-            self.assertNotIn("| `exp35` 50-shot |", rendered)
+            self.assertTrue(rendered.startswith(maintenance_prefix))
+            self.assertEqual(self.ablation_block(rendered), ablation_before)
+            self.assertEqual(joint_rows(rendered), joint_rows_before)
             self.assertIn("| `exp35_gen_cs_office` 50-shot |", rendered)
             self.assertIn("| `exp35_loc_cs_office` 50-shot |", rendered)
 
@@ -1782,6 +2103,10 @@ class MapSpecificRunnerTests(unittest.TestCase):
             ["schedule", "--exp35-loc-minimum-free-memory-mb", "27000"]
         )
         self.assertEqual(parsed.exp35_loc_minimum_free_memory_mb, 27000)
+        parsed = parser.parse_args(
+            ["schedule", "--exp36_1-joint-minimum-free-memory-mb", "46000"]
+        )
+        self.assertEqual(parsed.exp36_1_joint_minimum_free_memory_mb, 46000)
         parsed = parser.parse_args(
             ["schedule", "--launch-memory-confirmation-seconds", "0"]
         )
