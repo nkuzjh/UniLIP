@@ -43,7 +43,7 @@ csgo benchmark v2 实验设计与表格维护规则
 | 实验版本 | 训练 | 推理 | Metric 计算 |
 |---|---|---|---|
 | `exp31_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
-| `exp31_1_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
+| `exp31_1_3maps` | 67 训练中；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 | `exp31_2_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 | `exp31_3_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 
@@ -99,10 +99,10 @@ csgo benchmark v2 实验设计与表格维护规则
 | `exp35_de_golden` 20-shot | 等待 parent checkpoint | 未开始 | 未开始 |
 | `exp35_de_palacio` 20-shot | 等待 parent checkpoint | 未开始 | 未开始 |
 | `exp35_de_vertigo` 20-shot | 等待 parent checkpoint | 未开始 | 未开始 |
-| `exp36_1_cs_office` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation partial | 未开始 |
-| `exp36_1_de_golden` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous | 未开始 |
-| `exp36_1_de_palacio` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous | 未开始 |
-| `exp36_1_de_vertigo` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous | 未开始 |
+| `exp36_1_cs_office` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_golden` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_palacio` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_vertigo` 20-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
 | `exp35_gen_cs_office` 20-shot | 未开始 | 未开始 | 未开始 |
 | `exp35_gen_de_golden` 20-shot | 未开始 | 未开始 | 未开始 |
 | `exp35_gen_de_palacio` 20-shot | 未开始 | 未开始 | 未开始 |
@@ -116,10 +116,10 @@ csgo benchmark v2 实验设计与表格维护规则
 | `exp35_de_golden` 10-shot | 等待 parent checkpoint | 未开始 | 未开始 |
 | `exp35_de_palacio` 10-shot | 等待 parent checkpoint | 未开始 | 未开始 |
 | `exp35_de_vertigo` 10-shot | 等待 parent checkpoint | 未开始 | 未开始 |
-| `exp36_1_cs_office` 10-shot | 未开始 | 未开始 | 未开始 |
-| `exp36_1_de_golden` 10-shot | 未开始 | 未开始 | 未开始 |
-| `exp36_1_de_palacio` 10-shot | 未开始 | 未开始 | 未开始 |
-| `exp36_1_de_vertigo` 10-shot | 未开始 | 未开始 | 未开始 |
+| `exp36_1_cs_office` 10-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_golden` 10-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_palacio` 10-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
+| `exp36_1_de_vertigo` 10-shot | ✅ step 400 | CrossMap-4 generation discrete+continuous<br>Seen-10 retention generation discrete+continuous<br>CrossMap-4 localization<br>Seen-10 retention localization | CrossMap discrete<br>CrossMap continuous<br>Seen retention discrete<br>Seen retention continuous<br>CrossMap localization<br>Seen retention localization |
 | `exp35_gen_cs_office` 10-shot | 未开始 | 未开始 | 未开始 |
 | `exp35_gen_de_golden` 10-shot | 未开始 | 未开始 | 未开始 |
 | `exp35_gen_de_palacio` 10-shot | 未开始 | 未开始 | 未开始 |
@@ -318,10 +318,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Localization | exp35_de_golden | 20 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_de_palacio | 20 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_de_vertigo | 20 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_cs_office | 20 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_golden | 20 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_palacio | 20 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_vertigo | 20 |  |  |  |  | - |
+| CrossMap-4 few-shot | Localization | exp36_1_cs_office | 20 | 140.899 | 2.139 | 4.981 | 86.700 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_golden | 20 | 205.050 | 14.138 | 2.126 | 82.885 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_palacio | 20 | 263.819 | 14.510 | 3.523 | 79.928 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_vertigo | 20 | 179.212 | 20.513 | 3.026 | 84.123 | 400 |
 | CrossMap-4 few-shot | Localization | exp35_loc_cs_office | 20 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_loc_de_golden | 20 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_loc_de_palacio | 20 |  |  |  |  | - |
@@ -331,10 +331,10 @@ ablation 3 maps表
 | Seen-10 retention | Localization | exp35_de_palacio | 20 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_de_vertigo | 20 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_loc_de_vertigo | 20 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_cs_office | 20 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_golden | 20 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_palacio | 20 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_vertigo | 20 |  |  |  |  | - |
+| Seen-10 retention | Localization | exp36_1_cs_office | 20 | 261.939 | 17.207 | 6.856 | 69.089 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_golden | 20 | 225.539 | 12.908 | 3.160 | 75.435 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_palacio | 20 | 225.915 | 16.806 | 3.802 | 69.596 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_vertigo | 20 | 216.861 | 11.668 | 3.607 | 66.533 | 400 |
 | Seen-10 retention | Localization | exp35_loc_cs_office | 20 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_loc_de_golden | 20 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_loc_de_palacio | 20 |  |  |  |  | - |
@@ -343,10 +343,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Localization | exp35_de_golden | 10 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_de_palacio | 10 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_de_vertigo | 10 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_cs_office | 10 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_golden | 10 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_palacio | 10 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1_de_vertigo | 10 |  |  |  |  | - |
+| CrossMap-4 few-shot | Localization | exp36_1_cs_office | 10 | 149.829 | 2.761 | 5.122 | 86.316 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_golden | 10 | 219.587 | 17.857 | 2.154 | 86.595 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_palacio | 10 | 267.508 | 14.773 | 2.765 | 88.412 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1_de_vertigo | 10 | 193.268 | 20.186 | 2.737 | 84.196 | 400 |
 | CrossMap-4 few-shot | Localization | exp35_loc_cs_office | 10 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_loc_de_golden | 10 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_loc_de_palacio | 10 |  |  |  |  | - |
@@ -355,10 +355,10 @@ ablation 3 maps表
 | Seen-10 retention | Localization | exp35_de_golden | 10 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_de_palacio | 10 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_de_vertigo | 10 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_cs_office | 10 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_golden | 10 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_palacio | 10 |  |  |  |  | - |
-| Seen-10 retention | Localization | exp36_1_de_vertigo | 10 |  |  |  |  | - |
+| Seen-10 retention | Localization | exp36_1_cs_office | 10 | 270.479 | 16.147 | 6.913 | 75.941 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_golden | 10 | 209.586 | 12.878 | 3.189 | 74.860 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_palacio | 10 | 229.112 | 15.516 | 3.162 | 80.364 | 400 |
+| Seen-10 retention | Localization | exp36_1_de_vertigo | 10 | 214.614 | 17.543 | 3.145 | 65.920 | 400 |
 | Seen-10 retention | Localization | exp35_loc_cs_office | 10 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_loc_de_golden | 10 |  |  |  |  | - |
 | Seen-10 retention | Localization | exp35_loc_de_palacio | 10 |  |  |  |  | - |
@@ -370,8 +370,8 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Localization | exp35 | 10 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp36_1 | 100 | 161.142 | 10.570 | 3.591 | 71.960 | 400 |
 | CrossMap-4 few-shot | Localization | exp36_1 | 50 | 180.947 | 11.649 | 3.635 | 79.276 | 400 |
-| CrossMap-4 few-shot | Localization | exp36_1 | 20 |  |  |  |  | - |
-| CrossMap-4 few-shot | Localization | exp36_1 | 10 |  |  |  |  | - |
+| CrossMap-4 few-shot | Localization | exp36_1 | 20 | 197.245 | 12.825 | 3.414 | 83.409 | 400 |
+| CrossMap-4 few-shot | Localization | exp36_1 | 10 | 207.548 | 13.894 | 3.194 | 86.380 | 400 |
 | CrossMap-4 few-shot | Localization | exp35_loc | 100 | 162.784 | 10.307 | 3.616 | 69.920 | 400 |
 | CrossMap-4 few-shot | Localization | exp35_loc | 50 | 177.490 | 11.478 | 3.714 | 78.869 | 400 |
 | CrossMap-4 few-shot | Localization | exp35_loc | 20 |  |  |  |  | - |
@@ -449,10 +449,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Discrete generation | exp35_de_golden | 20 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_de_palacio | 20 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_de_vertigo | 20 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_cs_office | 20 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_golden | 20 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_palacio | 20 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_vertigo | 20 |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_cs_office | 20 | 13.375 | 0.6028 | 0.6487 | 0.4283 | 66.517 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_golden | 20 | 15.031 | 0.3821 | 0.6224 | 0.5262 | 73.553 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_palacio | 20 | 12.977 | 0.3767 | 0.7112 | 0.5154 | 66.020 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_vertigo | 20 | 12.156 | 0.4711 | 0.6739 | 0.4507 | 73.408 | 400 |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 20 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_de_golden | 20 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_de_palacio | 20 |  |  |  |  |  | - |
@@ -461,10 +461,10 @@ ablation 3 maps表
 | Seen-10 retention | Discrete generation | exp35_de_golden | 20 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_de_palacio | 20 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_de_vertigo | 20 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_cs_office | 20 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_golden | 20 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_palacio | 20 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_vertigo | 20 |  |  |  |  |  | - |
+| Seen-10 retention | Discrete generation | exp36_1_cs_office | 20 | 13.119 | 0.4799 | 0.7242 | 0.4663 | 142.086 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_golden | 20 | 13.289 | 0.4103 | 0.6511 | 0.5223 | 92.416 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_palacio | 20 | 12.860 | 0.4229 | 0.7092 | 0.4918 | 122.822 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_vertigo | 20 | 12.656 | 0.4492 | 0.6836 | 0.4686 | 120.741 | 400 |
 | Seen-10 retention | Discrete generation | exp35_gen_cs_office | 20 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_gen_de_golden | 20 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_gen_de_palacio | 20 |  |  |  |  |  | - |
@@ -474,10 +474,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Discrete generation | exp35_de_golden | 10 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_de_palacio | 10 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_de_vertigo | 10 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_cs_office | 10 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_golden | 10 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_palacio | 10 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1_de_vertigo | 10 |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_cs_office | 10 | 12.536 | 0.6121 | 0.6850 | 0.3967 | 120.828 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_golden | 10 | 14.485 | 0.3638 | 0.6353 | 0.5119 | 100.393 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_palacio | 10 | 12.187 | 0.3459 | 0.7179 | 0.5085 | 104.259 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1_de_vertigo | 10 | 11.743 | 0.4756 | 0.6843 | 0.4507 | 129.216 | 400 |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_cs_office | 10 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_de_golden | 10 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen_de_palacio | 10 |  |  |  |  |  | - |
@@ -487,10 +487,10 @@ ablation 3 maps表
 | Seen-10 retention | Discrete generation | exp35_de_palacio | 10 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_de_vertigo | 10 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_gen_de_vertigo | 10 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_cs_office | 10 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_golden | 10 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_palacio | 10 |  |  |  |  |  | - |
-| Seen-10 retention | Discrete generation | exp36_1_de_vertigo | 10 |  |  |  |  |  | - |
+| Seen-10 retention | Discrete generation | exp36_1_cs_office | 10 | 12.201 | 0.4524 | 0.7367 | 0.4572 | 147.389 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_golden | 10 | 12.906 | 0.3970 | 0.6629 | 0.5098 | 126.722 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_palacio | 10 | 12.998 | 0.4054 | 0.7020 | 0.4918 | 143.218 | 400 |
+| Seen-10 retention | Discrete generation | exp36_1_de_vertigo | 10 | 12.243 | 0.4434 | 0.7020 | 0.4752 | 158.646 | 400 |
 | Seen-10 retention | Discrete generation | exp35_gen_cs_office | 10 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_gen_de_golden | 10 |  |  |  |  |  | - |
 | Seen-10 retention | Discrete generation | exp35_gen_de_palacio | 10 |  |  |  |  |  | - |
@@ -501,8 +501,8 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Discrete generation | exp35 | 10 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp36_1 | 100 | 14.293 | 0.4600 | 0.6200 | 0.5067 | 38.249 | 400 |
 | CrossMap-4 few-shot | Discrete generation | exp36_1 | 50 | 13.746 | 0.4559 | 0.6447 | 0.4920 | 50.098 | 400 |
-| CrossMap-4 few-shot | Discrete generation | exp36_1 | 20 |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Discrete generation | exp36_1 | 10 |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Discrete generation | exp36_1 | 20 | 13.385 | 0.4581 | 0.6641 | 0.4802 | 69.874 | 400 |
+| CrossMap-4 few-shot | Discrete generation | exp36_1 | 10 | 12.738 | 0.4494 | 0.6806 | 0.4669 | 113.674 | 400 |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen | 100 | 14.111 | 0.4572 | 0.6267 | 0.5018 | 37.408 | 400 |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen | 50 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_gen | 20 |  |  |  |  |  | - |
@@ -580,10 +580,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Continuous generation | exp35_de_golden | 20 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_de_palacio | 20 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_de_vertigo | 20 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_cs_office | 20 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_golden | 20 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_palacio | 20 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_vertigo | 20 |  |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_cs_office | 20 | 12.593 | 0.5586 | 0.6677 | 16.870 | 25.315 | 654.784 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_golden | 20 | 14.905 | 0.3799 | 0.6230 | 15.235 | 21.332 | 1142.936 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_palacio | 20 | 12.823 | 0.3570 | 0.7196 | 20.584 | 28.829 | 1095.749 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_vertigo | 20 | 11.647 | 0.4505 | 0.6785 | 19.523 | 27.623 | 956.651 | 400 |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_cs_office | 20 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_de_golden | 20 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_de_palacio | 20 |  |  |  |  |  |  | - |
@@ -592,10 +592,10 @@ ablation 3 maps表
 | Seen-10 retention | Continuous generation | exp35_de_golden | 20 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_de_palacio | 20 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_de_vertigo | 20 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_cs_office | 20 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_golden | 20 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_palacio | 20 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 20 |  |  |  |  |  |  | - |
+| Seen-10 retention | Continuous generation | exp36_1_cs_office | 20 | 13.204 | 0.4811 | 0.7259 | 21.706 | 29.977 | 1855.592 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_golden | 20 | 13.300 | 0.4102 | 0.6512 | 18.424 | 27.034 | 1112.867 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_palacio | 20 | 13.014 | 0.4282 | 0.7040 | 20.486 | 29.211 | 1285.211 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 20 | 12.695 | 0.4485 | 0.6870 | 26.252 | 33.972 | 1383.501 | 400 |
 | Seen-10 retention | Continuous generation | exp35_gen_cs_office | 20 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_gen_de_golden | 20 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_gen_de_palacio | 20 |  |  |  |  |  |  | - |
@@ -605,10 +605,10 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Continuous generation | exp35_de_golden | 10 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_de_palacio | 10 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_de_vertigo | 10 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_cs_office | 10 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_golden | 10 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_palacio | 10 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1_de_vertigo | 10 |  |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_cs_office | 10 | 11.602 | 0.5667 | 0.7173 | 17.355 | 26.503 | 763.896 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_golden | 10 | 14.461 | 0.3644 | 0.6274 | 14.456 | 19.487 | 1204.013 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_palacio | 10 | 12.377 | 0.3329 | 0.7080 | 19.888 | 26.938 | 1278.453 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1_de_vertigo | 10 | 11.306 | 0.4552 | 0.6896 | 15.328 | 23.930 | 1255.499 | 400 |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_cs_office | 10 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_de_golden | 10 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen_de_palacio | 10 |  |  |  |  |  |  | - |
@@ -617,10 +617,10 @@ ablation 3 maps表
 | Seen-10 retention | Continuous generation | exp35_de_golden | 10 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_de_palacio | 10 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_de_vertigo | 10 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_cs_office | 10 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_golden | 10 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_palacio | 10 |  |  |  |  |  |  | - |
-| Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 10 |  |  |  |  |  |  | - |
+| Seen-10 retention | Continuous generation | exp36_1_cs_office | 10 | 12.201 | 0.4505 | 0.7409 | 26.780 | 34.118 | 1842.580 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_golden | 10 | 12.821 | 0.3899 | 0.6691 | 16.990 | 25.150 | 1288.490 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_palacio | 10 | 13.242 | 0.4132 | 0.6978 | 23.892 | 31.541 | 1419.282 | 400 |
+| Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 10 | 12.297 | 0.4451 | 0.7063 | 22.483 | 30.050 | 1469.555 | 400 |
 | Seen-10 retention | Continuous generation | exp35_gen_cs_office | 10 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_gen_de_golden | 10 |  |  |  |  |  |  | - |
 | Seen-10 retention | Continuous generation | exp35_gen_de_palacio | 10 |  |  |  |  |  |  | - |
@@ -632,8 +632,8 @@ ablation 3 maps表
 | CrossMap-4 few-shot | Continuous generation | exp35 | 10 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 100 | 14.195 | 0.4437 | 0.6241 | 20.981 | 28.650 | 680.417 | 400 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 | 400 |
-| CrossMap-4 few-shot | Continuous generation | exp36_1 | 20 |  |  |  |  |  |  | - |
-| CrossMap-4 few-shot | Continuous generation | exp36_1 | 10 |  |  |  |  |  |  | - |
+| CrossMap-4 few-shot | Continuous generation | exp36_1 | 20 | 12.992 | 0.4365 | 0.6722 | 18.053 | 25.775 | 962.530 | 400 |
+| CrossMap-4 few-shot | Continuous generation | exp36_1 | 10 | 12.437 | 0.4298 | 0.6856 | 16.757 | 24.214 | 1125.465 | 400 |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen | 100 | 13.943 | 0.4386 | 0.6306 | 22.033 | 29.725 | 667.223 | 400 |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen | 50 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_gen | 20 |  |  |  |  |  |  | - |

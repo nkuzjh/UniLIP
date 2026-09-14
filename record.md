@@ -6259,13 +6259,13 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIF
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29569 train_csgo.py \
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29569 train_csgo.py \
   --csgo_config csgo_configs/exp31_1_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
   --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
   --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
   --output_dir outputs/csgo_1b/exp31_1_3maps --num_train_epochs 50 \
-  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 \
+  --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 4 \
   --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 \
   --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
   --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
@@ -6308,7 +6308,7 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIF
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29570 train_csgo.py \
+CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29570 train_csgo.py \
   --csgo_config csgo_configs/exp31_2_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
   --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
@@ -6357,14 +6357,14 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIF
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29571 train_csgo.py \
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29571 train_csgo.py \
   --csgo_config csgo_configs/exp31_3_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
   --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
   --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
   --output_dir outputs/csgo_1b/exp31_3_3maps --num_train_epochs 50 \
-  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 \
-  --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 \
+  --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 4 \
+  --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 \
   --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
   --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
   --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True \
