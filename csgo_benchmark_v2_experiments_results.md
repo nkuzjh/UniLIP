@@ -43,7 +43,7 @@ csgo benchmark v2 实验设计与表格维护规则
 | 实验版本 | 训练 | 推理 | Metric 计算 |
 |---|---|---|---|
 | `exp31_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
-| `exp31_1_3maps` | 67 训练中；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
+| `exp31_1_3maps` | ✅ Seen-3，50 epochs，step 5850 | ✅ Seen-3：定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 |
 | `exp31_2_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 | `exp31_3_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 
@@ -220,7 +220,7 @@ ablation 3 maps表
 | Setting | Task | Experiment | Shot/map | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | Seen-3 ablation | Localization | exp31_3maps | - |  |  |  |  | - |
-| Seen-3 ablation | Localization | exp31_1_3maps | - |  |  |  |  | - |
+| Seen-3 ablation | Localization | exp31_1_3maps | - | 83.911 | 3.887 | 3.251 | 35.434 | 5850 |
 | Seen-3 ablation | Localization | exp31_2_3maps | - |  |  |  |  | - |
 | Seen-3 ablation | Localization | exp31_3_3maps | - |  |  |  |  | - |
 
@@ -230,7 +230,7 @@ ablation 3 maps表
 | Setting | Task | Experiment | Shot/map | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
 | Seen-3 ablation | Discrete generation | exp31_3maps | - |  |  |  |  |  | - |
-| Seen-3 ablation | Discrete generation | exp31_1_3maps | - |  |  |  |  |  | - |
+| Seen-3 ablation | Discrete generation | exp31_1_3maps | - | 14.304 | 0.407 | 0.624 | 0.516 | 29.829 | 5850 |
 | Seen-3 ablation | Discrete generation | exp31_2_3maps | - |  |  |  |  |  | - |
 | Seen-3 ablation | Discrete generation | exp31_3_3maps | - |  |  |  |  |  | - |
 
@@ -240,7 +240,7 @@ ablation 3 maps表
 | Setting | Task | Experiment | Shot/map | PSNR↑ | SSIM↑ | LPIPS↓ | Temporal_Warping_Error↓ | Temporal_Difference_Error↓ | FVD↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Seen-3 ablation | Continuous generation | exp31_3maps | - |  |  |  |  |  |  | - |
-| Seen-3 ablation | Continuous generation | exp31_1_3maps | - |  |  |  |  |  |  | - |
+| Seen-3 ablation | Continuous generation | exp31_1_3maps | - | 14.761 | 0.423 | 0.616 | 34.344 | 39.686 | 886.168 | 5850 |
 | Seen-3 ablation | Continuous generation | exp31_2_3maps | - |  |  |  |  |  |  | - |
 | Seen-3 ablation | Continuous generation | exp31_3_3maps | - |  |  |  |  |  |  | - |
 

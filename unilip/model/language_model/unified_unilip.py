@@ -993,8 +993,13 @@ class Unified_UniLIP_InternVL_MetaModel:
                 else:
                     if os.path.exists("/home/user/yc57963/.cache/openpi/openpi-assets/checkpoints/pi05_base"):
                         model_path = os.path.join("/home/user/yc57963/.cache/openpi/openpi-assets/checkpoints/pi05_base", "model.safetensors")
-                    else:
+                    elif os.path.exists("/home/user/yc47429/.cache/openpi/openpi-assets/checkpoints/pi05_base"):
                         model_path = os.path.join("/home/user/yc47429/.cache/openpi/openpi-assets/checkpoints/pi05_base", "model.safetensors")
+                    elif os.path.exists("/home/yc57963/.cache/openpi/openpi-assets/checkpoints/pi05_base"):
+                        model_path = os.path.join("/home/yc57963/.cache/openpi/openpi-assets/checkpoints/pi05_base", "model.safetensors")
+                    else:
+                        model_path = os.path.join("~/.cache/openpi/openpi-assets/checkpoints/pi05_base", "model.safetensors")
+
                 # safetensors.torch.load_model(
                 #     (self.action_dit.module if isinstance(self.action_dit, torch.nn.parallel.DistributedDataParallel) else self.action_dit), model_path, strict=False
                 # )

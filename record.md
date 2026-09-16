@@ -3281,6 +3281,14 @@ step=(1e-4 alpha_loc_loss: 2, masked_loc_loss:, eval结果) running~
 
 # csgo_benchmark_v2
 
+
+## Benchmark v2 最小数据集参数
+如果当前服务器只同步了 Benchmark v2 的扁平最小数据，不同步 277 GiB 的完整 `data/preprocessed_data`。训练、推理和 metric 统一通过一个开关使用最小数据集：
+```yaml
+benchmark_v2_asset_manifest: "data/csgo_benchmark_v2/minimal_dataset_report.json"
+```
+
+
 ## exp31
 - parent: `exp28_1`; Seen-10 balanced joint generation + localization, full-head route.
 - v2 change: manifest-driven Seen-10 training with frozen per-map Z calibration; evaluation covers Seen-10 and CrossMap-4 zero-shot.
@@ -6308,7 +6316,7 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest "$V2_MANIF
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=1,2 torchrun --nproc_per_node=2 --master_port=29570 train_csgo.py \
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29570 train_csgo.py \
   --csgo_config csgo_configs/exp31_2_3maps.yaml --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf \
   --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
@@ -6363,7 +6371,7 @@ CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29571 train_csg
   --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data \
   --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
   --output_dir outputs/csgo_1b/exp31_3_3maps --num_train_epochs 50 \
-  --per_device_train_batch_size 32 --per_device_eval_batch_size 32 --gradient_accumulation_steps 4 \
+  --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 32 \
   --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 \
   --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 \
   --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 \
