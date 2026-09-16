@@ -8,7 +8,7 @@ UNILIP_ROOT=/home/jiahao/task/UniLIP
 DATA_ROOT=/home/jiahao/task/UniLIP/data/csgo_benchmark_v2
 UNILIP_PYTHON=/home/jiahao/miniconda3/envs/UniLIP/bin/python
 BUILD_SHARED_EVALUATOR=<首个独立项目填1，其余填0>
-SHARED_EVAL_DIR=${PROJECT_ROOT}/csgo_benchmark_v2_eval
+SHARED_EVAL_DIR=/home/jiahao/task/csgo_benchmark_v2_eval_general
 RUN_FULL=<准备完成后立即运行完整实验填1；仅完成代码、配置和smoke填0>
 TRAIN_SEEDS="0"  # 只需要单种子结果即可
 
@@ -83,10 +83,25 @@ de_train
 5. 尽量复用原模型的视觉、语言和 action head；仅新增必要的双图输入适配、5D head或投影层。
 6. 使用 seen_train 训练、seen_validation 选 checkpoint、seen_discrete_test 推理。
 7. 输出：
-   outputs/csgo_benchmark_v2_seen10/${MODEL_NAME}/seed_<seed>/localization/predictions.jsonl
-8. 每行至少包含：
-   sample_id、map_name、pred_x、pred_y、pred_z、pred_pitch、pred_yaw。
+        outputs/csgo_benchmark_v2_seen10/${MODEL_NAME}/seed_<seed>/localization/predictions.jsonl
+   每行至少包含：
+        sample_id、map_name、pred_x、pred_y、pred_z、pred_pitch、pred_yaw。
    不要在模型输入文件中放置 GT pose。
+9. 训练阶段eval interval和checkpoint save interval设置为总训练steps的 1/5；
+   即训练阶段只eval和save五次，且使用late和best链接到checkpoints的最后一次保存结果和最优保存结果。
+10. 训练结束后根据训练日志的主loss绘制loss曲线图。
+11. 在训练时的eval和推理时增加样本可视化功能，可视化功能的主要行为有：
+    - 每张地图固定随机选择 10 个样本，保证各次 eval 可横向比较。
+    - Radar 上：
+        - GT：同色实心圆。
+        - Prediction：同色大号空心圆。
+        - GT 与预测之间绘制连线。
+        - 越界预测贴边显示。
+    - 右侧 10 张 FPV 竖排，左上角显示对应颜色圆点。
+    - FPV 顶部居中显示：
+        - gt_xyzhw
+        - pred_xyzhw
+    - 数值使用物理坐标，xyzhw = x,y,z,pitch,yaw，角度单位为度。
 
 如果 MODEL_TYPE=GENERATION：
 
@@ -102,6 +117,9 @@ de_train
    outputs/csgo_benchmark_v2_seen10/${MODEL_NAME}/seed_<seed>/discrete/gen_imgs/<map>/<frame>.jpg
    outputs/csgo_benchmark_v2_seen10/${MODEL_NAME}/seed_<seed>/continuous/gen_imgs/<map>/<frame>.jpg
 8. 保存图像时复用 UniLIP 当前输出尺寸、RGB转换和编码方式。
+9. 训练结束后根据训练日志的主loss绘制loss曲线图。
+10. 训练阶段eval interval和checkpoint save interval设置为总训练steps的 1/5；
+   即训练阶段只eval和save五次，且使用late和best链接到checkpoints的最后一次保存结果和最优保存结果。
 
 不要求不同模型使用完全相同的 optimizer、native resolution、LoRA策略或可训练参数量。优先选择当前项目最稳定、改动最小的官方训练路径，但数据 split、任务输入输出和最终 metric 必须一致。
 
@@ -149,8 +167,11 @@ de_train
 当 BUILD_SHARED_EVALUATOR=0 时：
 
 - 不重新实现评测器。
+- 尽量减少修改通用评测器，如必需修改则说明并记录修改理由和内容。
 - 使用已手动同步到 SHARED_EVAL_DIR 的通用代码。
 - 只保证当前模型的预测满足上述标准输出格式，然后直接运行统一评测命令。
+- 如果为了当前模型的预测满足上述标准输出格式而修改了 SHARED_EVAL_DIR 的通用代码，
+  需要确保修改后的代码兼容之前所有 MODEL_TYPE=VLA 和 MODEL_TYPE=GENERATION 的模型预测输出格式。
 
 六、执行要求
 
