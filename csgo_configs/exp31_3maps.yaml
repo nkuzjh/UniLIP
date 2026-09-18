@@ -73,6 +73,7 @@ use_short_instruction: True
 
 
 ### data
+benchmark_v2_asset_manifest: "data/csgo_benchmark_v2/minimal_dataset_report.json"
 benchmark_v2_manifest: "data/csgo_benchmark_v2/benchmark_manifest.json"
 benchmark_v2_split: "seen_train"
 data_dir: "data/preprocessed_data"
