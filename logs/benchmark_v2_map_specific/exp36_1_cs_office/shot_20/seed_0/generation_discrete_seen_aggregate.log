@@ -1,0 +1,4 @@
+
+[2026-09-13 19:44:38] COMMAND /home/jiahao/miniconda3/envs/UniLIP/bin/python scripts/aggregate_csgo_benchmark_v2_metrics.py maps --manifest data/csgo_benchmark_v2/benchmark_manifest.json --split seen_discrete_test --input_root outputs_eval/benchmark_v2/exp36_1_cs_office/shot_20/seed_0/seen_retention_discrete --kind discrete --output outputs_eval/benchmark_v2/exp36_1_cs_office/shot_20/seed_0/seen_retention_discrete/summary.json
+wrote /data/home/jiahao/UniLIP_outputs/outputs_eval/benchmark_v2/exp36_1_cs_office/shot_20/seed_0/seen_retention_discrete/summary.json
+[2026-09-13 19:44:38] EXIT 0

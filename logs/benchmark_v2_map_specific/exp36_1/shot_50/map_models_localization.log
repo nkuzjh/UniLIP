@@ -1,0 +1,4 @@
+
+[2026-09-13 20:20:35] COMMAND /home/jiahao/miniconda3/envs/UniLIP/bin/python scripts/aggregate_csgo_benchmark_v2_metrics.py map-models --manifest data/csgo_benchmark_v2/benchmark_manifest.json --split crossmap_query_test --kind localization --input_pattern 'outputs_loc/benchmark_v2/exp36_1_{map}/shot_50/seed_0/benchmark_csgo_v2_loc.json' --output outputs_loc/benchmark_v2/exp36_1/shot_50/seed_0/map_models/benchmark_v2_localization_crossmap_query_test.json
+wrote /data/home/jiahao/UniLIP_outputs/outputs_loc/benchmark_v2/exp36_1/shot_50/seed_0/map_models/benchmark_v2_localization_crossmap_query_test.json
+[2026-09-13 20:20:35] EXIT 0

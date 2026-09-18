@@ -1,0 +1,4 @@
+
+[2026-09-13 20:20:34] COMMAND /home/jiahao/miniconda3/envs/UniLIP/bin/python scripts/aggregate_csgo_benchmark_v2_metrics.py map-models --manifest data/csgo_benchmark_v2/benchmark_manifest.json --split crossmap_query_test --kind discrete --input_pattern 'outputs_eval/benchmark_v2/exp36_1_{map}/shot_50/seed_0/discrete/benchmark_csgo_v2_{map}.json' --output outputs_eval/benchmark_v2/exp36_1/shot_50/seed_0/map_models/benchmark_v2_discrete_crossmap.json
+wrote /data/home/jiahao/UniLIP_outputs/outputs_eval/benchmark_v2/exp36_1/shot_50/seed_0/map_models/benchmark_v2_discrete_crossmap.json
+[2026-09-13 20:20:34] EXIT 0
