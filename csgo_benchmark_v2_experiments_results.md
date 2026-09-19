@@ -57,7 +57,7 @@ csgo benchmark v2 实验设计与表格维护规则
 | `exp31_gen` | ✅ Seen-10，step 19500 | ✅ Seen-10：离散 20,000 + 连续 12,800<br>✅ CrossMap-4：离散 8,000 + 连续 5,120 | ✅ Seen-10 离散/连续<br>✅ CrossMap-4 离散/连续 |
 | `exp31_loc` | ✅ Seen-10，step 19500 | ✅ Seen-10，20,000 样本<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10 定位 metric<br>CrossMap-4 zero-shot：未开始 |
 |---|---|---|---|
-| `exp32` | ✅ Seen-10，step 19550；✅ 当前评测 checkpoint-6000 | ✅ Seen-10 checkpoint-6000：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10 checkpoint-6000：定位/离散/连续 metric 与聚合完成<br>CrossMap-4 zero-shot：未开始 |
+| `exp32` | ✅ Seen-10，step 19550；✅  checkpoint-6000 | ✅ checkpoint-19550 Seen-10 ：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>CrossMap-4 zero-shot；checkpoint-6000 未开始| ✅ checkpoint-19550 Seen-10 ：定位/离散/连续 metric 与聚合完成<br>CrossMap-4 zero-shot；checkpoint-6000未开始 |
 | `exp32_gen` | ✅ Seen-10，step 19500 | ✅ Seen-10：离散 20,000 + 连续 12,800<br>✅ CrossMap-4：离散 8,000 + 连续 5,120 | ✅ Seen-10 离散/连续<br>✅ CrossMap-4 离散/连续 |
 | `exp32_loc` | ✅ Seen-10，step 19500 | ✅ Seen-10，20,000 样本<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10 定位 metric<br>CrossMap-4 zero-shot：未开始 |
 |---|---|---|---|
@@ -260,8 +260,8 @@ ablation 3 maps表
 | CrossMap-4 zero-shot | Localization | exp31_loc | - |  |  |  |  | - |
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | Seen-10 | Localization | exp32 | - | 211.975 | 10.766 | 4.652 | 81.964 | 6000 |
-| Seen-10 | Localization | exp32 | - | 211.975 | 10.766 | 4.652 | 81.964 | 19500 |
-| CrossMap-4 zero-shot | Localization | exp32 | - |  |  |  |  | - |
+| Seen-10 | Localization | exp32 | - | 123.194 | 6.38 | 3.352 | 55.449 | 19500 |
+| CrossMap-4 zero-shot | Localization | exp32 | - | 340.912 | 18.794 | 4.188 | 87.616 | 19500 |
 | Seen-10 | Localization | exp32_loc | - | 48.961 | 3.006 | 2.970 | 26.047 | 19500 |
 | CrossMap-4 zero-shot | Localization | exp32_loc | - |  |  |  |  | - |
 |---|---|---|---:|---:|---:|---:|---:|---:|
@@ -392,8 +392,8 @@ ablation 3 maps表
 | CrossMap-4 zero-shot | Discrete generation | exp31_gen | - | 12.288 | 0.4380 | 0.7358 | 0.4542 | 101.199 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | Seen-10 | Discrete generation | exp32 | - | 12.995 | 0.3974 | 0.6583 | 0.4889 | 44.101 | 6000 |
-| Seen-10 | Discrete generation | exp32 | - | 12.995 | 0.3974 | 0.6583 | 0.4889 | 44.101 | 19500 |
-| CrossMap-4 zero-shot | Discrete generation | exp32 | - |  |  |  |  |  | - |
+| Seen-10 | Discrete generation | exp32 | - | 14.1528 | 0.4141 | 0.6035 | 0.5229 | 36.6005 | 19500 |
+| CrossMap-4 zero-shot | Discrete generation | exp32 | - | 11.5381 | 0.4075 | .7396 | 0.4471 | 88.0380 | - |
 | Seen-10 | Discrete generation | exp32_gen | - | 13.965 | 0.4113 | 0.6106 | 0.5163 | 35.584 | 19500 |
 | CrossMap-4 zero-shot | Discrete generation | exp32_gen | - | 11.081 | 0.3690 | 0.7210 | 0.4592 | 79.887 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|
@@ -524,8 +524,8 @@ ablation 3 maps表
 | CrossMap-4 zero-shot | Continuous generation | exp31_gen | - | 12.252 | 0.4291 | 0.7379 | 35.262 | 42.141 | 1131.397 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Seen-10 | Continuous generation | exp32 | - | 13.078 | 0.3953 | 0.6601 | 40.511 | 46.401 | 1058.158 | 6000 |
-| Seen-10 | Continuous generation | exp32 | - | 13.078 | 0.3953 | 0.6601 | 40.511 | 46.401 | 1058.158 | 19500 |
-| CrossMap-4 zero-shot | Continuous generation | exp32 | - |  |  |  |  |  |  | - |
+| Seen-10 | Continuous generation | exp32 | - | 14.5725 | 0.4190 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | 19500 |
+| CrossMap-4 zero-shot | Continuous generation | exp32 | - | 11.5966 | 0.4018 | 0.7452 | 44.2626 | 50.0603 | 1255.7838 | 19500 |
 | Seen-10 | Continuous generation | exp32_gen | - | 14.342 | 0.4162 | 0.5929 | 35.698 | 41.867 | 848.071 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp32_gen | - | 11.042 | 0.3628 | 0.7208 | 46.932 | 52.377 | 1349.984 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
