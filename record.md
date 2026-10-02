@@ -3648,6 +3648,9 @@ run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discret
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
 run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
+
 
 ### exp32_gen
 - parent: `exp14_2_gen`; Seen-10 generation-only, LoRA route.
