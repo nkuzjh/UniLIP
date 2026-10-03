@@ -1,4 +1,4 @@
-csgo benchmark v2 实验设计与表格维护规则
+# csgo benchmark v2 实验设计与表格维护规则
 ===========================================
 
 ## 1. exp31~exp36 实验设计定位
@@ -44,7 +44,7 @@ csgo benchmark v2 实验设计与表格维护规则
 |---|---|---|---|
 | `exp31_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
 | `exp31_1_3maps` | ✅ Seen-3，50 epochs，step 5850 | ✅ Seen-3：定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 |
-| `exp31_2_3maps` | 未开始；目标 50 epochs，预计 step 5900 | 未开始；Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | 未开始 |
+| `exp31_2_3maps` | ✅ Seen-3，50 epochs， step 5900 | ✅ Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 |
 | `exp31_3_3maps` | ✅ Seen-3，50 epochs，step 5900 | ✅ Seen-3：定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 |
 
 
@@ -52,7 +52,7 @@ csgo benchmark v2 实验设计与表格维护规则
 
 | 实验版本 | 训练 | 推理 | Metric 计算 |
 |---|---|---|---|
-| `exp31` | Seen-10 未完成，step 10000/19550；✅ 当前评测 checkpoint-6000 | ✅ Seen-10：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10：定位/离散/连续 metric 与聚合完成<br>CrossMap-4 zero-shot：未开始 |
+| `exp31` | ✅ Seen-10，step 19550；✅ 评测 checkpoint-6000 | ✅ Seen-10：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>✅ CrossMap-4 zero-shot | ✅ Seen-10：定位/离散/连续 metric 与聚合完成<br>✅ CrossMap-4 zero-shot |
 | `exp31_1` | ✅ Seen-10，step 19500 | ✅ Seen-10：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>✅ CrossMap-4 zero-shot：定位 8,000 + 离散生成 8,000 + 连续生成 5,120 | ✅ Seen-10 与 CrossMap-4 zero-shot：定位/离散/连续 metric 与聚合完成 |
 | `exp31_gen` | ✅ Seen-10，step 19500 | ✅ Seen-10：离散 20,000 + 连续 12,800<br>✅ CrossMap-4：离散 8,000 + 连续 5,120 | ✅ Seen-10 离散/连续<br>✅ CrossMap-4 离散/连续 |
 | `exp31_loc` | ✅ Seen-10，step 19500 | ✅ Seen-10，20,000 样本<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10 定位 metric<br>CrossMap-4 zero-shot：未开始 |
@@ -219,9 +219,9 @@ ablation 3 maps表
 
 | Setting | Task | Experiment | Shot/map | ablation | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| Seen-3 ablation | Localization | exp31_3maps | dust2, ancient, nuke | aux-loc loss + perception loss |  |  |  |  | - |
+| Seen-3 ablation | Localization | exp31_3maps | dust2, ancient, nuke | aux-loc loss + perception loss | 83.911 |  |  |  | - |
 | Seen-3 ablation | Localization | exp31_1_3maps | dust2, ancient, nuke | - - | 83.911 | 3.887 | 3.251 | 35.434 | 5850 |
-| Seen-3 ablation | Localization | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss |  |  |  |  | - |
+| Seen-3 ablation | Localization | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss | 93.755 | 4.259 | 3.009 | 40.475 | 5900 |
 | Seen-3 ablation | Localization | exp31_3_3maps | dust2, ancient, nuke | perception loss | 82.114 | 3.900 | 3.314 | 35.501 | 5900 |
 
 
@@ -231,8 +231,8 @@ ablation 3 maps表
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | Seen-3 ablation | Discrete generation | exp31_3maps | dust2, ancient, nuke | aux-loc loss + perception loss |  |  |  |  |  | - |
 | Seen-3 ablation | Discrete generation | exp31_1_3maps | dust2, ancient, nuke | - - | 14.304 | 0.407 | 0.624 | 0.516 | 29.829 | 5850 |
-| Seen-3 ablation | Discrete generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss |  |  |  |  |  | - |
-| Seen-3 ablation | Discrete generation | exp31_3_3maps | dust2, ancient, nuke | perception loss | 17.086 | 0.410 | 0.567 | 0.580 | 31.409 | 5900 |
+| Seen-3 ablation | Discrete generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss | 14.291 | 0.405 | 0.623 | 0.516 | 30.130 | 5900 |
+| Seen-3 ablation | Discrete generation | exp31_3_3maps | dust2, ancient, nuke | perception loss | 14.616 | 0.409 | 0.607 | 0.527 | 30.430 | 5900 |
 
 
 ## 连续生成
@@ -241,7 +241,7 @@ ablation 3 maps表
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | Seen-3 ablation | Continuous generation | exp31_3maps | dust2, ancient, nuke | aux-loc loss + perception loss |  |  |  |  |  |  | - |
 | Seen-3 ablation | Continuous generation | exp31_1_3maps | dust2, ancient, nuke | - - | 14.761 | 0.423 | 0.616 | 34.344 | 39.686 | 886.168 | 5850 |
-| Seen-3 ablation | Continuous generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss |  |  |  |  |  |  | - |
+| Seen-3 ablation | Continuous generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss | 14.811 | 0.424 | 0.611 | 32.870 | 38.398 | 831.028 | 5900 |
 | Seen-3 ablation | Continuous generation | exp31_3_3maps | dust2, ancient, nuke | perception loss | 15.303 | 0.433 | 0.586 | 32.357 | 37.824 | 836.473 | 5900 |
 
 
@@ -249,21 +249,23 @@ ablation 3 maps表
 
 
 ## 定位
-
+<!-- | Seen-10 | Localization | exp31 | - | 195.048 | 10.489 | 4.344 | 79.060 | 6000 | -->
+<!-- | Seen-10 | Localization | exp32 | - | 211.975 | 10.766 | 4.652 | 81.964 | 6000 | -->
 | Setting | Task | Experiment | Shot/map | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Localization | exp31 | - | 195.048 | 10.489 | 4.344 | 79.060 | 6000 |
-| CrossMap-4 zero-shot | Localization | exp31 | - |  |  |  |  | - |
+| Seen-10 | Localization | exp31 | - | 99.0970 | 4.9604 | 3.2192 | 45.1100 | 19550 |
+| CrossMap-4 zero-shot | Localization | exp31 | - | 328.6658 | 17.9069 | 3.9495 | 90.0281 | 19550 |
 | Seen-10 | Localization | exp31_1 | - | 82.750 | 4.354 | 2.969 | 37.130 | 19500 |
 | CrossMap-4 zero-shot | Localization | exp31_1 | - | 330.421 | 17.483 | 3.895 | 89.844 | 19500 |
-| Seen-10 | Localization | exp31_loc | - | 79.294 | 4.134 | 2.708 | 36.173 | 19500 |
+| Seen-10 | Localization | exp31_loc | - | 79.294 | 4.134 | **2.708** | 36.173 | 19500 |
 | CrossMap-4 zero-shot | Localization | exp31_loc | - |  |  |  |  | - |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Localization | exp32 | - | 211.975 | 10.766 | 4.652 | 81.964 | 6000 |
 | Seen-10 | Localization | exp32 | - | 123.194 | 6.38 | 3.352 | 55.449 | 19500 |
 | CrossMap-4 zero-shot | Localization | exp32 | - | 340.912 | 18.794 | 4.188 | 87.616 | 19500 |
-| Seen-10 | Localization | exp32_loc | - | 48.961 | 3.006 | 2.970 | 26.047 | 19500 |
+| Seen-10 | Localization | exp32_loc | - | **48.961** | **3.006** | 2.970 | **26.047** | 19500 |
 | CrossMap-4 zero-shot | Localization | exp32_loc | - |  |  |  |  | - |
+| Seen-10 | Localization | exp32_1 | - | 63.0377 | 3.5604 | 3.0882 | 31.6713 | 19500 |
+| CrossMap-4 zero-shot | Localization | exp32_1 | - |  |  |  |  | - |
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | CrossMap-4 few-shot | Localization | exp35_cs_office | 100 |  |  |  |  | - |
 | CrossMap-4 few-shot | Localization | exp35_de_golden | 100 |  |  |  |  | - |
@@ -381,21 +383,23 @@ ablation 3 maps表
 
 
 ## 离散生成
-
+<!-- | Seen-10 | Discrete generation | exp31 | - | 13.212 | 0.4054 | 0.6425 | 0.4972 | 36.066 | 6000 | -->
+<!-- | Seen-10 | Discrete generation | exp32 | - | 12.995 | 0.3974 | 0.6583 | 0.4889 | 44.101 | 6000 | -->
 | Setting | Task | Experiment | Shot/map | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Discrete generation | exp31 | - | 13.212 | 0.4054 | 0.6425 | 0.4972 | 36.066 | 6000 |
-| CrossMap-4 zero-shot | Discrete generation | exp31 | - |  |  |  |  |  | - |
-| Seen-10 | Discrete generation | exp31_1 | - | 14.954 | 0.4319 | 0.5725 | 0.5375 | 27.949 | 19500 |
+| Seen-10 | Discrete generation | exp31 | - | 14.6271 | 0.4259 | 0.5847 | 0.5294 | 28.3035 | 19550 |
+| CrossMap-4 zero-shot | Discrete generation | exp31 | - | 12.0959 | 0.4237 | 0.7352 | 0.4483 | 86.8346 | 19550 |
+| Seen-10 | Discrete generation | exp31_1 | - | **14.954** | 0.4319 | **0.5725** | **0.5375** | **27.949** | 19500 |
 | CrossMap-4 zero-shot | Discrete generation | exp31_1 | - | 11.747 | 0.4156 | 0.7400 | 0.4522 | 96.250 | 19500 |
 | Seen-10 | Discrete generation | exp31_gen | - | 14.561 | 0.4268 | 0.5888 | 0.5258 | 28.629 | 19500 |
-| CrossMap-4 zero-shot | Discrete generation | exp31_gen | - | 12.288 | 0.4380 | 0.7358 | 0.4542 | 101.199 | 19500 |
+| CrossMap-4 zero-shot | Discrete generation | exp31_gen | - | 12.288 | **0.4380** | 0.7358 | 0.4542 | 101.199 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Discrete generation | exp32 | - | 12.995 | 0.3974 | 0.6583 | 0.4889 | 44.101 | 6000 |
 | Seen-10 | Discrete generation | exp32 | - | 14.1528 | 0.4141 | 0.6035 | 0.5229 | 36.6005 | 19500 |
-| CrossMap-4 zero-shot | Discrete generation | exp32 | - | 11.5381 | 0.4075 | .7396 | 0.4471 | 88.0380 | - |
+| CrossMap-4 zero-shot | Discrete generation | exp32 | - | 11.5381 | 0.4075 | 0.7396 | 0.4471 | 88.0380 | 19500 |
 | Seen-10 | Discrete generation | exp32_gen | - | 13.965 | 0.4113 | 0.6106 | 0.5163 | 35.584 | 19500 |
 | CrossMap-4 zero-shot | Discrete generation | exp32_gen | - | 11.081 | 0.3690 | 0.7210 | 0.4592 | 79.887 | 19500 |
+| Seen-10 | Discrete generation | exp32_1 | - | 13.9070 | 0.4072 | 0.6145 | 0.5151 | 36.2159 | 19500 |
+| CrossMap-4 zero-shot | Discrete generation | exp32_1 | - |  |  |  |  |  | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|
 | CrossMap-4 few-shot | Discrete generation | exp35_cs_office | 100 |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Discrete generation | exp35_de_golden | 100 |  |  |  |  |  | - |
@@ -513,21 +517,23 @@ ablation 3 maps表
 
 
 ## 连续生成
-
+<!-- | Seen-10 | Continuous generation | exp31 | - | 13.255 | 0.4026 | 0.6417 | 40.134 | 46.190 | 1011.744 | 6000 | -->
+<!-- | Seen-10 | Continuous generation | exp32 | - | 13.078 | 0.3953 | 0.6601 | 40.511 | 46.401 | 1058.158 | 6000 | -->
 | Setting | Task | Experiment | Shot/map | PSNR↑ | SSIM↑ | LPIPS↓ | Temporal_Warping_Error↓ | Temporal_Difference_Error↓ | FVD↓ | Checkpoint step |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Continuous generation | exp31 | - | 13.255 | 0.4026 | 0.6417 | 40.134 | 46.190 | 1011.744 | 6000 |
-| CrossMap-4 zero-shot | Continuous generation | exp31 | - |  |  |  |  |  |  | - |
-| Seen-10 | Continuous generation | exp31_1 | - | 15.571 | 0.4411 | 0.5446 | 28.879 | 35.688 | 674.180 | 19500 |
+| Seen-10 | Continuous generation | exp31 | - | 15.1897 | 0.4330 | 0.5592 | 31.0365 | 37.6569 | 727.5069 | 19550 |
+| CrossMap-4 zero-shot | Continuous generation | exp31 | - | 11.9599 | 0.4129 | 0.7360 | 38.1472 | 44.7851 | 122.9265 | 19550 |
+| Seen-10 | Continuous generation | exp31_1 | - | **15.571** | **0.4411** | **0.5446** | **28.879** | **35.688** | **674.180** | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp31_1 | - | 11.826 | 0.4107 | 0.7421 | 37.947 | 44.492 | 1158.692 | 19500 |
 | Seen-10 | Continuous generation | exp31_gen | - | 15.164 | 0.4349 | 0.5622 | 31.409 | 38.033 | 737.197 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp31_gen | - | 12.252 | 0.4291 | 0.7379 | 35.262 | 42.141 | 1131.397 | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Continuous generation | exp32 | - | 13.078 | 0.3953 | 0.6601 | 40.511 | 46.401 | 1058.158 | 6000 |
 | Seen-10 | Continuous generation | exp32 | - | 14.5725 | 0.4190 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp32 | - | 11.5966 | 0.4018 | 0.7452 | 44.2626 | 50.0603 | 1255.7838 | 19500 |
 | Seen-10 | Continuous generation | exp32_gen | - | 14.342 | 0.4162 | 0.5929 | 35.698 | 41.867 | 848.071 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp32_gen | - | 11.042 | 0.3628 | 0.7208 | 46.932 | 52.377 | 1349.984 | 19500 |
+| Seen-10 | Continuous generation | exp32_1 | - | 14.2285 | 0.4100 | 0.5981 | 36.1777 | 42.2848 | 891.6025 | 19500 |
+| CrossMap-4 zero-shot | Continuous generation | exp32_1 | - |  |  |  |  |  |  | 19500 |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
 | CrossMap-4 few-shot | Continuous generation | exp35_cs_office | 100 |  |  |  |  |  |  | - |
 | CrossMap-4 few-shot | Continuous generation | exp35_de_golden | 100 |  |  |  |  |  |  | - |

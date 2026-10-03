@@ -3296,7 +3296,7 @@ benchmark_v2_asset_manifest: "data/csgo_benchmark_v2/minimal_dataset_report.json
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,2 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29561 train_csgo.py --csgo_config csgo_configs/exp31.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp31 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm True
 ```
 
 **Inference**
@@ -3647,8 +3647,11 @@ run_discrete "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discret
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/discrete" crossmap_query_test discrete
 run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous "${CROSS_MAPS[@]}"
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
+```
+
 
 ### exp32_gen
+
 - parent: `exp14_2_gen`; Seen-10 generation-only, LoRA route.
 - v2 change: same manifest and Z calibration, with localization head held inactive.
 
@@ -6304,7 +6307,7 @@ aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29568 train_csgo.py \
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=1 --master_port=29568 train_csgo.py \
   --csgo_config csgo_configs/exp31_3maps.yaml \
   --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B \
@@ -6314,7 +6317,7 @@ CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29568 train_csg
   --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True \
   --output_dir outputs/csgo_1b/exp31_3maps --num_train_epochs 50 \
   --per_device_train_batch_size 4 --per_device_eval_batch_size 4 \
-  --gradient_accumulation_steps 32 --eval_strategy "no" --save_strategy "steps" \
+  --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" \
   --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. \
   --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" \
   --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True \
