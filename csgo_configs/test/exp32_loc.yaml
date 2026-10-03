@@ -54,6 +54,7 @@ img_size: 224
 use_short_instruction: True
 
 benchmark_v2_manifest: "data/csgo_benchmark_v2/benchmark_manifest.json"
+benchmark_v2_asset_manifest: "data/csgo_benchmark_v2/minimal_dataset_report.json"
 benchmark_v2_split: "seen_discrete_test"
 data_dir: "data/preprocessed_data"
 train_maps: ['cs_agency', 'cs_italy', 'de_ancient', 'de_anubis', 'de_dust2', 'de_inferno', 'de_mirage', 'de_nuke', 'de_overpass', 'de_train']

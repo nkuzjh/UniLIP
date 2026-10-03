@@ -3570,7 +3570,7 @@ aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29564 train_csgo.py --csgo_config csgo_configs/exp32_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_1 --num_train_epochs 50 --per_device_train_batch_size 8 --per_device_eval_batch_size 8 --gradient_accumulation_steps 8 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29564 train_csgo.py --csgo_config csgo_configs/exp32_1.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_1 --num_train_epochs 50 --per_device_train_batch_size 4 --per_device_eval_batch_size 4 --gradient_accumulation_steps 16 --eval_strategy "no" --save_strategy "steps" --save_steps 1000 --save_total_limit 3 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64 --benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json
 ```
 
 **Inference**
@@ -3579,14 +3579,15 @@ set -euo pipefail
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
 CKPT="outputs/csgo_1b/exp32_1/model.safetensors"
+# CKPT="outputs/csgo_1b/exp32_1/checkpoint-16000/model.safetensors"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp32_1_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/seen/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=1 python eval_csgo.py --csgo_config csgo_configs/test/exp32_1_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/seen/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_1_gen.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/zero_shot/crossmap/discrete --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py --csgo_config csgo_configs/test/exp32_1_gen_conti.yaml --output_dir outputs_eval/benchmark_v2/exp32_1/zero_shot/crossmap/continuous --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_continuous --benchmark_v2_maps "${CROSS_MAPS[@]}"
 ```
 
 **Inference and metric (same command)**
@@ -3596,15 +3597,17 @@ SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
 CKPT="outputs/csgo_1b/exp32_1/model.safetensors"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_1/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_1_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_1/seen --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}"
 
-CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_1/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_1_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_1/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
 ```
 
 **Metric**
 ```bash
 set -euo pipefail
 V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+V2_ASSET_MANIFEST=data/csgo_benchmark_v2/minimal_dataset_report.json
+V2_GT_ROOT=data/csgo_benchmark_v2/images
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
 CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
 EXTERNAL_LOC_ROOT=csgosquare
@@ -3618,7 +3621,7 @@ run_discrete() {
   shift 2
   local map_name
   for map_name in "$@"; do
-    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py     --gt "${V2_GT_ROOT}/${map_name}"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_asset_manifest "$V2_ASSET_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"     --metric_profile benchmark_v2_core
   done
 }
 
@@ -3628,7 +3631,7 @@ run_continuous() {
   shift 2
   local map_name
   for map_name in "$@"; do
-    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "data/preprocessed_data/${map_name}/imgs"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"
+    CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py     --gt "${V2_GT_ROOT}/${map_name}"     --pred "${input_root}/gen_imgs/${map_name}"     --batch_size 1     --device cuda     --paired_size 448     --data_dir data/preprocessed_data     --map_name "$map_name"     --frame_diff_threshold 2     --min_track_len 4     --clip_length 16     --clip_stride 16     --fvd_size 224     --benchmark_v2_manifest "$V2_MANIFEST"     --benchmark_v2_asset_manifest "$V2_ASSET_MANIFEST"     --benchmark_v2_split "$split"     --external_loc_repo_root "$EXTERNAL_LOC_ROOT"     --external_loc_config_path "$EXTERNAL_LOC_CONFIG"     --external_loc_checkpoint_path "$EXTERNAL_LOC_CKPT"     --metric_profile benchmark_v2_core
   done
 }
 
@@ -6307,7 +6310,7 @@ aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous
 **Training**
 ```bash
 set -euo pipefail
-CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=1 --master_port=29568 train_csgo.py \
+CUDA_VISIBLE_DEVICES=1 torchrun --nproc_per_node=1 --master_port=29568 train_csgo.py \
   --csgo_config csgo_configs/exp31_3maps.yaml \
   --deepspeed deepspeed_scripts/zero0.json \
   --model_name_or_path UniLIP-1B \
