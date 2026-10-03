@@ -4,8 +4,11 @@ import unittest
 import argparse
 import hashlib
 import json
+import math
+from contextlib import ExitStack
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest import mock
 
 
 def _install_lightweight_import_stubs() -> None:
@@ -68,6 +71,8 @@ from benchmark_csgo_v1_conti import (  # noqa: E402
     build_fvd_clips,
     build_tracks_from_benchmark_v2_clips,
 )
+import benchmark_csgo_v1 as discrete_benchmark  # noqa: E402
+import benchmark_csgo_v1_conti as continuous_benchmark  # noqa: E402
 
 
 class BenchmarkV2ProtocolTest(unittest.TestCase):
@@ -430,6 +435,131 @@ class BenchmarkV2ProtocolTest(unittest.TestCase):
         self.assertEqual(pose_index["file_num1_frame_0"]["z"], 3)
         self.assertEqual((z_min, z_max), (-100.0, 500.0))
         self.assertEqual(loaded_paths, [str(Path("manifest.json").resolve())])
+
+
+class MetricProfileTest(unittest.TestCase):
+    @staticmethod
+    def args(root, profile="benchmark_v2_core"):
+        return argparse.Namespace(
+            gt=str(root / "gt"), pred=str(root / "pred"), map_name="map_a",
+            benchmark_v2_manifest=str(root / "manifest.json"), benchmark_v2_split="seen_discrete_test",
+            benchmark_v2_asset_manifest=None, metric_profile=profile,
+            allow_incomplete_benchmark_v2=False, paired_size=448, batch_size=1,
+            device="cpu", data_dir="unused", pose_json="auto",
+            external_loc_repo_root="missing", external_loc_config_path="missing",
+            external_loc_checkpoint_path="missing", edge_quantile=0.85,
+            edge_tolerance=2, frame_diff_threshold=2, min_track_len=4,
+            clip_length=16, clip_stride=16, fvd_size=224, sequence_batch_size=None,
+        )
+
+    def patch_protocol(self, stack, module, root):
+        coverage = {
+            "Coverage_GT": 1.0, "Coverage_Pred": 1.0, "Common_Count": 1,
+            "GT_Count": 1, "Pred_Count": 1, "common_files": ["a.jpg"],
+            "expected_file_stems": ["a"], "gt_filename_by_stem": {"a": "a.jpg"},
+            "missing_pred_files": [], "unmatched_pred_files": [],
+        }
+        values = {
+            "infer_map_name": "map_a", "load_benchmark_v2_selection": object(),
+            "benchmark_v2_selection_rows": [], "benchmark_v2_z_range": {},
+            "benchmark_v2_radar_path": "unused", "benchmark_v2_image_extension": ".jpg",
+            "collect_benchmark_v2_coverage": coverage,
+            "benchmark_v2_selection_details": {"rows": 1},
+            "resolve_eval_output_root": (root, "exp", "now", root / "unused.json"),
+            "load_benchmark_v2_inference_provenance": {"payload": {}},
+            "benchmark_v2_asset_provenance": {"asset_backend": "source"},
+            "compute_psnr_ssim": (20.0, 0.8),
+            "compute_boundary_metrics": {"Boundary_F1": 0.7, "Boundary_Precision": 0.8},
+            "compute_lpips": 0.2,
+            "compute_pixel_metrics": {"Pixel_MAE_255": 4.0, "Pixel_Exact_Acc": 0.2, "Pixel_Within_1_Acc": 0.3},
+        }
+        for name, value in values.items():
+            stack.enter_context(mock.patch.object(module, name, return_value=value))
+        stack.enter_context(mock.patch.object(module, "print_results"))
+
+    def test_discrete_core_skips_optional_calls_and_writes_null_metadata(self):
+        with TemporaryDirectory() as temp_dir, ExitStack() as stack:
+            root = Path(temp_dir)
+            args = self.args(root)
+            self.patch_protocol(stack, discrete_benchmark, root)
+            stack.enter_context(mock.patch.object(discrete_benchmark, "compute_fid", return_value=5.0))
+            stack.enter_context(mock.patch.object(discrete_benchmark, "compute_clip_score", return_value=0.9))
+            for name in ("compute_external_locator_metrics", "compute_inception_score", "compute_aesthetic_score"):
+                stack.enter_context(mock.patch.object(discrete_benchmark, name, side_effect=AssertionError(name)))
+            result = discrete_benchmark.run_benchmark_v1(args)
+            payload = json.loads(Path(result["json_path"]).read_text())
+            self.assertEqual(payload["metric_profile"], "benchmark_v2_core")
+            self.assertEqual(payload["metrics_order"], discrete_benchmark.SIMULATOR_OUTPUT_ORDER)
+            self.assertIsNone(payload["metrics_ordered"]["Locator_XY_Dist"])
+            self.assertIsNone(payload["metrics_ordered"]["Pixel_Exact_Acc"])
+            self.assertIn("IS", payload["skipped_metrics"])
+            self.assertEqual(payload["metrics_ordered"]["CLIP"], 0.9)
+
+    def test_continuous_core_keeps_appendix_and_skips_optional_calls(self):
+        with TemporaryDirectory() as temp_dir, ExitStack() as stack:
+            root = Path(temp_dir)
+            args = self.args(root)
+            self.patch_protocol(stack, continuous_benchmark, root)
+            stack.enter_context(mock.patch.object(continuous_benchmark, "benchmark_v2_clips", return_value=[]))
+            stack.enter_context(mock.patch.object(continuous_benchmark, "build_tracks_from_benchmark_v2_clips", return_value=([[]], {"tracks": 1})))
+            stack.enter_context(mock.patch.object(continuous_benchmark, "release_cuda_memory"))
+            stack.enter_context(mock.patch.object(continuous_benchmark, "compute_temporal_metrics", return_value={
+                "Temporal_Warping_Error": 1.0, "Temporal_Difference_Error": 2.0,
+                "Flicker_Score": 3.0, "Optical_Flow_EPE": 4.0,
+            }))
+            stack.enter_context(mock.patch.object(continuous_benchmark, "compute_fvd_for_tracks", return_value=(5.0, 1)))
+            for name in ("compute_external_locator_metrics", "compute_fid", "compute_inception_score", "compute_clip_score", "compute_aesthetic_score", "compute_sequence_metrics"):
+                stack.enter_context(mock.patch.object(continuous_benchmark, name, side_effect=AssertionError(name)))
+            result = continuous_benchmark.run_benchmark_v1_conti(args)
+            payload = json.loads(Path(result["json_path"]).read_text())
+            self.assertEqual(payload["metric_profile"], "benchmark_v2_core")
+            self.assertEqual(payload["metrics_ordered"]["Optical_Flow_EPE"], 4.0)
+            self.assertEqual(payload["metrics_ordered"]["Pixel_MAE_255"], 4.0)
+            self.assertIsNone(payload["metrics_ordered"]["Seq-LPIPS"])
+            self.assertIsNone(payload["metrics_ordered"]["Flicker_Score"])
+            self.assertIn("FID", payload["skipped_metrics"])
+
+    def test_discrete_default_full_still_calls_optional_metrics(self):
+        with TemporaryDirectory() as temp_dir, ExitStack() as stack:
+            root = Path(temp_dir)
+            args = self.args(root, profile="full")
+            del args.metric_profile  # Legacy callers construct Namespace without this flag.
+            self.patch_protocol(stack, discrete_benchmark, root)
+            locator = stack.enter_context(mock.patch.object(discrete_benchmark, "compute_external_locator_metrics", return_value={
+                "Locator_XY_Dist": 1.0, "locator_pose_json_paths": [],
+                "Locator_Z_Dist": 1.0, "Locator_Pitch_Dist": 1.0,
+                "Locator_Yaw_Dist": 1.0, "Locator_Norm_L2_5D": 1.0,
+                "locator_z_min": 0.0, "locator_z_max": 1.0,
+            }))
+            inception = stack.enter_context(mock.patch.object(discrete_benchmark, "compute_inception_score", return_value=2.0))
+            aesthetic = stack.enter_context(mock.patch.object(discrete_benchmark, "compute_aesthetic_score", return_value=3.0))
+            stack.enter_context(mock.patch.object(discrete_benchmark, "compute_fid", return_value=4.0))
+            stack.enter_context(mock.patch.object(discrete_benchmark, "compute_clip_score", return_value=5.0))
+            result = discrete_benchmark.run_benchmark_v1(args)
+            locator.assert_called_once()
+            inception.assert_called_once()
+            aesthetic.assert_called_once()
+            self.assertEqual(result["metrics"]["IS"], 2.0)
+            self.assertEqual(json.loads(Path(result["json_path"]).read_text())["metric_profile"], "full")
+
+    def test_core_requires_v2_strict_coverage_and_finite_metrics(self):
+        args = argparse.Namespace(metric_profile="benchmark_v2_core", allow_incomplete_benchmark_v2=False)
+        with self.assertRaisesRegex(ValueError, "requires Benchmark v2"):
+            discrete_benchmark.metric_profile(args, v2_mode=False)
+        args.allow_incomplete_benchmark_v2 = True
+        with self.assertRaisesRegex(ValueError, "strict prediction coverage"):
+            discrete_benchmark.metric_profile(args, v2_mode=True)
+        args.allow_incomplete_benchmark_v2 = False
+        self.assertEqual(discrete_benchmark.metric_profile(args, v2_mode=True), "benchmark_v2_core")
+        args.allow_missing_inference_manifest = True
+        with self.assertRaisesRegex(ValueError, "inference provenance"):
+            discrete_benchmark.metric_profile(args, v2_mode=True)
+        with self.assertRaisesRegex(ValueError, "FID"):
+            discrete_benchmark.validate_core_metrics({
+                "Coverage_GT": 1.0, "Coverage_Pred": 1.0, "Common_Count": 1,
+                **{key: 1.0 for key in discrete_benchmark.DISCRETE_CORE_METRICS if key != "FID"},
+                "FID": math.nan,
+            }, discrete_benchmark.DISCRETE_CORE_METRICS)
 
 
 if __name__ == "__main__":

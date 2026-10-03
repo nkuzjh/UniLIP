@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import inspect
 import json
+import math
 import os
 from collections.abc import Mapping
 from pathlib import Path
@@ -18,15 +19,11 @@ from tqdm import tqdm
 
 from torchmetrics.image import PeakSignalNoiseRatio, StructuralSimilarityIndexMeasure
 from torchmetrics.image.fid import FrechetInceptionDistance
-from torchmetrics.image.inception import InceptionScore
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
-from transformers import CLIPModel
-
-from unilip.model.external_loc_model_loader import build_frozen_external_loc_model
-
 
 VALID_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 TAU = 2.0 * np.pi
+METRIC_PROFILES = ("full", "benchmark_v2_core")
 
 SIMULATOR_OUTPUT_ORDER = [
     "Coverage_GT",
@@ -49,6 +46,40 @@ SIMULATOR_OUTPUT_ORDER = [
     "CLIP",
     "Aesthetic",
 ]
+DISCRETE_CORE_METRICS = (
+    "PSNR", "SSIM", "LPIPS", "Boundary_F1", "FID", "Pixel_MAE_255", "CLIP",
+)
+PROTOCOL_CORE_METRICS = ("Coverage_GT", "Coverage_Pred", "Common_Count")
+
+
+def metric_profile(args: argparse.Namespace, *, v2_mode: bool) -> str:
+    profile = getattr(args, "metric_profile", "full")
+    if profile not in METRIC_PROFILES:
+        raise ValueError(f"Unknown metric profile: {profile!r}")
+    if profile == "benchmark_v2_core":
+        if not v2_mode:
+            raise ValueError("--metric_profile benchmark_v2_core requires Benchmark v2 manifest and split")
+        if getattr(args, "allow_incomplete_benchmark_v2", False):
+            raise ValueError("--metric_profile benchmark_v2_core requires strict prediction coverage")
+        if getattr(args, "allow_missing_inference_manifest", False):
+            raise ValueError("--metric_profile benchmark_v2_core requires inference provenance")
+    return profile
+
+
+def validate_core_metrics(metrics: Mapping[str, object], required: Sequence[str]) -> None:
+    invalid = []
+    for key in (*PROTOCOL_CORE_METRICS, *required):
+        value = metrics.get(key)
+        if (
+            value is None
+            or isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+        ):
+            invalid.append(key)
+    if invalid:
+        raise ValueError(f"Benchmark v2 core metrics missing or non-finite: {', '.join(invalid)}")
+
 
 MAP_PATH_DICT = {
     "de_dust2": "de_dust2_radar_psd.png",
@@ -829,6 +860,8 @@ def compute_fid(gt_dir: str, pred_dir: str, filenames: Sequence[str], batch_size
 
 
 def compute_inception_score(pred_dir: str, filenames: Sequence[str], batch_size: int, device: str):
+    from torchmetrics.image.inception import InceptionScore
+
     inception = InceptionScore().to(device)
     dataset = SingleImageDataset(pred_dir, filenames, size=299, uint8=True)
     loader = DataLoader(dataset, batch_size=batch_size, num_workers=4)
@@ -842,6 +875,8 @@ def compute_inception_score(pred_dir: str, filenames: Sequence[str], batch_size:
 
 
 def compute_clip_score(gt_dir: str, pred_dir: str, filenames: Sequence[str], batch_size: int, device: str):
+    from transformers import CLIPModel
+
     model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
     model.eval()
     dataset = PairedImageDataset(gt_dir, pred_dir, filenames, size=224, uint8=False)
@@ -882,6 +917,8 @@ class AestheticPredictor(torch.nn.Module):
 
 
 def compute_aesthetic_score(pred_dir: str, filenames: Sequence[str], batch_size: int, device: str):
+    from transformers import CLIPModel
+
     clip_model = CLIPModel.from_pretrained("openai/clip-vit-large-patch14").to(device)
     clip_model.eval()
     weight_url = "https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/sac+logos+ava1-l14-linearMSE.pth"
@@ -1046,6 +1083,8 @@ def compute_external_locator_metrics(
     benchmark_v2_manifest: Optional[str] = None,
     benchmark_v2_radar: Optional[str] = None,
 ):
+    from unilip.model.external_loc_model_loader import build_frozen_external_loc_model
+
     pose_index, z_min, z_max, loaded_pose_paths = load_pose_index(
         data_dir,
         map_name,
@@ -1101,17 +1140,19 @@ def compute_external_locator_metrics(
     }
 
 
-def ordered_metrics(metrics: Dict[str, float]) -> Dict[str, float]:
+def ordered_metrics(metrics: Dict[str, object]) -> Dict[str, object]:
     return {key: metrics[key] for key in SIMULATOR_OUTPUT_ORDER}
 
 
-def print_results(metrics: Dict[str, float]) -> None:
+def print_results(metrics: Dict[str, object]) -> None:
     print("\n" + "=" * 30)
     print("CSGO Simulator Benchmark V1")
     print("=" * 30)
     for key in SIMULATOR_OUTPUT_ORDER:
         value = metrics[key]
-        if isinstance(value, int):
+        if value is None:
+            print(f"{key}: None")
+        elif isinstance(value, int):
             print(f"{key}: {value}")
         else:
             print(f"{key}: {value:.6f}")
@@ -1126,7 +1167,7 @@ def write_results_json(
     map_name: str,
     gt_dir: str,
     pred_dir: str,
-    metrics: Dict[str, float],
+    metrics: Dict[str, object],
     coverage: Dict[str, object],
     args: argparse.Namespace,
     locator_details: Dict[str, object],
@@ -1143,6 +1184,12 @@ def write_results_json(
         "pred_dir": str(Path(pred_dir).resolve()),
         "metrics_order": SIMULATOR_OUTPUT_ORDER,
         "metrics_ordered": ordered_metrics(metrics),
+        "metric_profile": getattr(args, "metric_profile", "full"),
+        "skipped_metrics": [key for key in SIMULATOR_OUTPUT_ORDER if metrics[key] is None],
+        "skipped_metrics_reason": (
+            "Outside Benchmark v2 final main-table and appendix metric set"
+            if getattr(args, "metric_profile", "full") == "benchmark_v2_core" else None
+        ),
         "unmatched_pred_files": coverage["unmatched_pred_files"],
         "unmatched_pred_files_count": len(coverage["unmatched_pred_files"]),
         "missing_pred_files_count": len(coverage["missing_pred_files"]),
@@ -1186,6 +1233,7 @@ def write_results_json(
 
 def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
     v2_mode = benchmark_v2_enabled(args)
+    profile = metric_profile(args, v2_mode=v2_mode)
     if v2_mode:
         map_name = infer_map_name(args.gt, args.pred, args.map_name)
         selection = load_benchmark_v2_selection(args, map_name)
@@ -1266,33 +1314,42 @@ def run_benchmark_v1(args: argparse.Namespace) -> Dict[str, object]:
     metrics["LPIPS"] = compute_lpips(args.gt, args.pred, common_files, args.paired_size, args.batch_size, args.device)
     metrics.update(compute_pixel_metrics(args.gt, args.pred, common_files, args.paired_size, args.batch_size))
 
-    locator_results = compute_external_locator_metrics(
-        pred_dir=args.pred,
-        filenames=common_files,
-        data_dir=args.data_dir,
-        map_name=map_name,
-        pose_json=args.pose_json,
-        batch_size=args.batch_size,
-        device=args.device,
-        external_loc_repo_root=args.external_loc_repo_root,
-        external_loc_config_path=args.external_loc_config_path,
-        external_loc_checkpoint_path=args.external_loc_checkpoint_path,
-        benchmark_v2_rows=selection_rows,
-        benchmark_v2_z_range=selection_z_range,
-        benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
-        benchmark_v2_radar=selection_radar,
-    )
-    locator_details = {
-        "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
-        "locator_z_min": locator_results.pop("locator_z_min"),
-        "locator_z_max": locator_results.pop("locator_z_max"),
-    }
-    metrics.update(locator_results)
+    locator_details = {}
+    if profile == "full":
+        locator_results = compute_external_locator_metrics(
+            pred_dir=args.pred,
+            filenames=common_files,
+            data_dir=args.data_dir,
+            map_name=map_name,
+            pose_json=args.pose_json,
+            batch_size=args.batch_size,
+            device=args.device,
+            external_loc_repo_root=args.external_loc_repo_root,
+            external_loc_config_path=args.external_loc_config_path,
+            external_loc_checkpoint_path=args.external_loc_checkpoint_path,
+            benchmark_v2_rows=selection_rows,
+            benchmark_v2_z_range=selection_z_range,
+            benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
+            benchmark_v2_radar=selection_radar,
+        )
+        locator_details = {
+            "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
+            "locator_z_min": locator_results.pop("locator_z_min"),
+            "locator_z_max": locator_results.pop("locator_z_max"),
+        }
+        metrics.update(locator_results)
 
     metrics["FID"] = compute_fid(args.gt, args.pred, common_files, args.batch_size, args.device)
-    metrics["IS"] = compute_inception_score(args.pred, common_files, args.batch_size, args.device)
+    if profile == "full":
+        metrics["IS"] = compute_inception_score(args.pred, common_files, args.batch_size, args.device)
     metrics["CLIP"] = compute_clip_score(args.gt, args.pred, common_files, args.batch_size, args.device)
-    metrics["Aesthetic"] = compute_aesthetic_score(args.pred, common_files, args.batch_size, args.device)
+    if profile == "full":
+        metrics["Aesthetic"] = compute_aesthetic_score(args.pred, common_files, args.batch_size, args.device)
+    else:
+        for key in SIMULATOR_OUTPUT_ORDER:
+            if key not in (*PROTOCOL_CORE_METRICS, *DISCRETE_CORE_METRICS):
+                metrics[key] = None
+        validate_core_metrics(metrics, DISCRETE_CORE_METRICS)
 
     print_results(metrics)
     write_results_json(
@@ -1337,6 +1394,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data_dir", type=str, default="data/preprocessed_data")
     parser.add_argument("--map_name", type=str, default="auto")
     parser.add_argument("--pose_json", type=str, default="auto")
+    parser.add_argument(
+        "--metric_profile", choices=METRIC_PROFILES, default="full",
+        help="Metric set: full legacy evaluation or Benchmark v2 final main-table and appendix metrics.",
+    )
     parser.add_argument(
         "--benchmark_v2_manifest",
         type=str,

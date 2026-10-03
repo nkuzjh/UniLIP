@@ -27,6 +27,7 @@ from fvd_metric import compute_fvd as compute_fvd_metric
 
 from benchmark_csgo_v1 import (
     _row_stem,
+    METRIC_PROFILES,
     benchmark_v2_clips,
     benchmark_v2_enabled,
     benchmark_v2_asset_provenance,
@@ -49,8 +50,10 @@ from benchmark_csgo_v1 import (
     infer_map_name,
     load_benchmark_v2_inference_provenance,
     load_benchmark_v2_selection,
+    metric_profile,
     resolve_eval_output_root,
     validate_benchmark_v2_coverage,
+    validate_core_metrics,
 )
 
 
@@ -88,6 +91,10 @@ CONTI_OUTPUT_ORDER = [
     "Optical_Flow_EPE",
     "FVD",
 ]
+CONTINUOUS_CORE_METRICS = (
+    "PSNR", "SSIM", "LPIPS", "Temporal_Warping_Error", "Temporal_Difference_Error",
+    "FVD", "Boundary_F1", "Optical_Flow_EPE", "Pixel_MAE_255",
+)
 
 
 @dataclass(frozen=True)
@@ -624,6 +631,12 @@ def write_results_json(
         "pred_dir": str(Path(pred_dir).resolve()),
         "metrics_order": CONTI_OUTPUT_ORDER,
         "metrics_ordered": ordered_metrics(metrics),
+        "metric_profile": getattr(args, "metric_profile", "full"),
+        "skipped_metrics": [key for key in CONTI_OUTPUT_ORDER if metrics.get(key) is None],
+        "skipped_metrics_reason": (
+            "Outside Benchmark v2 final main-table and appendix metric set"
+            if getattr(args, "metric_profile", "full") == "benchmark_v2_core" else None
+        ),
         "unmatched_pred_files": coverage["unmatched_pred_files"],
         "unmatched_pred_files_count": len(coverage["unmatched_pred_files"]),
         "missing_pred_files": coverage["missing_pred_files"],
@@ -674,6 +687,7 @@ def write_results_json(
 
 def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
     v2_mode = benchmark_v2_enabled(args)
+    profile = metric_profile(args, v2_mode=v2_mode)
     if v2_mode:
         map_name = infer_map_name(args.gt, args.pred, args.map_name)
         selection = load_benchmark_v2_selection(args, map_name)
@@ -775,42 +789,44 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
     release_cuda_memory(args.device)
     metrics.update(compute_pixel_metrics(args.gt, args.pred, common_files, args.paired_size, args.batch_size))
 
-    locator_results = compute_external_locator_metrics(
-        pred_dir=args.pred,
-        filenames=common_files,
-        data_dir=args.data_dir,
-        map_name=map_name,
-        pose_json=args.pose_json,
-        batch_size=args.batch_size,
-        device=args.device,
-        external_loc_repo_root=args.external_loc_repo_root,
-        external_loc_config_path=args.external_loc_config_path,
-        external_loc_checkpoint_path=args.external_loc_checkpoint_path,
-        benchmark_v2_rows=selection_rows,
-        benchmark_v2_z_range=selection_z_range,
-        benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
-        benchmark_v2_radar=selection_radar,
-    )
-    locator_details = {
-        "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
-        "locator_z_min": locator_results.pop("locator_z_min"),
-        "locator_z_max": locator_results.pop("locator_z_max"),
-    }
-    metrics.update(locator_results)
-    release_cuda_memory(args.device)
+    locator_details = {}
+    if profile == "full":
+        locator_results = compute_external_locator_metrics(
+            pred_dir=args.pred,
+            filenames=common_files,
+            data_dir=args.data_dir,
+            map_name=map_name,
+            pose_json=args.pose_json,
+            batch_size=args.batch_size,
+            device=args.device,
+            external_loc_repo_root=args.external_loc_repo_root,
+            external_loc_config_path=args.external_loc_config_path,
+            external_loc_checkpoint_path=args.external_loc_checkpoint_path,
+            benchmark_v2_rows=selection_rows,
+            benchmark_v2_z_range=selection_z_range,
+            benchmark_v2_manifest=getattr(args, "benchmark_v2_manifest", None),
+            benchmark_v2_radar=selection_radar,
+        )
+        locator_details = {
+            "locator_pose_json_paths": locator_results.pop("locator_pose_json_paths"),
+            "locator_z_min": locator_results.pop("locator_z_min"),
+            "locator_z_max": locator_results.pop("locator_z_max"),
+        }
+        metrics.update(locator_results)
+        release_cuda_memory(args.device)
 
-    metrics["FID"] = compute_fid(args.gt, args.pred, common_files, args.batch_size, args.device)
-    release_cuda_memory(args.device)
-    metrics["IS"] = compute_inception_score(args.pred, common_files, args.batch_size, args.device)
-    release_cuda_memory(args.device)
-    metrics["CLIP"] = compute_clip_score(args.gt, args.pred, common_files, args.batch_size, args.device)
-    release_cuda_memory(args.device)
-    metrics["Aesthetic"] = compute_aesthetic_score(args.pred, common_files, args.batch_size, args.device)
-    release_cuda_memory(args.device)
+        metrics["FID"] = compute_fid(args.gt, args.pred, common_files, args.batch_size, args.device)
+        release_cuda_memory(args.device)
+        metrics["IS"] = compute_inception_score(args.pred, common_files, args.batch_size, args.device)
+        release_cuda_memory(args.device)
+        metrics["CLIP"] = compute_clip_score(args.gt, args.pred, common_files, args.batch_size, args.device)
+        release_cuda_memory(args.device)
+        metrics["Aesthetic"] = compute_aesthetic_score(args.pred, common_files, args.batch_size, args.device)
+        release_cuda_memory(args.device)
 
-    sequence_batch_size = args.sequence_batch_size if args.sequence_batch_size is not None else args.batch_size
-    metrics.update(compute_sequence_metrics(args.gt, args.pred, tracks, args.paired_size, args.device, sequence_batch_size))
-    release_cuda_memory(args.device)
+        sequence_batch_size = args.sequence_batch_size if args.sequence_batch_size is not None else args.batch_size
+        metrics.update(compute_sequence_metrics(args.gt, args.pred, tracks, args.paired_size, args.device, sequence_batch_size))
+        release_cuda_memory(args.device)
     metrics.update(compute_temporal_metrics(args.gt, args.pred, tracks, args.paired_size))
     fvd_score, fvd_clip_count = compute_fvd_for_tracks(
         args.gt,
@@ -823,6 +839,15 @@ def run_benchmark_v1_conti(args: argparse.Namespace) -> Dict[str, object]:
         device=args.device,
     )
     metrics["FVD"] = fvd_score
+    if profile == "benchmark_v2_core":
+        core_and_counts = {
+            "Coverage_GT", "Coverage_Pred", "Common_Count", "Track_Count",
+            "Seq_Frame_Count", *CONTINUOUS_CORE_METRICS,
+        }
+        for key in CONTI_OUTPUT_ORDER:
+            if key not in core_and_counts:
+                metrics[key] = None
+        validate_core_metrics(metrics, (*CONTINUOUS_CORE_METRICS, "Track_Count", "Seq_Frame_Count"))
 
     print_results(metrics)
     write_results_json(
@@ -883,6 +908,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--data_dir", type=str, default="data/preprocessed_data")
     parser.add_argument("--map_name", type=str, default="auto")
     parser.add_argument("--pose_json", type=str, default="auto")
+    parser.add_argument(
+        "--metric_profile", choices=METRIC_PROFILES, default="full",
+        help="Metric set: full legacy evaluation or Benchmark v2 final main-table and appendix metrics.",
+    )
     parser.add_argument(
         "--benchmark_v2_manifest",
         type=str,
