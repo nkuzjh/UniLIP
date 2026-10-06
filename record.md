@@ -6599,6 +6599,8 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --st
 set -euo pipefail
 EXPERIMENT=exp32_3maps_loc_single
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --experiment exp32_3maps_loc_single --stop-after-step 2400 --cuda-devices 5 --execute >fst_outs/exp32_3maps_loc_single.nohup.out 2>&1 &
 ```
 
 **Inference**
