@@ -335,7 +335,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--stop-after-step", type=int, help="Absolute optimizer step; 0 removes the early stop")
     result.add_argument("--resume", action="store_true")
     result.add_argument("--cuda-devices", default="0")
-    result.add_argument("--micro-batch", type=int, default=4)
+    result.add_argument("--micro-batch", type=int, default=64)
     result.add_argument("--master-port", type=int, default=29632)
     result.add_argument("--seed", type=int, default=42)
     result.add_argument("--report-to", default="none")
