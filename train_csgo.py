@@ -16,6 +16,7 @@ import random
 from unilip.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_IDX
 from torch.utils.data import Dataset
 from unilip.train.nonmix_trainer import NonMixTrainer
+from unilip.train.csgo_staged_training import StopAndSaveAtStepCallback, enable_microbatch_mean_loss
 from unilip import conversation as conversation_lib
 from unilip.model import *
 from unilip.model.external_loc_model_loader import build_frozen_external_loc_model
@@ -2459,6 +2460,18 @@ def train(attn_implementation=None):
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
 
+    training_stop_after_step = csgo_config.get("training_stop_after_step")
+    if training_stop_after_step is not None:
+        # Validate before constructing the model or any dataloaders.
+        StopAndSaveAtStepCallback(training_stop_after_step)
+        if training_args.save_only_model:
+            raise ValueError(
+                "training_stop_after_step requires save_only_model=False for resumable checkpoints"
+            )
+    csgo_loss_per_microbatch_mean = csgo_config.get("csgo_loss_per_microbatch_mean", False)
+    if not isinstance(csgo_loss_per_microbatch_mean, bool):
+        raise ValueError("csgo_loss_per_microbatch_mean must be a boolean")
+
     # Keep Benchmark v2 sampling in the YAML for reproducibility, while
     # allowing a CLI override for support-seed and shot-scaling experiments.
     for key in (
@@ -3512,6 +3525,8 @@ def train(attn_implementation=None):
 
     unilip_log_callback = UniLIPLogCallback()
     callbacks = [unilip_log_callback]
+    if training_stop_after_step is not None:
+        callbacks.append(StopAndSaveAtStepCallback(training_stop_after_step))
 
     alpha_loc_schedule_steps = csgo_config.get("alpha_loc_schedule_steps", None)
     alpha_loc_schedule_values = csgo_config.get("alpha_loc_schedule_values", None)
@@ -3579,6 +3594,14 @@ def train(attn_implementation=None):
             )
         )
 
+    if csgo_loss_per_microbatch_mean:
+        loss_model = enable_microbatch_mean_loss(model)
+        logging.info(
+            "CSGO microbatch-mean loss enabled for Trainer model %s (unwrapped %s).",
+            type(model).__name__,
+            type(loss_model).__name__,
+        )
+
     trainer = NonMixTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -3589,9 +3612,24 @@ def train(attn_implementation=None):
         data_collator=data_collator,
         callbacks=callbacks,
     )
+    if csgo_loss_per_microbatch_mean and trainer.model_accepts_loss_kwargs is not False:
+        raise RuntimeError("Trainer did not adopt csgo_loss_per_microbatch_mean for the unwrapped model")
     unilip_log_callback.bind_trainer(trainer)
     logging.info("NonMixTrainer.Callbacks: %s", trainer.callback_handler.callback_list)
     validate_resume_total_optimization_steps(trainer, auto_resume_checkpoint_path)
+    if training_stop_after_step is not None and auto_resume_checkpoint_path is not None:
+        resumed_step = int(_load_checkpoint_trainer_state(auto_resume_checkpoint_path)["global_step"])
+        if resumed_step >= training_stop_after_step:
+            logging.info(
+                "Checkpoint %s is already at global_step=%s, reaching "
+                "training_stop_after_step=%s; skipping training.",
+                auto_resume_checkpoint_path,
+                resumed_step,
+                training_stop_after_step,
+            )
+            if training_args.local_rank in [-1, 0]:
+                wandb.finish()
+            return
     # trainer.remove_callback(PrinterCallback)
     # trainer.remove_callback(ProgressCallback)
 

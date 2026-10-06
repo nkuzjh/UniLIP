@@ -90,6 +90,7 @@ class CustomEditPipeline:
             pixel_values=image_prompt.cuda(),
             tokenizer=self.tokenizer,
             guidance_scale=guidance_scale,
+            generator=generator,
             actions=actions,
         )
         return prompt

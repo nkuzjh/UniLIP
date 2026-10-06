@@ -743,7 +743,7 @@ def run_csgo_generation_from_config(
     disable_torch_init()
     tokenizer, model, context_len = load_pretrained_model_general(
         'Unified_UniLIP_InternVLForCausalLM', #'UniLIP_InternVLForCausalLM',
-        'UniLIP-1B'
+        csgo_config.get('model_name_or_path', 'UniLIP-1B')
     )
 
     add_loc_bin_tokens_and_resize(tokenizer, model, csgo_config)
@@ -792,6 +792,9 @@ def run_csgo_generation_from_config(
     )
 
     dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=collate_fn)
+
+    # Reset after model/checkpoint setup so initialization RNG use cannot change sampling.
+    set_seed(seed)
 
     # 3. 推理循环
     generator = torch.Generator(device=model.device).manual_seed(int(seed))

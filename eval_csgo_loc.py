@@ -26,6 +26,7 @@ from csgo_datasets.benchmark_v2 import (
     is_benchmark_v2_config,
     load_benchmark_v2_selection,
 )
+from unilip.angle_utils import shortest_angle_distance
 from scripts.aggregate_csgo_benchmark_v2_metrics import (
     build_localization_summary,
     validate_localization_result_coverage,
@@ -330,9 +331,9 @@ def calculate_metrics(results, ckpt_path, csgo_config=None):
 
     # --- 2. 处理 Yaw (Index 4) 的周期性 ---
     # 在 0~1 空间中，周期是 1.0
-    # 修正后的误差 = min(raw_diff, 1.0 - raw_diff)
+    # Modulo keeps the circular distance nonnegative even outside [0, 1].
     yaw_diff = norm_abs_diff[:, 4]
-    yaw_diff_wrapped = torch.min(yaw_diff, 1.0 - yaw_diff)
+    yaw_diff_wrapped = shortest_angle_distance(yaw_diff, 1.0)
     norm_abs_diff[:, 4] = yaw_diff_wrapped # 更新 Diff Tensor
 
     norm_l2_xy = torch.norm(norm_abs_diff[:, :2], p=2, dim=1).mean().item()
@@ -372,12 +373,9 @@ def calculate_metrics(results, ckpt_path, csgo_config=None):
     diff_tensor = pred_tensor - gt_tensor
     abs_diff = torch.abs(diff_tensor)
 
-    # 对 Yaw (第4列) 做 wrap 处理: diff = (diff + 180) % 360 - 180
-    # 或者更简单的 min(|d|, 360-|d|) 逻辑，但为了保留符号给 Loss 用，通常取最小夹角
-    # 这里为了 L2/MSE/SmoothL1 计算距离（即误差大小），我们取绝对误差
-    # 修正 Yaw 的绝对误差: min(err, 360 - err)
+    # Physical yaw distance is the shortest separation modulo 360 degrees.
     yaw_err = abs_diff[:, 4]
-    yaw_err = torch.min(yaw_err, 360.0 - yaw_err)
+    yaw_err = shortest_angle_distance(yaw_err, 360.0)
     abs_diff[:, 4] = yaw_err
 
     # --- Metric 1: 单项误差 ---
@@ -1381,6 +1379,8 @@ def main():
     vis_data_grouped = defaultdict(list) # 按地图分组存储可视化数据
     vis_data_flag = True
 
+    # Reset after model/checkpoint setup so initialization RNG use cannot change sampling.
+    set_seed(seed)
     print("🚀 Starting Localization Inference...")
     for batch in tqdm(dataloader):
         map_name = batch["map_name"]

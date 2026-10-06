@@ -28,6 +28,7 @@ from typing import Any, Mapping, Sequence
 
 
 MAP_SPLITS = (
+    "seen_validation",
     "seen_discrete_test",
     "seen_continuous",
     "crossmap_query_test",

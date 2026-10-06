@@ -1,0 +1,110 @@
+# 第二轮 exp32 Seen-3：联合任务 loss 消融对照，aux 与 perception 均关闭。
+# 训练截断于 step 3600，按 50 epoch 计划只保留该阶段的 schedule 前缀；续训只提高或移除 stop，num_train_epochs=50 与原完整 LR/loss schedule 保持不变，不重置优化器。
+# 默认 minimal backend；切换 full 时设 benchmark_v2_asset_manifest: null，并将 data_dir 设为服务器全量根目录（例如 /path/to/preprocessed_data）。
+# exp32_3maps_joint_sharedlr_constloc 是预指定默认，并非已验证最佳；runner --joint-base 可统一切换为第一轮选定配方，四组必须一致且从原始 UniLIP 权重独立训练。
+# 训练、推理和 metrics 必须使用同一 backend；runner --asset-mode full --data-dir 可统一切换。
+# 对照配置用于实验比较，不代表已验证的最佳设置。
+
+debug: false
+is_multi_task: true
+is_multi_task_balanced: true
+task_mix_ratio: 0.5
+alpha_loc_loss: 2.0
+is_loc_aux_loss: false
+alpha_loc_aux_loss: 0.0
+is_aux_loc_em_loss: false
+is_aux_loc_uncertainty_loss: false
+is_aux_loc_combined_em_unc_loss: false
+is_gen_aux_loss: false
+is_repa_loss: false
+is_loc_repa_loss: false
+is_loc_perception_loss: false
+alpha_loc_perception_loss: 0.0
+loc_perception_teacher_type: current_loc_head
+loc_perception_use_ema_teacher: false
+loc_perception_ema_decay: 0.999
+loc_perception_feature_source: vision_tower
+loc_perception_loss_type: smooth_l1
+loc_perception_use_attention_weight: true
+loc_perception_attention_source: teacher_gt
+loc_perception_attention_layer: last
+loc_perception_attention_head_reduce: mean
+loc_perception_attention_normalize: mean_one
+loc_perception_attention_detach: true
+loc_perception_attention_action_time: loc_sampled
+loc_perception_attention_eps: 1.0e-06
+loc_perception_timestep_weight: linear_1m_sigma
+loc_perception_use_und_tokens_only: true
+loc_perception_teacher_detach: true
+is_action_dit_dense_timestep: true
+is_action_dit_projector: true
+action_dit_projector_lr: 0.0005
+action_dit_lr: 0.0001
+is_aciton_dit_vae_small_init: false
+use_pi05_action_dit: true
+pi05_pytorch_weight_path: /home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base
+use_external_loc_model: false
+img_size: 224
+use_short_instruction: true
+benchmark_v2_manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+benchmark_v2_split: seen_train
+data_dir: data/preprocessed_data
+train_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+val_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+test_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+is_lora: true
+llm_train_mode: lora
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+llm_lora_lr: 3.0e-05
+llm_connector_lora_lr: 0.0001
+gen_dit_lora_lr: 0.0001
+action_dit_lora_lr: 0.0001
+enable_language_model_lora: true
+enable_gen_head_lora: true
+enable_loc_head_lora: true
+freeze_inactive_head: false
+fix_vit: true
+fix_llm: false
+fix_connect: false
+fix_dit: false
+learning_rate: 0.0001
+mm_projector_lr: 0.0001
+action_dit_connector_lr: 0.0005
+action_dit_norm_lr: 0.0005
+action_io_mlp_lr: 0.0001
+weight_decay: 0.0
+warmup_ratio: 0.003
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr: 1.0e-05
+benchmark_v2_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+batch_size: 1
+guidance_scale: 4.5
+mllm_hf_path: OpenGVLab/InternVL3-1B-hf
+action_dim: 5
+seed: 42
+training_stop_after_step: 3600
+csgo_loss_per_microbatch_mean: true
+aux_loc_combined_num_samples: 2
+aux_loc_combined_candidate_tau: 1.0
+aux_loc_combined_unc_metric: residual_l1_normed
+aux_loc_combined_unc_tau: 1.0
+aux_loc_combined_unc_min_weight: 0.05
+aux_loc_combined_share_loc_noise: true
+aux_loc_combined_unc_eps: 1.0e-06
+aux_loc_timestep_weight_type: exp_sigma
+aux_loc_exp_weight_lambda: 5.0
+aux_loc_timestep_weight_renorm: none
+is_noisy_loc_loss: false
+exp32_3maps_joint_base: exp32_3maps_joint_sharedlr_constloc

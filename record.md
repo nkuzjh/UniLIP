@@ -6569,3 +6569,312 @@ outputs_eval/benchmark_v2/exp36_1_<map>/shot_<N>/seed_0/
 outputs_loc/benchmark_v2/exp36_1_<map>/shot_<N>/seed_0/
 logs/benchmark_v2_map_specific/exp36_1_<map>/shot_<N>/seed_0/
 ```
+
+
+## exp32_3maps 两轮实验与分阶段筛选
+
+详细实验设置和定位见exp32_3maps两轮实验的说明文档[CSGO_BENCHMARK_V2_EXP32_3MAPS.md]
+
+训练时分阶段(checkpoint/step)评测的设计，需要手动执行以下操作：**阶段训练 → validation 推理 → 指标计算 → 查看结果 → 决定是否续训**。
+具体命令如下：
+```bash
+# 例如，第一轮在 2400 停止后：
+EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
+# 对 checkpoint-2400 做验证推理和指标计算
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+# 查看结果后，若决定继续到 3600，再执行：
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --stop-after-step 3600 --cuda-devices 0 --execute
+# 若决定直接完成剩余全部训练，则续训命令改为：
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --cuda-devices 0 --execute
+# 这里 0 表示取消阶段停止限制，恢复模型、优化器、scheduler 等状态，继续完成原定总计 50 epoch 的剩余部分。完整训练结束后，仍需单独执行推理和评测。
+```
+
+### exp32_3maps_loc_single
+- L0：定位单任务参照。
+- 配置：`csgo_configs/exp32_3maps_loc_single.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_loc_single
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_loc_single
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_loc_single
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_gen_single
+- G0：生成单任务参照。
+- 配置：`csgo_configs/exp32_3maps_gen_single.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_gen_single
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_gen_single
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_gen_single
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_joint_original
+- J0：原联合优化配方，使用统一 GAS 归一化。
+- 配置：`csgo_configs/exp32_3maps_joint_original.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_original
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_original
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_original
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_joint_headlr
+- J1：在 J0 基础上对齐定位私有模块学习率。
+- 配置：`csgo_configs/exp32_3maps_joint_headlr.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_headlr
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_headlr
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_headlr
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_joint_sharedlr
+- J2：在 J1 基础上仅降低共享 LLM LoRA 学习率。
+- 配置：`csgo_configs/exp32_3maps_joint_sharedlr.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_joint_constloc
+- J3：在 J1 基础上将定位主任务权重固定为 2。
+- 配置：`csgo_configs/exp32_3maps_joint_constloc.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_constloc
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_constloc
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_constloc
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_joint_sharedlr_constloc
+- J4：对齐定位头、降低共享 LR、固定定位权重。
+- 配置：`csgo_configs/exp32_3maps_joint_sharedlr_constloc.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_aux_control
+- A0：第二轮匹配预算对照，关闭两项辅助 loss。
+- 配置：`csgo_configs/exp32_3maps_aux_control.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_aux_control
+JOINT_BASE=exp32_3maps_joint_sharedlr_constloc  # 第二轮四组统一设置；仅预指定默认。
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --joint-base "$JOINT_BASE" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_aux_control
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_aux_control
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_perception
+- A1：仅开启 perception，优先验证其独立作用。
+- 配置：`csgo_configs/exp32_3maps_perception.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception
+JOINT_BASE=exp32_3maps_joint_sharedlr_constloc  # 第二轮四组统一设置；仅预指定默认。
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --joint-base "$JOINT_BASE" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_auxloc
+- A2：仅开启两候选 combined aux-loc。
+- 配置：`csgo_configs/exp32_3maps_auxloc.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc
+JOINT_BASE=exp32_3maps_joint_sharedlr_constloc  # 第二轮四组统一设置；仅预指定默认。
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --joint-base "$JOINT_BASE" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+
+### exp32_3maps_both
+- A3：同时开启 aux-loc 与 perception。
+- 配置：`csgo_configs/exp32_3maps_both.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both
+JOINT_BASE=exp32_3maps_joint_sharedlr_constloc  # 第二轮四组统一设置；仅预指定默认。
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --joint-base "$JOINT_BASE" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```

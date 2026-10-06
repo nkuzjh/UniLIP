@@ -245,6 +245,71 @@ class AggregateCsgoBenchmarkV2MetricsTests(unittest.TestCase):
                 result["inference_provenance"]["payload"]["maps"], ["map_a"]
             )
 
+    def test_seen_validation_three_maps_and_split_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = root / "manifest.json"
+            maps = ["map_a", "map_b", "map_c"]
+            self._write_json(manifest, {
+                "protocol": {"seen_maps": maps, "crossmap_maps": []},
+            })
+            results_root = root / "validation_results"
+            self._write_per_map_results(
+                results_root, manifest, split="seen_validation",
+                maps=maps, values=(1.0, 3.0, 5.0),
+            )
+            result = aggregate_maps(
+                manifest=manifest, split="seen_validation",
+                input_root=results_root, kind="discrete", maps=maps,
+                output=root / "validation_macro.json",
+            )
+            self.assertEqual(result["maps"], maps)
+            self.assertEqual(result["split"], "seen_validation")
+            self.assertEqual(result["metrics_macro_map"]["PSNR"], 3.0)
+            self.assertEqual(
+                result["inference_provenance"]["payload"]["benchmark_v2_split"],
+                "seen_validation",
+            )
+
+            provenance_path = results_root / "inference_manifest.json"
+            provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
+            loc_summary = build_localization_summary(
+                manifest=manifest, split="seen_validation", maps=maps,
+                per_map={map_name: {"L2_5D": float(index + 1)}
+                         for index, map_name in enumerate(maps)},
+                metrics_macro_map={"L2_5D": 2.0},
+                inference_provenance={"path": str(provenance_path), "payload": provenance},
+                checkpoint="checkpoint.safetensors", seed=42,
+                support_seed=None, shots_per_map=None, sample_count=4,
+            )
+            self.assertEqual(loc_summary["split"], "seen_validation")
+            self.assertEqual(loc_summary["maps"], maps)
+
+            test_provenance = dict(provenance, benchmark_v2_split="seen_discrete_test")
+            test_provenance_path = root / "test_inference_manifest.json"
+            self._write_json(test_provenance_path, test_provenance)
+            with self.assertRaisesRegex(AggregationError, "provenance split"):
+                build_localization_summary(
+                    manifest=manifest, split="seen_validation", maps=maps,
+                    per_map={map_name: {"L2_5D": 2.0} for map_name in maps},
+                    metrics_macro_map={"L2_5D": 2.0},
+                    inference_provenance={"path": str(test_provenance_path),
+                                          "payload": test_provenance},
+                    checkpoint="checkpoint.safetensors", seed=42,
+                    support_seed=None, shots_per_map=None, sample_count=4,
+                )
+
+            contaminated = results_root / "benchmark_csgo_v2_map_c.json"
+            payload = json.loads(contaminated.read_text(encoding="utf-8"))
+            payload["benchmark_v2_split"] = "seen_discrete_test"
+            self._write_json(contaminated, payload)
+            with self.assertRaisesRegex(AggregationError, "does not match requested split"):
+                aggregate_maps(
+                    manifest=manifest, split="seen_validation",
+                    input_root=results_root, kind="discrete", maps=maps,
+                    output=root / "bad_macro.json",
+                )
+
     def test_maps_subset_rejects_unknown_duplicate_and_out_of_order_maps(self):
         cases = (
             (["map_unknown"], "unknown protocol map"),
