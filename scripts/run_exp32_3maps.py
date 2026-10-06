@@ -276,6 +276,8 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     config["ckpt_path"] = str(checkpoint)
     config["benchmark_v2_split"] = split
     config["seed"] = args.seed
+    # Only this Seen-3 evaluation may summarize its ordered protocol map subset.
+    config["benchmark_v2_allow_map_subset_summary"] = True
     # These training-only objectives do not add modules in this experiment family.
     for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss"):
         config[key] = False

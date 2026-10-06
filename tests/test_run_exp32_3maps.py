@@ -14,6 +14,11 @@ from unittest.mock import patch
 
 import yaml
 
+from scripts.aggregate_csgo_benchmark_v2_metrics import (
+    AggregationError,
+    build_localization_summary,
+)
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location(
@@ -63,6 +68,94 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             self.assertEqual(config["train_maps"], RUNNER.MAPS)
             self.assertEqual(config["val_maps"], RUNNER.MAPS)
             self.assertEqual(config["test_maps"], RUNNER.MAPS)
+
+    def test_eval_subset_summary_opt_in_is_scoped_to_all_evaluation_plans(self):
+        flag = "benchmark_v2_allow_map_subset_summary"
+        for experiment in RUNNER.EXPERIMENTS:
+            train = RUNNER.resolve_config(self.args("train", experiment), for_training=True)
+            original = copy.deepcopy(train)
+            identity = RUNNER.fingerprint(train, {"seed": 42})
+            self.assertNotIn(flag, train)
+            for command in ("infer", "metrics"):
+                for split, benchmark_split in (
+                    ("validation", "seen_validation"),
+                    ("test", "seen_discrete_test"),
+                ):
+                    with self.subTest(experiment=experiment, command=command, split=split):
+                        args = self.args(command, experiment, "--checkpoint-step", "2400",
+                                         "--split", split)
+                        _, _, evaluation = RUNNER.evaluation_plan(args, train)
+                        self.assertIs(evaluation[flag], True)
+                        self.assertEqual(evaluation["benchmark_v2_split"], benchmark_split)
+                        self.assertEqual(evaluation["seed"], 42)
+                        self.assertEqual(
+                            evaluation["ckpt_path"],
+                            f"outputs/csgo_1b/{experiment}/checkpoint-2400/model.safetensors",
+                        )
+                        self.assertNotIn(flag, train)
+            self.assertEqual(train, original)
+            self.assertEqual(RUNNER.fingerprint(train, {"seed": 42}), identity)
+
+    def test_seen_ten_protocol_requires_explicit_seen_three_summary_opt_in(self):
+        protocol = json.loads((REPO_ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json")
+                              .read_text(encoding="utf-8"))["protocol"]["seen_maps"]
+        self.assertEqual(len(protocol), 10)
+        self.assertEqual([name for name in protocol if name in RUNNER.MAPS], RUNNER.MAPS)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            manifest = root / "manifest.json"
+            manifest.write_text(json.dumps({"protocol": {"seen_maps": protocol}}), encoding="utf-8")
+            for split in ("validation", "test"):
+                args = self.args("infer", "exp32_3maps_joint_original",
+                                 "--checkpoint-step", "2400", "--split", split)
+                training = RUNNER.resolve_config(self.args("train"), for_training=True)
+                _, _, evaluation = RUNNER.evaluation_plan(args, training)
+                selected_split = evaluation["benchmark_v2_split"]
+                for maps in (RUNNER.MAPS, protocol):
+                    inference_manifest = root / f"{split}_{len(maps)}_inference.json"
+                    provenance = {
+                        "benchmark_v2_manifest": str(manifest),
+                        "benchmark_v2_split": selected_split,
+                        "benchmark_v2_support_seed": None,
+                        "benchmark_v2_shots_per_map": None,
+                        "maps": maps,
+                        "sample_count": len(maps),
+                        "checkpoint": evaluation["ckpt_path"],
+                        "ckpt_path": evaluation["ckpt_path"],
+                        "seed": evaluation["seed"],
+                    }
+                    inference_manifest.write_text(json.dumps(provenance), encoding="utf-8")
+                    summary_args = dict(
+                        manifest=manifest,
+                        split=selected_split,
+                        maps=maps,
+                        per_map={name: {"L2_5D": 1.0} for name in maps},
+                        metrics_macro_map={"L2_5D": 1.0},
+                        inference_provenance={"path": str(inference_manifest),
+                                              "payload": provenance},
+                        checkpoint=evaluation["ckpt_path"],
+                        seed=evaluation["seed"],
+                        support_seed=None,
+                        shots_per_map=None,
+                        sample_count=len(maps),
+                    )
+                    if len(maps) == 3:
+                        with self.assertRaisesRegex(AggregationError,
+                                                    "do not match manifest protocol"):
+                            build_localization_summary(**summary_args)
+                        with self.assertRaisesRegex(AggregationError,
+                                                    "do not match manifest protocol"):
+                            build_localization_summary(
+                                allow_protocol_map_subset=False, **summary_args
+                            )
+                        summary = build_localization_summary(
+                            allow_protocol_map_subset=evaluation[
+                                "benchmark_v2_allow_map_subset_summary"
+                            ], **summary_args
+                        )
+                    else:
+                        summary = build_localization_summary(**summary_args)
+                    self.assertEqual(summary["maps"], maps)
 
     def test_dry_run_never_writes_or_launches_a_subprocess(self):
         for command, extra in (
