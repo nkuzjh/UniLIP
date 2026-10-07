@@ -6601,6 +6601,8 @@ EXPERIMENT=exp32_3maps_loc_single
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
 
 nohup python scripts/run_exp32_3maps.py train --experiment exp32_3maps_loc_single --stop-after-step 2400 --cuda-devices 5 --execute >fst_outs/exp32_3maps_loc_single.nohup.out 2>&1 &
+
+nohup python scripts/run_exp32_3maps.py train --resume --experiment exp32_3maps_loc_single --stop-after-step 0 --cuda-devices 5 --execute >>fst_outs/exp32_3maps_loc_single.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6608,6 +6610,12 @@ nohup python scripts/run_exp32_3maps.py train --experiment exp32_3maps_loc_singl
 set -euo pipefail
 EXPERIMENT=exp32_3maps_loc_single
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 
 **Metric**
@@ -6627,6 +6635,10 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_gen_single
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29633 --experiment exp32_3maps_gen_single --stop-after-step 2400 --cuda-devices 5 --execute >fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29633 --resume --experiment exp32_3maps_gen_single --stop-after-step 0 --cuda-devices 5 --execute >>fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6634,6 +6646,12 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_gen_single
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 
 **Metric**
@@ -6641,7 +6659,25 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_gen_single
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
+
+<!-- 终端loc5850 gen2400 3600 5850正在执行以下命令：2026.10.8 1:33 -->
+<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute -->
+
 
 
 ### exp32_3maps_joint_original
@@ -6653,6 +6689,10 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_original
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29634 --experiment exp32_3maps_joint_original --stop-after-step 2400 --cuda-devices 5 --execute >fst_outs/exp32_3maps_joint_original.nohup.out 2>&1 &
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29634 --resume --experiment exp32_3maps_joint_original --stop-after-step 0 --cuda-devices 5 --execute >>fst_outs/exp32_3maps_joint_original.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6660,6 +6700,10 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_original
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 
 **Metric**
@@ -6667,8 +6711,18 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_original
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
-```
 
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+```
+<!-- 等待fst exp32_3maps_joint_original全部step训练完成后，一次性执行以下命令： -->
+<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 5 --execute -->
 
 ### exp32_3maps_joint_headlr
 - J1：在 J0 基础上对齐定位私有模块学习率。
@@ -6679,6 +6733,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_headlr
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29635 --experiment exp32_3maps_joint_headlr --stop-after-step 0 --cuda-devices 5 --execute >fst_outs/exp32_3maps_joint_headlr.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6686,6 +6742,10 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_headlr
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 
 **Metric**
@@ -6693,7 +6753,17 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_headlr
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
+<!-- 等待fst exp32_3maps_joint_headlr全部step训练完成后，一次性执行以下命令： -->
+<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 5 --execute -->
 
 
 ### exp32_3maps_joint_sharedlr
@@ -6705,6 +6775,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29636 --experiment exp32_3maps_joint_sharedlr --stop-after-step 0 --cuda-devices 1 --execute >fst_outs/exp32_3maps_joint_sharedlr.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6712,6 +6784,9 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr --checkpoint-step 2400 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
 ```
 
 **Metric**
@@ -6719,7 +6794,22 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr --checkpoint-step 2400 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
 ```
+<!-- fst a100 cuda1 一次性执行以下任务中~： -->
+<!-- nohup bash -c '
+set -euo pipefail
+
+python scripts/run_exp32_3maps.py train --master-port 29636 --experiment exp32_3maps_joint_sharedlr --stop-after-step 0 --cuda-devices 1 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr --checkpoint-step 2400 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr --checkpoint-step 2400 --split validation --cuda-devices 1 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
+' > fst_outs/exp32_3maps_joint_sharedlr.nohup.out 2>&1 < /dev/null & -->
 
 
 ### exp32_3maps_joint_constloc
@@ -6731,6 +6821,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_constloc
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29637 --experiment exp32_3maps_joint_constloc --stop-after-step 0 --cuda-devices 2 --execute >fst_outs/exp32_3maps_joint_constloc.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6738,6 +6830,10 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_constloc
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc --checkpoint-step 2400 --split validation --cuda-devices 2 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc --checkpoint-step 5850 --split validation --cuda-devices 2 --execute
 ```
 
 **Metric**
@@ -6745,7 +6841,24 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_constloc
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc --checkpoint-step 2400 --split validation --cuda-devices 2 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc--checkpoint-step 5850 --split validation --cuda-devices 2 --execute
 ```
+
+<!-- fst a100 cuda2 一次性执行以下任务中~： -->
+<!-- nohup bash -c '
+set -euo pipefail
+
+python scripts/run_exp32_3maps.py train --master-port 29637 --experiment exp32_3maps_joint_constloc --stop-after-step 0 --cuda-devices 2 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc --checkpoint-step 2400 --split validation --cuda-devices 2 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc --checkpoint-step 2400 --split validation --cuda-devices 2 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc --checkpoint-step 5850 --split validation --cuda-devices 2 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc--checkpoint-step 5850 --split validation --cuda-devices 2 --execute
+' > fst_outs/exp32_3maps_joint_constloc.nohup.out 2>&1 < /dev/null & -->
 
 
 ### exp32_3maps_joint_sharedlr_constloc
@@ -6757,6 +6870,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+
+nohup python scripts/run_exp32_3maps.py train --master-port 29638 --experiment exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 0 --execute >fst_outs/exp32_3maps_joint_sharedlr_constloc.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -6764,6 +6879,9 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 
 **Metric**
@@ -6771,7 +6889,23 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 set -euo pipefail
 EXPERIMENT=exp32_3maps_joint_sharedlr_constloc
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
+
+<!-- 65 cuda0 一次性执行以下任务中~： -->
+<!-- nohup bash -c '
+set -euo pipefail
+
+python scripts/run_exp32_3maps.py train --master-port 29638 --experiment exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_sharedlr_constloc --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+' > fst_outs/exp32_3maps_joint_sharedlr_constloc.nohup.out 2>&1 < /dev/null & -->
 
 
 ### exp32_3maps_aux_control
@@ -6880,3 +7014,16 @@ set -euo pipefail
 EXPERIMENT=exp32_3maps_both
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
 ```
+
+<!-- 65 cuda1 一次性执行以下任务中~： -->
+<!-- nohup bash -c '
+set -euo pipefail
+python scripts/run_exp32_3maps.py train --master-port 29642 --experiment exp32_3maps_both --joint-base exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 1 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 1 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 5850 --split validation --cuda-devices 1 --execute
+' > fst_outs/exp32_3maps_both.nohup.out 2>&1 < /dev/null & -->
+
