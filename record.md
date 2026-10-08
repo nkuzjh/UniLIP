@@ -6668,6 +6668,7 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --
 ```
 
 <!-- 终端loc5850 gen2400 3600 5850正在执行以下命令：2026.10.8 1:33 -->
+<!-- 已完成 2026.10.8 3:09 -->
 <!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
@@ -6717,12 +6718,15 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_origina
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
 <!-- 等待fst exp32_3maps_joint_original全部step训练完成后，一次性执行以下命令： -->
-<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+<!-- nohup bash -c '
+set -euo pipefail
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
 
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
-
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 5 --execute -->
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
+' >>fst_outs/exp32_3maps_joint_original.nohup.out 2>&1 < /dev/null & -->
 
 ### exp32_3maps_joint_headlr
 - J1：在 J0 基础上对齐定位私有模块学习率。
