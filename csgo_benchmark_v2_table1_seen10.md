@@ -67,11 +67,11 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 
 | Setting | Task | Method | Experiment | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Discrete generation | OmniGen | `--` | -- | -- | -- | -- | -- | -- | -- |
-| Seen-10 | Discrete generation | ControlAR | `csgo_seen10_exp32gen_aligned_peft` | -- | -- | -- | 13.3055 | 0.6230 | 0.5103 | 30.2869 |
+| Seen-10 | Discrete generation | OmniGen | `exp32gen_aligned` | -- | -- | -- | 11.9736 | 0.6915 | 0.5057 | 83.4449 |
+| Seen-10 | Discrete generation | ControlAR | `exp32gen_aligned_peft` | -- | -- | -- | 13.3055 | 0.6230 | 0.5103 | 30.2869 |
 | Seen-10 | Discrete generation | Lumina-Accessory | `--` | -- | -- | -- | -- | -- | -- | -- |
 | Seen-10 | Discrete generation | Show-o2 | `--` | -- | -- | -- | -- | -- | -- | -- |
-| Seen-10 | Discrete generation | Puffin | `--` | -- | -- | -- | -- | -- | -- | -- |
+| Seen-10 | Discrete generation | Puffin | `exp32gen_aligned` | -- | -- | -- | 14.3186 | 0.5924 | 0.5357 | 33.2448 |
 | Seen-10 | Discrete generation | FPV synthesis baseline | `exp32_gen` | -- | -- | -- | 13.965 | 0.6106 | 0.5163 | 35.584 |
 | Seen-10 | Discrete generation | multi-task baseline | `exp32` | -- | -- | -- | 14.1528 | 0.6035 | 0.5229 | 36.6005 |
 | Seen-10 | Discrete generation | aux. objs. baseline | `exp32_1` | -- | -- | -- | 13.9070 | 0.6145 | 0.5151 | 36.2159 |
@@ -80,11 +80,11 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 
 | Setting | Task | Method | Experiment | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Seen-10 | Continuous generation | OmniGen | `--` | -- | -- | -- | -- | -- | -- | -- | -- |
-| Seen-10 | Continuous generation | ControlAR | `csgo_seen10_exp32gen_aligned_peft` | -- | -- | -- | 13.9832 | 0.6157 | 39.2998 | 45.1919 | 951.4971 |
+| Seen-10 | Continuous generation | OmniGen | `exp32gen_aligned` | -- | -- | -- | 12.7187 | 0.6993 | 24.9154 | 33.0017 | 1631.3874 |
+| Seen-10 | Continuous generation | ControlAR | `exp32gen_aligned_peft` | -- | -- | -- | 13.9832 | 0.6157 | 39.2998 | 45.1919 | 951.4971 |
 | Seen-10 | Continuous generation | Lumina-Accessory | `--` | -- | -- | -- | -- | -- | -- | -- | -- |
 | Seen-10 | Continuous generation | Show-o2 | `--` | -- | -- | -- | -- | -- | -- | -- | -- |
-| Seen-10 | Continuous generation | Puffin | `--` | -- | -- | -- | -- | -- | -- | -- | -- |
+| Seen-10 | Continuous generation | Puffin | `exp32gen_aligned` | -- | -- | -- | 15.4657 | 0.5679 | 28.1975 | 35.2320 | 844.2427 |
 | Seen-10 | Continuous generation | FPV synthesis baseline | `exp32_gen` | -- | -- | -- | 14.342 | 0.5929 | 35.698 | 41.867 | 848.071 |
 | Seen-10 | Continuous generation | multi-task baseline | `exp32` | -- | -- | -- | 14.5725 | 0.5826 | 34.0925 | 40.3596 | 848.4586 |
 | Seen-10 | Continuous generation | aux. objs. baseline | `exp32_1` | -- | -- | -- | 14.2285 | 0.5981 | 36.1777 | 42.2848 | 891.6025 |

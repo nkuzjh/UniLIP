@@ -6763,13 +6763,13 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr 
 
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 ```
-<!-- fst exp32_3maps_joint_headlr全部step训练完成后，一次性执行以下命令： -->
-<!-- 执行完毕2026.10.9 1:49 -->
-<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 5 --execute
+<!-- fst exp32_3maps_joint_headlr全部step训练完成后，同步至67 exp32_3maps_joint_headlr 终端中，一次性执行以下命令： -->
+<!-- 执行完毕2026.10.9 3:41 -->
+<!-- python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
 
-python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 5 --execute -->
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_headlr --checkpoint-step 5850 --split validation --cuda-devices 0 --execute -->
 
 
 ### exp32_3maps_joint_sharedlr
