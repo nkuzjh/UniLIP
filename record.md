@@ -6865,7 +6865,7 @@ python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc 
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc --checkpoint-step 2400 --split validation --cuda-devices 2 --execute
 
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc --checkpoint-step 5850 --split validation --cuda-devices 2 --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc--checkpoint-step 5850 --split validation --cuda-devices 2 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc --checkpoint-step 5850 --split validation --cuda-devices 2 --execute
 ' > fst_outs/exp32_3maps_joint_constloc.nohup.out 2>&1 < /dev/null & -->
 
 
@@ -7023,15 +7023,31 @@ EXPERIMENT=exp32_3maps_both
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
 ```
 
-<!-- fst a100 cuda5 一次性执行以下任务中~： -->
+<!-- fst a100 cuda4,5 一次性执行以下任务中~： -->
 <!-- nohup bash -c '
 set -euo pipefail
-python scripts/run_exp32_3maps.py train --master-port 29642 --experiment exp32_3maps_both --joint-base exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 5 --micro-batch 4 --execute
+python scripts/run_exp32_3maps.py train --master-port 29642 --experiment exp32_3maps_both --joint-base exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 4,5 --micro-batch 4 --execute
 
-python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 5 --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 4 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 4 --execute
 
-python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 5 --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 5850 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 5900 --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 5900 --split validation --cuda-devices 5 --execute
+' >>fst_outs/exp32_3maps_both.nohup.out 2>&1 < /dev/null & -->
+
+<!-- 或以下命令，用于自动获取最后一个checkpoint的steps -->
+
+<!-- nohup bash -c '
+set -euo pipefail
+
+python scripts/run_exp32_3maps.py train --master-port 29642 --experiment exp32_3maps_both --joint-base exp32_3maps_joint_sharedlr_constloc --stop-after-step 0 --cuda-devices 4,5 --micro-batch 4 --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 4 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step 3600 --split validation --cuda-devices 4 --execute
+
+FINAL_STEP=$(python -c "import json; print(json.load(open(\"outputs/csgo_1b/exp32_3maps_both/trainer_state.json\"))[\"global_step\"])")
+test -f "outputs/csgo_1b/exp32_3maps_both/checkpoint-$FINAL_STEP/model.safetensors"
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step "$FINAL_STEP" --split validation --cuda-devices 5 --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step "$FINAL_STEP" --split validation --cuda-devices 5 --execute
 ' > fst_outs/exp32_3maps_both.nohup.out 2>&1 < /dev/null & -->
-
