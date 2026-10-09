@@ -23,9 +23,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "exp32_3maps_"
 ROUND1 = ("loc_single", "gen_single", "joint_original", "joint_headlr",
           "joint_sharedlr", "joint_constloc", "joint_sharedlr_constloc")
+ROUND1_EXTRA = ("joint_original_constloc", "joint_constloc1",
+                "joint_constloc4", "joint_constloc8")
 ROUND2 = ("aux_control", "perception", "auxloc", "both")
-EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND2)
-JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:])
+EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2)
+JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:] + ROUND1_EXTRA)
 MAPS = ["de_ancient", "de_dust2", "de_nuke"]
 DEFAULT_BASE = PREFIX + "joint_sharedlr_constloc"
 BASE_KEYS = (
@@ -134,7 +136,7 @@ def validate_config(config: dict) -> None:
     if config.get("benchmark_v2_split") != "seen_train":
         raise ValueError("Training recipes must use seen_train")
     if config.get("csgo_loss_per_microbatch_mean") is not True:
-        raise ValueError("All eleven arms must use microbatch-mean GAS normalization")
+        raise ValueError("All fifteen arms must use microbatch-mean GAS normalization")
     if config.get("is_lora") is not True or config.get("llm_train_mode") != "lora":
         raise ValueError("Expected the exp32 LoRA architecture")
     if any(config.get(key) for key in (

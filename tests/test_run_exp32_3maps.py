@@ -55,19 +55,53 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             [command, "--experiment", experiment, *extra]
         )
 
-    def test_matrix_has_seven_first_round_and_four_second_round_arms(self):
+    def test_matrix_has_seven_original_four_extra_and_four_second_round_arms(self):
         self.assertEqual(len(RUNNER.ROUND1), 7)
+        self.assertEqual(len(RUNNER.ROUND1_EXTRA), 4)
         self.assertEqual(len(RUNNER.ROUND2), 4)
         self.assertEqual(
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
-        self.assertEqual(len(RUNNER.JOINT_BASES), 5)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 15)
+        self.assertEqual(len(RUNNER.JOINT_BASES), 9)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
             RUNNER.validate_config(config)
             self.assertEqual(config["train_maps"], RUNNER.MAPS)
             self.assertEqual(config["val_maps"], RUNNER.MAPS)
             self.assertEqual(config["test_maps"], RUNNER.MAPS)
+
+    def test_extra_joint_arms_change_only_constant_alpha(self):
+        cases = (
+            ("joint_original_constloc", "joint_original", 2.0),
+            ("joint_constloc1", "joint_constloc", 1.0),
+            ("joint_constloc4", "joint_constloc", 4.0),
+            ("joint_constloc8", "joint_constloc", 8.0),
+        )
+        for suffix, parent, alpha in cases:
+            with self.subTest(suffix=suffix):
+                experiment = RUNNER.PREFIX + suffix
+                child = RUNNER.read_yaml(RUNNER.config_path(experiment))
+                expected = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + parent))
+                expected["alpha_loc_loss"] = alpha
+                expected.pop("alpha_loc_schedule_steps", None)
+                expected.pop("alpha_loc_schedule_values", None)
+                self.assertEqual(child, expected)
+                self.assertEqual(child["training_stop_after_step"], 2400)
+                self.assertNotIn("alpha_loc_schedule_steps", child)
+                self.assertNotIn("alpha_loc_schedule_values", child)
+                self.assertIn(experiment, RUNNER.JOINT_BASES)
+                for mode in ("minimal", "full"):
+                    args = self.args("train", experiment, "--asset-mode", mode)
+                    resolved = RUNNER.resolve_config(args, for_training=True)
+                    RUNNER.validate_config(resolved)
+                    command, metadata, out = RUNNER.training_plan(args, resolved)
+                    self.assertEqual(metadata["runtime"]["epochs"], 50)
+                    self.assertEqual(metadata["runtime"]["save_steps"], 1200)
+                    self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 2)
+                    self.assertEqual(option(command[0], "--num_train_epochs"), "50")
+                    self.assertEqual(option(command[0], "--save_steps"), "1200")
+                    self.assertFalse(out.exists())
 
     def test_eval_subset_summary_opt_in_is_scoped_to_all_evaluation_plans(self):
         flag = "benchmark_v2_allow_map_subset_summary"
@@ -176,7 +210,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
     def test_staged_train_keeps_full_horizon_and_resumable_state(self):
         for step in (2400, 3600):
             with self.subTest(step=step):
-                args = self.args("train", "exp32_3maps_both", "--stop-after-step", str(step))
+                args = self.args("train", "exp32_3maps_both", "--micro-batch", "4",
+                                 "--stop-after-step", str(step))
                 config = RUNNER.resolve_config(args, for_training=True)
                 commands, metadata, _ = RUNNER.training_plan(args, config)
                 command = commands[0]

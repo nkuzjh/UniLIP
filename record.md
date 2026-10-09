@@ -6571,6 +6571,7 @@ logs/benchmark_v2_map_specific/exp36_1_<map>/shot_<N>/seed_0/
 ```
 
 
+
 ## exp32_3maps 两轮实验与分阶段筛选
 
 详细实验设置和定位见exp32_3maps两轮实验的说明文档[CSGO_BENCHMARK_V2_EXP32_3MAPS.md]
@@ -6589,6 +6590,7 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --st
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --cuda-devices 0 --execute
 # 这里 0 表示取消阶段停止限制，恢复模型、优化器、scheduler 等状态，继续完成原定总计 50 epoch 的剩余部分。完整训练结束后，仍需单独执行推理和评测。
 ```
+
 
 ### exp32_3maps_loc_single
 - L0：定位单任务参照。
@@ -7051,3 +7053,159 @@ test -f "outputs/csgo_1b/exp32_3maps_both/checkpoint-$FINAL_STEP/model.safetenso
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both --checkpoint-step "$FINAL_STEP" --split validation --cuda-devices 5 --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both --checkpoint-step "$FINAL_STEP" --split validation --cuda-devices 5 --execute
 ' > fst_outs/exp32_3maps_both.nohup.out 2>&1 < /dev/null & -->
+
+
+
+## exp32_3maps 补充联合对照 J5～J8
+
+以下命令按阶段执行：每个 checkpoint 训练完成且有模型文件后才运行相应的 Inference／Metric。runner 默认每 1200 step 保存，保留完整 50 epoch 调度，源样本有效 batch=128。2400 仅作初筛，3600 复核；已有 J0～J4 后期排序变化，不以 2400 单点淘汰。
+
+
+### exp32_3maps_joint_original_constloc
+- J5：J0 原定位头学习率，αloc 恒定 2；待运行、待 validation 推理及指标计算。
+- 配置：`csgo_configs/exp32_3maps_joint_original_constloc.yaml`；首评 `checkpoint-2400`，复核 `checkpoint-3600`，必要时评实际最后 checkpoint，均使用 `seen_validation`。
+- 默认 minimal 后端；如首次训练用 full，命令末尾统一加 `--asset-mode full --data-dir /path/to/preprocessed_data`，训练、推理、metrics 使用同一后端和路径。
+
+**Training**
+```bash
+set -euo pipefail
+python scripts/run_exp32_3maps.py train --experiment exp32_3maps_joint_original_constloc --stop-after-step 0 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original_constloc --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=0
+
+python scripts/run_exp32_3maps.py train --master-port 29643 --experiment exp32_3maps_joint_original_constloc --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original_constloc --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original_constloc --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_original_constloc --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_original_constloc --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' > fst_outs/exp32_3maps_joint_original_constloc.nohup.out 2>&1 < /dev/null & -->
+
+
+### exp32_3maps_joint_constloc1
+- J6：J3 的 αloc 恒定 1；待运行、待 validation 推理及指标计算。
+- 配置：`csgo_configs/exp32_3maps_joint_constloc1.yaml`；首评 `checkpoint-2400`，复核 `checkpoint-3600`，必要时评实际最后 checkpoint，均使用 `seen_validation`。
+- 默认 minimal 后端；如首次训练用 full，命令末尾统一加 `--asset-mode full --data-dir /path/to/preprocessed_data`，训练、推理、metrics 使用同一后端和路径。
+
+**Training**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc1
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc1
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc1
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=0
+
+python scripts/run_exp32_3maps.py train --master-port 29644 --experiment exp32_3maps_joint_constloc1 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc1 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc1 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc1 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc1 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' > fst_outs/exp32_3maps_joint_constloc1.nohup.out 2>&1 < /dev/null & -->
+
+
+### exp32_3maps_joint_constloc4
+- J7：J3 的 αloc 恒定 4；待运行、待 validation 推理及指标计算。
+- 配置：`csgo_configs/exp32_3maps_joint_constloc4.yaml`；首评 `checkpoint-2400`，复核 `checkpoint-3600`，必要时评实际最后 checkpoint，均使用 `seen_validation`。
+- 默认 minimal 后端；如首次训练用 full，命令末尾统一加 `--asset-mode full --data-dir /path/to/preprocessed_data`，训练、推理、metrics 使用同一后端和路径。
+
+**Training**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc4
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc4
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc4
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=0
+
+python scripts/run_exp32_3maps.py train --master-port 29645 --experiment exp32_3maps_joint_constloc4 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc4 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc4 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc4 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc4 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' > fst_outs/exp32_3maps_joint_constloc4.nohup.out 2>&1 < /dev/null & -->
+
+
+### exp32_3maps_joint_constloc8
+- J8：J3 的 αloc 恒定 8；待运行、待 validation 推理及指标计算。
+- 配置：`csgo_configs/exp32_3maps_joint_constloc8.yaml`；首评 `checkpoint-2400`，复核 `checkpoint-3600`，必要时评实际最后 checkpoint，均使用 `seen_validation`。
+- 默认 minimal 后端；如首次训练用 full，命令末尾统一加 `--asset-mode full --data-dir /path/to/preprocessed_data`，训练、推理、metrics 使用同一后端和路径。
+
+**Training**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc8
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc8
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+export EXPERIMENT=exp32_3maps_joint_constloc8
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=0
+
+python scripts/run_exp32_3maps.py train --master-port 29646 --experiment exp32_3maps_joint_constloc8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' > fst_outs/exp32_3maps_joint_constloc8.nohup.out 2>&1 < /dev/null & -->
+
