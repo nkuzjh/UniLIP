@@ -55,15 +55,15 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             [command, "--experiment", experiment, *extra]
         )
 
-    def test_matrix_has_seven_original_four_extra_and_four_second_round_arms(self):
+    def test_matrix_has_seven_original_six_extra_and_four_second_round_arms(self):
         self.assertEqual(len(RUNNER.ROUND1), 7)
-        self.assertEqual(len(RUNNER.ROUND1_EXTRA), 4)
+        self.assertEqual(len(RUNNER.ROUND1_EXTRA), 6)
         self.assertEqual(len(RUNNER.ROUND2), 4)
         self.assertEqual(
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 15)
-        self.assertEqual(len(RUNNER.JOINT_BASES), 9)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 17)
+        self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
             RUNNER.validate_config(config)
@@ -77,6 +77,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             ("joint_constloc1", "joint_constloc", 1.0),
             ("joint_constloc4", "joint_constloc", 4.0),
             ("joint_constloc8", "joint_constloc", 8.0),
+            ("joint_constloc12", "joint_constloc8", 12.0),
+            ("joint_constloc16", "joint_constloc8", 16.0),
         )
         for suffix, parent, alpha in cases:
             with self.subTest(suffix=suffix):
