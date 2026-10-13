@@ -27,10 +27,12 @@ ROUND1_EXTRA = ("joint_original_constloc", "joint_constloc1",
                 "joint_constloc4", "joint_constloc8",
                 "joint_constloc12", "joint_constloc16")
 ROUND2 = ("aux_control", "perception", "auxloc", "both")
-EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2)
+ROUND2_J8 = ("perception_j8", "auxloc_j8", "both_j8")
+EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8)
 JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:] + ROUND1_EXTRA)
 MAPS = ["de_ancient", "de_dust2", "de_nuke"]
 DEFAULT_BASE = PREFIX + "joint_sharedlr_constloc"
+J8_BASE = PREFIX + "joint_constloc8"
 BASE_KEYS = (
     "alpha_loc_loss", "alpha_loc_schedule_steps", "alpha_loc_schedule_values",
     "llm_lora_lr", "llm_connector_lora_lr", "gen_dit_lora_lr",
@@ -68,13 +70,21 @@ def config_path(experiment: str) -> Path:
 
 
 def is_round2(experiment: str) -> bool:
-    return experiment.removeprefix(PREFIX) in ROUND2
+    return experiment.removeprefix(PREFIX) in ROUND2 + ROUND2_J8
 
 
 def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
     source = read_yaml(config_path(args.experiment))
     out = ROOT / "outputs/csgo_1b" / args.experiment
     snapshot = out / "resolved_config.yaml"
+    if args.experiment.removeprefix(PREFIX) in ROUND2_J8:
+        if args.joint_base and args.joint_base != J8_BASE:
+            raise ValueError("J8 experiment requires --joint-base exp32_3maps_joint_constloc8")
+        if snapshot.is_file():
+            if read_yaml(snapshot).get("exp32_3maps_joint_base") != J8_BASE:
+                raise ValueError("Saved J8 training recipe has a different joint base")
+        elif source.get("exp32_3maps_joint_base") != J8_BASE:
+            raise ValueError("J8 experiment requires the joint_constloc8 base in its source recipe")
     trained = None
     # Evaluation follows the recipe actually trained, even after editing a YAML.
     if not for_training and snapshot.is_file():
@@ -85,6 +95,8 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
         if for_training and args.resume and snapshot.is_file():
             saved_base = read_yaml(snapshot).get("exp32_3maps_joint_base")
         base_name = args.joint_base or saved_base or source.get("exp32_3maps_joint_base", DEFAULT_BASE)
+        if args.experiment.removeprefix(PREFIX) in ROUND2_J8 and base_name != J8_BASE:
+            raise ValueError("J8 experiment requires the joint_constloc8 base")
         if base_name not in JOINT_BASES:
             raise ValueError(f"Invalid joint base: {base_name}")
         base = read_yaml(config_path(base_name))

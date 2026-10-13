@@ -7,7 +7,7 @@
 |---|---|
 | `exp31` | Seen-10 full-head 实验；`exp31` 为 joint 联合训练且开启 aux_loc_loss 与 perception_loss，`exp31_1` 为关闭 aux 与 perception 的 loss-only control，`exp31_gen`/`exp31_loc` 为单任务实验，评测  Seen-10 与CrossMap zero-shot。 |
 | `exp31*_3maps` | Benchmark v2 Seen-3 full-head 联合训练低成本 `2 x 2` loss ablation；固定使用 `de_ancient`、`de_dust2`、`de_nuke`，分别覆盖 aux+perception、joint-only、aux-only、perception-only，只评测 Seen-3。 |
-| `exp32_3maps_*` | Benchmark v2 Seen-3 LoRA 两轮消融；固定同三图，第一轮 L0/G0/J0～J4 共 7 组比较单任务、联合训练、学习率和 αloc，第二轮 A0～A3 共 4 组比较辅助 loss；使用 seen_validation 分阶段筛选，选定 checkpoint 后报告 Seen-3 离散／连续测试。 |
+| `exp32_3maps_*` | Benchmark v2 Seen-3 LoRA 两轮消融；固定同三图，第一轮 L0/G0/J0～J4 共 7 组、补充联合对照 J5～J10 共 6 组比较单任务、联合训练、学习率和 αloc，第二轮原 A0～A3 共 4 组（J4）及 2026-10-14 新增 A1_J8～A3_J8 共 3 组（J8）比较辅助 loss；使用 seen_validation 分阶段筛选，选定 checkpoint 后报告 Seen-3 离散／连续测试。 |
 | `exp32` | Seen-10 LoRA 实验；`exp32` 为 joint 联合训练且关闭 aux_loc_loss 与 perception_loss，`exp32_gen`/`exp32_loc` 为单任务实验，评测  Seen-10 与CrossMap zero-shot。 |
 | `exp33`/`exp34` | 分别从 matching 的 `exp31*`/`exp32*` 初始化，在 CrossMap-4 四图共同 support 上进行非 map-specific 的 `100/50/20/10-shot` 适配；包含 joint、gen、loc 路由，并评测 CrossMap 与 Seen-10 retention。 |
 | `exp35`/`exp36` | 分别从 matching 的 `exp31*`/`exp32*` 初始化，对 `cs_office`、`de_golden`、`de_palacio`、`de_vertigo` 四张 CrossMap 地图分别进行 map-specific 适配；shot 为 `100/50/20/10`，包含 joint、gen、loc 路由，评测 CrossMap 与 Seen-10 retention。 |
@@ -17,7 +17,7 @@
 
 ## 2. 实验归属与表格对应
 
-- **ablation 3 maps实验进度表及ablation 3 maps表**：`exp31_3maps`、`exp31_1_3maps`、`exp31_2_3maps`、`exp31_3_3maps`，以及 `exp32_3maps_*` 原第一轮 7 组、补充联合对照 J5～J8 共 4 组和第二轮 A0～A3 共 4 组。
+- **ablation 3 maps实验进度表及ablation 3 maps表**：`exp31_3maps`、`exp31_1_3maps`、`exp31_2_3maps`、`exp31_3_3maps`，以及 `exp32_3maps_*` 原第一轮 7 组、补充联合对照 J5～J10 共 6 组、原第二轮 A0～A3 共 4 组和新增 A1_J8～A3_J8 共 3 组，合计 20 个独立运行名。
 - **主线进度表及主表**：`exp31*`、`exp32*`、`exp35*`、`exp36_1*`。
 - **暂停支线进度表及补充表格**：`exp33*`、`exp34*`、`exp36*`。
 
@@ -53,17 +53,24 @@
 | `exp32_3maps_joint_sharedlr`（J2） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、5850 |
 | `exp32_3maps_joint_constloc`（J3） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、5850 |
 | `exp32_3maps_joint_sharedlr_constloc`（J4） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、4800、5850；已评测 2400、5850 |
-| `exp32_3maps_joint_original_constloc`（J5） | 远端完成（用户确认）；本地状态待同步 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型待同步；已评测 2400、5850 |
+| `exp32_3maps_joint_original_constloc`（J5） | ✅ 远端完成；本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 |
 | `exp32_3maps_joint_constloc1`（J6） | ✅ 远端完成；本地状态核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地 2400、5850 模型文件已到；其余同步中 |
 | `exp32_3maps_joint_constloc4`（J7） | ✅ 远端完成；本地状态核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地 2400、5850 模型文件已到；其余同步中 |
-| `exp32_3maps_joint_constloc8`（J8） | 远端完成（用户确认）；本地状态待同步 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型待同步；已评测 2400、5850 |
+| `exp32_3maps_joint_constloc8`（J8） | ✅ 远端完成；本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型：2400、5850 及根目录；其余同步中 |
+| `exp32_3maps_joint_constloc12`（J9） | ✅ 远端完成；本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 |
+| `exp32_3maps_joint_constloc16`（J10） | 远端完成（用户确认）；本地训练元数据待同步 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成三图指标；test 待评测 | ✅ seen_validation 两任务各三图各 500 条；seed=42 | 本地模型与元数据待同步；已评测 2400、5850 |
 | `exp32_3maps_aux_control`（A0） | 待记录；首阶段目标 step 3600；总预算 50 epochs | 待记录；定位＋离散 validation／test，连续仅 test | 待记录；定位推理内计算，生成 metric 单独执行 | 待记录；seen_validation 定位 1,500＋离散生成 1,500；seed=42 | 计划：3600（首评）；4800／实际最终 step（入围后） |
 | `exp32_3maps_perception`（A1） | 待记录；首阶段目标 step 3600；总预算 50 epochs | 待记录；定位＋离散 validation／test，连续仅 test | 待记录；定位推理内计算，生成 metric 单独执行 | 待记录；seen_validation 定位 1,500＋离散生成 1,500；seed=42 | 计划：3600（首评）；4800／实际最终 step（入围后） |
 | `exp32_3maps_auxloc`（A2） | 待记录；首阶段目标 step 3600；总预算 50 epochs | 待记录；定位＋离散 validation／test，连续仅 test | 待记录；定位推理内计算，生成 metric 单独执行 | 待记录；seen_validation 定位 1,500＋离散生成 1,500；seed=42 | 计划：3600（首评）；4800／实际最终 step（入围后） |
 | `exp32_3maps_both`（A3） | 仅发现 J4 配方计划／配置；无训练完成证据；首阶段目标 step 3600 | 待记录；定位＋离散 validation／test，连续仅 test | 待记录；定位推理内计算，生成 metric 单独执行 | 待记录；seen_validation 定位 1,500＋离散生成 1,500；seed=42 | 计划：3600（首评）；4800／实际最终 step（入围后） |
+| `exp32_3maps_perception_j8`（A1_J8） | 已配置／未启动；J8 固定配方，首停 3600，50 epochs horizon | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各 1,500 条；seed=42 | 计划：3600（首评）；入围后续训至匹配步数 |
+| `exp32_3maps_auxloc_j8`（A2_J8） | 已配置／未启动；J8 固定配方，首停 3600，50 epochs horizon | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各 1,500 条；seed=42 | 计划：3600（首评）；入围后续训至匹配步数 |
+| `exp32_3maps_both_j8`（A3_J8） | 已配置／未启动；J8 固定配方，首停 3600，50 epochs horizon | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各 1,500 条；seed=42 | 计划：3600（首评）；入围后续训至匹配步数 |
 
-上述 exp32_3maps 第一轮结果的源 JSON 与运行证据见 [两轮实验记录和结果表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。J5～J8 的远端训练完成由用户确认；J6/J7 的本地 Trainer 状态及 2400、5850 模型文件已核实，J5/J8 的本地 checkpoint 仍待同步。其余计划节点不代表已生成 checkpoint；不依据命令示例推断实际运行进度。`validation` 列记录筛选集及验证状态，`checkpoint steps` 列按各行说明区分本地已有与计划评测节点；旧 exp31 行的两列暂记为 `—`，原有进度保留。所有新实验每 1200 optimizer steps 保存完整 checkpoint，1200 为可选异常检查点；第一轮默认在 2400 停止，第二轮默认在 3600 停止，随后手动推理、计算指标及决定是否续训。最终 step 以实际训练为准，约 5900 仅为估计。设置与命令见 [record.md](record.md) 和 [两轮实验说明](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
+上述 exp32_3maps 第一轮结果的源 JSON 与运行证据见 [两轮实验记录和结果表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。J5～J10 的远端训练完成由用户确认；截至 2026-10-13 的同步快照，J5～J9 的本地 Trainer 状态均为 50 epochs、5850/5850、train batch=64，运行计划均记录单 GPU、microbatch=64、GAS=2、seed=42。J5 本地模型 1200／2400／3600／4800／5850 均已到；J6/J7/J8 本地模型 2400／5850 已到；J9 本地模型 1200／2400／3600／4800／5850 已到；上述各组均有根目录模型。J10 的本地训练元数据及模型尚待同步。J5～J9 所列模型仅核对 safetensors 头部声明的长度与文件大小吻合，未做校验和或 optimizer、scheduler、RNG 等完整恢复文件核查；快照随同步变化。其余计划节点不代表已生成 checkpoint；不依据命令示例推断实际运行进度。`validation` 列记录筛选集及验证状态，`checkpoint steps` 列按各行说明区分本地已有与计划评测节点；旧 exp31 行的两列暂记为 `—`，原有进度保留。所有新实验每 1200 optimizer steps 保存完整 checkpoint，1200 为可选异常检查点；第一轮默认在 2400 停止，第二轮默认在 3600 停止，随后手动推理、计算指标及决定是否续训。最终 step 以实际训练为准，约 5900 仅为估计。设置与命令见 [record.md](record.md) 和 [两轮实验说明](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
 
+
+2026-10-14 新配置仅登记 A1_J8～A3_J8 的计划状态，以上 2026-10-13 训练及评测证据快照日期保持不变。原 A0～A3 名称、J4 默认配方及已存在输出不覆盖。J8 为新组三者的无辅助参照，仅在原始初始化、seed、主配方、数据布局、有效 batch 和评测步数一致时使用；本地 J8 现有结果仅为 2400／5850，3600 对照需补评 J8@3600。
 
 ## 主线实验进度表
 
@@ -230,11 +237,11 @@
 
 # ablation 3 maps表
 
-`exp32_3maps_*` 按 L0、G0、J0～J4、补充对照 J5～J8、第二轮 A0～A3 的顺序加入各自有效任务表。固定地图为 `de_ancient`、`de_dust2`、`de_nuke`；S3 为 `[0,3000,5400,8400] -> [2,5,10,20]` 的分段线性 αloc 调度。第二轮原预设 J4 配方，现拟统一选择 J8；实际运行以训练保存的 `resolved_config.yaml` 为准，已有 J4 配方的 A3 计划不覆盖。
+`exp32_3maps_*` 按 L0、G0、J0～J4、补充对照 J5～J10、原第二轮 A0～A3、再到新增 A1_J8～A3_J8 的顺序加入各自有效任务表。固定地图为 `de_ancient`、`de_dust2`、`de_nuke`；S3 为 `[0,3000,5400,8400] -> [2,5,10,20]` 的分段线性 αloc 调度。原第二轮 A0～A3 保留 J4 默认配方；2026-10-14 新增 A1_J8～A3_J8 固定 J8 配方且独立输出。纳入 J9/J10 后，[2026-10-13 结果分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#j9-j10-results-20261013)仍建议 J8 作为新辅助组主配方，J9 保留为定位优先候选；实际运行以训练保存的 `resolved_config.yaml` 为准。
 
-`validation` 列区分筛选结果与测试报告；新实验的定位、离散生成行预留 `seen_validation` 结果，连续生成仅预留 `seen_continuous` 测试结果。`checkpoint steps` 是该行对应的单一 checkpoint：标注“计划”的步数未确认执行，连续测试的步数须在 validation 后选定。评测其他 checkpoint 或补充离散测试时，在对应实验旁新增明确 split／step 的结果行，分别记录，不覆盖既有结果。同一联合模型的定位／生成使用同一 checkpoint，比较时匹配步数；旧 exp31 指标原样保留，validation 列暂记 `—`，不与新 validation 数值直接比较。
+新 J8 辅助三组的定位、离散、连续结果当前均为空白占位，状态为已配置／未启动、待评测。`validation` 列区分筛选结果与测试报告；新实验的定位、离散生成行预留 `seen_validation` 结果，连续生成仅预留 `seen_continuous` 测试结果。`checkpoint steps` 是该行对应的单一 checkpoint：标注“计划”的步数未确认执行，连续测试的步数须在 validation 后选定。评测其他 checkpoint 或补充离散测试时，在对应实验旁新增明确 split／step 的结果行，分别记录，不覆盖既有结果。同一联合模型的定位／生成使用同一 checkpoint，比较时匹配步数；旧 exp31 指标原样保留，validation 列暂记 `—`，不与新 validation 数值直接比较。
 
-J5～J8 的同一步数对照、逐图例外及后续执行计划见 [2026-10-12 结果分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#j5-j8-results-20261012)。
+J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见 [2026-10-12 结果分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#j5-j8-results-20261012)。
 
 
 ## 定位
@@ -265,10 +272,17 @@ J5～J8 的同一步数对照、逐图例外及后续执行计划见 [2026-10-12
 | Seen-3 validation | Localization | exp32_3maps_joint_constloc4 | dust2, ancient, nuke | J7：joint-only；定位私有 LR 对齐；αloc=4 | 57.560 | 3.188 | 2.588 | 28.979 | seen_validation | 5850 |
 | Seen-3 validation | Localization | exp32_3maps_joint_constloc8 | dust2, ancient, nuke | J8：joint-only；定位私有 LR 对齐；αloc=8 | 67.344 | 4.415 | 2.504 | 35.516 | seen_validation | 2400 |
 | Seen-3 validation | Localization | exp32_3maps_joint_constloc8 | dust2, ancient, nuke | J8：joint-only；定位私有 LR 对齐；αloc=8 | 47.113 | 2.665 | 2.548 | 25.070 | seen_validation | 5850 |
+| Seen-3 validation | Localization | exp32_3maps_joint_constloc12 | dust2, ancient, nuke | J9：joint-only；定位私有 LR 对齐；αloc=12 | 61.070 | 3.985 | 4.047 | 33.191 | seen_validation | 2400 |
+| Seen-3 validation | Localization | exp32_3maps_joint_constloc12 | dust2, ancient, nuke | J9：joint-only；定位私有 LR 对齐；αloc=12 | 44.067 | 2.907 | 2.421 | 24.334 | seen_validation | 5850 |
+| Seen-3 validation | Localization | exp32_3maps_joint_constloc16 | dust2, ancient, nuke | J10：joint-only；定位私有 LR 对齐；αloc=16 | 130.298 | 6.710 | 5.462 | 57.129 | seen_validation | 2400 |
+| Seen-3 validation | Localization | exp32_3maps_joint_constloc16 | dust2, ancient, nuke | J10：joint-only；定位私有 LR 对齐；αloc=16 | 82.350 | 4.247 | 2.769 | 36.257 | seen_validation | 5850 |
 | Seen-3 validation | Localization | exp32_3maps_aux_control | dust2, ancient, nuke | A0：joint-only；aux-loc 关＋perception 关 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Localization | exp32_3maps_perception | dust2, ancient, nuke | A1：joint＋perception；aux-loc 关 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Localization | exp32_3maps_auxloc | dust2, ancient, nuke | A2：joint＋aux-loc；perception 关 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Localization | exp32_3maps_both | dust2, ancient, nuke | A3：joint＋aux-loc＋perception |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Localization | exp32_3maps_perception_j8 | dust2, ancient, nuke | A1_J8：joint＋perception；aux-loc 关；J8 配方 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Localization | exp32_3maps_auxloc_j8 | dust2, ancient, nuke | A2_J8：joint＋aux-loc；perception 关；J8 配方 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Localization | exp32_3maps_both_j8 | dust2, ancient, nuke | A3_J8：joint＋aux-loc＋perception；J8 配方 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 
 
 ## 离散生成
@@ -299,10 +313,17 @@ J5～J8 的同一步数对照、逐图例外及后续执行计划见 [2026-10-12
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc4 | dust2, ancient, nuke | J7：joint-only；定位私有 LR 对齐；αloc=4 | 14.198 | 0.416 | 0.621 | 0.518 | 62.457 | seen_validation | 5850 |
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc8 | dust2, ancient, nuke | J8：joint-only；定位私有 LR 对齐；αloc=8 | 13.420 | 0.396 | 0.660 | 0.495 | 65.713 | seen_validation | 2400 |
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc8 | dust2, ancient, nuke | J8：joint-only；定位私有 LR 对齐；αloc=8 | 14.222 | 0.416 | 0.623 | 0.517 | 61.569 | seen_validation | 5850 |
+| Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc12 | dust2, ancient, nuke | J9：joint-only；定位私有 LR 对齐；αloc=12 | 13.204 | 0.388 | 0.674 | 0.495 | 65.632 | seen_validation | 2400 |
+| Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc12 | dust2, ancient, nuke | J9：joint-only；定位私有 LR 对齐；αloc=12 | 14.087 | 0.416 | 0.638 | 0.501 | 64.164 | seen_validation | 5850 |
+| Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc16 | dust2, ancient, nuke | J10：joint-only；定位私有 LR 对齐；αloc=16 | 13.346 | 0.393 | 0.666 | 0.496 | 69.046 | seen_validation | 2400 |
+| Seen-3 validation | Discrete generation | exp32_3maps_joint_constloc16 | dust2, ancient, nuke | J10：joint-only；定位私有 LR 对齐；αloc=16 | 14.498 | 0.421 | 0.612 | 0.521 | 62.497 | seen_validation | 5850 |
 | Seen-3 validation | Discrete generation | exp32_3maps_aux_control | dust2, ancient, nuke | A0：joint-only；aux-loc 关＋perception 关 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Discrete generation | exp32_3maps_perception | dust2, ancient, nuke | A1：joint＋perception；aux-loc 关 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Discrete generation | exp32_3maps_auxloc | dust2, ancient, nuke | A2：joint＋aux-loc；perception 关 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Discrete generation | exp32_3maps_both | dust2, ancient, nuke | A3：joint＋aux-loc＋perception |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_perception_j8 | dust2, ancient, nuke | A1_J8：joint＋perception；aux-loc 关；J8 配方 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_auxloc_j8 | dust2, ancient, nuke | A2_J8：joint＋aux-loc；perception 关；J8 配方 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_both_j8 | dust2, ancient, nuke | A3_J8：joint＋aux-loc＋perception；J8 配方 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 
 
 ## 连续生成
@@ -323,10 +344,15 @@ J5～J8 的同一步数对照、逐图例外及后续执行计划见 [2026-10-12
 | Seen-3 test | Continuous generation | exp32_3maps_joint_constloc1 | dust2, ancient, nuke | J6：joint-only；定位私有 LR 对齐；αloc=1 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_joint_constloc4 | dust2, ancient, nuke | J7：joint-only；定位私有 LR 对齐；αloc=4 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_joint_constloc8 | dust2, ancient, nuke | J8：joint-only；定位私有 LR 对齐；αloc=8 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_joint_constloc12 | dust2, ancient, nuke | J9：joint-only；定位私有 LR 对齐；αloc=12 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_joint_constloc16 | dust2, ancient, nuke | J10：joint-only；定位私有 LR 对齐；αloc=16 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_aux_control | dust2, ancient, nuke | A0：joint-only；aux-loc 关＋perception 关 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_perception | dust2, ancient, nuke | A1：joint＋perception；aux-loc 关 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_auxloc | dust2, ancient, nuke | A2：joint＋aux-loc；perception 关 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_both | dust2, ancient, nuke | A3：joint＋aux-loc＋perception |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_perception_j8 | dust2, ancient, nuke | A1_J8：joint＋perception；aux-loc 关；J8 配方 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_auxloc_j8 | dust2, ancient, nuke | A2_J8：joint＋aux-loc；perception 关；J8 配方 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_both_j8 | dust2, ancient, nuke | A3_J8：joint＋aux-loc＋perception；J8 配方 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 
 
 

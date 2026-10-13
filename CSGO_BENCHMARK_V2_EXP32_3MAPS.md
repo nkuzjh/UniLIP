@@ -1,7 +1,7 @@
 
 ## exp32_3maps 两轮实验与分阶段筛选
 
-- 本节设计原第一轮 7 组、补充联合对照 J5～J8 共 4 组、第二轮 A0～A3 共 4 组，共 15 组。截至 2026-10-12，原第一轮 7 组已核对本地训练及 validation 结果；新增 J5～J8 据用户确认在远端完成训练，2400／5850 的定位和离散生成 validation 指标已同步，训练 checkpoint 仍在同步；第二轮尚无已完成的本地评测记录。具体证据见下方实验记录表和实验结果表。
+- 本节设计原第一轮 7 组、补充联合对照 J5～J10 共 6 组、第二轮 A0～A3 共 4 组，再加 2026-10-14 新配置的 J8 辅助 A1_J8～A3_J8 共 3 组，共 20 个独立运行名。截至 2026-10-13，原第一轮 7 组已核对本地训练及 validation 结果；新增 J5～J10 据用户确认在远端完成训练，2400／5850 的定位和离散生成 validation 指标已同步，训练 checkpoint 仍在同步；第二轮尚无已完成的本地评测记录。具体证据见下方实验记录表和实验结果表。
 - 固定 Seen-3：`de_ancient, de_dust2, de_nuke`，来自定版 Benchmark v2；训练 15,000 个源样本，验证每地图 500 条。架构沿用 exp32 的共享 LLM LoRA＋两个任务 head LoRA，不切换为 exp31 的冻结 LLM／全量 heads。
 - 统一 LoRA `r=32, alpha=64, dropout=0.05`、224 encoder input、短指令、源样本有效 batch 128、最多 50 epoch。单任务每次更新 128 个任务样本；paired joint 每次更新各 128 个定位／生成样本，因此是每任务数据曝光匹配，不是计算量匹配。
 - 初始方案为单 GPU、micro batch 4、GAS 32；本批已完成的第一轮七组实际保存的运行参数均为单 GPU、micro batch 64、GAS 2，源样本有效 batch 仍为 128。实际运行布局以各实验 `experiment_plan.json`／Trainer 状态为准；恢复时不改变卡数或 micro batch，跨服务器可改变具体 GPU 编号。
@@ -26,21 +26,26 @@
 | J6 | `exp32_3maps_joint_constloc1` | 联合 | 1e-4 | 1e-4 | 5e-4 | 恒定 1 | 2400 |
 | J7 | `exp32_3maps_joint_constloc4` | 联合 | 1e-4 | 1e-4 | 5e-4 | 恒定 4 | 2400 |
 | J8 | `exp32_3maps_joint_constloc8` | 联合 | 1e-4 | 1e-4 | 5e-4 | 恒定 8 | 2400 |
+| J9 | `exp32_3maps_joint_constloc12` | 联合 | 1e-4 | 1e-4 | 5e-4 | 恒定 12 | 2400 |
+| J10 | `exp32_3maps_joint_constloc16` | 联合 | 1e-4 | 1e-4 | 5e-4 | 恒定 16 | 2400 |
 
-其余定位 norm/projector LR=5e-4，IO/time MLP LR=1e-4，生成 connector/DiT LoRA LR=1e-4；第一轮和补充组全部关闭辅助 loss。J1 对齐定位私有模块，J2/J3/J4 区分共享学习率与主任务权重。J5 只将 J0 的主任务权重固定为 2，保留 J0 全部定位头 LR；J6～J8 仅改变 J3 的恒定 αloc。当前 scheduler 按参数组初始 LR 的比例衰减；LLM LR=3e-5 的末期值约为 3e-6，不是绝对 1e-5。
+其余定位 norm/projector LR=5e-4，IO/time MLP LR=1e-4，生成 connector/DiT LoRA LR=1e-4；第一轮和补充组全部关闭辅助 loss。J1 对齐定位私有模块，J2/J3/J4 区分共享学习率与主任务权重。J5 只将 J0 的主任务权重固定为 2，保留 J0 全部定位头 LR；J6～J10 仅改变 J3 的恒定 αloc。当前 scheduler 按参数组初始 LR 的比例衰减；LLM LR=3e-5 的末期值约为 3e-6，不是绝对 1e-5。
 
 **第二轮配置矩阵**
 
-原预设共同使用 J4 配方；根据下方新结果，下一轮拟将 `JOINT_BASE` 统一选为 J8。需要训练的辅助组在首次 Training 命令中设置 `--joint-base exp32_3maps_joint_constloc8`；runner 会复制主任务权重、主 schedule、各 LR 和 LoRA 参数，保留本组辅助设置。A1～A3 从原始 UniLIP-1B 和 pi05 权重独立初始化，不加载 J8 训练后的 checkpoint；A0 的有条件复用见下方结果分析。续训会沿用已记录的 joint base，禁止中途更换配方；现有 J4 配方的 A3 计划须另建实验版本，不覆盖旧记录。
+原 A0～A3 四组保持 J4 默认配方、原 YAML、命令与输出目录；2026-10-14 新增三个独立的 J8 辅助运行名 A1_J8～A3_J8。纳入 J9/J10 后，2026-10-13 的同口径评测建议 J8 作为新辅助组的固定主配方，J9 保留为定位优先候选，依据见下方[最新结果分析](#j9-j10-results-20261013)。新组可省略 `--joint-base` 或显式设置 `--joint-base exp32_3maps_joint_constloc8`；runner 固定 J8 配方并拒绝切换其他 base，复制主任务权重、主 schedule、各 LR 与 LoRA 参数，同时保留本组辅助设置。A1_J8～A3_J8 分别从原始 UniLIP-1B 与 pi05 权重独立初始化，不加载 J8 训练后的 checkpoint；续训只恢复自身 checkpoint 且沿用已保存配方。A0 不新增 J8 版本，是否以 J8 作为无辅助对照须先核实初始化、seed、主配方、数据布局、有效 batch、步数和评测口径。
 
-| ID | Experiment | aux-loc | perception | αaux 调度 | αperception 调度 | 默认停止点 |
-|---|---|---|---|---|---|---:|
-| A0 | `exp32_3maps_aux_control` | 关 | 关 | — | — | 3600 |
-| A1 | `exp32_3maps_perception` | 关 | 开 | — | `[0,599,600] -> [0,0,0.1]` | 3600 |
-| A2 | `exp32_3maps_auxloc` | 开 | 关 | `[0,1800] -> [0,2]` | — | 3600 |
-| A3 | `exp32_3maps_both` | 开 | 开 | `[0,1800] -> [0,2]` | `[0,599,600] -> [0,0,0.1]` | 3600 |
+| ID | Experiment | JOINT_BASE | aux-loc | perception | αaux 调度 | αperception 调度 | 默认停止点 |
+|---|---|---|---|---|---|---|---:|
+| A0 | `exp32_3maps_aux_control` | J4（原默认） | 关 | 关 | — | — | 3600 |
+| A1 | `exp32_3maps_perception` | J4（原默认） | 关 | 开 | — | `[0,599,600] -> [0,0,0.1]` | 3600 |
+| A2 | `exp32_3maps_auxloc` | J4（原默认） | 开 | 关 | `[0,1800] -> [0,2]` | — | 3600 |
+| A3 | `exp32_3maps_both` | J4（原默认） | 开 | 开 | `[0,1800] -> [0,2]` | `[0,599,600] -> [0,0,0.1]` | 3600 |
+| A1_J8 | `exp32_3maps_perception_j8` | J8（固定） | 关 | 开 | — | `[0,599,600] -> [0,0,0.1]` | 3600 |
+| A2_J8 | `exp32_3maps_auxloc_j8` | J8（固定） | 开 | 关 | `[0,1800] -> [0,2]` | — | 3600 |
+| A3_J8 | `exp32_3maps_both_j8` | J8（固定） | 开 | 开 | `[0,1800] -> [0,2]` | `[0,599,600] -> [0,0,0.1]` | 3600 |
 
-aux-loc 沿用两候选 combined EM＋uncertainty、共享定位噪声、`exp_sigma(lambda=5)`；perception 沿用 vision-tower SmoothL1 和 detached GT attention。此轮只改变组件开关，暂不加入弱权重或延迟启用组。A0 作为匹配预算对照：若配置、初始化、seed、有效 batch 与评测步数完全一致，可明确引用第一轮 joint 对照的同一步结果；否则独立训练。不要把不同步数的 J* 与辅助组直接比较。
+aux-loc 沿用两候选 combined EM＋uncertainty、共享定位噪声、`exp_sigma(lambda=5)`；perception 沿用 vision-tower SmoothL1 和 detached GT attention。此轮只改变组件开关，暂不加入弱权重或延迟启用组。J8 主配方固定 αloc=8，LLM LoRA／Action LoRA LR=1e-4，Action connector／norm／projector LR=5e-4，IO LR=1e-4；新组三者的辅助开关及调度逐项沿用旧 A1～A3。默认单卡 microbatch=64、GAS=2、源样本有效 batch=128，50 epoch horizon，首停 3600，save_steps=1200、save_total_limit=6。J8 作为新组三者的无辅助参照须核实原始权重初始化、seed=42、配方、数据布局、有效 batch、评测步数及同一推理设置。当前本地 J8 只有 2400／5850 的 validation 指标；3600 主筛选须取得并补评 J8@3600，同步不到则只记录辅助组结果，不拿 J8@5850 跨步数比较。
 
 **最小数据集／全量数据切换**
 
@@ -68,14 +73,14 @@ runner 会将选定后端固化到训练配置，Inference/Metric 默认沿用�
 - 预计完整 50 epoch 约 5900 步，具体以目标服务器 Trainer 的 `max_steps`／`global_step` 为准，不将 5900 写成强制 horizon。保存文件较大，最多保留六个 checkpoint；本方案主要节省训练与评测计算，不通过丢弃优化器来省空间。
 - 第一轮默认到 2400 步（约 20 epoch）；第二轮默认到 3600 步（约 30 epoch），此时 aux-loc 达到完整权重后已有约 1800 步观察窗口。
 - `seen_validation` 是唯一筛选集。每次必须用完整生成采样和相同 seed，查看三图逐图指标与等地图宏平均；单图验证 FID 样本较少，结合 LPIPS/PSNR/Boundary F1 和定位各分量判断，不凭一个波动指标淘汰。保留定位和生成表现互有优势的候选。
-- 第一轮优胜者、L0/G0 与 J0 等必要参照按相同步数继续到 3600、4800，必要时完整 50 epoch；第二轮至少让 A0 和各组件代表到 3600，再保留候选到相同的 4800／最终节点。不要求所有 15 组一律跑满。J5～J8 在 2400 初筛后至少复核 3600，必要时续到实际最终节点；已有 J0～J4 在 2400 与 5850 的排序变化，不以 2400 单点结果直接淘汰。
+- 第一轮优胜者、L0/G0 与 J0 等必要参照按相同步数继续到 3600、4800，必要时完整 50 epoch；第二轮至少让 A0 和各组件代表到 3600，再保留候选到相同的 4800／最终节点。不要求所有 20 组一律跑满。J5～J10 已完成到 5850，并有 2400／5850 的 validation 结果；若补评 3600，须先确认对应 checkpoint 已同步，且不以 2400 单点结果直接淘汰。
 - 离散测试和连续测试仅在配方／checkpoint 通过 validation 选定后报告，不反过来选参数。联合模型两个任务使用同一个 checkpoint。
 
 | 保存节点 | 建议评测 | 是否作淘汰判断 |
 |---|---|---|
 | 1200，约 10 epoch | 可选：优先定位验证；出现异常再补生成验证 | 只发现明显异常，不因辅助尚未成熟就淘汰 |
 | 2400，约 20 epoch | 第一轮及补充组全部有效任务的 validation 推理＋metric | 短程初筛，不单点淘汰 |
-| 3600，约 30 epoch | 第二轮四组、J5～J8 及必要参照的 validation | 第二轮主要筛选点；比较预算需匹配 |
+| 3600，约 30 epoch | 原第二轮四组、新 J8 辅助三组、J8@3600 及必要参照的 validation | 第二轮主要筛选点；比较预算需匹配 |
 | 4800，约 40 epoch | 入围者的 validation | 检查优势是否持续 |
 | 实际最后 step，约 5900 | 仅必要候选完成 50 epoch 后的 validation | 先确定 checkpoint，再做 test 报告 |
 
@@ -112,7 +117,7 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --cuda-devices 0 --execute
 ```
 
-定位推理自带指标与 `summary.json`，无需额外定位 metric 子进程；生成 metric 使用 `benchmark_v2_core`，计算正式主表／附录所需指标，不依赖额外 csgosquare 定位器或 aesthetic checkpoint。连续评测保留原 clip、stride、FVD 配置。输出按 experiment、checkpoint、validation/test 和 inference seed 隔离：
+定位推理自带指标并写入 `loc_metrics.json`，正式定位摘要文件名为 `benchmark_csgo_v2_loc.json`，无需额外定位 metric 子进程；生成 metric 使用 `benchmark_v2_core`，计算正式主表／附录所需指标，不依赖额外 csgosquare 定位器或 aesthetic checkpoint。连续评测保留原 clip、stride、FVD 配置。输出按 experiment、checkpoint、validation/test 和 inference seed 隔离：
 
 ```text
 outputs/csgo_1b/<EXPERIMENT>/checkpoint-<STEP>/
@@ -126,11 +131,11 @@ outputs_eval/benchmark_v2/<EXPERIMENT>/checkpoint-<STEP>/test/seed_42/continuous
 
 ## exp32_3maps 实验记录表
 
-更新日期：2026-10-12。以下按本地已同步的训练状态、运行计划、checkpoint 模型文件和评测 JSON 核对；J5～J8 的远端训练完成由用户确认，本地 checkpoint 仍在同步。原第一轮 7 组均有 `global_step=max_steps=5850`、`epoch=50` 及非空最终模型文件；J6/J7 已同步的根目录 Trainer 状态也记录 `global_step=max_steps=5850`、`epoch=50`，J5/J8 的本地训练状态尚待同步。当前共核对 21 份定位指标和 21 份离散生成汇总。
+更新日期：2026-10-13。以下为同步中的本地快照，按已同步的训练状态、运行计划、checkpoint 模型文件和评测 JSON 核对；J5～J10 的远端训练完成由用户确认。原第一轮 7 组均有 `global_step=max_steps=5850`、`epoch=50` 及非空最终模型文件；J5～J9 的根目录 Trainer 状态也记录 `global_step=max_steps=5850`、`epoch=50`、train batch=64；J10 的本地训练元数据尚未到。当前共核对 25 份定位指标和 25 份离散生成汇总（定位含 L0@3600，生成含 G0@3600）。
 
 已完成的原第一轮七组的运行计划和启动参数均记录为单 GPU、microbatch=64、GAS=2、seed=42，源样本有效 batch=128；Trainer 状态记录的 train batch 也为 64。J4 的[训练日志](logs/csgo_1b/exp32_3maps_joint_sharedlr_constloc/train_20261008_030333/train.log)另有对应启动参数证据。L0、G0、J0 的计划记录了从本实验 checkpoint-2400 续训；表中的 5850 是总步数。
 
-J6/J7 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42、50 epoch，源样本有效 batch=128；根目录 Trainer 状态的 train batch 为 64。J5/J8 的本地运行计划与训练状态仍待同步核对。
+J5～J9 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42、50 epoch，源样本有效 batch=128；根目录 Trainer 状态的 train batch 为 64。J9 计划另记录 save_steps=1200、save_total_limit=6；J10 运行计划与训练状态尚待同步核对。
 
 | ID | Experiment | 训练 | 推理 | Metric 计算 | validation | checkpoint steps | 训练证据 |
 |---|---|---|---|---|---|---|---|
@@ -141,27 +146,32 @@ J6/J7 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42、
 | J2 | `exp32_3maps_joint_sharedlr` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_sharedlr/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_sharedlr/experiment_plan.json) |
 | J3 | `exp32_3maps_joint_constloc` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc/experiment_plan.json) |
 | J4 | `exp32_3maps_joint_sharedlr_constloc` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、4800、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_sharedlr_constloc/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_sharedlr_constloc/experiment_plan.json) |
-| J5 | `exp32_3maps_joint_original_constloc` | 远端完成（用户确认）；本地状态待同步 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型待同步；已评测 2400、5850 | 用户远端完成回报；本地训练证据待同步 |
+| J5 | `exp32_3maps_joint_original_constloc` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_original_constloc/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_original_constloc/experiment_plan.json) |
 | J6 | `exp32_3maps_joint_constloc1` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、5850 模型文件已到；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc1/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc1/experiment_plan.json) |
 | J7 | `exp32_3maps_joint_constloc4` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、5850 模型文件已到；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc4/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc4/experiment_plan.json) |
-| J8 | `exp32_3maps_joint_constloc8` | 远端完成（用户确认）；本地状态待同步 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型待同步；已评测 2400、5850 | 用户远端完成回报；本地训练证据待同步 |
+| J8 | `exp32_3maps_joint_constloc8` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：2400、5850 及根目录；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc8/experiment_plan.json) |
+| J9 | `exp32_3maps_joint_constloc12` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc12/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc12/experiment_plan.json) |
+| J10 | `exp32_3maps_joint_constloc16` | 远端完成（用户确认）；本地训练元数据待同步 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型及元数据待同步；已评测 2400、5850 | 用户远端完成回报；本地训练证据待同步 |
 | A0 | `exp32_3maps_aux_control` | 未发现本地训练记录 | 未发现本地结果 | 未发现本地指标 | 待记录 | 未发现本地 checkpoint；计划首评 3600 | — |
 | A1 | `exp32_3maps_perception` | 未发现本地训练记录 | 未发现本地结果 | 未发现本地指标 | 待记录 | 未发现本地 checkpoint；计划首评 3600 | — |
 | A2 | `exp32_3maps_auxloc` | 未发现本地训练记录 | 未发现本地结果 | 未发现本地指标 | 待记录 | 未发现本地 checkpoint；计划首评 3600 | — |
 | A3 | `exp32_3maps_both` | 仅发现计划／配置；无完成证据 | 未发现本地结果 | 未发现本地指标 | 待记录 | 未发现本地 checkpoint；计划首评 3600 | [计划](outputs/csgo_1b/exp32_3maps_both/experiment_plan.json)／[配置](outputs/csgo_1b/exp32_3maps_both/resolved_config.yaml) |
+| A1_J8 | `exp32_3maps_perception_j8` | 已配置／未启动；50 epoch horizon、首停 3600 | 待评测 | 待评测 | 计划 seen_validation；seed=42；每任务 1,500 条 | 计划首评 3600；无训练 checkpoint | [配置](csgo_configs/exp32_3maps_perception_j8.yaml) |
+| A2_J8 | `exp32_3maps_auxloc_j8` | 已配置／未启动；50 epoch horizon、首停 3600 | 待评测 | 待评测 | 计划 seen_validation；seed=42；每任务 1,500 条 | 计划首评 3600；无训练 checkpoint | [配置](csgo_configs/exp32_3maps_auxloc_j8.yaml) |
+| A3_J8 | `exp32_3maps_both_j8` | 已配置／未启动；50 epoch horizon、首停 3600 | 待评测 | 待评测 | 计划 seen_validation；seed=42；每任务 1,500 条 | 计划首评 3600；无训练 checkpoint | [配置](csgo_configs/exp32_3maps_both_j8.yaml) |
 
-- `checkpoint steps` 列对已同步的节点列出本地非空模型文件；对仍在同步的 J5/J8 则明确标明评测节点与本地模型状态。这不等于每个本地模型节点都已评测。原第一轮七组均有 3600 checkpoint，但当前仅 L0、G0 有 3600 validation 结果；J4 的 4800 checkpoint 也暂无本地评测结果。未列出的保存节点不据此推断从未生成。
+- `checkpoint steps` 列对已同步的节点列出本地模型文件；对仍在同步的 J10 则明确标明评测节点与本地模型状态。J5～J9 所列模型仅核对 safetensors 头部声明的长度与文件大小吻合，未做校验和或 optimizer、scheduler、RNG 等完整恢复文件核查；本地模型存在也不等于每个节点都已评测。原第一轮七组均有 3600 checkpoint，但当前仅 L0、G0 有 3600 validation 结果；J4 的 4800 checkpoint 也暂无本地评测结果。未列出的保存节点不据此推断从未生成。
 - 已同步的定位与离散生成均在三图各 500 条 `seen_validation` 上完成：定位逐样本文件已核对每图 500 条、共 1,500 个唯一 `(map, file_frame)`；生成汇总逐图 `Common_Count=500`、`Coverage_GT=Coverage_Pred=1`。
-- 定位的 21 份 `loc_metrics.json` 已包含逐图指标及 `metrics_macro_map`，但本地未发现对应的独立 `summary.json`；下表直接使用已有宏平均。生成的 21 份 `summary.json` 已存在。J5～J8 的评测结果可核实评测节点，不代表相应模型 checkpoint 已全部同步到本地。
-- J5～J8 已同步的 validation 节点为 2400 和 5850；当前未发现 3600 的本地评测结果，不据此推断该步表现。
-- A3 现有计划使用 J4 配方、单 GPU、microbatch=4、GAS=32、seed=42；缺少 Trainer 状态和 checkpoint，仅登记为配置／计划已存在。A0 尚无独立记录，也未将任何第一轮结果自动复制为 A0；若后续确认复用，须注明来源及相同步数、实际配置。
+- 定位的 25 份 `loc_metrics.json` 已包含逐图指标及 `metrics_macro_map`，下表直接使用已有宏平均；正式定位摘要文件名为 `benchmark_csgo_v2_loc.json`。生成的 25 份 `discrete/summary.json` 已存在。J5～J10 的评测结果可核实评测节点，不代表相应模型 checkpoint 已全部同步到本地。
+- J5～J10 已同步的 validation 节点为 2400 和 5850；当前未发现 3600 的本地评测结果，不据此推断该步表现。
+- A3 现有计划使用 J4 配方、单 GPU、microbatch=4、GAS=32、seed=42；缺少 Trainer 状态和 checkpoint，仅登记为配置／计划已存在。A0 尚无独立记录，也未将任何第一轮结果自动复制为 A0；若后续确认复用，须注明来源及相同步数、实际配置。2026-10-14 新增的 A1_J8～A3_J8 仅完成配置，未启动训练、推理或评测；本段 2026-10-13 训练及指标快照不据此刷新。
 - 尚未发现本轮任何实验的本地 test 定位、test 离散生成或连续生成结果。以下指标均为 validation，不混入历史 exp31 三图测试结果。
 
 ## exp32_3maps 实验结果表
 
 表中数值均取源 JSON 的 `metrics_macro_map`，对 `de_ancient`、`de_dust2`、`de_nuke` 做等地图宏平均，保留三位小数；全部使用 inference seed=42。不同 checkpoint 单独成行，按配置矩阵的实验顺序、各实验内步数递增排列。联合模型同一步数的两个任务对应同一 checkpoint。源文件链接保留完整精度和逐图结果；不将不同步数、不同 split 的指标合并比较。
 
-J5～J8 已同步 2400 和 5850 的定位与离散生成 validation 指标；两任务按相同实验和步数配对。
+J5～J10 已同步 2400 和 5850 的定位与离散生成 validation 指标；两任务按相同实验和步数配对。
 
 ### 定位 validation 结果
 
@@ -189,6 +199,13 @@ J5～J8 已同步 2400 和 5850 的定位与离散生成 validation 指标；两
 | J7 | `exp32_3maps_joint_constloc4` | seen_validation | 5850 | 57.560 | 3.188 | 2.588 | 28.979 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc4/checkpoint-5850/validation/seed_42/loc_metrics.json) |
 | J8 | `exp32_3maps_joint_constloc8` | seen_validation | 2400 | 67.344 | 4.415 | 2.504 | 35.516 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-2400/validation/seed_42/loc_metrics.json) |
 | J8 | `exp32_3maps_joint_constloc8` | seen_validation | 5850 | 47.113 | 2.665 | 2.548 | 25.070 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-5850/validation/seed_42/loc_metrics.json) |
+| J9 | `exp32_3maps_joint_constloc12` | seen_validation | 2400 | 61.070 | 3.985 | 4.047 | 33.191 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc12/checkpoint-2400/validation/seed_42/loc_metrics.json) |
+| J9 | `exp32_3maps_joint_constloc12` | seen_validation | 5850 | 44.067 | 2.907 | 2.421 | 24.334 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc12/checkpoint-5850/validation/seed_42/loc_metrics.json) |
+| J10 | `exp32_3maps_joint_constloc16` | seen_validation | 2400 | 130.298 | 6.710 | 5.462 | 57.129 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc16/checkpoint-2400/validation/seed_42/loc_metrics.json) |
+| J10 | `exp32_3maps_joint_constloc16` | seen_validation | 5850 | 82.350 | 4.247 | 2.769 | 36.257 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc16/checkpoint-5850/validation/seed_42/loc_metrics.json) |
+| A1_J8 | `exp32_3maps_perception_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  | —（已配置／未启动） |
+| A2_J8 | `exp32_3maps_auxloc_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  | —（已配置／未启动） |
+| A3_J8 | `exp32_3maps_both_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  | —（已配置／未启动） |
 
 ### 离散生成 validation 结果
 
@@ -215,6 +232,13 @@ J5～J8 已同步 2400 和 5850 的定位与离散生成 validation 指标；两
 | J7 | `exp32_3maps_joint_constloc4` | seen_validation | 5850 | 14.198 | 0.416 | 0.621 | 0.518 | 62.457 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc4/checkpoint-5850/validation/seed_42/discrete/summary.json) |
 | J8 | `exp32_3maps_joint_constloc8` | seen_validation | 2400 | 13.420 | 0.396 | 0.660 | 0.495 | 65.713 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-2400/validation/seed_42/discrete/summary.json) |
 | J8 | `exp32_3maps_joint_constloc8` | seen_validation | 5850 | 14.222 | 0.416 | 0.623 | 0.517 | 61.569 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-5850/validation/seed_42/discrete/summary.json) |
+| J9 | `exp32_3maps_joint_constloc12` | seen_validation | 2400 | 13.204 | 0.388 | 0.674 | 0.495 | 65.632 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc12/checkpoint-2400/validation/seed_42/discrete/summary.json) |
+| J9 | `exp32_3maps_joint_constloc12` | seen_validation | 5850 | 14.087 | 0.416 | 0.638 | 0.501 | 64.164 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc12/checkpoint-5850/validation/seed_42/discrete/summary.json) |
+| J10 | `exp32_3maps_joint_constloc16` | seen_validation | 2400 | 13.346 | 0.393 | 0.666 | 0.496 | 69.046 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc16/checkpoint-2400/validation/seed_42/discrete/summary.json) |
+| J10 | `exp32_3maps_joint_constloc16` | seen_validation | 5850 | 14.498 | 0.421 | 0.612 | 0.521 | 62.497 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc16/checkpoint-5850/validation/seed_42/discrete/summary.json) |
+| A1_J8 | `exp32_3maps_perception_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  |  | —（已配置／未启动） |
+| A2_J8 | `exp32_3maps_auxloc_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  |  | —（已配置／未启动） |
+| A3_J8 | `exp32_3maps_both_j8` | seen_validation（待评测） | 3600（计划） |  |  |  |  |  | —（已配置／未启动） |
 
 ### 测试集与第二轮结果记录
 
@@ -224,6 +248,59 @@ J5～J8 已同步 2400 和 5850 的定位与离散生成 validation 指标；两
 | 离散生成测试 | seen_discrete_test | 未发现本地结果，暂不填写指标 |
 | 连续生成测试 | seen_continuous | 未发现本地结果，暂不填写 PSNR／SSIM／LPIPS／时序指标／FVD；按方案在 validation 选定 checkpoint 后报告 |
 | A0～A3 辅助 loss 消融 | seen_validation | 尚无完成的本地评测结果；训练与配置状态见上方实验记录表 |
+| A1_J8～A3_J8 辅助 loss 消融 | seen_validation | 2026-10-14 已配置／未启动；首评 3600 待训练与评测，结果留空 |
+
+2026-10-14 当前执行命名：以下 2026-10-12／13 的历史分析中“A1～A3 用 J8”表示当时的研究建议；实际执行请使用独立 `A1_J8`／`A2_J8`／`A3_J8` 运行名。旧 A1～A3 保持 J4 默认，不能通过给旧名字加 `--joint-base J8` 覆盖旧实验目录。新组仅配置完成，暂无可报告的辅助结果。
+
+<a id="j9-j10-results-20261013"></a>
+
+## 2026-10-13：J9/J10 结果分析与下一步计划
+
+当前建议继续以 **J8（αloc=8）作为辅助四格的共同配方**，保留 **J9（αloc=12）作为定位优先候选**，暂不扩大 αloc 扫描。J9 提高了 XY、Pitch、Yaw 精度，但牺牲 Z 和生成表现；J10（αloc=16）在两个已评测节点均出现定位退化。结果支持“主任务配重很重要”，尚不支持“同一联合 checkpoint 全面优于两个单任务模型”或“辅助 loss 已经有效”。
+
+以下均为 `seen_validation`、推理 seed=42、三图等权宏平均、checkpoint-5850；L0 与 G0 是两个独立的单任务模型。来源为上方定位和生成结果表链接的完整 JSON。
+
+| 实验 | XY↓ | Z↓ | Pitch↓ | Yaw↓ | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | FID↓ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| L0 定位单任务 | 48.459 | 2.878 | 2.818 | 26.235 | — | — | — | — | — |
+| G0 生成单任务 | — | — | — | — | 14.402 | 0.418 | 0.613 | 0.520 | 62.252 |
+| J8，αloc=8 | 47.113 | 2.665 | 2.548 | 25.070 | 14.222 | 0.416 | 0.623 | 0.517 | 61.569 |
+| J9，αloc=12 | 44.067 | 2.907 | 2.421 | 24.334 | 14.087 | 0.416 | 0.638 | 0.501 | 64.164 |
+| J10，αloc=16 | 82.350 | 4.247 | 2.769 | 36.257 | 14.498 | 0.421 | 0.612 | 0.521 | 62.497 |
+
+J9 相对 J8 的 XY 降低 **6.47%**，Pitch／Yaw 降低 **4.97%／2.94%**，但 Z 增加 **9.08%**，表中五项生成宏平均全部变差；其中 LPIPS 增加 **2.28%**，Boundary F1 从 `0.516770` 降到 `0.501416`，FID 从 `61.569` 增到 `64.164`。SSIM 的差异在三位小数下被隐藏（`0.416095→0.415637`），结论按完整精度判断。相对 L0，J9 的 XY／Pitch／Yaw 改善 **9.06%／14.11%／7.25%**，Z 略差 **1.03%**；生成五项宏平均均差于 G0。因此 J9 是性能折中的另一候选，不能只因 XY 最低就替换共同基线。
+
+逐图核对也显示收益与代价：J9 对 J8 的 XY 在 ancient／dust2／nuke 均改善（`53.272→47.784 / 50.999→50.272 / 37.069→34.145`），但三图 Z、LPIPS、Boundary F1、FID 均变差。J9 的三图 XY 均优于 L0，但 dust2 优势仅 `50.387→50.272`；dust2 的 Yaw `20.594` 仍差于 L0 的 `20.445`，nuke 的 Z `2.745` 仍差于 L0 的 `2.536`，不能宣称逐图全指标占优。
+
+J10 相对 J8 的定位四项宏平均均退步，XY 增加 **74.79%**，三图 XY 都变差；其生成 PSNR／SSIM／LPIPS／Boundary F1 宏平均略优于 G0，FID 略差（`62.497` 对 `62.252`）。这些小差值来自单次训练与固定推理 seed，尚无显著性或等效性结论。J10 的生成恢复也不能抵消其定位退步。
+
+完整权重扫描呈非单调结果，不能将此前 αloc=1→8 的趋势外推：
+
+| αloc（实验） | XY@2400↓ | XY@5850↓ | LPIPS@5850↓ | FID@5850↓ |
+|---|---:|---:|---:|---:|
+| 1（J6） | 134.598 | 89.705 | 0.603 | 61.294 |
+| 2（J3） | 112.408 | 67.537 | 0.609 | 65.062 |
+| 4（J7） | 88.933 | 57.560 | 0.621 | 62.457 |
+| 8（J8） | 67.344 | 47.113 | 0.623 | 61.569 |
+| 12（J9） | 61.070 | 44.067 | 0.638 | 64.164 |
+| 16（J10） | 130.298 | 82.350 | 0.612 | 62.497 |
+
+αloc=1→12 时，两个节点的 XY 持续改善、5850 的 LPIPS 持续变差；αloc=16 时发生反转。J9@2400 的 Pitch=`4.047`，差于 J8 的 `2.504` 和 L0 的 `3.278`，到 5850 才改善。这进一步说明应比较完整定位分量和两个任务，并保留中后期评测，不能根据 2400 的 XY 单项决定最终方案。
+
+本次还核对了训练证据：J9 的 [实际配置](outputs/csgo_1b/exp32_3maps_joint_constloc12/resolved_config.yaml) 与 J8 仅 αloc 不同，运行计划均为单 GPU／microbatch=64／GAS=2／seed=42／50 epoch；J8 计划记录从自身 3600 恢复，J9 计划无恢复记录。J10 的评测配置与 αloc=16 配方一致，但本地训练计划、Trainer 状态和模型仍待同步，不能用评测配置替代训练证据，也不能把退化直接解释为梯度冲突、爆炸或实现错误。
+
+已有 Trainer 日志提供了一个待查线索：J8 的 [Trainer 状态](outputs/csgo_1b/exp32_3maps_joint_constloc8/trainer_state.json) 中 `grad_norm>1` 为 **232/585 个记录点（39.66%）**，J9 的 [Trainer 状态](outputs/csgo_1b/exp32_3maps_joint_constloc12/trainer_state.json) 为 **454/585（77.61%）**；step>3600 时分别为 **9/225（4.00%）**、**95/225（42.22%）**。这是每 10 步记录的总梯度范数，不能写成所有 optimizer steps 的实际裁剪比例，也不能单凭它推断哪一任务或哪一模块受到抑制。需进一步核对范数记录位置、裁剪阈值与参数范围；若使用全局裁剪，任务间可能通过共同裁剪系数发生耦合，但这仍是待验证解释，尤其尚无 J10 的对应日志。
+
+后续按以下优先级推进；本次只更新结果及方案，未新增配置或启动实验：
+
+1. **先补运行证据和有针对性的诊断。** checkpoint 到齐后核对 J10 与 J8/J9 的真实初始化、配方、有效 batch、恢复记录、LR 和训练曲线；同时核查 J8 的完整恢复轨迹。挑选已有代表性 checkpoint，在相同源样本和随机性下测累积完成、裁剪前的共享 LLM 与两类私有模块的未加权／加权任务梯度、共享梯度余弦及实际裁剪系数；必要时记录 Adam 后的模块更新量。先记录真实有效 batch 的行为，不将历史 12 个小 batch 的诊断外推为全程机制；暂不增加 α>16 或密集 α 网格。
+2. **用 J8 推进既定辅助四格，优先 A1 perception-only，其次 A2 aux-loc-only，最后 A3 两者都有。** 主任务固定 αloc=8，A1 仍按 step600 开启权重 0.1，A2 仍按 `[0,1800]→[0,2]` 调度；先只改变组件开关。A0 仅在初始化、实际配置、训练布局、seed、步数和评测口径全部一致并注明来源时复用 J8；3600 主筛选需要 J8@3600 的匹配结果，缺失时先同步并补评，无法取得则补独立 A0，不能拿 J8@5850 比辅助组@3600。入围后统一比较 5850。各辅助组从原始预训练权重初始化；旧 J4 配方 A3 另建版本保留，不覆盖或中途换配方续训。
+3. **按四格证据再单因素调辅助 loss。** 目标是保住 J8 的定位表现，同时缩小其相对 G0 的 LPIPS／PSNR／Boundary F1 差距；也同时检查 SSIM 与 FID。若 A2 损害生成，先单独降低 αaux；若曲线显示启用阶段产生扰动，再单独测试延迟启用。不要同时降低权重和延迟，也不立即在 J9 上复制整套四格。J9 保留为定位优先参照。固定 αloc=8 的裁剪阈值消融仅在梯度诊断支持、辅助四格仍不能解决问题时考虑，不与 loss 整体缩放同时展开网格。
+4. **在最终研究结论前补稳健性对照。** 对 L0/G0、J8 和最佳辅助组补独立训练 seed，优先形成至少 3 个训练 seed 的匹配比较，推理 seed 固定以区分训练随机性；预算允许再纳入 J9。同时建议额外设置仅把定位单任务 αloc 从 1 改为 8 的独立控制，保留原 L0 正式结果，检查 J8 约 2.78% 的 XY 优势是否只是优化尺度差异。此控制不等价于匹配联合训练总梯度或裁剪轨迹，也不预设它会改善单任务。配方和 checkpoint 由 validation 选定后，再报告离散／连续 test，并迁移到 Seen-10 主实验。当前只匹配每任务数据曝光，不能声称同计算预算优于单任务。
+
+方法参考应服从诊断结果：[GradNorm（ICML 2018）](https://proceedings.mlr.press/v80/chen18a.html)通过调节梯度尺度平衡任务，[PCGrad（NeurIPS 2020）](https://proceedings.neurips.cc/paper_files/paper/2020/hash/3fe78a8acf5fda99de95303940a2420c-Abstract.html)通过梯度投影处理任务干扰。前者可在确认尺度失衡后作为后备，后者需先确认稳定的共享梯度冲突；本项目当前证据不足以优先引入它们，更不能将预期收益写成实验结论。
+
+2026-10-12 的 J5～J8 分析保留为当日历史判断；其中“J5/J8 元数据待同步”为当时状态，现状见本次实验记录表。
 
 <a id="j5-j8-results-20261012"></a>
 

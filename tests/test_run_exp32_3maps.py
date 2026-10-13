@@ -55,14 +55,15 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             [command, "--experiment", experiment, *extra]
         )
 
-    def test_matrix_has_seven_original_six_extra_and_four_second_round_arms(self):
+    def test_matrix_has_seven_original_six_extra_and_seven_second_round_arms(self):
         self.assertEqual(len(RUNNER.ROUND1), 7)
         self.assertEqual(len(RUNNER.ROUND1_EXTRA), 6)
         self.assertEqual(len(RUNNER.ROUND2), 4)
         self.assertEqual(
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 17)
+        self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 20)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
@@ -70,6 +71,61 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             self.assertEqual(config["train_maps"], RUNNER.MAPS)
             self.assertEqual(config["val_maps"], RUNNER.MAPS)
             self.assertEqual(config["test_maps"], RUNNER.MAPS)
+            if experiment.removeprefix(RUNNER.PREFIX) in RUNNER.ROUND2:
+                self.assertEqual(config["exp32_3maps_joint_base"], RUNNER.DEFAULT_BASE)
+            elif experiment.removeprefix(RUNNER.PREFIX) in RUNNER.ROUND2_J8:
+                self.assertEqual(config["exp32_3maps_joint_base"], RUNNER.J8_BASE)
+
+    def test_j8_recipes_preserve_auxiliary_settings_and_fix_joint_base(self):
+        base = RUNNER.read_yaml(RUNNER.config_path(RUNNER.J8_BASE))
+        cases = (("perception_j8", "perception", False, True),
+                 ("auxloc_j8", "auxloc", True, False),
+                 ("both_j8", "both", True, True))
+        for suffix, old_suffix, aux, perception in cases:
+            with self.subTest(suffix=suffix):
+                experiment = RUNNER.PREFIX + suffix
+                raw = RUNNER.read_yaml(RUNNER.config_path(experiment))
+                old = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + old_suffix))
+                expected = copy.deepcopy(old)
+                for key in RUNNER.BASE_KEYS:
+                    expected.pop(key, None)
+                    if key in base:
+                        expected[key] = copy.deepcopy(base[key])
+                expected["exp32_3maps_joint_base"] = RUNNER.J8_BASE
+                self.assertEqual(raw, expected)
+                self.assertEqual(raw["alpha_loc_loss"], 8.0)
+                self.assertEqual(raw["llm_lora_lr"], 1e-4)
+                self.assertEqual(raw["training_stop_after_step"], 3600)
+                self.assertEqual(raw["is_loc_aux_loss"], aux)
+                self.assertEqual(raw["is_aux_loc_combined_em_unc_loss"], aux)
+                self.assertEqual(raw["is_loc_perception_loss"], perception)
+                self.assertEqual(raw.get("alpha_loc_aux_schedule_steps"),
+                                 [0, 1800] if aux else None)
+                self.assertEqual(raw.get("alpha_loc_aux_schedule_values"),
+                                 [0.0, 2.0] if aux else None)
+                self.assertEqual(raw.get("alpha_loc_perception_schedule_steps"),
+                                 [0, 599, 600] if perception else None)
+                self.assertEqual(raw.get("alpha_loc_perception_schedule_values"),
+                                 [0.0, 0.0, 0.1] if perception else None)
+                self.assertTrue(RUNNER.is_round2(experiment))
+                for mode in ("minimal", "full"):
+                    args = self.args("train", experiment, "--asset-mode", mode)
+                    resolved = RUNNER.resolve_config(args, for_training=True)
+                    expected_resolved = {**raw, "model_name_or_path": "UniLIP-1B"}
+                    if mode == "full":
+                        expected_resolved["benchmark_v2_asset_manifest"] = None
+                    self.assertEqual(resolved, expected_resolved)
+                    RUNNER.validate_config(resolved)
+                    commands, metadata, output = RUNNER.training_plan(args, resolved)
+                    self.assertEqual(metadata["joint_base"], RUNNER.J8_BASE)
+                    self.assertEqual(metadata["runtime"]["epochs"], 50)
+                    self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 2)
+                    self.assertEqual(option(commands[0], "--num_train_epochs"), "50")
+                    self.assertNotIn("--resume_from_checkpoint", commands[0])
+                    self.assertFalse(output.exists())
+                for key in ("resume_ckpt_path", "finetune_init_ckpt_path",
+                            "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path"):
+                    self.assertFalse(raw.get(key))
 
     def test_extra_joint_arms_change_only_constant_alpha(self):
         cases = (
@@ -316,6 +372,100 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
         _, resumed_metadata, _ = RUNNER.training_plan(resume, resumed_config)
         self.assertEqual(resumed_metadata["fingerprint"], metadata["fingerprint"])
         self.assertEqual(resumed_metadata["resume_checkpoint"], RUNNER.relative(checkpoint))
+
+    def test_j8_base_identity_survives_resume_and_rejects_mismatches(self):
+        experiment = RUNNER.PREFIX + "both_j8"
+        old_base = RUNNER.DEFAULT_BASE
+        with self.assertRaisesRegex(ValueError, "J8 experiment requires"):
+            RUNNER.resolve_config(
+                self.args("train", experiment, "--joint-base", old_base), for_training=True
+            )
+        first = self.args("train", experiment)
+        initial = RUNNER.resolve_config(first, for_training=True)
+        _, metadata, output = RUNNER.training_plan(first, initial)
+        output.mkdir(parents=True)
+        snapshot = output / "resolved_config.yaml"
+        snapshot.write_text(yaml.safe_dump(initial))
+        (output / "experiment_plan.json").write_text(json.dumps(metadata))
+        checkpoint = output / "checkpoint-3600"
+        checkpoint.mkdir()
+        (checkpoint / "trainer_state.json").write_text(
+            json.dumps({"global_step": 3600, "max_steps": 10000})
+        )
+        for name in ("training_args.bin", "model.safetensors", "rng_state_0.pth",
+                     "optimizer.pt", "scheduler.pt"):
+            (checkpoint / name).touch()
+        resume = self.args("train", experiment, "--resume", "--stop-after-step", "4800")
+        resumed = RUNNER.resolve_config(resume, for_training=True)
+        self.assertEqual(resumed["exp32_3maps_joint_base"], RUNNER.J8_BASE)
+        _, resumed_metadata, _ = RUNNER.training_plan(resume, resumed)
+        self.assertEqual(resumed_metadata["fingerprint"], metadata["fingerprint"])
+        self.assertEqual(resumed_metadata["resume_checkpoint"], RUNNER.relative(checkpoint))
+        explicit = self.args("train", experiment, "--resume", "--stop-after-step", "4800",
+                             "--joint-base", RUNNER.J8_BASE)
+        self.assertEqual(RUNNER.resolve_config(explicit, for_training=True), resumed)
+        source_path = RUNNER.config_path(experiment)
+        source = RUNNER.read_yaml(source_path)
+        source["exp32_3maps_joint_base"] = old_base
+        source_path.write_text(yaml.safe_dump(source))
+        evaluation = self.args("infer", experiment, "--checkpoint-step", "3600")
+        self.assertEqual(RUNNER.resolve_config(evaluation, for_training=False)[
+            "exp32_3maps_joint_base"], RUNNER.J8_BASE)
+        with self.assertRaisesRegex(ValueError, "J8 experiment requires"):
+            RUNNER.resolve_config(first, for_training=True)
+        source["exp32_3maps_joint_base"] = RUNNER.J8_BASE
+        source_path.write_text(yaml.safe_dump(source))
+        full = self.args("train", experiment, "--resume", "--stop-after-step", "0")
+        full_config = RUNNER.resolve_config(full, for_training=True)
+        self.assertNotIn("training_stop_after_step", full_config)
+        self.assertEqual(RUNNER.fingerprint(full_config, metadata["runtime"]),
+                         metadata["fingerprint"])
+        saved_wrong = copy.deepcopy(initial)
+        saved_wrong["exp32_3maps_joint_base"] = old_base
+        snapshot.write_text(yaml.safe_dump(saved_wrong))
+        for command, extra in (("train", ("--resume",)),
+                               ("infer", ("--checkpoint-step", "3600")),
+                               ("metrics", ("--checkpoint-step", "3600"))):
+            with self.subTest(command=command), self.assertRaisesRegex(
+                ValueError, "Saved J8 training recipe"
+            ):
+                RUNNER.resolve_config(self.args(command, experiment, *extra),
+                                      for_training=command == "train")
+
+    def test_j8_inference_routes_both_tasks_and_isolates_outputs(self):
+        for suffix in RUNNER.ROUND2_J8:
+            experiment = RUNNER.PREFIX + suffix
+            config = RUNNER.resolve_config(self.args("train", experiment), for_training=True)
+            for split, expected_splits in (("validation", ["seen_validation", "seen_validation"]),
+                                           ("test", ["seen_discrete_test", "seen_continuous"])):
+                with self.subTest(experiment=experiment, split=split):
+                    args = self.args("infer", experiment, "--checkpoint-step", "3600",
+                                     "--split", split)
+                    commands, path, evaluation = RUNNER.evaluation_plan(args, config)
+                    self.assertEqual(len(commands), 2 if split == "validation" else 3)
+                    self.assertEqual(commands[0][1], "eval_csgo_loc.py")
+                    self.assertTrue(all(item[1] == "eval_csgo.py" for item in commands[1:]))
+                    self.assertEqual([option(item, "--benchmark_v2_split")
+                                      for item in commands[1:]],
+                                     expected_splits[1:] if split == "validation"
+                                     else expected_splits)
+                    self.assertIn(f"/{experiment}/checkpoint-3600/{split}/", str(path))
+                    self.assertIn(f"/{experiment}/checkpoint-3600/{split}/",
+                                  option(commands[0], "--output_dir"))
+                    self.assertEqual(len({option(item, "--output_dir") for item in commands}),
+                                     len(commands))
+                    self.assertEqual(evaluation["exp32_3maps_joint_base"], RUNNER.J8_BASE)
+                    for task, count in (("localization", 1),
+                                        ("generation", 1 if split == "validation" else 2)):
+                        selected = self.args("infer", experiment, "--checkpoint-step", "3600",
+                                             "--split", split, "--task", task)
+                        selected_commands, _, _ = RUNNER.evaluation_plan(selected, config)
+                        self.assertEqual(len(selected_commands), count)
+                        self.assertEqual([option(item, "--output_dir")
+                                          for item in selected_commands],
+                                         [option(item, "--output_dir") for item in commands
+                                          if (item[1] == "eval_csgo_loc.py")
+                                          == (task == "localization")])
 
     def test_full_backend_flows_from_training_snapshot_to_infer_and_metrics(self):
         experiment = "exp32_3maps_joint_original"

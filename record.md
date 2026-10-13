@@ -7236,11 +7236,12 @@ export EXPERIMENT=exp32_3maps_joint_constloc12
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
 ```
 <!-- 一次性执行以下任务： -->
+<!-- python scripts/run_exp32_3maps.py train --master-port 29647 --experiment exp32_3maps_joint_constloc12 --stop-after-step 0 --cuda-devices "$DEVICES" --execute -->
 <!-- nohup bash -c '
 set -euo pipefail
 export DEVICES=1
 
-python scripts/run_exp32_3maps.py train --master-port 29646 --resume --experiment exp32_3maps_joint_constloc12 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
 
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc12 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc12 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
@@ -7274,11 +7275,12 @@ export EXPERIMENT=exp32_3maps_joint_constloc16
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
 ```
 <!-- 一次性执行以下任务： -->
+<!-- python scripts/run_exp32_3maps.py train --master-port 29648 --experiment exp32_3maps_joint_constloc16 --stop-after-step 0 --cuda-devices "$DEVICES" --execute -->
 <!-- nohup bash -c '
 set -euo pipefail
 export DEVICES=2
 
-python scripts/run_exp32_3maps.py train --master-port 29646 --resume --experiment exp32_3maps_joint_constloc16 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
 
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc16 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc16 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
@@ -7286,3 +7288,123 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constlo
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_joint_constloc16 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constloc16 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
 ' >>fst_outs/exp32_3maps_joint_constloc16.nohup.out 2>&1 < /dev/null & -->
+
+
+## exp32_3maps J8 辅助消融 A1_J8～A3_J8
+
+以下三个实验均为已配置／未启动、待评测，独立于原 J4 默认的 A1～A3；保留旧实验的 YAML、输出和命令。固定主配方 `exp32_3maps_joint_constloc8`：αloc=8，LLM LoRA 与 Action LoRA LR=1e-4，Action connector／norm／projector LR=5e-4，IO LR=1e-4。新组从原始 UniLIP-1B／pi05 权重各自初始化，不从 J8 训练 checkpoint 续训。均使用 seed=42、单卡默认 microbatch=64／GAS=2／有效 batch=128、50 epoch horizon、首停 3600、save_steps=1200／save_total_limit=6。`--joint-base` 可省略（YAML 已固定 J8）或显式使用 `--joint-base exp32_3maps_joint_constloc8`；不能切换其他 base。默认数据后端为 minimal；首次训练改用全量后端时追加 `--asset-mode full --data-dir /path/to/preprocessed_data`，续训及推理／metric 使用相同后端与路径布局。服务器上的模型权重路径如不同，在首次训练传 `--model-path`／`--pi05-path`，恢复时保持一致。
+
+J8 仅在同 seed、主配方、原始权重初始化、数据布局、有效 batch、评测步数和推理设置核实一致时作为无辅助对照。本地 J8 目前仅有 2400／5850 的 validation 指标；3600 主筛选须先取得相应 checkpoint 并补评 J8@3600，不用 J8@5850 跨步比较。以下命令是待运行示例，尚未执行。
+
+
+### exp32_3maps_perception_j8
+- A1_J8：仅开启 perception；权重 `[0,599,600] -> [0,0,0.1]`，沿用旧 A1 设置。
+- 配置：`csgo_configs/exp32_3maps_perception_j8.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception_j8
+python scripts/run_exp32_3maps.py train --master-port 29649 --experiment "$EXPERIMENT" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception_j8
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception_j8
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=1
+
+python scripts/run_exp32_3maps.py train --master-port 29649 --experiment exp32_3maps_perception_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_perception_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_perception_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_perception_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_perception_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' >>fst_outs/exp32_3maps_perception_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+### exp32_3maps_auxloc_j8
+- A2_J8：仅开启两候选 combined aux-loc；权重 `[0,1800] -> [0,2]`，沿用旧 A2 设置。
+- 配置：`csgo_configs/exp32_3maps_auxloc_j8.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc_j8
+python scripts/run_exp32_3maps.py train --master-port 29650 --experiment "$EXPERIMENT" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc_j8
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc_j8
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=2
+
+python scripts/run_exp32_3maps.py train --master-port 29649 --experiment exp32_3maps_auxloc_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_auxloc_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_auxloc_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_auxloc_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_auxloc_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' >>fst_outs/exp32_3maps_auxloc_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+### exp32_3maps_both_j8
+- A3_J8：同时开启 aux-loc 与 perception；两项权重分别沿用旧 A2／A1 调度。
+- 配置：`csgo_configs/exp32_3maps_both_j8.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+
+**Training**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both_j8
+python scripts/run_exp32_3maps.py train --master-port 29651 --experiment "$EXPERIMENT" --stop-after-step 3600 --cuda-devices 0 --execute
+```
+**Inference**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both_j8
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+**Metric**
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both_j8
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split validation --cuda-devices 0 --execute
+```
+<!-- 一次性执行以下任务： -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=1
+
+python scripts/run_exp32_3maps.py train --master-port 29650 --experiment exp32_3maps_both_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
+
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
+' >>fst_outs/exp32_3maps_both_j8.nohup.out 2>&1 < /dev/null & -->
+
+
