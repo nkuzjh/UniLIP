@@ -63,7 +63,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
         self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 20)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 24)
+        self.assertEqual(len(RUNNER.STAGE2_J8), 4)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
@@ -578,6 +579,178 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                     self.args("infer", experiment, "--checkpoint-step", "2400", *options),
                     for_training=False,
                 )
+
+
+    def test_stage2_four_arms_share_j8_initialization_and_fixed_schedule(self):
+        base = RUNNER.read_yaml(RUNNER.config_path(RUNNER.J8_BASE))
+        for suffix, aux, perception in (("control", False, False),
+                                        ("perception", False, True),
+                                        ("auxloc", True, False),
+                                        ("both", True, True)):
+            experiment = f"exp32_3maps_stage2_{suffix}_j8"
+            for asset_mode in ("minimal", "full"):
+                with self.subTest(experiment=experiment, asset_mode=asset_mode):
+                    args = self.args("train", experiment, "--asset-mode", asset_mode)
+                    config = RUNNER.resolve_config(args, for_training=True)
+                    RUNNER.validate_config(config)
+                    self.assertEqual(config["finetune_init_ckpt_path"], RUNNER.STAGE2_SOURCE)
+                    self.assertTrue(config["finetune_init_strict"])
+                    self.assertEqual(config["alpha_loc_loss"], 8)
+                    self.assertEqual(config["training_stop_after_step"], 1200)
+                    self.assertEqual(config["is_loc_aux_loss"], aux)
+                    self.assertEqual(config["is_loc_perception_loss"], perception)
+                    self.assertEqual(config.get("alpha_loc_aux_schedule_steps"), [0, 120] if aux else None)
+                    self.assertEqual(config.get("alpha_loc_perception_schedule_steps"), [0, 120] if perception else None)
+                    self.assertEqual(config.get("alpha_loc_aux_schedule_values"), [0.0, 2.0] if aux else None)
+                    self.assertEqual(config.get("alpha_loc_perception_schedule_values"), [0.0, 0.1] if perception else None)
+                    self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": 0.1})
+                    self.assertEqual(config["warmup_ratio"], 0.0)
+                    if asset_mode == "full":
+                        self.assertIsNone(config["benchmark_v2_asset_manifest"])
+                    else:
+                        self.assertIsNotNone(config["benchmark_v2_asset_manifest"])
+                    for key in RUNNER.STAGE2_LR_KEYS:
+                        self.assertEqual(config[key], float(base[key]) * 0.2)
+                    commands, metadata, _ = RUNNER.training_plan(args, config)
+                    command = commands[0]
+                    for key, value in (("--max_steps", "1800"), ("--warmup_steps", "60"),
+                                       ("--save_steps", "300"), ("--save_total_limit", "6"),
+                                       ("--save_only_model", "False"), ("--optim", "adamw_torch"),
+                                       ("--adam_beta1", "0.9"), ("--adam_beta2", "0.999"),
+                                       ("--adam_epsilon", "1e-8"), ("--max_grad_norm", "1.0")):
+                        self.assertEqual(option(command, key), value)
+                        self.assertEqual(command.count(key), 1)
+                    self.assertEqual(metadata["runtime"]["max_steps"], 1800)
+                    self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 2)
+                    self.assertIsNone(metadata["source_checkpoint"])
+
+    def test_stage2_dry_run_does_not_require_source_or_write(self):
+        for suffix in RUNNER.STAGE2_J8:
+            for command, extra in (("train", ()),
+                                   ("infer", ("--checkpoint-step", "1200")),
+                                   ("metrics", ("--checkpoint-step", "1200"))):
+                experiment = RUNNER.PREFIX + suffix
+                with self.subTest(experiment=experiment, command=command), patch.object(
+                    RUNNER.subprocess, "run"
+                ) as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main([command, "--experiment", experiment, *extra]), 0)
+                    run.assert_not_called()
+        self.assertFalse((self.root / "outputs").exists())
+        self.assertFalse((self.root / "outputs_eval").exists())
+
+    def test_stage2_rejects_joint_base_changes_and_stop_beyond_horizon(self):
+        experiment = "exp32_3maps_stage2_both_j8"
+        with self.assertRaisesRegex(ValueError, "--joint-base"):
+            RUNNER.resolve_config(self.args("train", experiment, "--joint-base", RUNNER.J8_BASE),
+                                  for_training=True)
+        config = RUNNER.resolve_config(self.args("train", experiment, "--stop-after-step", "1801"),
+                                       for_training=True)
+        with self.assertRaisesRegex(ValueError, "horizon"):
+            RUNNER.validate_config(config)
+        config["finetune_init_ckpt_path"] = "another.safetensors"
+        with self.assertRaisesRegex(ValueError, "J8 checkpoint"):
+            RUNNER.validate_config(config)
+
+    def test_stage2_resume_uses_own_full_checkpoint_without_j8_source(self):
+        experiment = "exp32_3maps_stage2_both_j8"
+        args = self.args("train", experiment)
+        config = RUNNER.resolve_config(args, for_training=True)
+        _, metadata, output = RUNNER.training_plan(args, config)
+        output.mkdir(parents=True)
+        metadata["source_checkpoint"] = {"path": RUNNER.STAGE2_SOURCE, "sha256": "abc",
+                                         "size_bytes": 100, "step": 5850}
+        (output / "experiment_plan.json").write_text(json.dumps(metadata))
+        (output / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        checkpoint = output / "checkpoint-1200"
+        checkpoint.mkdir()
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": 1200,
+                                                                    "max_steps": 1800}))
+        for name in ("training_args.bin", "model.safetensors", "rng_state_0.pth",
+                     "optimizer.pt", "scheduler.pt"):
+            (checkpoint / name).touch()
+        resumed = self.args("train", experiment, "--resume", "--stop-after-step", "1800")
+        resumed_config = RUNNER.resolve_config(resumed, for_training=True)
+        commands, resumed_meta, _ = RUNNER.training_plan(resumed, resumed_config)
+        self.assertEqual(resumed_meta["source_checkpoint"], metadata["source_checkpoint"])
+        self.assertEqual(resumed_meta["resume_checkpoint"], RUNNER.relative(checkpoint))
+        self.assertEqual(resumed_meta["fingerprint"], metadata["fingerprint"])
+        self.assertNotIn("--resume_from_checkpoint", commands[0])
+        self.assertFalse(RUNNER.repo_path(RUNNER.STAGE2_SOURCE).exists())
+        with self.assertRaisesRegex(ValueError, "later stop"):
+            RUNNER.training_plan(self.args("train", experiment, "--resume"), config)
+        changed = copy.deepcopy(resumed_config)
+        changed["learning_rate"] *= 2
+        with self.assertRaisesRegex(ValueError, "recipe/layout changed"):
+            RUNNER.training_plan(resumed, changed)
+        missing_source = copy.deepcopy(metadata)
+        missing_source.pop("source_checkpoint")
+        (output / "experiment_plan.json").write_text(json.dumps(missing_source))
+        with self.assertRaisesRegex(ValueError, "source provenance"):
+            RUNNER.training_plan(resumed, resumed_config)
+
+    def test_stage2_snapshot_evaluation_routes_both_tasks(self):
+        experiment = "exp32_3maps_stage2_control_j8"
+        config = RUNNER.resolve_config(self.args("train", experiment, "--asset-mode", "full",
+                                                "--data-dir", "/dataset/full"), for_training=True)
+        out = self.root / "outputs/csgo_1b" / experiment
+        out.mkdir(parents=True)
+        (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        for command in ("infer", "metrics"):
+            for split, count in (("validation", 2), ("test", 3)):
+                args = self.args(command, experiment, "--checkpoint-step", "1200", "--split", split)
+                saved = RUNNER.resolve_config(args, for_training=False)
+                planned, _, eval_config = RUNNER.evaluation_plan(args, saved)
+                if command == "infer":
+                    self.assertEqual(len(planned), count)
+                    self.assertEqual(planned[0][1], "eval_csgo_loc.py")
+                    self.assertTrue(all(item[1] == "eval_csgo.py" for item in planned[1:]))
+                self.assertIn("checkpoint-1200", eval_config["ckpt_path"])
+                self.assertIsNone(eval_config["benchmark_v2_asset_manifest"])
+                self.assertEqual(eval_config["data_dir"], "/dataset/full")
+                self.assertFalse(eval_config["is_loc_aux_loss"])
+                self.assertFalse(eval_config["is_loc_perception_loss"])
+
+    def test_stage2_source_preflight_validates_provenance_on_small_fixture(self):
+        import torch
+        from safetensors.torch import save_file
+
+        source = RUNNER.repo_path(RUNNER.STAGE2_SOURCE)
+        source.parent.mkdir(parents=True)
+        base = RUNNER.read_yaml(RUNNER.config_path(RUNNER.J8_BASE))
+        base["model_name_or_path"] = "UniLIP-1B"
+        (source.parent.parent / "resolved_config.yaml").write_text(yaml.safe_dump(base))
+        (source.parent / "trainer_state.json").write_text(
+            json.dumps({"global_step": 5850, "max_steps": 5850})
+        )
+        state = {f"x.lora_{index}": torch.zeros(1) for index in range(1124)}
+        state.update({
+            f"{prefix}layer.lora_A.weight": torch.zeros(1)
+            for prefix in ("language_model.model.", "model.llm_connector.",
+                           "model.dit.", "model.action_dit.")
+        })
+        state.update({f"x.weight_{index}": torch.zeros(1) for index in range(1697)})
+        state.update({key: torch.zeros(1) for key in (
+            "language_model.lm_head.weight", "model.action_dit_norm.weight",
+            "model.action_dit_connector.0.bias", "model.action_dit_projector.0.bias",
+            "multi_modal_projector.0.bias")})
+        save_file(state, str(source))
+        config = RUNNER.resolve_config(self.args("train", "exp32_3maps_stage2_control_j8"),
+                                       for_training=True)
+        provenance = RUNNER.preflight_stage2_source(config)
+        self.assertEqual(provenance["step"], 5850)
+        self.assertEqual(provenance["tensor_count"], 2830)
+        self.assertEqual(provenance["lora_tensor_count"], 1128)
+        self.assertEqual(len(provenance["sha256"]), 64)
+        config["action_dim"] = 6
+        with self.assertRaisesRegex(ValueError, "action_dim"):
+            RUNNER.preflight_stage2_source(config)
+        config["action_dim"] = 5
+        (source.parent / "trainer_state.json").write_text(
+            json.dumps({"global_step": 5700, "max_steps": 5850})
+        )
+        with self.assertRaisesRegex(ValueError, "complete"):
+            RUNNER.preflight_stage2_source(config)
+
 
 
 if __name__ == "__main__":

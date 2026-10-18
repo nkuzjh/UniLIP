@@ -644,7 +644,7 @@ def load_partial_checkpoint(model, ckpt_path: str, prefixes: List[str], tag: str
     logging.info(msg)
 
 
-def load_finetune_init_checkpoint(model, ckpt_path: str):
+def load_finetune_init_checkpoint(model, ckpt_path: str, *, strict: bool = False):
     """Load model weights only after the complete model/LoRA structure exists."""
     src_state_dict = smart_matching_state_dict_keys(
         load_checkpoint_state_dict(ckpt_path),
@@ -678,10 +678,19 @@ def load_finetune_init_checkpoint(model, ckpt_path: str):
             f"a partial initialization. Showing up to 10: {shape_mismatch_keys[:10]}"
         )
 
+    def tensor_alias_identity(tensor):
+        return (tensor.data_ptr(), tuple(tensor.shape), tuple(tensor.stride()),
+                tensor.dtype, tensor.device)
+
+    loaded_aliases = (
+        {tensor_alias_identity(target_state_dict[name]) for name in loadable_state_dict}
+        if strict else set()
+    )
     missing_trainable_keys = [
         name
         for name, parameter in model.named_parameters()
         if parameter.requires_grad and name not in loadable_state_dict
+        and (not strict or tensor_alias_identity(target_state_dict[name]) not in loaded_aliases)
     ]
     if missing_trainable_keys:
         raise RuntimeError(
@@ -690,6 +699,22 @@ def load_finetune_init_checkpoint(model, ckpt_path: str):
             f"{len(missing_trainable_keys)}. Showing up to 20: "
             f"{missing_trainable_keys[:20]}"
         )
+
+    if strict:
+        # safetensors may omit a tied tensor name. Only an identical view
+        # shares the values populated by loading the saved name.
+        missing_non_alias = [
+            name for name, value in target_state_dict.items()
+            if name not in loadable_state_dict
+            and tensor_alias_identity(value) not in loaded_aliases
+        ]
+        if unexpected_keys or missing_non_alias:
+            raise RuntimeError(
+                f"Strict finetune init {ckpt_path} has unexpected="
+                f"{len(unexpected_keys)}, missing_non_alias={len(missing_non_alias)}; "
+                f"unexpected sample={unexpected_keys[:10]}, "
+                f"missing sample={missing_non_alias[:10]}"
+            )
 
     msg = model.load_state_dict(loadable_state_dict, strict=False)
     missing_keys = list(msg.missing_keys)
@@ -3425,7 +3450,10 @@ def train(attn_implementation=None):
         else None
     )
     if has_finetune_init and finetune_destination_checkpoint is None:
-        load_finetune_init_checkpoint(model, finetune_init_ckpt_path)
+        load_finetune_init_checkpoint(
+            model, finetune_init_ckpt_path,
+            strict=csgo_config.get("finetune_init_strict", False) is True,
+        )
         logging.info(
             "Finetune init loaded model weights only; optimizer/trainer state is not loaded "
             "and output_dir remains unchanged: %s",

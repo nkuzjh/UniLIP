@@ -2,8 +2,9 @@
 """Plan or explicitly execute one exp32 Seen-3 experiment stage.
 
 No arguments launch a queue. Commands are printed only unless --execute is set.
-Training stops are prefixes of the unchanged 50-epoch schedule; --resume uses
-the same output directory and restores the complete Trainer checkpoint.
+The original two rounds retain their 50-epoch schedule. J8 stage-two arms
+use a new 1800-step schedule, initialized from stage-one model weights only.
+--resume restores the complete checkpoint in the selected arm's output directory.
 """
 from __future__ import annotations
 
@@ -28,11 +29,27 @@ ROUND1_EXTRA = ("joint_original_constloc", "joint_constloc1",
                 "joint_constloc12", "joint_constloc16")
 ROUND2 = ("aux_control", "perception", "auxloc", "both")
 ROUND2_J8 = ("perception_j8", "auxloc_j8", "both_j8")
-EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8)
+STAGE2_J8 = ("stage2_control_j8", "stage2_perception_j8",
+             "stage2_auxloc_j8", "stage2_both_j8")
+EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8)
 JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:] + ROUND1_EXTRA)
 MAPS = ["de_ancient", "de_dust2", "de_nuke"]
 DEFAULT_BASE = PREFIX + "joint_sharedlr_constloc"
 J8_BASE = PREFIX + "joint_constloc8"
+STAGE2_SOURCE = ("outputs/csgo_1b/exp32_3maps_joint_constloc8/"
+                 "checkpoint-5850/model.safetensors")
+STAGE2_MAX_STEPS = 1800
+STAGE2_SAVE_STEPS = 300
+STAGE2_WARMUP_STEPS = 60
+STAGE2_LR_PEAKS = {
+    "learning_rate": 2e-5, "mm_projector_lr": 2e-5,
+    "action_dit_projector_lr": 1e-4, "action_dit_lr": 2e-5,
+    "llm_lora_lr": 2e-5, "llm_connector_lora_lr": 2e-5,
+    "gen_dit_lora_lr": 2e-5, "action_dit_lora_lr": 2e-5,
+    "action_dit_connector_lr": 1e-4, "action_dit_norm_lr": 1e-4,
+    "action_io_mlp_lr": 2e-5,
+}
+STAGE2_LR_KEYS = tuple(STAGE2_LR_PEAKS)
 BASE_KEYS = (
     "alpha_loc_loss", "alpha_loc_schedule_steps", "alpha_loc_schedule_values",
     "llm_lora_lr", "llm_connector_lora_lr", "gen_dit_lora_lr",
@@ -69,6 +86,10 @@ def config_path(experiment: str) -> Path:
     return ROOT / "csgo_configs" / f"{experiment}.yaml"
 
 
+def is_stage2(experiment: str) -> bool:
+    return experiment.removeprefix(PREFIX) in STAGE2_J8
+
+
 def is_round2(experiment: str) -> bool:
     return experiment.removeprefix(PREFIX) in ROUND2 + ROUND2_J8
 
@@ -77,6 +98,11 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
     source = read_yaml(config_path(args.experiment))
     out = ROOT / "outputs/csgo_1b" / args.experiment
     snapshot = out / "resolved_config.yaml"
+    if is_stage2(args.experiment):
+        if args.joint_base:
+            raise ValueError("Stage 2 uses fixed J8 weights; --joint-base is not allowed")
+        if source.get("exp32_3maps_experiment") != args.experiment:
+            raise ValueError("Stage 2 recipe identity differs from experiment")
     if args.experiment.removeprefix(PREFIX) in ROUND2_J8:
         if args.joint_base and args.joint_base != J8_BASE:
             raise ValueError("J8 experiment requires --joint-base exp32_3maps_joint_constloc8")
@@ -89,6 +115,8 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
     # Evaluation follows the recipe actually trained, even after editing a YAML.
     if not for_training and snapshot.is_file():
         source = read_yaml(snapshot)
+        if is_stage2(args.experiment) and source.get("exp32_3maps_experiment") != args.experiment:
+            raise ValueError("Saved stage 2 recipe belongs to another experiment")
         trained = copy.deepcopy(source)
     elif is_round2(args.experiment):
         saved_base = None
@@ -152,7 +180,9 @@ def validate_config(config: dict) -> None:
         raise ValueError("All arms must use microbatch-mean GAS normalization")
     if config.get("is_lora") is not True or config.get("llm_train_mode") != "lora":
         raise ValueError("Expected the exp32 LoRA architecture")
-    if any(config.get(key) for key in (
+    if is_stage2(config.get("exp32_3maps_experiment", "")):
+        validate_stage2_config(config)
+    elif any(config.get(key) for key in (
         "resume_ckpt_path", "finetune_init_ckpt_path", "base_init_ckpt_path",
         "gen_init_ckpt_path", "loc_init_ckpt_path",
     )):
@@ -164,6 +194,42 @@ def validate_config(config: dict) -> None:
         if steps is not None and (len(steps) != len(values) or not steps
                                   or steps != sorted(set(steps))):
             raise ValueError(f"Invalid {stem} schedule")
+
+
+def validate_stage2_config(config: dict) -> None:
+    if config.get("finetune_init_ckpt_path") != STAGE2_SOURCE or config.get("finetune_init_strict") is not True:
+        raise ValueError("Stage 2 must strictly initialize from J8 checkpoint-5850")
+    if any(config.get(key) for key in ("resume_ckpt_path", "base_init_ckpt_path",
+                                       "gen_init_ckpt_path", "loc_init_ckpt_path")):
+        raise ValueError("Stage 2 cannot use another initialization or J8 resume")
+    if config.get("alpha_loc_loss") != 8 or any(config.get(key) for key in
+        ("alpha_loc_schedule_steps", "alpha_loc_schedule_values")):
+        raise ValueError("Stage 2 requires constant alpha_loc=8")
+    if config.get("exp32_3maps_joint_base") != J8_BASE:
+        raise ValueError("Stage 2 requires J8 identity")
+    if config.get("training_stop_after_step", STAGE2_MAX_STEPS) > STAGE2_MAX_STEPS:
+        raise ValueError("Stage 2 stop exceeds its 1800-step horizon")
+    for key, expected_lr in STAGE2_LR_PEAKS.items():
+        if config.get(key) != expected_lr:
+            raise ValueError(f"Stage 2 {key} must match its fixed LR peak")
+    for key, expected in (("weight_decay", 0), ("warmup_ratio", 0),
+                          ("lr_scheduler_type", "cosine_with_min_lr"),
+                          ("lr_scheduler_kwargs", {"min_lr_rate": 0.1})):
+        if config.get(key) != expected:
+            raise ValueError(f"Invalid stage 2 {key}")
+    suffix = config["exp32_3maps_experiment"].removeprefix(PREFIX)
+    aux = suffix in ("stage2_auxloc_j8", "stage2_both_j8")
+    perception = suffix in ("stage2_perception_j8", "stage2_both_j8")
+    expected = (("is_loc_aux_loss", aux),
+                ("is_aux_loc_combined_em_unc_loss", aux),
+                ("is_loc_perception_loss", perception),
+                ("alpha_loc_aux_schedule_steps", [0, 120] if aux else None),
+                ("alpha_loc_aux_schedule_values", [0.0, 2.0] if aux else None),
+                ("alpha_loc_perception_schedule_steps", [0, 120] if perception else None),
+                ("alpha_loc_perception_schedule_values", [0.0, 0.1] if perception else None))
+    for key, value in expected:
+        if config.get(key) != value:
+            raise ValueError(f"Invalid stage 2 {key}")
 
 
 def fingerprint(config: dict, runtime: dict) -> str:
@@ -222,9 +288,22 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     runtime = dict(epochs=50, world_size=len(devices), micro_batch=args.micro_batch,
                    gradient_accumulation_steps=accumulation, seed=args.seed,
                    save_steps=1200, save_total_limit=6, report_to=args.report_to)
+    if is_stage2(args.experiment):
+        runtime.update(max_steps=STAGE2_MAX_STEPS, warmup_steps=STAGE2_WARMUP_STEPS,
+                       save_steps=STAGE2_SAVE_STEPS, optimizer="adamw_torch",
+                       adam_beta1=0.9, adam_beta2=0.999, adam_epsilon=1e-8,
+                       max_grad_norm=1.0)
     out = ROOT / "outputs/csgo_1b" / args.experiment
     identity = fingerprint(config, runtime)
     checkpoint = check_resume(out, identity, args.resume)
+    previous = json.loads((out / "experiment_plan.json").read_text()) if checkpoint else None
+    if checkpoint and is_stage2(args.experiment):
+        source = previous.get("source_checkpoint")
+        if not isinstance(source, dict) or source.get("path") != STAGE2_SOURCE or not source.get("sha256"):
+            raise ValueError("Stage 2 resume lacks the saved J8 source provenance")
+        state = json.loads((checkpoint / "trainer_state.json").read_text())
+        if state.get("max_steps") != STAGE2_MAX_STEPS:
+            raise ValueError("Stage 2 resume checkpoint has a different horizon")
     stop = config.get("training_stop_after_step")
     if checkpoint and stop is not None:
         state = json.loads((checkpoint / "trainer_state.json").read_text())
@@ -241,7 +320,8 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
            "--output_dir", relative(out), "--num_train_epochs", "50",
            "--per_device_train_batch_size", str(args.micro_batch),
            "--per_device_eval_batch_size", "1", "--gradient_accumulation_steps", str(accumulation),
-           "--eval_strategy", "no", "--save_strategy", "steps", "--save_steps", "1200",
+           "--eval_strategy", "no", "--save_strategy", "steps", "--save_steps",
+           str(STAGE2_SAVE_STEPS if is_stage2(args.experiment) else 1200),
            "--save_total_limit", "6", "--save_only_model", "False", "--seed", str(args.seed),
            "--learning_rate", str(config["learning_rate"]), "--weight_decay", str(config["weight_decay"]),
            "--warmup_ratio", str(config["warmup_ratio"]), "--lr_scheduler_type", config["lr_scheduler_type"],
@@ -253,10 +333,75 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
                            fix_vit=config["fix_vit"], fix_llm=config["fix_llm"],
                            fix_connect=config["fix_connect"], fix_dit=config["fix_dit"]).items():
         cmd.extend(["--" + key, str(value)])
+    if is_stage2(args.experiment):
+        cmd.extend(["--max_steps", str(STAGE2_MAX_STEPS),
+                    "--warmup_steps", str(STAGE2_WARMUP_STEPS),
+                    "--optim", "adamw_torch", "--adam_beta1", "0.9",
+                    "--adam_beta2", "0.999", "--adam_epsilon", "1e-8",
+                    "--max_grad_norm", "1.0"])
     metadata = dict(experiment=args.experiment, fingerprint=identity, runtime=runtime,
                     joint_base=config.get("exp32_3maps_joint_base"), command=cmd,
                     resume_checkpoint=relative(checkpoint) if checkpoint else None)
+    if is_stage2(args.experiment):
+        metadata["source_checkpoint"] = previous["source_checkpoint"] if checkpoint else None
     return [cmd], metadata, out
+
+
+def preflight_stage2_source(config: dict) -> dict:
+    """Read-only provenance and format checks before any stage 2 launch writes."""
+    from safetensors import safe_open
+
+    source = repo_path(STAGE2_SOURCE)
+    if not source.is_file():
+        raise ValueError(f"Missing J8 source model: {source}")
+    source_dir = source.parent
+    source_recipe = read_yaml(source_dir.parent / "resolved_config.yaml")
+    state_path = source_dir / "trainer_state.json"
+    if not state_path.is_file():
+        state_path = source_dir.parent / "trainer_state.json"
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    if state.get("global_step") != 5850 or state.get("max_steps") != 5850:
+        raise ValueError("J8 source is not complete at checkpoint-5850")
+    checks = ("train_maps", "val_maps", "test_maps", "benchmark_v2_split",
+              "alpha_loc_loss", "action_dim", "is_multi_task", "is_multi_task_balanced",
+              "task_mix_ratio", "csgo_loss_per_microbatch_mean", "is_lora",
+              "llm_train_mode", "lora_r", "lora_alpha", "lora_dropout",
+              "enable_language_model_lora", "enable_gen_head_lora", "enable_loc_head_lora",
+              "fix_vit", "fix_llm", "fix_connect", "fix_dit",
+              "is_action_dit_projector", "use_pi05_action_dit")
+    for key in checks:
+        if config.get(key) != source_recipe.get(key):
+            raise ValueError(f"J8 source recipe differs in {key}")
+    if source_recipe.get("model_name_or_path") != "UniLIP-1B" or source_recipe.get("mllm_hf_path") != "OpenGVLab/InternVL3-1B-hf":
+        raise ValueError("Unexpected J8 source model identity")
+    with safe_open(source, framework="pt", device="cpu") as handle:
+        keys = list(handle.keys())
+        lora = sum("lora_" in key for key in keys)
+        if len(keys) != 2830 or lora != 1128:
+            raise ValueError(f"Incomplete J8 source tensor header: total={len(keys)}, lora={lora}")
+        required_keys = ("language_model.lm_head.weight",
+                         "model.action_dit_norm.weight",
+                         "model.action_dit_connector.0.bias",
+                         "model.action_dit_projector.0.bias",
+                         "multi_modal_projector.0.bias")
+        required_lora_prefixes = ("language_model.model.", "model.llm_connector.",
+                                  "model.dit.", "model.action_dit.")
+        if any(key not in keys for key in required_keys) or any(
+            not any(key.startswith(prefix) and "lora_" in key for key in keys)
+            for prefix in required_lora_prefixes
+        ):
+            raise ValueError("J8 source tensor header lacks required model/LoRA modules")
+        if any(not handle.get_slice(key).get_shape() for key in keys):
+            raise ValueError("J8 source contains a scalar/empty tensor header")
+    digest = hashlib.sha256()
+    with source.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+            digest.update(chunk)
+    return {"path": STAGE2_SOURCE, "sha256": digest.hexdigest(),
+            "size_bytes": source.stat().st_size, "step": 5850,
+            "tensor_count": len(keys), "lora_tensor_count": lora,
+            "recipe_path": relative(source_dir.parent / "resolved_config.yaml"),
+            "state_path": relative(state_path)}
 
 
 def ground_truth_dir(config: dict, map_name: str) -> str:
@@ -387,6 +532,14 @@ def main(argv: list[str] | None = None) -> int:
         validate_config(config)
         if args.command == "train":
             commands, metadata, out = training_plan(args, config)
+            if args.execute and is_stage2(args.experiment) and not args.resume:
+                source = preflight_stage2_source(config)
+                previous_plan = out / "experiment_plan.json"
+                if previous_plan.is_file():
+                    old_source = json.loads(previous_plan.read_text()).get("source_checkpoint")
+                    if old_source != source:
+                        raise ValueError("J8 source changed since the previous stage 2 plan")
+                metadata["source_checkpoint"] = source
             writes = [(out / "resolved_config.yaml", yaml.safe_dump(config, sort_keys=False)),
                       (out / "experiment_plan.json", json.dumps(metadata, indent=2) + "\n")]
         else:

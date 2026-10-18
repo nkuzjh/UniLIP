@@ -7,7 +7,7 @@
 |---|---|
 | `exp31` | Seen-10 full-head 实验；`exp31` 为 joint 联合训练且开启 aux_loc_loss 与 perception_loss，`exp31_1` 为关闭 aux 与 perception 的 loss-only control，`exp31_gen`/`exp31_loc` 为单任务实验，评测  Seen-10 与CrossMap zero-shot。 |
 | `exp31*_3maps` | Benchmark v2 Seen-3 full-head 联合训练低成本 `2 x 2` loss ablation；固定使用 `de_ancient`、`de_dust2`、`de_nuke`，分别覆盖 aux+perception、joint-only、aux-only、perception-only，只评测 Seen-3。 |
-| `exp32_3maps_*` | Benchmark v2 Seen-3 LoRA 两轮消融；固定同三图，第一轮 L0/G0/J0～J4 共 7 组、补充联合对照 J5～J10 共 6 组比较单任务、联合训练、学习率和 αloc，第二轮原 A0～A3 共 4 组（J4）及 2026-10-14 新增 A1_J8～A3_J8 共 3 组（J8）比较辅助 loss；使用 seen_validation 分阶段筛选，选定 checkpoint 后报告 Seen-3 离散／连续测试。 |
+| `exp32_3maps_*` | Benchmark v2 Seen-3 LoRA 消融，共 24 个独立运行名；固定同三图，原两轮的第一轮 L0/G0/J0～J4 共 7 组、补充联合对照 J5～J10 共 6 组比较单任务、联合训练、学习率和 αloc，第二轮原 A0～A3 共 4 组（J4）及 2026-10-14 新增 A1_J8～A3_J8 共 3 组（J8）比较从原始权重训练的辅助 loss；另有从 J8@5850 权重开始的独立 Stage 2 四组 S0_J8～S3_J8（无辅助对照＋三个辅助主组）。使用 seen_validation 分阶段筛选，选定 checkpoint 后报告 Seen-3 离散／连续测试。 |
 | `exp32` | Seen-10 LoRA 实验；`exp32` 为 joint 联合训练且关闭 aux_loc_loss 与 perception_loss，`exp32_gen`/`exp32_loc` 为单任务实验，评测  Seen-10 与CrossMap zero-shot。 |
 | `exp33`/`exp34` | 分别从 matching 的 `exp31*`/`exp32*` 初始化，在 CrossMap-4 四图共同 support 上进行非 map-specific 的 `100/50/20/10-shot` 适配；包含 joint、gen、loc 路由，并评测 CrossMap 与 Seen-10 retention。 |
 | `exp35`/`exp36` | 分别从 matching 的 `exp31*`/`exp32*` 初始化，对 `cs_office`、`de_golden`、`de_palacio`、`de_vertigo` 四张 CrossMap 地图分别进行 map-specific 适配；shot 为 `100/50/20/10`，包含 joint、gen、loc 路由，评测 CrossMap 与 Seen-10 retention。 |
@@ -17,7 +17,7 @@
 
 ## 2. 实验归属与表格对应
 
-- **ablation 3 maps实验进度表及ablation 3 maps表**：`exp31_3maps`、`exp31_1_3maps`、`exp31_2_3maps`、`exp31_3_3maps`，以及 `exp32_3maps_*` 原第一轮 7 组、补充联合对照 J5～J10 共 6 组、原第二轮 A0～A3 共 4 组和新增 A1_J8～A3_J8 共 3 组，合计 20 个独立运行名。
+- **ablation 3 maps实验进度表及ablation 3 maps表**：`exp31_3maps`、`exp31_1_3maps`、`exp31_2_3maps`、`exp31_3_3maps`，以及 `exp32_3maps_*` 原第一轮 7 组、补充联合对照 J5～J10 共 6 组、原第二轮 A0～A3 共 4 组、A1_J8～A3_J8 共 3 组及独立 Stage 2 S0_J8～S3_J8 共 4 组，合计 24 个独立运行名。
 - **主线进度表及主表**：`exp31*`、`exp32*`、`exp35*`、`exp36_1*`。
 - **暂停支线进度表及补充表格**：`exp33*`、`exp34*`、`exp36*`。
 
@@ -67,10 +67,18 @@
 | `exp32_3maps_auxloc_j8`（A2_J8） | 已配置／未启动；J8 固定配方，首停 3600，50 epochs horizon | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各 1,500 条；seed=42 | 计划：3600（首评）；入围后续训至匹配步数 |
 | `exp32_3maps_both_j8`（A3_J8） | 已配置／未启动；J8 固定配方，首停 3600，50 epochs horizon | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各 1,500 条；seed=42 | 计划：3600（首评）；入围后续训至匹配步数 |
 
+| `exp32_3maps_stage2_control_j8`（S0_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
+| `exp32_3maps_stage2_perception_j8`（S1_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
+| `exp32_3maps_stage2_auxloc_j8`（S2_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
+| `exp32_3maps_stage2_both_j8`（S3_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
+
 上述 exp32_3maps 第一轮结果的源 JSON 与运行证据见 [两轮实验记录和结果表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。J5～J10 的远端训练完成由用户确认；截至 2026-10-13 的同步快照，J5～J9 的本地 Trainer 状态均为 50 epochs、5850/5850、train batch=64，运行计划均记录单 GPU、microbatch=64、GAS=2、seed=42。J5 本地模型 1200／2400／3600／4800／5850 均已到；J6/J7/J8 本地模型 2400／5850 已到；J9 本地模型 1200／2400／3600／4800／5850 已到；上述各组均有根目录模型。J10 的本地训练元数据及模型尚待同步。J5～J9 所列模型仅核对 safetensors 头部声明的长度与文件大小吻合，未做校验和或 optimizer、scheduler、RNG 等完整恢复文件核查；快照随同步变化。其余计划节点不代表已生成 checkpoint；不依据命令示例推断实际运行进度。`validation` 列记录筛选集及验证状态，`checkpoint steps` 列按各行说明区分本地已有与计划评测节点；旧 exp31 行的两列暂记为 `—`，原有进度保留。所有新实验每 1200 optimizer steps 保存完整 checkpoint，1200 为可选异常检查点；第一轮默认在 2400 停止，第二轮默认在 3600 停止，随后手动推理、计算指标及决定是否续训。最终 step 以实际训练为准，约 5900 仅为估计。设置与命令见 [record.md](record.md) 和 [两轮实验说明](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
 
 
 2026-10-14 新配置仅登记 A1_J8～A3_J8 的计划状态，以上 2026-10-13 训练及评测证据快照日期保持不变。原 A0～A3 名称、J4 默认配方及已存在输出不覆盖。J8 为新组三者的无辅助参照，仅在原始初始化、seed、主配方、数据布局、有效 batch 和评测步数一致时使用；本地 J8 现有结果仅为 2400／5850，3600 对照需补评 J8@3600。
+
+
+2026-10-17 新增独立 J8 Stage 2 四组 S0_J8～S3_J8，累计 24 个 exp32_3maps 运行名。S1～S3 为三个辅助主组；S0 是匹配更新数、主任务曝光与 LR 的无辅助归因对照，辅助计算的 GPU 时间不匹配。四组均从 J8@5850 模型权重开始，Stage 2 使用新 optimizer／local step 0／1800 步调度；旧 A1_J8～A3_J8 仍为从原始权重独立训练的 50 epoch 配方。四组尚未启动，结果待填；既有 J8@5850 可作初始化参照，辅助效应以 S0 同 local checkpoint 比较，报告两阶段总成本时计入共享的 J8 Stage 1 成本。详见 [Stage 2 设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md)及 [执行命令](record.md)。
 
 ## 主线实验进度表
 
@@ -285,6 +293,19 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-3 validation | Localization | exp32_3maps_both_j8 | dust2, ancient, nuke | A3_J8：joint＋aux-loc＋perception；J8 配方 |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 
 
+| Seen-3 validation | Localization | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Localization | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+
 ## 离散生成
 
 | Setting | Task | Experiment | Shot/map | ablation | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | validation | checkpoint steps |
@@ -325,6 +346,19 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-3 validation | Discrete generation | exp32_3maps_auxloc_j8 | dust2, ancient, nuke | A2_J8：joint＋aux-loc；perception 关；J8 配方 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 | Seen-3 validation | Discrete generation | exp32_3maps_both_j8 | dust2, ancient, nuke | A3_J8：joint＋aux-loc＋perception；J8 配方 |  |  |  |  |  | seen_validation（待评测） | 3600（计划） |
 
+
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_control_j8 | dust2, ancient, nuke | S0_J8：joint；Stage 2 无辅助等预算对照 |  |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_perception_j8 | dust2, ancient, nuke | S1_J8：joint＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_auxloc_j8 | dust2, ancient, nuke | S2_J8：joint＋aux-loc；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 600（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
+| Seen-3 validation | Discrete generation | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
 
 ## 连续生成
 

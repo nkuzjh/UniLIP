@@ -56,8 +56,8 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | Setting | Task | Method | Experiment | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|
 | Seen-10 | Localization | X-VLA | `X-VLA-fair-frozen-vl` | -- | -- | -- | 65.969 | 4.162 | 2.908 | 27.748 |
-| Seen-10 | Localization | RDT | `--` | -- | -- | -- | 43.251 | 2.783 | 2.306 | 20.779 |
-| Seen-10 | Localization | OpenVLA-OFT | `--` | -- | -- | -- | -- | -- | -- | -- |
+| Seen-10 | Localization | RDT | `csgo_aligned_aug_v1` | -- | -- | -- | 43.251 | 2.783 | 2.306 | 20.779 |
+| Seen-10 | Localization | OpenVLA-OFT | `csgo_seen10_aligned_v2` | -- | -- | -- | 36.956 | 2.264 | 1.146 | 17.137 |
 | Seen-10 | Localization | $\pi_{0.5}^{\dagger}$ | `pi0.5_exp32_loc_main_frozen_vl` | -- | -- | -- | 53.542 | 3.453 | 1.251 | 25.450 |
 | Seen-10 | Localization | pose prediction baseline | `exp32_loc` | -- | -- | -- | 48.961 | 3.006 | 2.970 | 26.047 |
 | Seen-10 | Localization | multi-task baseline | `exp32` | -- | -- | -- | 123.194 | 6.38 | 3.352 | 55.449 |
