@@ -55,6 +55,20 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             [command, "--experiment", experiment, *extra]
         )
 
+    def final_fixture(self, experiment: str, step: int, *, root_state: bool = True) -> Path:
+        config = RUNNER.resolve_config(self.args("train", experiment), for_training=True)
+        out = self.root / "outputs/csgo_1b" / experiment
+        out.mkdir(parents=True)
+        (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        checkpoint = out / f"checkpoint-{step}"
+        checkpoint.mkdir()
+        state = json.dumps({"global_step": step, "max_steps": step})
+        (checkpoint / "trainer_state.json").write_text(state)
+        (checkpoint / "model.safetensors").touch()
+        if root_state:
+            (out / "trainer_state.json").write_text(state)
+        return checkpoint
+
     def test_matrix_has_seven_original_six_extra_and_seven_second_round_arms(self):
         self.assertEqual(len(RUNNER.ROUND1), 7)
         self.assertEqual(len(RUNNER.ROUND1_EXTRA), 6)
@@ -63,8 +77,9 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
         self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 24)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 33)
         self.assertEqual(len(RUNNER.STAGE2_J8), 4)
+        self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 9)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
@@ -175,7 +190,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                     ("test", "seen_discrete_test"),
                 ):
                     with self.subTest(experiment=experiment, command=command, split=split):
-                        args = self.args(command, experiment, "--checkpoint-step", "2400",
+                        step = (1200 if split == "validation" else 1800) if experiment in RUNNER.STAGE2_NEW_EXPERIMENTS else 2400
+                        args = self.args(command, experiment, "--checkpoint-step", str(step),
                                          "--split", split)
                         _, _, evaluation = RUNNER.evaluation_plan(args, train)
                         self.assertIs(evaluation[flag], True)
@@ -183,7 +199,7 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                         self.assertEqual(evaluation["seed"], 42)
                         self.assertEqual(
                             evaluation["ckpt_path"],
-                            f"outputs/csgo_1b/{experiment}/checkpoint-2400/model.safetensors",
+                            f"outputs/csgo_1b/{experiment}/checkpoint-{step}/model.safetensors",
                         )
                         self.assertNotIn(flag, train)
             self.assertEqual(train, original)
@@ -265,6 +281,97 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                 run.assert_not_called()
         self.assertFalse((self.root / "outputs").exists())
         self.assertFalse((self.root / "outputs_eval").exists())
+
+    def test_final_test_plans_reuse_numeric_paths_and_active_task_routing(self):
+        cases = (
+            ("loc_single", 5850, 1, 0),
+            ("gen_single", 5850, 2, 8),
+            ("joint_constloc8", 5850, 3, 8),
+            ("perception_j8", 5900, 3, 8),
+            ("stage2_control_j8", 1800, 3, 8),
+        )
+        for suffix, step, infer_count, metric_count in cases:
+            experiment = RUNNER.PREFIX + suffix
+            self.final_fixture(experiment, step)
+            for command, count in (("infer", infer_count), ("metrics", metric_count)):
+                with self.subTest(experiment=experiment, command=command):
+                    args = self.args(command, experiment, "--checkpoint-step", "final",
+                                     "--split", "test", "--task", "all")
+                    config = RUNNER.resolve_config(args, for_training=False)
+                    commands, path, evaluated = RUNNER.evaluation_plan(args, config)
+                    self.assertEqual(len(commands), count)
+                    self.assertIn(f"/{experiment}/checkpoint-{step}/test/", str(path))
+                    self.assertEqual(evaluated["ckpt_path"],
+                                     f"outputs/csgo_1b/{experiment}/checkpoint-{step}/model.safetensors")
+                    self.assertNotIn("checkpoint-final", str(path))
+                    numeric = self.args(command, experiment, "--checkpoint-step", str(step),
+                                        "--split", "test", "--task", "all")
+                    self.assertEqual(RUNNER.evaluation_plan(numeric, config),
+                                     (commands, path, evaluated))
+                    if command == "infer":
+                        self.assertEqual([item[1] for item in commands],
+                                         (["eval_csgo_loc.py"] if suffix == "loc_single" else
+                                          ["eval_csgo.py", "eval_csgo.py"] if suffix == "gen_single" else
+                                          ["eval_csgo_loc.py", "eval_csgo.py", "eval_csgo.py"]))
+                        self.assertEqual([option(item, "--benchmark_v2_split") for item in commands],
+                                         (["seen_discrete_test"] if suffix == "loc_single" else
+                                          ["seen_discrete_test", "seen_continuous"] if suffix == "gen_single" else
+                                          ["seen_discrete_test", "seen_discrete_test", "seen_continuous"]))
+
+    def test_final_requires_completed_matching_state_and_model(self):
+        experiment = RUNNER.PREFIX + "joint_constloc8"
+        checkpoint = self.final_fixture(experiment, 5850)
+        out = checkpoint.parent
+        args = self.args("infer", experiment, "--checkpoint-step", "final", "--split", "test")
+        config = RUNNER.resolve_config(args, for_training=False)
+        self.assertEqual(RUNNER.final_checkpoint_step(experiment), 5850)
+        (out / "trainer_state.json").write_text(json.dumps({"global_step": 4800, "max_steps": 5850}))
+        with self.assertRaisesRegex(ValueError, "not reached max_steps"):
+            RUNNER.evaluation_plan(args, config)
+        (out / "trainer_state.json").write_text(json.dumps({"global_step": 5850, "max_steps": 5850}))
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": 4800, "max_steps": 5850}))
+        with self.assertRaisesRegex(ValueError, "step/global_step/max_steps differ"):
+            RUNNER.evaluation_plan(args, config)
+        (checkpoint / "trainer_state.json").unlink()
+        with self.assertRaisesRegex(ValueError, "missing Trainer state"):
+            RUNNER.evaluation_plan(args, config)
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": 5850, "max_steps": 5850}))
+        (checkpoint / "model.safetensors").unlink()
+        with self.assertRaisesRegex(ValueError, "missing model weights"):
+            RUNNER.evaluation_plan(args, config)
+        (checkpoint / "model.safetensors").touch()
+        (out / "resolved_config.yaml").unlink()
+        with self.assertRaisesRegex(ValueError, "saved training recipe"):
+            RUNNER.evaluation_plan(args, config)
+
+    def test_final_without_root_state_requires_checkpoint_state(self):
+        experiment = RUNNER.PREFIX + "stage2_both_j8"
+        checkpoint = self.final_fixture(experiment, 1800, root_state=False)
+        self.assertEqual(RUNNER.final_checkpoint_step(experiment), 1800)
+        (checkpoint / "trainer_state.json").unlink()
+        with self.assertRaisesRegex(ValueError, "Expected one completed final checkpoint"):
+            RUNNER.final_checkpoint_step(experiment)
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": 1200, "max_steps": 1800}))
+        with self.assertRaisesRegex(ValueError, "directory and Trainer step differ"):
+            RUNNER.final_checkpoint_step(experiment)
+
+    def test_final_dry_run_and_command_scope(self):
+        experiment = RUNNER.PREFIX + "joint_constloc8"
+        self.final_fixture(experiment, 5850)
+        self.assertEqual(self.args("infer", experiment, "--checkpoint-step", "5850").checkpoint_step, 5850)
+        for command in ("infer", "metrics"):
+            with self.subTest(command=command), patch.object(RUNNER.subprocess, "run") as run, \
+                    patch("sys.stdout", io.StringIO()) as output:
+                self.assertEqual(RUNNER.main([command, "--experiment", experiment,
+                                              "--checkpoint-step", "final", "--split", "test"]), 0)
+                self.assertIn("checkpoint-5850/test", output.getvalue())
+                run.assert_not_called()
+        self.assertFalse((self.root / "outputs_eval").exists())
+        for command in ("train", "validate"):
+            with self.subTest(command=command), patch("sys.stderr", io.StringIO()) as error:
+                self.assertEqual(RUNNER.main([command, "--experiment", experiment,
+                                              "--checkpoint-step", "final"]), 1)
+                self.assertIn("applies only to infer/metrics", error.getvalue())
 
     def test_staged_train_keeps_full_horizon_and_resumable_state(self):
         for step in (2400, 3600):
@@ -751,6 +858,152 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "complete"):
             RUNNER.preflight_stage2_source(config)
 
+
+
+    def test_new_stage2_recipes_change_only_the_declared_factor(self):
+        expected_names = (
+            "P1_S1_J8", "U1_S2_J8", "B1_S3_J8", "P2_S1_J8", "P3_S1_J8",
+            "U2_S2_J8", "U3_S2_J8", "P4_S1_J8", "U4_S2_J8",
+        )
+        self.assertEqual(tuple(RUNNER.STAGE2_NEW_ARMS), expected_names)
+        for suffix, (base_suffix, changes, removed) in RUNNER.STAGE2_NEW_ARMS.items():
+            with self.subTest(suffix=suffix):
+                experiment = RUNNER.PREFIX + suffix
+                self.assertTrue(RUNNER.is_stage2(experiment))
+                base = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + base_suffix))
+                expected = copy.deepcopy(base)
+                expected.update(changes)
+                for key in removed:
+                    expected.pop(key)
+                expected["exp32_3maps_experiment"] = experiment
+                expected["training_stop_after_step"] = 1800
+                raw = RUNNER.read_yaml(RUNNER.config_path(experiment))
+                self.assertEqual(raw, expected)
+                config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
+                RUNNER.validate_config(config)
+                self.assertEqual(config["benchmark_v2_asset_manifest"],
+                                 "data/csgo_benchmark_v2/minimal_dataset_report.json")
+                self.assertEqual(config["finetune_init_ckpt_path"], RUNNER.STAGE2_SOURCE)
+                for stem in ("alpha_loc_aux", "alpha_loc_perception"):
+                    steps = config.get(stem + "_schedule_steps")
+                    if steps is None:
+                        self.assertNotIn(stem + "_schedule_values", config)
+                    else:
+                        self.assertEqual(steps, [0, 120])
+                        self.assertEqual(config[stem + "_schedule_values"][0], 0.0)
+                if suffix in ("P1_S1_J8", "B1_S3_J8"):
+                    self.assertEqual(config["alpha_loc_perception_loss"], 0.1)
+                    self.assertNotIn("alpha_loc_perception_schedule_steps", config)
+                if suffix in ("U1_S2_J8", "B1_S3_J8"):
+                    self.assertEqual(config["alpha_loc_aux_loss"], 2.0)
+                    self.assertNotIn("alpha_loc_aux_schedule_steps", config)
+                commands, metadata, output = RUNNER.training_plan(self.args(experiment=experiment), config)
+                self.assertEqual(metadata["runtime"]["save_steps"], 600)
+                self.assertEqual(metadata["runtime"]["max_steps"], 1800)
+                self.assertEqual(metadata["runtime"]["warmup_steps"], 60)
+                self.assertEqual(metadata["runtime"]["save_total_limit"], 6)
+                self.assertEqual(option(commands[0], "--save_steps"), "600")
+                self.assertEqual(option(commands[0], "--max_steps"), "1800")
+                self.assertEqual(option(commands[0], "--optim"), "adamw_torch")
+                self.assertFalse(output.exists())
+                mutated = copy.deepcopy(config)
+                mutated["aux_loc_combined_candidate_tau"] = 0.123
+                with self.assertRaisesRegex(ValueError, "single-factor"):
+                    RUNNER.validate_config(mutated)
+
+    def test_new_stage2_evaluation_steps_and_existing_task_routing(self):
+        for suffix in RUNNER.STAGE2_NEW_ARMS:
+            experiment = RUNNER.PREFIX + suffix
+            for mode in ("minimal", "full"):
+                with self.subTest(experiment=experiment, mode=mode):
+                    extra = ("--asset-mode", "full", "--data-dir", "/dataset/full") if mode == "full" else ()
+                    config = RUNNER.resolve_config(self.args("train", experiment, *extra), for_training=True)
+                    RUNNER.validate_config(config)
+                    for split, step, infer_count, metric_count in (
+                        ("validation", 1200, 2, 4), ("validation", 1800, 2, 4),
+                        ("test", 1800, 3, 8),
+                    ):
+                        for command, count in (("infer", infer_count), ("metrics", metric_count)):
+                            args = self.args(command, experiment, "--split", split,
+                                             "--checkpoint-step", str(step))
+                            commands, path, evaluated = RUNNER.evaluation_plan(args, config)
+                            self.assertEqual(len(commands), count)
+                            self.assertIn(f"/{experiment}/checkpoint-{step}/{split}/", str(path))
+                            self.assertEqual(evaluated["ckpt_path"],
+                                             f"outputs/csgo_1b/{experiment}/checkpoint-{step}/model.safetensors")
+                            self.assertFalse(evaluated["is_loc_aux_loss"])
+                            self.assertFalse(evaluated["is_loc_perception_loss"])
+                            if command == "infer":
+                                self.assertEqual(commands[0][1], "eval_csgo_loc.py")
+                                self.assertTrue(all(item[1] == "eval_csgo.py" for item in commands[1:]))
+                                expected_splits = (["seen_validation", "seen_validation"] if split == "validation"
+                                                   else ["seen_discrete_test", "seen_discrete_test", "seen_continuous"])
+                                self.assertEqual([option(item, "--benchmark_v2_split") for item in commands],
+                                                 expected_splits)
+                            else:
+                                metric_scripts = [item[1] for item in commands]
+                                self.assertEqual(metric_scripts.count("benchmark_csgo_v1.py"), 3)
+                                self.assertEqual(metric_scripts.count("benchmark_csgo_v1_conti.py"),
+                                                 3 if split == "test" else 0)
+                                if mode == "full":
+                                    self.assertEqual(option(commands[0], "--gt"),
+                                                     "/dataset/full/de_ancient/imgs")
+                                    self.assertNotIn("--benchmark_v2_asset_manifest", commands[0])
+                                else:
+                                    self.assertIn("--benchmark_v2_asset_manifest", commands[0])
+                    for split, step in (("validation", 600), ("test", 1200), ("test", 600)):
+                        with self.assertRaisesRegex(ValueError, "requires checkpoint step"):
+                            RUNNER.evaluation_plan(
+                                self.args("infer", experiment, "--split", split,
+                                          "--checkpoint-step", str(step)), config)
+
+    def test_new_stage2_resume_keeps_own_recipe_and_legacy_save_interval(self):
+        experiment = RUNNER.PREFIX + "P2_S1_J8"
+        first = self.args("train", experiment, "--stop-after-step", "1200")
+        config = RUNNER.resolve_config(first, for_training=True)
+        _, metadata, output = RUNNER.training_plan(first, config)
+        output.mkdir(parents=True)
+        metadata["source_checkpoint"] = {"path": RUNNER.STAGE2_SOURCE, "sha256": "fixture"}
+        (output / "experiment_plan.json").write_text(json.dumps(metadata))
+        (output / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        checkpoint = output / "checkpoint-600"
+        checkpoint.mkdir()
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": 600, "max_steps": 1800}))
+        for name in ("training_args.bin", "model.safetensors", "rng_state_0.pth",
+                     "optimizer.pt", "scheduler.pt"):
+            (checkpoint / name).touch()
+        resume = self.args("train", experiment, "--resume", "--stop-after-step", "1800")
+        resumed = RUNNER.resolve_config(resume, for_training=True)
+        commands, result, _ = RUNNER.training_plan(resume, resumed)
+        self.assertEqual(result["fingerprint"], metadata["fingerprint"])
+        self.assertEqual(result["resume_checkpoint"], RUNNER.relative(checkpoint))
+        self.assertEqual(result["source_checkpoint"], metadata["source_checkpoint"])
+        self.assertEqual(option(commands[0], "--save_steps"), "600")
+        self.assertNotIn("--resume_from_checkpoint", commands[0])
+        with self.assertRaisesRegex(ValueError, "later stop"):
+            RUNNER.training_plan(self.args("train", experiment, "--resume", "--stop-after-step", "600"),
+                                 RUNNER.resolve_config(self.args("train", experiment, "--resume",
+                                                                 "--stop-after-step", "600"), for_training=True))
+        legacy = RUNNER.PREFIX + "stage2_perception_j8"
+        legacy_args = self.args("train", legacy)
+        legacy_config = RUNNER.resolve_config(legacy_args, for_training=True)
+        legacy_commands, legacy_metadata, _ = RUNNER.training_plan(legacy_args, legacy_config)
+        self.assertEqual(legacy_metadata["runtime"]["save_steps"], 300)
+        self.assertEqual(option(legacy_commands[0], "--save_steps"), "300")
+
+    def test_new_stage2_dry_runs_write_nothing_and_spawn_nothing(self):
+        for suffix in RUNNER.STAGE2_NEW_ARMS:
+            experiment = RUNNER.PREFIX + suffix
+            for command, split, step in (("train", None, None), ("infer", "test", 1800),
+                                         ("metrics", "validation", 1200)):
+                extra = [] if command == "train" else ["--split", split, "--checkpoint-step", str(step)]
+                with self.subTest(experiment=experiment, command=command), patch.object(
+                    RUNNER.subprocess, "run"
+                ) as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main([command, "--experiment", experiment, *extra]), 0)
+                    run.assert_not_called()
+        self.assertFalse((self.root / "outputs").exists())
+        self.assertFalse((self.root / "outputs_eval").exists())
 
 
 if __name__ == "__main__":

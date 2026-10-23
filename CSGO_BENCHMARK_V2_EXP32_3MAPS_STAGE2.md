@@ -1,12 +1,12 @@
 # J8 两阶段辅助微调设计
 
-设计日期：2026-10-17。本文件先于本次代码和配置变更记录方案；实验尚未启动。执行命令集中放在 [record.md](record.md)，状态与结果登记在 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
+设计日期：2026-10-17（当时实验尚未启动）。结果更新：2026-10-22，S0_J8～S3_J8 均已完成 local1800，local1200／1800 两任务 validation 结果已登记，见 [结果与分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#stage2-results-20261022)。本文件以下配方与验收记录保留设计时口径；实际双卡 microbatch/GAS 不同，名义有效 batch128 相同但尾批造成实际曝光略不等，不能把这批结果视为严格只改变辅助 loss 的对照。执行命令集中放在 [record.md](record.md)，状态与结果登记在 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
 
 ## 目标与归因
 
 Stage 1 使用已经训练完成的 J8（`exp32_3maps_joint_constloc8`，50 epoch、5850 optimizer steps、恒定 αloc=8）；stage 2 从它的最终模型权重开始短程联合微调。将两阶段整体作为方法报告，同时分别记录 stage 1 的一次成本和每个 stage 2 分支的增量成本。复用 stage 1 可减少辅助消融的重复训练，但“总算力低于从头带辅助训练”须用实际 GPU 时间验证，不能仅凭新增步数断言。
 
-用户要求的三个主实验仅改变 stage 2 辅助组件。另配一个无辅助 S0 对照：三个主组对 J8@5850 的差异包含额外训练、optimizer 重置与 LR 重新启动的影响；只有与 S0 同节点比较，才能进一步判断辅助目标的贡献。S0 匹配 optimizer 更新数、主任务曝光与 LR，不匹配辅助计算引入的 FLOPs/GPU 时间。
+设计中的三个主实验仅改变 stage 2 辅助组件。另配一个无辅助 S0 对照：三个主组对 J8@5850 的差异包含额外训练、optimizer 重置与 LR 重新启动的影响；只有与 S0 同节点比较，才能进一步判断辅助目标的贡献。设计要求 S0 匹配 optimizer 更新数、主任务曝光与 LR，不匹配辅助计算引入的 FLOPs/GPU 时间；本次实际曝光略不等，详见结果分析。
 
 | ID | Experiment | Stage 1 权重 | Stage 2 perception | Stage 2 aux-loc | 用途 |
 |---|---|---|---|---|---|
@@ -77,3 +77,23 @@ Stage 1 来源至少包含完整的 `checkpoint-5850/model.safetensors`、J8 的
 已实现四份独立配置、runner 的 Stage 2 初始化／恢复入口、仅新组启用的严格模型加载检查，并补齐实验进度表、结果占位行与 record.md 命令。CPU 单测 29 项通过，24 份配置检查通过；四组的 train/infer/metrics dry run 和新增 Bash 命令块语法检查通过。旧 20 组的 YAML 字节、resolved 配方、启动命令、runtime 与恢复 fingerprint 保持不变，既有结果和用户对 record.md 的修改保留。
 
 真实 J8 源文件通过只读预检：4,577,302,678 bytes、2830 tensors（1128 LoRA），SHA-256 为 `d970e75d73c65e0fe7751d703abf94683fd7a50aca3afab731d756dd633ebbea`。实际安装的 Transformers scheduler 经 CPU 检查，在 local60 达到 2e-5／1e-4，在 local1800 达到 2e-6／1e-5，保持 5 倍组间比例。完整大模型的实际加载覆盖检查将在首次训练启动时执行；本次未构建大模型或运行训练、推理、评测，不据此声称指标改善。
+
+## 2026-10-23：新增九组 Stage 2 消融设计
+
+本节是 S0_J8～S3_J8 已完成实验之后的新设计，前述四组的历史 `save_steps=300`、命令与结果保持原记录。以下九组分别占用新运行名和输出目录；前七组先运行并由人工查看完整 validation，之后才手动决定执行后两组。没有自动实验队列，也不根据评测指标自动触发后两组。九组加既有 24 组，共 33 个独立运行名。
+
+| 批次 | ID／运行名 | 配置参考 | 本组唯一变化 | perception 权重 | aux-loc 权重 |
+|---|---|---|---|---|---|
+| 先七组 | P1_S1_J8 `exp32_3maps_P1_S1_J8` | S1_J8 | 去除 perception ramp | 从 local step 0 恒定 0.1 | 关 |
+| 先七组 | U1_S2_J8 `exp32_3maps_U1_S2_J8` | S2_J8 | 去除 aux-loc ramp | 关 | 从 local step 0 恒定 2 |
+| 先七组 | B1_S3_J8 `exp32_3maps_B1_S3_J8` | S3_J8 | 同时去除两个 ramp | 从 local step 0 恒定 0.1 | 从 local step 0 恒定 2 |
+| 先七组 | P2_S1_J8 `exp32_3maps_P2_S1_J8` | S1_J8 | perception 终值改为 0.2 | local `[0,120] → [0,0.2]`，之后恒定 | 关 |
+| 先七组 | P3_S1_J8 `exp32_3maps_P3_S1_J8` | S1_J8 | perception 终值改为 0.05 | local `[0,120] → [0,0.05]`，之后恒定 | 关 |
+| 先七组 | U2_S2_J8 `exp32_3maps_U2_S2_J8` | S2_J8 | aux-loc 终值改为 1 | 关 | local `[0,120] → [0,1]`，之后恒定 |
+| 先七组 | U3_S2_J8 `exp32_3maps_U3_S2_J8` | S2_J8 | aux-loc 终值改为 4 | 关 | local `[0,120] → [0,4]`，之后恒定 |
+| 后两组 | P4_S1_J8 `exp32_3maps_P4_S1_J8` | S1_J8 | perception `attention=false` | local `[0,120] → [0,0.1]`，之后恒定 | 关 |
+| 后两组 | U4_S2_J8 `exp32_3maps_U4_S2_J8` | S2_J8 | aux-loc `candidate_tau=0.001` | 关 | local `[0,120] → [0,2]`，之后恒定 |
+
+表中的 S1/S2/S3 是**配置参考**，从未作为这些新组的模型权重来源。九组首次训练统一只加载 J8@5850 `model.safetensors`，从 local step 0 新建 optimizer、scheduler、Trainer/RNG 状态；沿用 paired joint、αloc=8、seed=42、原分组 LR（普通组峰值 2e-5，Action connector/norm/projector 峰值 1e-4）、AdamW、60 步 warmup、cosine min LR 及其他未注明参数。每组默认完整训练 `max_steps=1800`，`--stop-after-step 0`，每 600 local steps 保存完整 checkpoint（600／1200／1800）。单卡命令默认 microbatch=4，GAS 按有效 batch 128 自动设置；更换 GPU 布局时先核对有效 batch，恢复时保持原布局。
+
+九组只在 local 1200 和 1800 做 seen_validation 三图的定位与离散生成，不评测 600。local 1800 的 test 同一 checkpoint 执行定位、离散生成和连续生成；`infer --task all --split test` 自动路由三项推理，`metrics` 复用定位输出并生成离散、连续各自的三图汇总。test 定位／离散每图 2,000 条（共 6,000），连续每图 20×64=1,280 帧（共 3,840），连续指标沿用 clip_length=16、stride=16、FVD size=224。测试结果只报告，不用于选择后两组配置或决定是否启动。所有 `--checkpoint-step` 使用 Stage 2 local step。默认 minimal 资源；首次改用 full 时加 `--asset-mode full --data-dir /path/to/preprocessed_data`，之后读取本组保存的 `resolved_config.yaml`，从本组 checkpoint 恢复时保持相同后端与路径，并用 `--resume --stop-after-step 0` 保持完整 1800 步调度。逐组可复制命令和待填结果见 [record.md](record.md) 与 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。

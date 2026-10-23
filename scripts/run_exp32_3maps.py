@@ -31,7 +31,25 @@ ROUND2 = ("aux_control", "perception", "auxloc", "both")
 ROUND2_J8 = ("perception_j8", "auxloc_j8", "both_j8")
 STAGE2_J8 = ("stage2_control_j8", "stage2_perception_j8",
              "stage2_auxloc_j8", "stage2_both_j8")
-EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8)
+# Each new arm is (original Stage 2 recipe, changed fields, removed fields).
+STAGE2_NEW_ARMS = {
+    "P1_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_loss": 0.1},
+                 ("alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values")),
+    "U1_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_loss": 2.0},
+                 ("alpha_loc_aux_schedule_steps", "alpha_loc_aux_schedule_values")),
+    "B1_S3_J8": ("stage2_both_j8", {"alpha_loc_perception_loss": 0.1,
+                                   "alpha_loc_aux_loss": 2.0},
+                 ("alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values",
+                  "alpha_loc_aux_schedule_steps", "alpha_loc_aux_schedule_values")),
+    "P2_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.2]}, ()),
+    "P3_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.05]}, ()),
+    "U2_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
+    "U3_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 4.0]}, ()),
+    "P4_S1_J8": ("stage2_perception_j8", {"loc_perception_use_attention_weight": False}, ()),
+    "U4_S2_J8": ("stage2_auxloc_j8", {"aux_loc_combined_candidate_tau": 0.001}, ()),
+}
+STAGE2_NEW_EXPERIMENTS = tuple(PREFIX + name for name in STAGE2_NEW_ARMS)
+EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8 + tuple(STAGE2_NEW_ARMS))
 JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:] + ROUND1_EXTRA)
 MAPS = ["de_ancient", "de_dust2", "de_nuke"]
 DEFAULT_BASE = PREFIX + "joint_sharedlr_constloc"
@@ -40,6 +58,7 @@ STAGE2_SOURCE = ("outputs/csgo_1b/exp32_3maps_joint_constloc8/"
                  "checkpoint-5850/model.safetensors")
 STAGE2_MAX_STEPS = 1800
 STAGE2_SAVE_STEPS = 300
+STAGE2_NEW_SAVE_STEPS = 600
 STAGE2_WARMUP_STEPS = 60
 STAGE2_LR_PEAKS = {
     "learning_rate": 2e-5, "mm_projector_lr": 2e-5,
@@ -87,7 +106,11 @@ def config_path(experiment: str) -> Path:
 
 
 def is_stage2(experiment: str) -> bool:
-    return experiment.removeprefix(PREFIX) in STAGE2_J8
+    return experiment in tuple(PREFIX + name for name in STAGE2_J8) + STAGE2_NEW_EXPERIMENTS
+
+
+def stage2_save_steps(experiment: str) -> int:
+    return STAGE2_NEW_SAVE_STEPS if experiment in STAGE2_NEW_EXPERIMENTS else STAGE2_SAVE_STEPS
 
 
 def is_round2(experiment: str) -> bool:
@@ -197,6 +220,22 @@ def validate_config(config: dict) -> None:
 
 
 def validate_stage2_config(config: dict) -> None:
+    experiment = config["exp32_3maps_experiment"]
+    suffix = experiment.removeprefix(PREFIX)
+    if suffix in STAGE2_NEW_ARMS:
+        base_name, changes, removed = STAGE2_NEW_ARMS[suffix]
+        expected = read_yaml(config_path(PREFIX + base_name))
+        expected.update(copy.deepcopy(changes))
+        for key in removed:
+            expected.pop(key)
+        expected["exp32_3maps_experiment"] = experiment
+        expected["training_stop_after_step"] = STAGE2_MAX_STEPS
+        runtime_overrides = {"benchmark_v2_asset_manifest", "data_dir", "pi05_pytorch_weight_path",
+                             "model_name_or_path", "seed", "training_stop_after_step"}
+        for key in set(expected) | set(config):
+            if key not in runtime_overrides and (key not in expected or key not in config
+                                                 or config[key] != expected[key]):
+                raise ValueError(f"Invalid stage 2 {suffix} single-factor recipe: {key}")
     if config.get("finetune_init_ckpt_path") != STAGE2_SOURCE or config.get("finetune_init_strict") is not True:
         raise ValueError("Stage 2 must strictly initialize from J8 checkpoint-5850")
     if any(config.get(key) for key in ("resume_ckpt_path", "base_init_ckpt_path",
@@ -217,16 +256,22 @@ def validate_stage2_config(config: dict) -> None:
                           ("lr_scheduler_kwargs", {"min_lr_rate": 0.1})):
         if config.get(key) != expected:
             raise ValueError(f"Invalid stage 2 {key}")
-    suffix = config["exp32_3maps_experiment"].removeprefix(PREFIX)
-    aux = suffix in ("stage2_auxloc_j8", "stage2_both_j8")
-    perception = suffix in ("stage2_perception_j8", "stage2_both_j8")
+    reference = STAGE2_NEW_ARMS[suffix][0] if suffix in STAGE2_NEW_ARMS else suffix
+    aux = reference in ("stage2_auxloc_j8", "stage2_both_j8")
+    perception = reference in ("stage2_perception_j8", "stage2_both_j8")
+    aux_ramp = aux and suffix not in ("U1_S2_J8", "B1_S3_J8")
+    perception_ramp = perception and suffix not in ("P1_S1_J8", "B1_S3_J8")
+    aux_end = {"U2_S2_J8": 1.0, "U3_S2_J8": 4.0}.get(suffix, 2.0)
+    perception_end = {"P2_S1_J8": 0.2, "P3_S1_J8": 0.05}.get(suffix, 0.1)
     expected = (("is_loc_aux_loss", aux),
                 ("is_aux_loc_combined_em_unc_loss", aux),
                 ("is_loc_perception_loss", perception),
-                ("alpha_loc_aux_schedule_steps", [0, 120] if aux else None),
-                ("alpha_loc_aux_schedule_values", [0.0, 2.0] if aux else None),
-                ("alpha_loc_perception_schedule_steps", [0, 120] if perception else None),
-                ("alpha_loc_perception_schedule_values", [0.0, 0.1] if perception else None))
+                ("alpha_loc_aux_loss", 2.0 if aux and not aux_ramp else 0.0),
+                ("alpha_loc_perception_loss", 0.1 if perception and not perception_ramp else 0.0),
+                ("alpha_loc_aux_schedule_steps", [0, 120] if aux_ramp else None),
+                ("alpha_loc_aux_schedule_values", [0.0, aux_end] if aux_ramp else None),
+                ("alpha_loc_perception_schedule_steps", [0, 120] if perception_ramp else None),
+                ("alpha_loc_perception_schedule_values", [0.0, perception_end] if perception_ramp else None))
     for key, value in expected:
         if config.get(key) != value:
             raise ValueError(f"Invalid stage 2 {key}")
@@ -245,6 +290,55 @@ def latest_checkpoint(out: Path) -> Path | None:
         if path.is_dir() and path.name.removeprefix("checkpoint-").isdigit():
             choices.append((int(path.name.split("-")[-1]), path))
     return max(choices)[1] if choices else None
+
+
+def final_checkpoint_step(experiment: str) -> int:
+    """Resolve a completed training checkpoint without guessing from its name."""
+    out = ROOT / "outputs/csgo_1b" / experiment
+    if not (out / "resolved_config.yaml").is_file():
+        raise ValueError(f"Final evaluation requires the saved training recipe: {out}")
+
+    def state_at(path: Path) -> tuple[int, int]:
+        if not path.is_file():
+            raise ValueError(f"Final checkpoint is missing Trainer state: {path}")
+        state = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(state, dict):
+            raise ValueError(f"Invalid Trainer state: {path}")
+        step, horizon = state.get("global_step"), state.get("max_steps")
+        if (type(step) is not int or type(horizon) is not int
+                or step <= 0 or horizon < step):
+            raise ValueError(f"Invalid Trainer global_step/max_steps: {path}")
+        return step, horizon
+
+    root_state = out / "trainer_state.json"
+    if root_state.is_file():
+        step, horizon = state_at(root_state)
+        if step != horizon:
+            raise ValueError(f"Training has not reached max_steps: {root_state}")
+    else:
+        completed = []
+        for checkpoint in out.glob("checkpoint-*"):
+            suffix = checkpoint.name.removeprefix("checkpoint-")
+            if not checkpoint.is_dir() or not suffix.isdigit():
+                continue
+            checkpoint_state = checkpoint / "trainer_state.json"
+            if checkpoint_state.is_file():
+                saved_step, horizon = state_at(checkpoint_state)
+                if saved_step != int(suffix):
+                    raise ValueError(f"Checkpoint directory and Trainer step differ: {checkpoint}")
+                if saved_step == horizon:
+                    completed.append(saved_step)
+        if len(completed) != 1:
+            raise ValueError(f"Expected one completed final checkpoint, found {len(completed)}: {out}")
+        step = completed[0]
+
+    checkpoint = out / f"checkpoint-{step}"
+    saved_step, saved_horizon = state_at(checkpoint / "trainer_state.json")
+    if saved_step != step or saved_horizon != step:
+        raise ValueError(f"Final checkpoint step/global_step/max_steps differ: {checkpoint}")
+    if not (checkpoint / "model.safetensors").is_file():
+        raise ValueError(f"Final checkpoint is missing model weights: {checkpoint}")
+    return step
 
 
 def check_resume(out: Path, identity: str, resume: bool) -> Path | None:
@@ -290,7 +384,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
                    save_steps=1200, save_total_limit=6, report_to=args.report_to)
     if is_stage2(args.experiment):
         runtime.update(max_steps=STAGE2_MAX_STEPS, warmup_steps=STAGE2_WARMUP_STEPS,
-                       save_steps=STAGE2_SAVE_STEPS, optimizer="adamw_torch",
+                       save_steps=stage2_save_steps(args.experiment), optimizer="adamw_torch",
                        adam_beta1=0.9, adam_beta2=0.999, adam_epsilon=1e-8,
                        max_grad_norm=1.0)
     out = ROOT / "outputs/csgo_1b" / args.experiment
@@ -321,7 +415,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
            "--per_device_train_batch_size", str(args.micro_batch),
            "--per_device_eval_batch_size", "1", "--gradient_accumulation_steps", str(accumulation),
            "--eval_strategy", "no", "--save_strategy", "steps", "--save_steps",
-           str(STAGE2_SAVE_STEPS if is_stage2(args.experiment) else 1200),
+           str(stage2_save_steps(args.experiment) if is_stage2(args.experiment) else 1200),
            "--save_total_limit", "6", "--save_only_model", "False", "--seed", str(args.seed),
            "--learning_rate", str(config["learning_rate"]), "--weight_decay", str(config["weight_decay"]),
            "--warmup_ratio", str(config["warmup_ratio"]), "--lr_scheduler_type", config["lr_scheduler_type"],
@@ -420,16 +514,22 @@ def ground_truth_dir(config: dict, map_name: str) -> str:
 
 
 def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], Path, dict]:
-    if args.checkpoint_step is None or args.checkpoint_step <= 0:
-        raise ValueError("infer/metrics require --checkpoint-step with a positive saved global step")
+    step = (final_checkpoint_step(args.experiment) if args.checkpoint_step == "final"
+            else args.checkpoint_step)
+    if type(step) is not int or step <= 0:
+        raise ValueError("infer/metrics require --checkpoint-step with a positive saved global step or final")
+    if args.experiment in STAGE2_NEW_EXPERIMENTS:
+        allowed = (1200, 1800) if args.split == "validation" else (1800,)
+        if step not in allowed:
+            raise ValueError(f"New Stage 2 {args.split} evaluation requires checkpoint step {allowed}")
     if "," in args.cuda_devices:
         raise ValueError("Inference/metrics use one --cuda-devices device")
-    checkpoint = Path("outputs/csgo_1b") / args.experiment / f"checkpoint-{args.checkpoint_step}" / "model.safetensors"
+    checkpoint = Path("outputs/csgo_1b") / args.experiment / f"checkpoint-{step}" / "model.safetensors"
     if args.execute and not repo_path(checkpoint).is_file():
         raise ValueError(f"Checkpoint is absent: {checkpoint}")
     if args.execute and not (ROOT / "outputs/csgo_1b" / args.experiment / "resolved_config.yaml").is_file():
         raise ValueError("Evaluation requires the saved training recipe")
-    target = f"{args.experiment}/checkpoint-{args.checkpoint_step}/{args.split}/seed_{args.seed}"
+    target = f"{args.experiment}/checkpoint-{step}/{args.split}/seed_{args.seed}"
     eval_config = ROOT / "outputs_eval/benchmark_v2" / target / "evaluation_config.yaml"
     split = "seen_validation" if args.split == "validation" else "seen_discrete_test"
     config = copy.deepcopy(config)
@@ -486,6 +586,15 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     return commands, eval_config, config
 
 
+def parse_checkpoint_step(value: str) -> int | str:
+    if value == "final":
+        return value
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("checkpoint step must be an integer or final") from exc
+
+
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("command", choices=("validate", "train", "infer", "metrics"))
@@ -499,7 +608,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--master-port", type=int, default=29632)
     result.add_argument("--seed", type=int, default=42)
     result.add_argument("--report-to", default="none")
-    result.add_argument("--checkpoint-step", type=int)
+    result.add_argument("--checkpoint-step", type=parse_checkpoint_step,
+                        help="Saved step number, or final to verify and select a completed checkpoint")
     result.add_argument("--split", choices=("validation", "test"), default="validation")
     result.add_argument("--task", choices=("all", "localization", "generation"), default="all")
     result.add_argument("--asset-mode", choices=("minimal", "full"))
@@ -513,6 +623,8 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command in ("train", "validate") and args.checkpoint_step == "final":
+            raise ValueError("--checkpoint-step final applies only to infer/metrics")
         if args.asset_mode == "full" and args.asset_manifest:
             raise ValueError("--asset-manifest cannot be combined with --asset-mode full")
         if args.command != "train" and (args.resume or args.stop_after_step is not None):

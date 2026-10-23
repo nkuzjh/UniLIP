@@ -6592,6 +6592,9 @@ python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --resume --st
 ```
 
 
+**最终 test 统一说明（L0／G0／J8／A1_J8～A3_J8／S0_J8～S3_J8）**：以下各组的独立命令须逐组手动启动，不自动训练、等待或串行启动其他组。`--checkpoint-step final` 只在本组 Trainer state 证明 `global_step=max_steps`、对应 checkpoint 目录匹配且模型权重存在时解析；它不等同 latest。`infer`／`metrics` 使用本组训练保存的 `resolved_config.yaml` 及其实际数据后端，另存 `outputs_eval/.../<实验名>/checkpoint-<实际最终步数>/test/seed_42/evaluation_config.yaml`，不改训练 YAML 或恢复指纹。test 固定三图：定位及离散生成每图 2,000 条，连续生成每图 20×64 帧；`--task all` 按本组可用任务执行。每段 `EVAL_GPU=0` 改成实际空闲的单张 GPU；日志追加到本组 `.test.nohup.out`。
+
+
 ### exp32_3maps_loc_single
 - L0：定位单任务参照。
 - 配置：`csgo_configs/exp32_3maps_loc_single.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
@@ -6625,6 +6628,21 @@ python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_loc_single --ch
 set -euo pipefail
 EXPERIMENT=exp32_3maps_loc_single
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 2400 --split validation --cuda-devices 0 --execute
+```
+
+
+**最终 test：L0（手动单独启动）**。本机已核实最终 `checkpoint-5850`。只评定位；定位指标由 `infer` 生成，`metrics` 仅提示已有定位指标，不重复计算。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_loc_single
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_loc_single.test.nohup.out 2>&1 < /dev/null &
 ```
 
 
@@ -6681,6 +6699,21 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_gen_single --checkpoint-step 5850 --split validation --cuda-devices 0 --execute -->
 
+
+
+**最终 test：G0（手动单独启动）**。本机已核实最终 `checkpoint-5850`。评离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_gen_single
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_gen_single.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### exp32_3maps_joint_original
@@ -7211,6 +7244,21 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constlo
 
 
 
+**最终 test：J8（手动单独启动）**。本机已核实最终 `checkpoint-5850`。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_joint_constloc8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_joint_constloc8.test.nohup.out 2>&1 < /dev/null &
+```
+
+
 ### exp32_3maps_joint_constloc12
 - J9：完整继承 J8 `exp32_3maps_joint_constloc8` 配置，仅将 αloc 恒定值改为 12；从原始初始化开始，不从 J8 checkpoint 续训；暂无运行。
 - 配置：`csgo_configs/exp32_3maps_joint_constloc12.yaml`；2400 首评、3600 复核，必要时评实际最后 step，均使用 validation。训练保留完整 50 epoch；当前单卡默认 micro-batch=64、GAS=2 布局预期最后 step 为 5850，最终以 `trainer_state.json` 的 `global_step` 为准。Inference/Metric 的 `--checkpoint-step` 必须替换为实际已保存 step，不要用 0。
@@ -7292,14 +7340,14 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_joint_constlo
 
 ## exp32_3maps J8 辅助消融 A1_J8～A3_J8
 
-以下三个实验均为已配置／未启动、待评测，独立于原 J4 默认的 A1～A3；保留旧实验的 YAML、输出和命令。固定主配方 `exp32_3maps_joint_constloc8`：αloc=8，LLM LoRA 与 Action LoRA LR=1e-4，Action connector／norm／projector LR=5e-4，IO LR=1e-4。新组从原始 UniLIP-1B／pi05 权重各自初始化，不从 J8 训练 checkpoint 续训。均使用 seed=42、单卡默认 microbatch=64／GAS=2／有效 batch=128、50 epoch horizon、首停 3600、save_steps=1200／save_total_limit=6。`--joint-base` 可省略（YAML 已固定 J8）或显式使用 `--joint-base exp32_3maps_joint_constloc8`；不能切换其他 base。默认数据后端为 minimal；首次训练改用全量后端时追加 `--asset-mode full --data-dir /path/to/preprocessed_data`，续训及推理／metric 使用相同后端与路径布局。服务器上的模型权重路径如不同，在首次训练传 `--model-path`／`--pi05-path`，恢复时保持一致。
+2026-10-22 更新：A1_J8 已完成 50 epoch、5900 steps，2400／5900 的定位和离散生成 validation 结果已同步至 [实验结果表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)；3600 未发现本地评测。实际运行采用双卡 microbatch=4、GAS=16，名义有效 batch=128；A2_J8／A3_J8 保留原待评测记录。以下三组独立于原 J4 默认的 A1～A3；保留旧实验的 YAML、输出和命令。固定主配方 `exp32_3maps_joint_constloc8`：αloc=8，LLM LoRA 与 Action LoRA LR=1e-4，Action connector／norm／projector LR=5e-4，IO LR=1e-4。新组从原始 UniLIP-1B／pi05 权重各自初始化，不从 J8 训练 checkpoint 续训。均使用 seed=42、单卡默认 microbatch=64／GAS=2／有效 batch=128、50 epoch horizon、首停 3600、save_steps=1200／save_total_limit=6。`--joint-base` 可省略（YAML 已固定 J8）或显式使用 `--joint-base exp32_3maps_joint_constloc8`；不能切换其他 base。默认数据后端为 minimal；首次训练改用全量后端时追加 `--asset-mode full --data-dir /path/to/preprocessed_data`，续训及推理／metric 使用相同后端与路径布局。服务器上的模型权重路径如不同，在首次训练传 `--model-path`／`--pi05-path`，恢复时保持一致。
 
-J8 仅在同 seed、主配方、原始权重初始化、数据布局、有效 batch、评测步数和推理设置核实一致时作为无辅助对照。本地 J8 目前仅有 2400／5850 的 validation 指标；3600 主筛选须先取得相应 checkpoint 并补评 J8@3600，不用 J8@5850 跨步比较。以下命令是待运行示例，尚未执行。
+J8 仅在同 seed、主配方、原始权重初始化、数据布局、有效 batch、评测步数和推理设置核实一致时作为无辅助对照。本地 J8 目前仅有 2400／5850 的 validation 指标；3600 主筛选须先取得相应 checkpoint 并补评 J8@3600，不用 J8@5850 跨步比较。以下命令保留为启动／评测操作记录；A1_J8 的已完成节点以上述同步结果为准，本次未再次执行。
 
 
 ### exp32_3maps_perception_j8
 - A1_J8：仅开启 perception；权重 `[0,599,600] -> [0,0,0.1]`，沿用旧 A1 设置。
-- 配置：`csgo_configs/exp32_3maps_perception_j8.yaml`；第一评测 checkpoint：`checkpoint-3600`，使用 `seen_validation`。
+- 配置：`csgo_configs/exp32_3maps_perception_j8.yaml`；原计划首评 `checkpoint-3600`；实际已同步 `checkpoint-2400`／`checkpoint-5900` 的 `seen_validation` 指标，3600 结果暂缺。
 
 **Training**
 ```bash
@@ -7325,16 +7373,33 @@ set -euo pipefail
 export DEVICES=2,3
 python scripts/run_exp32_3maps.py train --master-port 29649 --resume --experiment exp32_3maps_perception_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --micro-batch 4 --execute
 ' >>fst_outs/exp32_3maps_perception_j8.nohup.out 2>&1 < /dev/null & -->
-
 <!-- nohup bash -c '
 set -euo pipefail
 export DEVICES=2
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_perception_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_perception_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
-
-python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_perception_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
-python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_perception_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
 ' >>fst_outs/exp32_3maps_perception_j8.nohup.out 2>&1 < /dev/null & -->
+<!-- nohup bash -c '
+set -euo pipefail
+export DEVICES=2
+python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_perception_j8 --checkpoint-step 5900 --split validation --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_perception_j8 --checkpoint-step 5900 --split validation --cuda-devices "$DEVICES" --execute
+' >>fst_outs/exp32_3maps_perception_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：A1_J8（手动单独启动）**。本机已核实最终 `checkpoint-5900`（不是 5850）。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_perception_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_perception_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### exp32_3maps_auxloc_j8
@@ -7362,16 +7427,32 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- 一次性执行以下任务： -->
 <!-- nohup bash -c '
 set -euo pipefail
-export DEVICES=2
+export DEVICES=0,2
 
-python scripts/run_exp32_3maps.py train --master-port 29650 --experiment exp32_3maps_auxloc_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
+python scripts/run_exp32_3maps.py train --master-port 29650 --experiment exp32_3maps_auxloc_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute --micro-batch 4
 
+export DEVICES=0
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_auxloc_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_auxloc_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_auxloc_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_auxloc_j8 --checkpoint-step 5850 --split validation --cuda-devices "$DEVICES" --execute
 ' >>fst_outs/exp32_3maps_auxloc_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：A2_J8（手动单独启动）**。本机尚无该组输出、Trainer state 或 checkpoint；待远程训练完成，且本组最终模型权重与元数据齐备后再执行。不要猜最终步数。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_auxloc_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_auxloc_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### exp32_3maps_both_j8
@@ -7399,10 +7480,11 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- 一次性执行以下任务： -->
 <!-- nohup bash -c '
 set -euo pipefail
+export DEVICES=1,4
+
+python scripts/run_exp32_3maps.py train --master-port 29651 --experiment exp32_3maps_both_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute --micro-batch 4
+
 export DEVICES=1
-
-python scripts/run_exp32_3maps.py train --master-port 29651 --experiment exp32_3maps_both_j8 --stop-after-step 0 --cuda-devices "$DEVICES" --execute
-
 python scripts/run_exp32_3maps.py infer --experiment exp32_3maps_both_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both_j8 --checkpoint-step 2400 --split validation --cuda-devices "$DEVICES" --execute
 
@@ -7413,13 +7495,28 @@ python scripts/run_exp32_3maps.py metrics --experiment exp32_3maps_both_j8 --che
 
 
 
+**最终 test：A3_J8（手动单独启动）**。本机尚无该组输出、Trainer state 或 checkpoint；待远程训练完成，且本组最终模型权重与元数据齐备后再执行。不要猜最终步数。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_both_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_both_j8.test.nohup.out 2>&1 < /dev/null &
+```
+
+
 ## exp32_3maps J8 两阶段辅助微调 Stage 2
 
-本节四组均已配置、尚未启动；设计与固定配方见 [J8 两阶段辅助微调设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md)，进度及结果见 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。S1～S3 是三个辅助主组，S0 是必要的无辅助等更新预算归因对照。既有 J8@5850 可作初始化参照，却不能单独分离额外训练、optimizer 重置和 LR 重启的影响；S0 与主组匹配 optimizer 更新、主任务曝光和 LR，辅助计算使 GPU 时间不匹配。报告总成本时计入共享的 J8 Stage 1 成本。
+2026-10-22 更新：本节 S0_J8～S3_J8 四组均已完成 Stage 2 local 1800，local1200／1800 的定位和离散生成 validation 指标已同步至 [实验结果表及分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#stage2-results-20261022)；local600 未发现本地评测产物。实际采用双卡 S0 microbatch64/GAS1、S1/S2 microbatch8/GAS8、S3 microbatch4/GAS16，名义有效 batch 均为128，实际曝光受 epoch 尾批影响略有差异。下列启动与恢复命令保留为操作记录，不表示本次再次执行。设计与固定配方见 [J8 两阶段辅助微调设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md)，进度及结果见 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。S1～S3 是三个辅助主组，S0 是必要的无辅助等更新预算归因对照。既有 J8@5850 可作初始化参照，却不能单独分离额外训练、optimizer 重置和 LR 重启的影响；S0 的设计目标是匹配 optimizer 更新、主任务曝光和 LR；本次实际曝光略不等，辅助计算也使 GPU 时间不匹配。报告总成本时计入共享的 J8 Stage 1 成本。
 
 四组首次训练从 `outputs/csgo_1b/exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors` **仅加载模型权重**，新建 optimizer、scheduler 与 Trainer/RNG 状态，Stage 2 local step 从 0 起。源服务器至少同步该完整模型文件、J8 的 `resolved_config.yaml` 和 `trainer_state.json`（优先 checkpoint 内状态，也可核对根目录最终状态），核对 J8 身份、完成 step=5850、文件 SHA-256／大小及模型加载覆盖；不要求同步 J8 optimizer。Stage 2 自己的恢复只用本组完整 checkpoint，不能再次加载 J8 权重。四组独立输出，首次训练不传 `--resume`；新组无需、也不接受 `--joint-base`。
 
-四组均固定 paired joint、αloc=8、单卡 microbatch=64／GAS=2／seed=42、源样本有效 batch=128。Stage 2 `max_steps=1800`，默认 `--stop-after-step 1200`；保存每 300 local steps、最多 6 个完整 checkpoint。全部 J8 LR 峰值乘 0.2：普通组 2e-5、Action connector/norm/projector 1e-4；新 AdamW，cosine min LR、warmup 60、min LR rate 0.1。perception 若开启，local `[0,120] -> [0,0.1]`；aux-loc 若开启，local `[0,120] -> [0,2]`。默认停在 1200 后**不会自动推理、评测或续训**。下面先单独执行 Training，确认 checkpoint 保存后，才手动执行对应 Evaluation；不自动排队四组。
+设计默认 paired joint、αloc=8、单卡 microbatch=64／GAS=2／seed=42、源样本有效 batch=128；本次实际运行布局见本节开头。Stage 2 `max_steps=1800`，默认 `--stop-after-step 1200`；保存每 300 local steps、最多 6 个完整 checkpoint。全部 J8 LR 峰值乘 0.2：普通组 2e-5、Action connector/norm/projector 1e-4；新 AdamW，cosine min LR、warmup 60、min LR rate 0.1。perception 若开启，local `[0,120] -> [0,0.1]`；aux-loc 若开启，local `[0,120] -> [0,2]`。默认停在 1200 后**不会自动推理、评测或续训**。下面先单独执行 Training，确认 checkpoint 保存后，才手动执行对应 Evaluation；不自动排队四组。
 
 默认 minimal asset manifest。首次切换 full 时，在 Training 命令追加 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续本组恢复时保持相同参数与路径；infer/metrics 读取已保存的 `resolved_config.yaml`。基础模型路径需要覆盖时，首次 Training 追加 `--model-path /path/to/UniLIP-1B --pi05-path /path/to/pi05_base`，恢复时同样保持。恢复不改变 GPU 数、microbatch、seed、数据后端、模型路径、LR 或辅助调度；可改变所用 GPU 编号。
 
@@ -7451,16 +7548,31 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_stage2_control_j8
-GPU=0,1
+GPU=2,3
 MASTER_PORT=29652
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute
 
-GPU=0
+GPU=2
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 ' >fst_outs/exp32_3maps_stage2_control_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：S0_J8（手动单独启动）**。本机已核实最终 Stage 2 local `checkpoint-1800`。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_stage2_control_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_stage2_control_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### S1_J8：仅 perception（`exp32_3maps_stage2_perception_j8`）
@@ -7487,16 +7599,31 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_stage2_perception_j8
-GPU=0,1
+GPU=1,3
 MASTER_PORT=29653
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute --micro-batch 8
 
-GPU=0
+GPU=1
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 ' >fst_outs/exp32_3maps_stage2_perception_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：S1_J8（手动单独启动）**。本机已核实最终 Stage 2 local `checkpoint-1800`。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_stage2_perception_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_stage2_perception_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### S2_J8：仅 aux-loc（`exp32_3maps_stage2_auxloc_j8`）
@@ -7522,16 +7649,31 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_stage2_auxloc_j8
-GPU=0,1
+GPU=2,3
 MASTER_PORT=29654
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute --micro-batch 8
 
-GPU=0
+GPU=3
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 ' >fst_outs/exp32_3maps_stage2_auxloc_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：S2_J8（手动单独启动）**。本机已核实最终 Stage 2 local `checkpoint-1800`。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_stage2_auxloc_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_stage2_auxloc_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### S3_J8：perception＋aux-loc（`exp32_3maps_stage2_both_j8`）
@@ -7557,9 +7699,9 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <!-- nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_stage2_both_j8
-GPU=0,1
+GPU=0,2
 MASTER_PORT=29655
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --cuda-devices "$GPU" --master-port "$MASTER_PORT" --execute --micro-batch 4
 
 GPU=0
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1200 --split validation --cuda-devices "$GPU" --execute
@@ -7567,6 +7709,21 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 ' >fst_outs/exp32_3maps_stage2_both_j8.nohup.out 2>&1 < /dev/null & -->
+
+
+**最终 test：S3_J8（手动单独启动）**。本机已核实最终 Stage 2 local `checkpoint-1800`。评定位、离散与连续生成。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_stage2_both_j8
+EVAL_GPU=0
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_stage2_both_j8.test.nohup.out 2>&1 < /dev/null &
+```
 
 
 ### 手动恢复与 Slurm 中断恢复模板
@@ -7586,3 +7743,218 @@ python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split validation --cuda-devices "$GPU" --execute
 ```
 Slurm 作业在 1200 前中断且本组已有完整 checkpoint 时，用同一实验名与相同运行布局重提作业，并使用 `--resume --stop-after-step 1200`，使原默认停止点保持 1200。若中断发生在人工决定继续到 1800 之后，改用 `--resume --stop-after-step 0`。两种恢复都只恢复本组 checkpoint；若尚无完整 checkpoint，需排查原因并重新首次训练，不能对 J8@5850 使用 `--resume`。
+
+
+## exp32_3maps J8 Stage 2 2026-10-23 九组新消融（待执行）
+
+本节仅记录新九组的可复制操作命令；上方 S0_J8～S3_J8 的历史命令、save_steps=300 和结果保留。新组 S1/S2/S3 只作为配置参考，首次训练均只从 J8@5850 加载模型权重，并从 local step 0 新建 optimizer、scheduler、Trainer/RNG；不使用 `--resume` 或 `--joint-base` 初始化。每组固定 max_steps=1800，`--stop-after-step 0` 表示完整训练，local 600／1200／1800 每 600 步保存完整 checkpoint。单卡默认 microbatch=4，目标有效 batch=128；切换 GPU 环境可修改训练用 `TRAIN_GPUS` 与 microbatch；`EVAL_GPU` 始终只填一张推理／评测卡，但恢复同一实验须保持原实际布局。αloc=8、分组 LR、seed 和未注明配置沿用原 Stage 2。
+
+每个代码块只对应一组，须由人手动逐块启动；先完成前七组并人工查看两节点完整 validation，之后再决定是否运行后两组。代码块内部依次训练、local1200／1800 validation、local1800 test；它们不读取指标来选择或触发其他组。首次全量数据后端可在本组 `train` 命令加入 `--asset-mode full --data-dir /path/to/preprocessed_data`；后续 infer/metrics 读取该组保存的 `resolved_config.yaml`，不能临时切换后端。若中断，使用本组最新完整 checkpoint 和相同 GPU／microbatch／数据后端，以 `train --resume --stop-after-step 0` 恢复，不再次加载 J8 或重置调度。详见本节末尾恢复模板。
+
+以下所有 `--checkpoint-step` 都是 Stage 2 local step；validation 只评测 1200／1800，600 仅保存。`infer`／`metrics` 明确使用 `--task all` 且单 GPU；test 的 `--task all --split test` 自动运行定位、离散生成和连续生成，定位指标随 infer 生成，metrics 复用定位输出并生成离散与连续各自的三图 summary，无需另加 continuous 参数。test 定位／离散每图 2,000 条（共 6,000），连续每图 20×64=1,280 帧（共 3,840），沿用 clip_length=16、stride=16、FVD size=224。正式 test 仅作结果报告。日志统一追加到 `fst_outs/<实验名>.nohup.out`；运行前先确认 J8@5850 来源文件、所选 GPU 与数据路径。
+
+### 第一批：先手动运行七组
+
+#### P1_S1_J8：perception 从 step 0 恒定 0.1；aux-loc 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_P1_S1_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29661
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_P1_S1_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### U1_S2_J8：aux-loc 从 step 0 恒定 2；perception 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_U1_S2_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29662
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_U1_S2_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### B1_S3_J8：perception 0.1、aux-loc 2，均从 step 0 恒定
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_B1_S3_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29663
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_B1_S3_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### P2_S1_J8：perception `[0,120] → [0,0.2]`；aux-loc 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_P2_S1_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29664
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_P2_S1_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### P3_S1_J8：perception `[0,120] → [0,0.05]`；aux-loc 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_P3_S1_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29665
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_P3_S1_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### U2_S2_J8：aux-loc `[0,120] → [0,1]`；perception 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_U2_S2_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29666
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_U2_S2_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### U3_S2_J8：aux-loc `[0,120] → [0,4]`；perception 关
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_U3_S2_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29667
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_U3_S2_J8.nohup.out 2>&1 < /dev/null &
+```
+
+### 第二批：前七组完成并人工查看后，再手动运行两组
+
+#### P4_S1_J8：perception attention=false；权重 `[0,120] → [0,0.1]`
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_P4_S1_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29668
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_P4_S1_J8.nohup.out 2>&1 < /dev/null &
+```
+
+#### U4_S2_J8：aux-loc candidate_tau=0.001；权重 `[0,120] → [0,2]`
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_U4_S2_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29669
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_U4_S2_J8.nohup.out 2>&1 < /dev/null &
+```
+
+### 九组中断恢复模板（选定同一组后手动执行）
+
+下例以 P1_S1_J8 为例。首次训练如果用了 full 后端，恢复命令也要加入同一 `--asset-mode full --data-dir` 和首次训练使用的模型路径覆盖参数。infer/metrics 从保存的 resolved_config 读取后端。必须保持原 GPU 数与 microbatch，单卡默认示例用 4；`--stop-after-step 0` 保持训练到 local1800。恢复后按上方同组命令手动补做未完成的 validation／test，避免不必要的重复评测。
+
+```bash
+set -euo pipefail
+EXPERIMENT=exp32_3maps_P1_S1_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29661
+python scripts/run_exp32_3maps.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+```
