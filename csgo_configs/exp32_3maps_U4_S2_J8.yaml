@@ -113,4 +113,4 @@ alpha_loc_aux_schedule_steps:
 - 120
 alpha_loc_aux_schedule_values:
 - 0.0
-- 2.0
+- 1.0

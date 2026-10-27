@@ -37,16 +37,20 @@ STAGE2_NEW_ARMS = {
                  ("alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values")),
     "U1_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_loss": 2.0},
                  ("alpha_loc_aux_schedule_steps", "alpha_loc_aux_schedule_values")),
-    "B1_S3_J8": ("stage2_both_j8", {"alpha_loc_perception_loss": 0.1,
-                                   "alpha_loc_aux_loss": 2.0},
-                 ("alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values",
-                  "alpha_loc_aux_schedule_steps", "alpha_loc_aux_schedule_values")),
+    "B1_S3_J8": ("stage2_both_j8", {"alpha_loc_perception_loss": 0.0,
+                                   "alpha_loc_aux_loss": 0.0,
+                                   "alpha_loc_perception_schedule_values": [0.0, 0.05],
+                                   "alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
     "P2_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.2]}, ()),
     "P3_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.05]}, ()),
     "U2_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
     "U3_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 4.0]}, ()),
-    "P4_S1_J8": ("stage2_perception_j8", {"loc_perception_use_attention_weight": False}, ()),
-    "U4_S2_J8": ("stage2_auxloc_j8", {"aux_loc_combined_candidate_tau": 0.001}, ()),
+    "P4_S1_J8": ("stage2_perception_j8", {"loc_perception_use_attention_weight": False,
+                                          "alpha_loc_perception_schedule_values": [0.0, 0.05]}, ()),
+    "U4_S2_J8": ("stage2_auxloc_j8", {"aux_loc_combined_candidate_tau": 0.001,
+                                    "alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
+    "U5_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 0.5]}, ()),
+    "P5_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.025]}, ()),
 }
 STAGE2_NEW_EXPERIMENTS = tuple(PREFIX + name for name in STAGE2_NEW_ARMS)
 EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8 + tuple(STAGE2_NEW_ARMS))
@@ -259,10 +263,12 @@ def validate_stage2_config(config: dict) -> None:
     reference = STAGE2_NEW_ARMS[suffix][0] if suffix in STAGE2_NEW_ARMS else suffix
     aux = reference in ("stage2_auxloc_j8", "stage2_both_j8")
     perception = reference in ("stage2_perception_j8", "stage2_both_j8")
-    aux_ramp = aux and suffix not in ("U1_S2_J8", "B1_S3_J8")
-    perception_ramp = perception and suffix not in ("P1_S1_J8", "B1_S3_J8")
-    aux_end = {"U2_S2_J8": 1.0, "U3_S2_J8": 4.0}.get(suffix, 2.0)
-    perception_end = {"P2_S1_J8": 0.2, "P3_S1_J8": 0.05}.get(suffix, 0.1)
+    aux_ramp = aux and suffix != "U1_S2_J8"
+    perception_ramp = perception and suffix != "P1_S1_J8"
+    aux_end = {"B1_S3_J8": 1.0, "U2_S2_J8": 1.0, "U3_S2_J8": 4.0,
+               "U4_S2_J8": 1.0, "U5_S2_J8": 0.5}.get(suffix, 2.0)
+    perception_end = {"B1_S3_J8": 0.05, "P2_S1_J8": 0.2, "P3_S1_J8": 0.05,
+                      "P4_S1_J8": 0.05, "P5_S1_J8": 0.025}.get(suffix, 0.1)
     expected = (("is_loc_aux_loss", aux),
                 ("is_aux_loc_combined_em_unc_loss", aux),
                 ("is_loc_perception_loss", perception),

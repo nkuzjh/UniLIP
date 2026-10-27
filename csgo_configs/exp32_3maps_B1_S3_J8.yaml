@@ -8,7 +8,7 @@ is_multi_task_balanced: true
 task_mix_ratio: 0.5
 alpha_loc_loss: 8.0
 is_loc_aux_loss: true
-alpha_loc_aux_loss: 2.0
+alpha_loc_aux_loss: 0.0
 is_aux_loc_em_loss: false
 is_aux_loc_uncertainty_loss: false
 is_aux_loc_combined_em_unc_loss: true
@@ -16,7 +16,7 @@ is_gen_aux_loss: false
 is_repa_loss: false
 is_loc_repa_loss: false
 is_loc_perception_loss: true
-alpha_loc_perception_loss: 0.1
+alpha_loc_perception_loss: 0.0
 loc_perception_teacher_type: current_loc_head
 loc_perception_use_ema_teacher: false
 loc_perception_ema_decay: 0.999
@@ -108,3 +108,15 @@ exp32_3maps_experiment: exp32_3maps_B1_S3_J8
 exp32_3maps_joint_base: exp32_3maps_joint_constloc8
 finetune_init_ckpt_path: outputs/csgo_1b/exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors
 finetune_init_strict: true
+alpha_loc_aux_schedule_steps:
+- 0
+- 120
+alpha_loc_aux_schedule_values:
+- 0.0
+- 1.0
+alpha_loc_perception_schedule_steps:
+- 0
+- 120
+alpha_loc_perception_schedule_values:
+- 0.0
+- 0.05

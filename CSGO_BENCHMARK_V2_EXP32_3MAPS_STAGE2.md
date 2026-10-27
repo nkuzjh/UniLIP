@@ -80,20 +80,48 @@ Stage 1 来源至少包含完整的 `checkpoint-5850/model.safetensors`、J8 的
 
 ## 2026-10-23：新增九组 Stage 2 消融设计
 
-本节是 S0_J8～S3_J8 已完成实验之后的新设计，前述四组的历史 `save_steps=300`、命令与结果保持原记录。以下九组分别占用新运行名和输出目录；前七组先运行并由人工查看完整 validation，之后才手动决定执行后两组。没有自动实验队列，也不根据评测指标自动触发后两组。九组加既有 24 组，共 33 个独立运行名。
+本节是 S0_J8～S3_J8 已完成实验之后的新设计，前述四组的历史 `save_steps=300`、命令与结果保持原记录。以下九组分别占用新运行名和输出目录；前七组先运行并由人工查看完整 validation，之后才手动决定执行后两组。没有自动实验队列，也不根据评测指标自动触发后两组。2026-10-23 九组加既有 24 组当时共 33 个独立运行名；增加 U5／P5 后当前计划共 35 个。**2026-10-28 修订 B1／P4／U4 三行尚无本地训练产物的配方**：B1 联合 P3 的 perception 0.05 ramp 与 U2 的 aux-loc 1 ramp，保留 `attention=true`、`candidate_tau=1`；P4 仅把 P3 的 attention 改为 false；U4 仅把 U2 的 candidate_tau 改为 0.001。三者运行名中的 S3／S1／S2 只标识既定运行，不表示沿用原高权重。
 
-| 批次 | ID／运行名 | 配置参考 | 本组唯一变化 | perception 权重 | aux-loc 权重 |
+| 批次 | ID／运行名 | 配置参考 | 本组变化 | perception 权重 | aux-loc 权重 |
 |---|---|---|---|---|---|
 | 先七组 | P1_S1_J8 `exp32_3maps_P1_S1_J8` | S1_J8 | 去除 perception ramp | 从 local step 0 恒定 0.1 | 关 |
 | 先七组 | U1_S2_J8 `exp32_3maps_U1_S2_J8` | S2_J8 | 去除 aux-loc ramp | 关 | 从 local step 0 恒定 2 |
-| 先七组 | B1_S3_J8 `exp32_3maps_B1_S3_J8` | S3_J8 | 同时去除两个 ramp | 从 local step 0 恒定 0.1 | 从 local step 0 恒定 2 |
+| 先七组 | B1_S3_J8 `exp32_3maps_B1_S3_J8` | P3_S1_J8＋U2_S2_J8 | 联合两项低权重 ramp；attention=true、candidate_tau=1 | local `[0,120] → [0,0.05]`，之后恒定 | local `[0,120] → [0,1]`，之后恒定 |
 | 先七组 | P2_S1_J8 `exp32_3maps_P2_S1_J8` | S1_J8 | perception 终值改为 0.2 | local `[0,120] → [0,0.2]`，之后恒定 | 关 |
 | 先七组 | P3_S1_J8 `exp32_3maps_P3_S1_J8` | S1_J8 | perception 终值改为 0.05 | local `[0,120] → [0,0.05]`，之后恒定 | 关 |
 | 先七组 | U2_S2_J8 `exp32_3maps_U2_S2_J8` | S2_J8 | aux-loc 终值改为 1 | 关 | local `[0,120] → [0,1]`，之后恒定 |
 | 先七组 | U3_S2_J8 `exp32_3maps_U3_S2_J8` | S2_J8 | aux-loc 终值改为 4 | 关 | local `[0,120] → [0,4]`，之后恒定 |
-| 后两组 | P4_S1_J8 `exp32_3maps_P4_S1_J8` | S1_J8 | perception `attention=false` | local `[0,120] → [0,0.1]`，之后恒定 | 关 |
-| 后两组 | U4_S2_J8 `exp32_3maps_U4_S2_J8` | S2_J8 | aux-loc `candidate_tau=0.001` | 关 | local `[0,120] → [0,2]`，之后恒定 |
+| 后两组 | P4_S1_J8 `exp32_3maps_P4_S1_J8` | P3_S1_J8 | 完整沿用 P3，仅 perception `attention=false` | local `[0,120] → [0,0.05]`，之后恒定 | 关 |
+| 后两组 | U4_S2_J8 `exp32_3maps_U4_S2_J8` | U2_S2_J8 | 完整沿用 U2，仅 aux-loc `candidate_tau=0.001` | 关 | local `[0,120] → [0,1]`，之后恒定 |
 
-表中的 S1/S2/S3 是**配置参考**，从未作为这些新组的模型权重来源。九组首次训练统一只加载 J8@5850 `model.safetensors`，从 local step 0 新建 optimizer、scheduler、Trainer/RNG 状态；沿用 paired joint、αloc=8、seed=42、原分组 LR（普通组峰值 2e-5，Action connector/norm/projector 峰值 1e-4）、AdamW、60 步 warmup、cosine min LR 及其他未注明参数。每组默认完整训练 `max_steps=1800`，`--stop-after-step 0`，每 600 local steps 保存完整 checkpoint（600／1200／1800）。单卡命令默认 microbatch=4，GAS 按有效 batch 128 自动设置；更换 GPU 布局时先核对有效 batch，恢复时保持原布局。
+表中的 S1／S2／S3、P3／U2 都只是**配方参考**，从未作为这些新组的模型权重来源。九组首次训练统一只加载 J8@5850 `model.safetensors`，从 local step 0 新建 optimizer、scheduler、Trainer/RNG 状态；沿用 paired joint、αloc=8、seed=42、原分组 LR（普通组峰值 2e-5，Action connector/norm/projector 峰值 1e-4）、AdamW、60 步 warmup、cosine min LR 及其他未注明参数。每组默认完整训练 `max_steps=1800`，`--stop-after-step 0`，每 600 local steps 保存完整 checkpoint（600／1200／1800）。单卡命令默认 microbatch=4，GAS 按有效 batch 128 自动设置；更换 GPU 布局时先核对有效 batch，恢复时保持原布局。B1 与 S0／P3／U2 形成四格联合比较，不从单项 loss 预设收益相加；P4 直接对照 P3，U4 直接对照 U2。
 
 九组只在 local 1200 和 1800 做 seen_validation 三图的定位与离散生成，不评测 600。local 1800 的 test 同一 checkpoint 执行定位、离散生成和连续生成；`infer --task all --split test` 自动路由三项推理，`metrics` 复用定位输出并生成离散、连续各自的三图汇总。test 定位／离散每图 2,000 条（共 6,000），连续每图 20×64=1,280 帧（共 3,840），连续指标沿用 clip_length=16、stride=16、FVD size=224。测试结果只报告，不用于选择后两组配置或决定是否启动。所有 `--checkpoint-step` 使用 Stage 2 local step。默认 minimal 资源；首次改用 full 时加 `--asset-mode full --data-dir /path/to/preprocessed_data`，之后读取本组保存的 `resolved_config.yaml`，从本组 checkpoint 恢复时保持相同后端与路径，并用 `--resume --stop-after-step 0` 保持完整 1800 步调度。逐组可复制命令和待填结果见 [record.md](record.md) 与 [Seen-3 实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
+
+## 2026-10-26：九组消融本地状态
+
+九组中 P1_S1_J8、P2_S1_J8、U2_S2_J8 已完成 local1800，local1200／1800 的定位与离散生成 validation、local1800 的定位／离散／连续 test 已同步；U1 仅有 600／1200 checkpoint 和从 1200 恢复的计划，P3 仅有 600 checkpoint，U3 仅有配置／计划，B1／P4／U4 本地无训练输出。其余组的远端状态不据本地缺项推断。数值、源 JSON 与进度证据见[主实验文档九组结果](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#nine-ablation-results-20261026)及[2026-10-26 分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#stage2-new-results-20261026)。
+
+## 2026-10-27：U1／P3 同步状态
+
+U1_S2_J8 与 P3_S1_J8 已同步至本地 local1800/1800；两组均有 local600／1200／1800 checkpoint、local1200／1800 定位及离散生成 validation，以及 local1800 定位／离散／连续 test。U1 从本组 local1200、P3 从本组 local600 恢复，首次初始化均为 J8@5850 模型权重。九组中现有五组完成；指标与源文件见[主实验文档九组结果](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#nine-ablation-results-20261026)及[test结果总表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#test-overall-20261027)。
+
+<a id="u5-aux05-20261027"></a>
+
+## 2026-10-27：U5_S2_J8 aux-loc 终值 0.5 独立补充
+
+2026-10-23 的九组加既有 24 组在当时共 33 个独立运行名；本次在九组之外新增 `exp32_3maps_U5_S2_J8`，计划总数为 34。U5 当前只有[静态配置](csgo_configs/exp32_3maps_U5_S2_J8.yaml)和[手动命令](record.md#exp32_3maps-u5_s2_j8-2026-10-27-手动命令)，未启动训练或评测；没有配置 aux-loc 终值 0.25 的分支。
+
+U5 完整继承 U2_S2_J8：仅把 aux-loc 权重从 local `[0,120] → [0,1]` 改为 `[0,120] → [0,0.5]`，之后恒定 0.5。perception 关闭；paired joint、αloc=8、普通组峰值 LR 2e-5、Action connector/norm/projector 峰值 1e-4、AdamW、cosine min LR、warmup 60、max_steps 1800、seed 42、单卡 microbatch 4 和目标有效 batch 128 均不变。首次训练只加载 J8@5850 `model.safetensors` 的模型权重，新建 optimizer、scheduler、Trainer/RNG 并从 local step 0 开始；U2 是配方来源，不是权重来源。
+
+U5 在 local 600／1200／1800 保存完整 checkpoint；local 1200／1800 分别做 seen_validation 定位与离散生成；local1800 test 运行定位、离散生成和连续生成。默认 minimal 资源。首次改用 full 时在 train 命令加入 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续 infer/metrics 使用本组 `resolved_config.yaml`；若中断，只从 U5 自己的完整 checkpoint 使用 `--resume --stop-after-step 0` 恢复，并保持原 GPU／microbatch 布局、数据后端与路径。所有步骤均需人工启动，本次只完成文档配置登记。待填进度和结果见[主实验文档 U5 补充](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#u5-aux05-20261027)。
+
+<a id="p5-perception025-20261028"></a>
+
+## 2026-10-28：P5_S1_J8 perception 终值 0.025 独立补充
+
+在原九组与 U5 之外，新增 `exp32_3maps_P5_S1_J8`；计划总数由 34 增至 35（原九组＋U5＋P5 共 11 个新增独立运行名）。P3_S1_J8 是配方参考，只把 perception 权重从 local `[0,120] → [0,0.05]` 改为 `[0,120] → [0,0.025]`，之后恒定 0.025；ramp 保留，aux-loc 关闭。P1 去除 ramp，因此不是本组的直接配方对照。本次只增加 0.025 一个低权重点，不新增 0.0125；比较 P3/P5 可观察低于 0.05 的区间，S1 的 0.1 提供较高权重参照，S0 提供相同 Stage 2 更新预算的无辅助参照。以同节点 validation 判断降低权重的收益与代价，不预设权重越小越好。
+
+P5 首次训练只加载 J8@5850 `checkpoint-5850/model.safetensors` 模型权重，从 local step 0 新建 optimizer、scheduler、Trainer/RNG；不从 P3@1800 续训。保留 paired joint、αloc=8、普通组峰值 LR 2e-5、Action connector/norm/projector 峰值 1e-4、AdamW、cosine_with_min_lr（`min_lr_rate=0.1`）、warmup 60、max_steps 1800、seed 42、单卡 microbatch 4 和目标有效 batch 128。local 600／1200／1800 保存完整 checkpoint。默认 minimal 资源；首次改用 full 时在 train 命令加入 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续 infer/metrics 使用本组保存的 `resolved_config.yaml`。中断后仅从 P5 自己的完整 checkpoint 加 `--resume --stop-after-step 0` 恢复，保持原 GPU／microbatch 布局、数据后端与路径。
+
+local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定位与离散生成必须来自同一 checkpoint；以 local1800 validation 作为 P5 与 P3/S1/S0 的主要比较，local1200 观察走势，不拼接不同 checkpoint 的最佳指标。local 1800 的 test 使用 seen_discrete_test 定位与离散生成（每图 2,000 条），以及 seen_continuous 连续生成（每图 20×64 帧），仅用于报告，不参与选型。`--checkpoint-step` 均指 Stage 2 local step。本次仅登记[静态配置](csgo_configs/exp32_3maps_P5_S1_J8.yaml)、[手动命令](record.md#exp32_3maps-p5_s1_j8-2026-10-28-手动命令)与[主实验文档待填表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#p5-perception025-20261028)，未启动训练或评测。

@@ -77,9 +77,9 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
         self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 33)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 35)
         self.assertEqual(len(RUNNER.STAGE2_J8), 4)
-        self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 9)
+        self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 11)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
@@ -863,7 +863,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
     def test_new_stage2_recipes_change_only_the_declared_factor(self):
         expected_names = (
             "P1_S1_J8", "U1_S2_J8", "B1_S3_J8", "P2_S1_J8", "P3_S1_J8",
-            "U2_S2_J8", "U3_S2_J8", "P4_S1_J8", "U4_S2_J8",
+            "U2_S2_J8", "U3_S2_J8", "P4_S1_J8", "U4_S2_J8", "U5_S2_J8",
+            "P5_S1_J8",
         )
         self.assertEqual(tuple(RUNNER.STAGE2_NEW_ARMS), expected_names)
         for suffix, (base_suffix, changes, removed) in RUNNER.STAGE2_NEW_ARMS.items():
@@ -891,10 +892,10 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                     else:
                         self.assertEqual(steps, [0, 120])
                         self.assertEqual(config[stem + "_schedule_values"][0], 0.0)
-                if suffix in ("P1_S1_J8", "B1_S3_J8"):
+                if suffix == "P1_S1_J8":
                     self.assertEqual(config["alpha_loc_perception_loss"], 0.1)
                     self.assertNotIn("alpha_loc_perception_schedule_steps", config)
-                if suffix in ("U1_S2_J8", "B1_S3_J8"):
+                if suffix == "U1_S2_J8":
                     self.assertEqual(config["alpha_loc_aux_loss"], 2.0)
                     self.assertNotIn("alpha_loc_aux_schedule_steps", config)
                 commands, metadata, output = RUNNER.training_plan(self.args(experiment=experiment), config)
@@ -910,6 +911,170 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                 mutated["aux_loc_combined_candidate_tau"] = 0.123
                 with self.assertRaisesRegex(ValueError, "single-factor"):
                     RUNNER.validate_config(mutated)
+
+    def test_b1_combines_p3_perception_and_u2_auxloc(self):
+        p3 = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + "P3_S1_J8"))
+        u2 = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + "U2_S2_J8"))
+        b1 = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + "B1_S3_J8"))
+        expected = copy.deepcopy(p3)
+        expected["exp32_3maps_experiment"] = RUNNER.PREFIX + "B1_S3_J8"
+        for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss",
+                    "alpha_loc_aux_loss", "alpha_loc_aux_schedule_steps",
+                    "alpha_loc_aux_schedule_values"):
+            expected[key] = copy.deepcopy(u2[key])
+        self.assertEqual(b1, expected)
+        self.assertEqual(b1["alpha_loc_perception_schedule_values"], [0.0, 0.05])
+        self.assertEqual(b1["alpha_loc_aux_schedule_values"], [0.0, 1.0])
+        self.assertEqual(b1["alpha_loc_perception_loss"], 0.0)
+        self.assertEqual(b1["alpha_loc_aux_loss"], 0.0)
+        self.assertTrue(b1["loc_perception_use_attention_weight"])
+        self.assertEqual(b1["aux_loc_combined_candidate_tau"], 1.0)
+
+    def test_p4_and_u4_change_only_one_field_from_p3_and_u2(self):
+        for source_suffix, target_suffix, key, value in (
+            ("P3_S1_J8", "P4_S1_J8", "loc_perception_use_attention_weight", False),
+            ("U2_S2_J8", "U4_S2_J8", "aux_loc_combined_candidate_tau", 0.001),
+        ):
+            with self.subTest(target=target_suffix):
+                source = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + source_suffix))
+                target = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + target_suffix))
+                expected = copy.deepcopy(source)
+                expected["exp32_3maps_experiment"] = RUNNER.PREFIX + target_suffix
+                expected[key] = value
+                self.assertEqual(target, expected)
+                self.assertEqual(target["alpha_loc_perception_schedule_values"]
+                                 if target_suffix.startswith("P") else target["alpha_loc_aux_schedule_values"],
+                                 [0.0, 0.05] if target_suffix.startswith("P") else [0.0, 1.0])
+
+    def test_revised_arms_reject_old_recipe_and_old_checkpoint_identity(self):
+        for suffix in ("B1_S3_J8", "P4_S1_J8", "U4_S2_J8"):
+            with self.subTest(suffix=suffix):
+                experiment = RUNNER.PREFIX + suffix
+                args = self.args("train", experiment)
+                new_config = RUNNER.resolve_config(args, for_training=True)
+                RUNNER.validate_config(new_config)
+                _, metadata, output = RUNNER.training_plan(args, new_config)
+                old_config = copy.deepcopy(new_config)
+                if suffix == "B1_S3_J8":
+                    old_config["alpha_loc_perception_loss"] = 0.1
+                    old_config["alpha_loc_aux_loss"] = 2.0
+                    for stem in ("alpha_loc_perception", "alpha_loc_aux"):
+                        old_config.pop(stem + "_schedule_steps")
+                        old_config.pop(stem + "_schedule_values")
+                elif suffix == "P4_S1_J8":
+                    old_config["alpha_loc_perception_schedule_values"] = [0.0, 0.1]
+                else:
+                    old_config["alpha_loc_aux_schedule_values"] = [0.0, 2.0]
+                with self.assertRaisesRegex(ValueError, "single-factor"):
+                    RUNNER.validate_config(old_config)
+                old_fingerprint = RUNNER.fingerprint(old_config, metadata["runtime"])
+                self.assertNotEqual(old_fingerprint, metadata["fingerprint"])
+                output.mkdir(parents=True)
+                metadata["fingerprint"] = old_fingerprint
+                metadata["source_checkpoint"] = {"path": RUNNER.STAGE2_SOURCE, "sha256": "fixture"}
+                plan = output / "experiment_plan.json"
+                plan.write_text(json.dumps(metadata))
+                checkpoint = output / "checkpoint-600"
+                checkpoint.mkdir()
+                (checkpoint / "trainer_state.json").write_text(
+                    json.dumps({"global_step": 600, "max_steps": 1800}))
+                for name in ("training_args.bin", "model.safetensors", "rng_state_0.pth",
+                             "optimizer.pt", "scheduler.pt"):
+                    (checkpoint / name).touch()
+                resumed_args = self.args("train", experiment, "--resume")
+                with self.assertRaisesRegex(ValueError, "recipe/layout changed"):
+                    RUNNER.training_plan(resumed_args, new_config)
+                metadata["fingerprint"] = RUNNER.fingerprint(new_config, metadata["runtime"])
+                plan.write_text(json.dumps(metadata))
+                commands, resumed, _ = RUNNER.training_plan(resumed_args, new_config)
+                self.assertEqual(resumed["resume_checkpoint"], RUNNER.relative(checkpoint))
+                self.assertNotIn("--finetune_init_ckpt_path", commands[0])
+
+    def test_u5_is_u2_with_only_a_lower_aux_ramp_endpoint(self):
+        u2_name = RUNNER.PREFIX + "U2_S2_J8"
+        u5_name = RUNNER.PREFIX + "U5_S2_J8"
+        u2 = RUNNER.read_yaml(RUNNER.config_path(u2_name))
+        u5 = RUNNER.read_yaml(RUNNER.config_path(u5_name))
+        expected = copy.deepcopy(u2)
+        expected["exp32_3maps_experiment"] = u5_name
+        expected["alpha_loc_aux_schedule_values"] = [0.0, 0.5]
+        self.assertEqual(u5, expected)
+        self.assertEqual(u5["alpha_loc_aux_schedule_steps"], [0, 120])
+        self.assertEqual(u5["alpha_loc_aux_loss"], 0.0)
+        self.assertEqual(u5["alpha_loc_loss"], 8.0)
+        self.assertFalse(u5["is_loc_perception_loss"])
+        self.assertEqual(u5["finetune_init_ckpt_path"], RUNNER.STAGE2_SOURCE)
+        self.assertNotIn(u2_name, u5["finetune_init_ckpt_path"])
+
+        args = self.args("train", u5_name)
+        config = RUNNER.resolve_config(args, for_training=True)
+        RUNNER.validate_config(config)
+        commands, metadata, output = RUNNER.training_plan(args, config)
+        self.assertEqual(metadata["runtime"]["max_steps"], 1800)
+        self.assertEqual(metadata["runtime"]["save_steps"], 600)
+        self.assertEqual(metadata["runtime"]["optimizer"], "adamw_torch")
+        self.assertIsNone(metadata["resume_checkpoint"])
+        self.assertIsNone(metadata["source_checkpoint"])
+        self.assertEqual(option(commands[0], "--max_steps"), "1800")
+        self.assertEqual(option(commands[0], "--save_steps"), "600")
+        self.assertNotIn("--resume_from_checkpoint", commands[0])
+        self.assertFalse(output.exists())
+
+        for split, step in (("validation", 1200), ("validation", 1800), ("test", 1800)):
+            for task, expected_count in (("infer", 2 if split == "validation" else 3),
+                                         ("metrics", 4 if split == "validation" else 8)):
+                with self.subTest(split=split, step=step, task=task):
+                    eval_args = self.args(task, u5_name, "--split", split,
+                                          "--checkpoint-step", str(step))
+                    routed, path, evaluated = RUNNER.evaluation_plan(eval_args, config)
+                    self.assertEqual(len(routed), expected_count)
+                    self.assertIn(f"/{u5_name}/checkpoint-{step}/{split}/", str(path))
+                    self.assertEqual(evaluated["ckpt_path"],
+                                     f"outputs/csgo_1b/{u5_name}/checkpoint-{step}/model.safetensors")
+                    self.assertEqual(evaluated["benchmark_v2_split"],
+                                     "seen_validation" if split == "validation" else "seen_discrete_test")
+                    self.assertFalse(evaluated["is_loc_aux_loss"])
+
+    def test_p5_is_p3_with_only_a_lower_perception_ramp_endpoint(self):
+        p3_name = RUNNER.PREFIX + "P3_S1_J8"
+        p5_name = RUNNER.PREFIX + "P5_S1_J8"
+        p3 = RUNNER.read_yaml(RUNNER.config_path(p3_name))
+        p5 = RUNNER.read_yaml(RUNNER.config_path(p5_name))
+        expected = copy.deepcopy(p3)
+        expected["exp32_3maps_experiment"] = p5_name
+        expected["alpha_loc_perception_schedule_values"] = [0.0, 0.025]
+        self.assertEqual(p5, expected)
+        self.assertEqual(p5["alpha_loc_perception_schedule_steps"], [0, 120])
+        self.assertEqual(p5["alpha_loc_perception_loss"], 0.0)
+        self.assertEqual(p5["alpha_loc_loss"], 8.0)
+        self.assertTrue(p5["loc_perception_use_attention_weight"])
+        self.assertFalse(p5["is_loc_aux_loss"])
+        self.assertFalse(p5["is_aux_loc_combined_em_unc_loss"])
+        self.assertEqual(p5["finetune_init_ckpt_path"], RUNNER.STAGE2_SOURCE)
+        self.assertNotIn(p3_name, p5["finetune_init_ckpt_path"])
+
+        args = self.args("train", p5_name)
+        config = RUNNER.resolve_config(args, for_training=True)
+        RUNNER.validate_config(config)
+        commands, metadata, output = RUNNER.training_plan(args, config)
+        self.assertEqual(metadata["runtime"]["max_steps"], 1800)
+        self.assertEqual(metadata["runtime"]["save_steps"], 600)
+        self.assertEqual(metadata["runtime"]["save_total_limit"], 6)
+        self.assertEqual(metadata["runtime"]["optimizer"], "adamw_torch")
+        self.assertIsNone(metadata["resume_checkpoint"])
+        self.assertIsNone(metadata["source_checkpoint"])
+        self.assertNotIn("--resume_from_checkpoint", commands[0])
+        self.assertFalse(output.exists())
+
+        for key, value in (("alpha_loc_perception_schedule_values", [0.0, 0.05]),
+                           ("alpha_loc_perception_schedule_steps", [0, 180]),
+                           ("loc_perception_use_attention_weight", False),
+                           ("is_loc_aux_loss", True)):
+            with self.subTest(key=key):
+                invalid = copy.deepcopy(config)
+                invalid[key] = value
+                with self.assertRaisesRegex(ValueError, "single-factor"):
+                    RUNNER.validate_config(invalid)
 
     def test_new_stage2_evaluation_steps_and_existing_task_routing(self):
         for suffix in RUNNER.STAGE2_NEW_ARMS:
@@ -958,7 +1123,7 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                                           "--checkpoint-step", str(step)), config)
 
     def test_new_stage2_resume_keeps_own_recipe_and_legacy_save_interval(self):
-        experiment = RUNNER.PREFIX + "P2_S1_J8"
+        experiment = RUNNER.PREFIX + "P5_S1_J8"
         first = self.args("train", experiment, "--stop-after-step", "1200")
         config = RUNNER.resolve_config(first, for_training=True)
         _, metadata, output = RUNNER.training_plan(first, config)

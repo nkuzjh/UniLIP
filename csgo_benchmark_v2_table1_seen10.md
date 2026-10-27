@@ -74,7 +74,7 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | Seen-10 | Discrete generation | OmniGen | `exp32gen_aligned` | 7805.604 M | 7136.920 M | 5.107 M | 11.9736 | 0.6915 | 0.5057 | 83.4449 |
 | Seen-10 | Discrete generation | ControlAR | `exp32gen_aligned_peft` | 910.198 M | 859.926 M | 69.317 M | 13.3055 | 0.6230 | 0.5103 | 30.2869 |
 | Seen-10 | Discrete generation | Lumina-Accessory | `--` | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 12.823 | 0.643 | 0.511 | 31.098 |
-| Seen-10 | Discrete generation | Show-o2 | `--` | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | -- | -- | -- | -- |
+| Seen-10 | Discrete generation | Show-o2 | `--` | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 14.539 | 0.591 | 0.529 | 37.430 |
 | Seen-10 | Discrete generation | Puffin | `exp32gen_aligned` | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 14.3186 | 0.5924 | 0.5357 | 33.2448 |
 | Seen-10 | Discrete generation | FPV synthesis baseline | `exp32_gen` | 1822.416 M | 1681.653 M | 38.910 M | 13.965 | 0.6106 | 0.5163 | 35.584 |
 | Seen-10 | Discrete generation | multi-task baseline | `exp32` | 1822.416 M | 1681.653 M | 77.003 M | 14.1528 | 0.6035 | 0.5229 | 36.6005 |
@@ -87,7 +87,7 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | Seen-10 | Continuous generation | OmniGen | `exp32gen_aligned` | 7805.604 M | 7136.920 M | 5.107 M | 12.7187 | 0.6993 | 24.9154 | 33.0017 | 1631.3874 |
 | Seen-10 | Continuous generation | ControlAR | `exp32gen_aligned_peft` | 910.198 M | 859.926 M | 69.317 M | 13.9832 | 0.6157 | 39.2998 | 45.1919 | 951.4971 |
 | Seen-10 | Continuous generation | Lumina-Accessory | `--` | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 13.722 | 0.634 | 38.103 | 44.423 | 932.545 |
-| Seen-10 | Continuous generation | Show-o2 | `--` | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | -- | -- | -- | -- | -- |
+| Seen-10 | Continuous generation | Show-o2 | `--` | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 15.446 | 0.577 | 32.709 | 39.043 | 887.303 |
 | Seen-10 | Continuous generation | Puffin | `exp32gen_aligned` | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 15.4657 | 0.5679 | 28.1975 | 35.2320 | 844.2427 |
 | Seen-10 | Continuous generation | FPV synthesis baseline | `exp32_gen` | 1822.416 M | 1681.653 M | 38.910 M | 14.342 | 0.5929 | 35.698 | 41.867 | 848.071 |
 | Seen-10 | Continuous generation | multi-task baseline | `exp32` | 1822.416 M | 1681.653 M | 77.003 M | 14.5725 | 0.5826 | 34.0925 | 40.3596 | 848.4586 |

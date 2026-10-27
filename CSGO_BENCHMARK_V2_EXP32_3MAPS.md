@@ -1,7 +1,9 @@
 
 ## exp32_3maps 两轮实验与分阶段筛选
 
-- 原两轮设计含第一轮 7 组、补充联合对照 J5～J10 共 6 组、第二轮 A0～A3 共 4 组，以及 2026-10-14 新配置的 J8 辅助 A1_J8～A3_J8 共 3 组；新增独立的 J8 Stage 2 四组 S0_J8～S3_J8 后为历史 24 个独立运行名；2026-10-23 再设计九组消融，共 33 个独立运行名。其中 S0 是无辅助的等更新预算归因对照，S1～S3 是用户要求的三个辅助主组。原第一轮与 J5～J10 保留 2026-10-13 的核对快照；**2026-10-22 已补充 S0_J8～S3_J8：四组均完成 local 1800，local 1200／1800 的定位和离散生成 validation 结果已同步**；同日补充 **A1_J8 已完成 50 epoch、5900 steps，2400／5900 两任务 validation 结果齐全**。现有配置编号为 S0（control）、S1（perception）、S2（aux-loc）、S3（both），未发现独立 S4_J8 配置或产物，不将 S2 结果改标为 S4。具体证据与分析见下方记录表及 [Stage 2 结果分析](#stage2-results-20261022)。
+- 原两轮设计含第一轮 7 组、补充联合对照 J5～J10 共 6 组、第二轮 A0～A3 共 4 组，以及 2026-10-14 新配置的 J8 辅助 A1_J8～A3_J8 共 3 组；新增独立的 J8 Stage 2 四组 S0_J8～S3_J8 后为历史 24 个独立运行名；2026-10-23 再设计九组消融，共 33 个独立运行名。其中 S0 是无辅助的等更新预算归因对照，S1～S3 是用户要求的三个辅助主组。原第一轮与 J5～J10 保留 2026-10-13 的核对快照；**2026-10-22 已补充 S0_J8～S3_J8：四组均完成 local 1800，local 1200／1800 的定位和离散生成 validation 结果已同步**；同日补充 **A1_J8 已完成 50 epoch、5900 steps，2400／5900 两任务 validation 结果齐全**。**2026-10-26 九组新消融本地快照：P1／P2／U2 已完成 local1800，并齐备 local1200／1800 的定位与离散生成 validation、local1800 的定位／离散／连续 test；其他六组未取得完整本地评测。** **2026-10-27 更新：U1／P3 已完成 local1800，local1200／1800 定位＋离散生成 validation 与 local1800 定位／离散／连续 test 均已同步；九组中现有五组完整。连同 L0／G0／J8@5850、S0_J8～S3_J8@local1800，共 12 组 test，见 [test结果总表](#test-overall-20261027)。** 现有配置编号为 S0（control）、S1（perception）、S2（aux-loc）、S3（both），未发现独立 S4_J8 配置或产物，不将 S2 结果改标为 S4。具体证据与分析见下方记录表及 [Stage 2 结果分析](#stage2-results-20261022)。
+- **2026-10-27 补充 U5_S2_J8**：在上述九组之外新增独立运行名 `exp32_3maps_U5_S2_J8`，计划总数由 33 增至 34；仅将 U2_S2_J8 的 aux-loc ramp 终值 1 降至 0.5，当前仅配置、未启动训练或评测。配置、进度及空结果表见[独立 U5 补充](#u5-aux05-20261027)。
+- **2026-10-28 补充 P5_S1_J8**：再新增独立运行名 `exp32_3maps_P5_S1_J8`，当前计划总数由 34 增至 35（原九组＋U5＋P5 共 11 个新增独立运行名）；仅将 P3_S1_J8 的 perception ramp 终值 0.05 降至 0.025，当前仅配置、未启动训练或评测。配置、进度及空结果表见[独立 P5 补充](#p5-perception025-20261028)。
 - 固定 Seen-3：`de_ancient, de_dust2, de_nuke`，来自定版 Benchmark v2；训练 15,000 个源样本，验证每地图 500 条。架构沿用 exp32 的共享 LLM LoRA＋两个任务 head LoRA，不切换为 exp31 的冻结 LLM／全量 heads。
 - 原两轮统一 LoRA `r=32, alpha=64, dropout=0.05`、224 encoder input、短指令、源样本有效 batch 128、最多 50 epoch；新 Stage 2 保留相同模型与名义有效 batch，但显式使用 1800 optimizer steps 的新调度。满批设计口径下，单任务每次更新 128 个任务样本，paired joint 每次更新各 128 个定位／生成样本，目标是匹配每任务数据曝光而非计算量；本次 Stage 2 的实际布局存在 epoch 尾批例外，曝光并非严格匹配，见结果分析。
 - 初始方案为单 GPU、micro batch 4、GAS 32；本批已完成的第一轮七组实际保存的运行参数均为单 GPU、micro batch 64、GAS 2，源样本有效 batch 仍为 128。实际运行布局以各实验 `experiment_plan.json`／Trainer 状态为准；恢复时不改变卡数或 micro batch，跨服务器可改变具体 GPU 编号。
@@ -156,8 +158,8 @@ J5～J9 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42�
 
 | ID | Experiment | 训练 | 推理 | Metric 计算 | validation | checkpoint steps | 训练证据 |
 |---|---|---|---|---|---|---|---|
-| L0 | `exp32_3maps_loc_single` | ✅ 50 epoch；5850/5850 | ✅ 定位：2400／3600／5850 | ✅ 定位 loc_metrics；无生成任务 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_loc_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_loc_single/experiment_plan.json) |
-| G0 | `exp32_3maps_gen_single` | ✅ 50 epoch；5850/5850 | ✅ 离散生成：2400／3600／5850 | ✅ 离散生成三图汇总；无定位任务 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_gen_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_gen_single/experiment_plan.json) |
+| L0 | `exp32_3maps_loc_single` | ✅ 50 epoch；5850/5850 | ✅ validation 定位：2400／3600／5850；test：5850 | ✅ validation＋test 定位 loc_metrics；生成不适用 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_loc_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_loc_single/experiment_plan.json) |
+| G0 | `exp32_3maps_gen_single` | ✅ 50 epoch；5850/5850 | ✅ validation 离散生成：2400／3600／5850；test 离散＋连续：5850 | ✅ validation 离散、test 离散＋连续三图汇总；定位不适用 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_gen_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_gen_single/experiment_plan.json) |
 | J0 | `exp32_3maps_joint_original` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_original/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_original/experiment_plan.json) |
 | J1 | `exp32_3maps_joint_headlr` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_headlr/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_headlr/experiment_plan.json) |
 | J2 | `exp32_3maps_joint_sharedlr` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_sharedlr/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_sharedlr/experiment_plan.json) |
@@ -166,7 +168,7 @@ J5～J9 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42�
 | J5 | `exp32_3maps_joint_original_constloc` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_original_constloc/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_original_constloc/experiment_plan.json) |
 | J6 | `exp32_3maps_joint_constloc1` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、5850 模型文件已到；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc1/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc1/experiment_plan.json) |
 | J7 | `exp32_3maps_joint_constloc4` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、5850 模型文件已到；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc4/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc4/experiment_plan.json) |
-| J8 | `exp32_3maps_joint_constloc8` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：2400、5850 及根目录；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc8/experiment_plan.json) |
+| J8 | `exp32_3maps_joint_constloc8` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ validation 定位＋离散生成：2400／5850；test 定位＋离散＋连续：5850 | ✅ validation 定位＋离散生成；test 定位＋离散＋连续指标 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：2400、5850 及根目录；其余同步中 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc8/experiment_plan.json) |
 | J9 | `exp32_3maps_joint_constloc12` | ✅ 远端完成；本地状态核实 50 epoch、5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型：1200、2400、3600、4800、5850 及根目录；已评测 2400、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_constloc12/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_constloc12/experiment_plan.json) |
 | J10 | `exp32_3maps_joint_constloc16` | 远端完成（用户确认）；本地训练元数据待同步 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 本地模型及元数据待同步；已评测 2400、5850 | 用户远端完成回报；本地训练证据待同步 |
 | A0 | `exp32_3maps_aux_control` | 未发现本地训练记录 | 未发现本地结果 | 未发现本地指标 | 待记录 | 未发现本地 checkpoint；计划首评 3600 | — |
@@ -176,17 +178,17 @@ J5～J9 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42�
 | A1_J8 | `exp32_3maps_perception_j8` | ✅ 50 epoch；5900/5900；双卡 microbatch=4、GAS=16 | ✅ 定位＋离散生成：2400／5900 | ✅ 定位宏平均＋离散生成三图汇总 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：2400、5900 及根目录；3600 未见本地评测 | [状态](outputs/csgo_1b/exp32_3maps_perception_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_perception_j8/experiment_plan.json) |
 | A2_J8 | `exp32_3maps_auxloc_j8` | 已配置／未启动；50 epoch horizon、首停 3600 | 待评测 | 待评测 | 计划 seen_validation；seed=42；每任务 1,500 条 | 计划首评 3600；无训练 checkpoint | [配置](csgo_configs/exp32_3maps_auxloc_j8.yaml) |
 | A3_J8 | `exp32_3maps_both_j8` | 已配置／未启动；50 epoch horizon、首停 3600 | 待评测 | 待评测 | 计划 seen_validation；seed=42；每任务 1,500 条 | 计划首评 3600；无训练 checkpoint | [配置](csgo_configs/exp32_3maps_both_j8.yaml) |
-| S0_J8 | `exp32_3maps_stage2_control_j8` | ✅ Stage 2 local 1800/1800；epoch=15.3846；GPU×microbatch×GAS=2×64×1 | ✅ 定位＋离散生成：local 1200／1800 | ✅ 定位宏平均＋离散生成三图汇总 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_control_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_control_j8/experiment_plan.json) |
-| S1_J8 | `exp32_3maps_stage2_perception_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2559；GPU×microbatch×GAS=2×8×8 | ✅ 定位＋离散生成：local 1200／1800 | ✅ 定位宏平均＋离散生成三图汇总 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_perception_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_perception_j8/experiment_plan.json) |
-| S2_J8 | `exp32_3maps_stage2_auxloc_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2559；GPU×microbatch×GAS=2×8×8 | ✅ 定位＋离散生成：local 1200／1800 | ✅ 定位宏平均＋离散生成三图汇总 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_auxloc_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_auxloc_j8/experiment_plan.json) |
-| S3_J8 | `exp32_3maps_stage2_both_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2560；GPU×microbatch×GAS=2×4×16 | ✅ 定位＋离散生成：local 1200／1800 | ✅ 定位宏平均＋离散生成三图汇总 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_both_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_both_j8/experiment_plan.json) |
+| S0_J8 | `exp32_3maps_stage2_control_j8` | ✅ Stage 2 local 1800/1800；epoch=15.3846；GPU×microbatch×GAS=2×64×1 | ✅ validation 定位＋离散生成：local 1200／1800；test 定位＋离散＋连续：local 1800 | ✅ validation 定位＋离散生成；test 定位＋离散＋连续指标 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_control_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_control_j8/experiment_plan.json) |
+| S1_J8 | `exp32_3maps_stage2_perception_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2559；GPU×microbatch×GAS=2×8×8 | ✅ validation 定位＋离散生成：local 1200／1800；test 定位＋离散＋连续：local 1800 | ✅ validation 定位＋离散生成；test 定位＋离散＋连续指标 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_perception_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_perception_j8/experiment_plan.json) |
+| S2_J8 | `exp32_3maps_stage2_auxloc_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2559；GPU×microbatch×GAS=2×8×8 | ✅ validation 定位＋离散生成：local 1200／1800；test 定位＋离散＋连续：local 1800 | ✅ validation 定位＋离散生成；test 定位＋离散＋连续指标 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_auxloc_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_auxloc_j8/experiment_plan.json) |
+| S3_J8 | `exp32_3maps_stage2_both_j8` | ✅ Stage 2 local 1800/1800；epoch=15.2560；GPU×microbatch×GAS=2×4×16 | ✅ validation 定位＋离散生成：local 1200／1800；test 定位＋离散＋连续：local 1800 | ✅ validation 定位＋离散生成；test 定位＋离散＋连续指标 | seen_validation；seed=42；每任务三图各 500 条 | 本地模型：local 1200、1800 及根目录；600 未见评测产物 | [状态](outputs/csgo_1b/exp32_3maps_stage2_both_j8/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_stage2_both_j8/experiment_plan.json) |
 
 - `checkpoint steps` 列对已同步的节点列出本地模型文件；对仍在同步的 J10 则明确标明评测节点与本地模型状态。J5～J9 所列模型仅核对 safetensors 头部声明的长度与文件大小吻合，未做校验和或 optimizer、scheduler、RNG 等完整恢复文件核查；本地模型存在也不等于每个节点都已评测。原第一轮七组均有 3600 checkpoint，但当前仅 L0、G0 有 3600 validation 结果；J4 的 4800 checkpoint 也暂无本地评测结果。未列出的保存节点不据此推断从未生成。
 - 已同步的定位与离散生成均在三图各 500 条 `seen_validation` 上完成：定位逐样本文件已核对每图 500 条、共 1,500 个唯一 `(map, file_frame)`；生成汇总逐图 `Common_Count=500`、`Coverage_GT=Coverage_Pred=1`。
 - 定位的 25 份 `loc_metrics.json` 已包含逐图指标及 `metrics_macro_map`，下表直接使用已有宏平均；正式定位摘要文件名为 `benchmark_csgo_v2_loc.json`。生成的 25 份 `discrete/summary.json` 已存在。J5～J10 的评测结果可核实评测节点，不代表相应模型 checkpoint 已全部同步到本地。
 - J5～J10 已同步的 validation 节点为 2400 和 5850；当前未发现 3600 的本地评测结果，不据此推断该步表现。
 - A3 现有计划使用 J4 配方、单 GPU、microbatch=4、GAS=32、seed=42；缺少 Trainer 状态和 checkpoint，仅登记为配置／计划已存在。A0 尚无独立记录，也未将任何第一轮结果自动复制为 A0；若后续确认复用，须注明来源及相同步数、实际配置。2026-10-14 新增的 A1_J8～A3_J8 当时仅完成配置；2026-10-22 已核对 A1_J8 完成情况并更新对应行，A2_J8／A3_J8 仍保留原状态，本次不据此推断其远端进度。
-- 尚未发现本轮任何实验的本地 test 定位、test 离散生成或连续生成结果。以下指标均为 validation，不混入历史 exp31 三图测试结果。
+- 截至 2026-10-22，尚未发现当时已核对实验的本地 test 定位、test 离散生成或连续生成结果；本节上方旧指标均为 validation，不混入历史 exp31 三图测试结果。2026-10-26 新九组中 P1／P2／U2 的 test 结果见下方独立表；2026-10-27 又同步 L0／G0／J8／S0～S3 及 U1／P3 的 test，共 12 组，见 [test结果总表](#test-overall-20261027)。不将 test 回填为 validation。
 
 ## exp32_3maps 实验结果表
 
@@ -283,107 +285,323 @@ J5～J10 已同步 2400 和 5850 的定位与离散生成 validation 指标；�
 
 | 范围 | split | 结果状态 |
 |---|---|---|
-| 定位测试 | seen_discrete_test | 未发现本地结果，暂不填写指标 |
-| 离散生成测试 | seen_discrete_test | 未发现本地结果，暂不填写指标 |
-| 连续生成测试 | seen_continuous | 未发现本地结果，暂不填写 PSNR／SSIM／LPIPS／时序指标／FVD；按方案在 validation 选定 checkpoint 后报告 |
+| 定位测试 | seen_discrete_test | 2026-10-27 已有 L0／J8@5850、S0～S3 与 P1／U1／P2／P3／U2@local1800 的定位 test；G0 定位不适用，见[test结果总表](#test-overall-20261027) |
+| 离散生成测试 | seen_discrete_test | 2026-10-27 已有 G0／J8@5850、S0～S3 与 P1／U1／P2／P3／U2@local1800 的离散生成 test；L0 生成不适用，见[test结果总表](#test-overall-20261027) |
+| 连续生成测试 | seen_continuous | 2026-10-27 已有 G0／J8@5850、S0～S3 与 P1／U1／P2／P3／U2@local1800 的连续生成 test；L0 生成不适用，见[test结果总表](#test-overall-20261027) |
 | A0～A3 辅助 loss 消融 | seen_validation | 尚无完成的本地评测结果；训练与配置状态见上方实验记录表 |
 | A1_J8 辅助 loss 消融 | seen_validation | 2026-10-22 核对 2400／5900 定位＋离散生成指标齐全；3600 未发现本地结果 |
 | A2_J8／A3_J8 辅助 loss 消融 | seen_validation | 保留原已配置／待评测记录，本次未更新；结果留空 |
-| S0_J8～S3_J8 两阶段微调 | seen_validation | 2026-10-22 核对 local 1200／1800 的定位＋离散生成结果齐全；local600 未发现本地结果；本次未发现 Stage 2 test／连续生成结果 |
+| S0_J8～S3_J8 两阶段微调 | seen_validation | 2026-10-22 核对 local 1200／1800 的定位＋离散生成 validation 齐全；local600 未发现本地结果；2026-10-27 补齐 local1800 定位／离散／连续 test |
 
-## 2026-10-23：J8 Stage 2 九组新消融（待执行）
+<a id="nine-ablation-results-20261026"></a>
 
-本节为新增计划；上方 S0_J8～S3_J8 的已完成结果与历史每 300 步保存的配方不改。新组以 S1/S2/S3 **仅作配置参考**，模型初始化始终是 J8@5850 权重，而非 S1/S2/S3 的最终权重。九组首次训练新建 optimizer、scheduler、Trainer/RNG，统一 αloc=8、原 Stage 2 分组 LR、seed=42 和有效 batch 128；`max_steps=1800`、默认完整训练、每 600 local steps 保存完整 checkpoint。只在 local 1200／1800 做 validation 的定位与离散生成；local 1800 test 运行定位、离散生成与连续生成。先手动执行前七组并人工查看结果，再手动决定执行后两组；没有指标触发的自动队列。执行命令见 [record.md](record.md)，设计说明见 [Stage 2 设计文档](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md)。
+## J8 Stage 2 九组新消融
+
+以下矩阵以 2026-10-23 九组设计为基础；**2026-10-28 修订尚无本地训练产物的 B1／P4／U4 三行配方**，其余六行及历史结果不变，计划运行名总数仍为 35。B1 组合 P3 的 perception 0.05 ramp 与 U2 的 aux-loc 1 ramp（两项均在 local `[0,120]` 从 0 升至终值），保留 `attention=true`、`candidate_tau=1`；P4 完整沿用 P3，只改 `attention=false`；U4 完整沿用 U2，只改 `candidate_tau=0.001`。名称中的 S3／S1／S2 仅保留运行身份，不代表继续使用原高权重配方。上方 S0_J8～S3_J8 的已完成结果与历史每 300 步保存的配方不改。P3／U2 是配方参考，模型初始化始终是 J8@5850 权重，而非 P3／U2 或 S1／S2／S3 的最终权重。九组首次训练新建 optimizer、scheduler、Trainer/RNG，统一 αloc=8、原 Stage 2 分组 LR、seed=42 和有效 batch 128；`max_steps=1800`、默认完整训练、每 600 local steps 保存完整 checkpoint。只在 local 1200／1800 做 validation 的定位与离散生成；local 1800 test 运行定位、离散生成与连续生成。原计划先手动执行前七组并人工查看结果，再手动决定执行后两组；没有指标触发的自动队列。执行命令见 [record.md](record.md)，设计说明见 [Stage 2 设计文档](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md)。
 
 | 批次 | ID | Experiment | 参考配方 | 本组变化 | 保存 | validation | test |
 |---|---|---|---|---|---|---|---|
 | 先七组 | P1_S1_J8 | `exp32_3maps_P1_S1_J8` | S1_J8 | perception 从 step 0 恒定 0.1；aux-loc 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 | 先七组 | U1_S2_J8 | `exp32_3maps_U1_S2_J8` | S2_J8 | aux-loc 从 step 0 恒定 2；perception 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
-| 先七组 | B1_S3_J8 | `exp32_3maps_B1_S3_J8` | S3_J8 | perception 0.1、aux-loc 2，均从 step 0 恒定 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
+| 先七组 | B1_S3_J8 | `exp32_3maps_B1_S3_J8` | P3_S1_J8＋U2_S2_J8 | perception `[0,120] → [0,0.05]`、aux-loc `[0,120] → [0,1]`；attention=true、candidate_tau=1 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 | 先七组 | P2_S1_J8 | `exp32_3maps_P2_S1_J8` | S1_J8 | perception `[0,120] → [0,0.2]`；aux-loc 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 | 先七组 | P3_S1_J8 | `exp32_3maps_P3_S1_J8` | S1_J8 | perception `[0,120] → [0,0.05]`；aux-loc 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 | 先七组 | U2_S2_J8 | `exp32_3maps_U2_S2_J8` | S2_J8 | aux-loc `[0,120] → [0,1]`；perception 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 | 先七组 | U3_S2_J8 | `exp32_3maps_U3_S2_J8` | S2_J8 | aux-loc `[0,120] → [0,4]`；perception 关 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
-| 后两组 | P4_S1_J8 | `exp32_3maps_P4_S1_J8` | S1_J8 | perception attention=false；权重 `[0,120] → [0,0.1]` | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
-| 后两组 | U4_S2_J8 | `exp32_3maps_U4_S2_J8` | S2_J8 | aux-loc candidate_tau=0.001；权重 `[0,120] → [0,2]` | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
+| 后两组 | P4_S1_J8 | `exp32_3maps_P4_S1_J8` | P3_S1_J8 | 完整沿用 P3：perception `[0,120] → [0,0.05]`、aux-loc 关；仅 attention=false | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
+| 后两组 | U4_S2_J8 | `exp32_3maps_U4_S2_J8` | U2_S2_J8 | 完整沿用 U2：aux-loc `[0,120] → [0,1]`、perception 关；仅 candidate_tau=0.001 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
 
 ### 九组进度记录
 
-下表全部为待执行占位，未运行任何新实验；训练、推理、指标和 checkpoint 状态须以实际产物更新。单卡命令默认 microbatch=4，GPU 布局改变后记录实际 GAS 和样本曝光。
+2026-10-26 本地核对时三组完整，U1／P3 仅部分 checkpoint。2026-10-27 同步后，九组中 P1／U1／P2／P3／U2 共五组完成 local1800，local1200／1800 定位＋离散生成 validation 及 local1800 定位／离散／连续 test 均齐全；U3 仍仅计划与配置，B1／P4／U4 仍无本地训练输出。进度仅表示本地证据，不推断远端状态。已完成五组的计划均记载 seed=42、单卡 microbatch=4、GAS=32、max_steps=1800；U1 从自身 local1200、P3 从自身 local600 checkpoint 恢复，首次初始化均为 J8@5850 模型权重。
 
 | ID | Experiment | 训练 | validation 1200 | validation 1800 | test 1800 | checkpoint／证据 |
 |---|---|---|---|---|---|---|
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 待启动；目标 local 1800 | 定位／离散：待评测 | 定位／离散：待评测 | 定位／离散／连续：待评测 | 目标保存 local 600／1200／1800；暂无产物 |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | ✅ local 1800/1800；单卡 microbatch=4、GAS=32 | ✅ 定位＋离散生成 | ✅ 定位＋离散生成 | ✅ 定位＋离散＋连续生成 | 本地模型 local 600／1200／1800；[状态](outputs/csgo_1b/exp32_3maps_P1_S1_J8/trainer_state.json)；[计划](outputs/csgo_1b/exp32_3maps_P1_S1_J8/experiment_plan.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | ✅ local 1800/1800；epoch=15.256；单卡 microbatch=4、GAS=32；从本组 local1200 恢复 | ✅ 定位＋离散生成 | ✅ 定位＋离散生成 | ✅ 定位＋离散＋连续生成 | 本地模型 local 600／1200／1800；[1800 状态](outputs/csgo_1b/exp32_3maps_U1_S2_J8/checkpoint-1800/trainer_state.json)；[计划](outputs/csgo_1b/exp32_3maps_U1_S2_J8/experiment_plan.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 本地无训练输出目录；远端状态未核实 | 本地评测未同步 | 本地评测未同步 | 本地评测未同步 | 本地无 checkpoint；[静态配置](csgo_configs/exp32_3maps_B1_S3_J8.yaml) |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | ✅ local 1800/1800；单卡 microbatch=4、GAS=32 | ✅ 定位＋离散生成 | ✅ 定位＋离散生成 | ✅ 定位＋离散＋连续生成 | 本地模型 local 600／1200／1800；[状态](outputs/csgo_1b/exp32_3maps_P2_S1_J8/trainer_state.json)；[计划](outputs/csgo_1b/exp32_3maps_P2_S1_J8/experiment_plan.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | ✅ local 1800/1800；epoch=15.256；单卡 microbatch=4、GAS=32；从本组 local600 恢复 | ✅ 定位＋离散生成 | ✅ 定位＋离散生成 | ✅ 定位＋离散＋连续生成 | 本地模型 local 600／1200／1800；[1800 状态](outputs/csgo_1b/exp32_3maps_P3_S1_J8/checkpoint-1800/trainer_state.json)；[计划](outputs/csgo_1b/exp32_3maps_P3_S1_J8/experiment_plan.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | ✅ local 1800/1800；单卡 microbatch=4、GAS=32 | ✅ 定位＋离散生成 | ✅ 定位＋离散生成 | ✅ 定位＋离散＋连续生成 | 本地模型 local 600／1200／1800；[状态](outputs/csgo_1b/exp32_3maps_U2_S2_J8/trainer_state.json)；[计划](outputs/csgo_1b/exp32_3maps_U2_S2_J8/experiment_plan.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 仅计划／配置；无 checkpoint 或完成状态 | 本地评测未同步 | 本地评测未同步 | 本地评测未同步 | 本地无 checkpoint；[计划](outputs/csgo_1b/exp32_3maps_U3_S2_J8/experiment_plan.json) |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 本地无训练输出目录；远端状态未核实 | 本地评测未同步 | 本地评测未同步 | 本地评测未同步 | 本地无 checkpoint；[静态配置](csgo_configs/exp32_3maps_P4_S1_J8.yaml) |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 本地无训练输出目录；远端状态未核实 | 本地评测未同步 | 本地评测未同步 | 本地评测未同步 | 本地无 checkpoint；[静态配置](csgo_configs/exp32_3maps_U4_S2_J8.yaml) |
 
 ### 九组定位 validation（seen_validation；seed=42；三图各 500）
 
+三图等权宏平均取自各源 JSON 的 `metrics_macro_map`，保留三位小数；空值表示本地结果未同步。
+
 | ID | Experiment | Stage 2 local step | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 源文件 |
-|---|---|---:|---:|---:|---:|---:|---|
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1200 | — | — | — | — | 待评测 |
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800 | — | — | — | — | 待评测 |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1200 | — | — | — | — | 待评测 |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800 | — | — | — | — | 待评测 |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1200 | — | — | — | — | 待评测 |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800 | — | — | — | — | 待评测 |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1200 | — | — | — | — | 待评测 |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800 | — | — | — | — | 待评测 |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1200 | — | — | — | — | 待评测 |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800 | — | — | — | — | 待评测 |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1200 | — | — | — | — | 待评测 |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800 | — | — | — | — | 待评测 |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1200 | — | — | — | — | 待评测 |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800 | — | — | — | — | 待评测 |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1200 | — | — | — | — | 待评测 |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800 | — | — | — | — | 待评测 |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1200 | — | — | — | — | 待评测 |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800 | — | — | — | — | 待评测 |
+|---|---|---|---|---|---|---|---|
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1200 | 45.505 | 2.706 | 2.528 | 24.856 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1200/validation/seed_42/loc_metrics.json) |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800 | 46.943 | 2.743 | 2.632 | 24.436 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1800/validation/seed_42/loc_metrics.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1200 | 45.269 | 2.694 | 2.446 | 24.060 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1200/validation/seed_42/loc_metrics.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800 | 44.178 | 2.603 | 2.543 | 23.610 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1800/validation/seed_42/loc_metrics.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1200 | — | — | — | — | 本地评测未同步 |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800 | — | — | — | — | 本地评测未同步 |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1200 | 45.135 | 2.708 | 2.635 | 24.198 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1200/validation/seed_42/loc_metrics.json) |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800 | 45.049 | 2.653 | 2.431 | 24.061 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1800/validation/seed_42/loc_metrics.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1200 | 47.813 | 2.744 | 2.651 | 24.216 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1200/validation/seed_42/loc_metrics.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800 | 45.031 | 2.645 | 2.406 | 23.977 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1800/validation/seed_42/loc_metrics.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1200 | 45.013 | 2.697 | 2.710 | 24.745 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1200/validation/seed_42/loc_metrics.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800 | 43.858 | 2.611 | 2.533 | 24.263 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1800/validation/seed_42/loc_metrics.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1200 | — | — | — | — | 本地评测未同步 |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800 | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1200 | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800 | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1200 | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800 | — | — | — | — | 本地评测未同步 |
 
 ### 九组离散生成 validation（seen_validation；seed=42；三图各 500）
 
+三图等权宏平均取自各源 JSON 的 `metrics_macro_map`，保留三位小数；空值表示本地结果未同步。
+
 | ID | Experiment | Stage 2 local step | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 源文件 |
-|---|---|---:|---:|---:|---:|---:|---:|---|
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1200 | — | — | — | — | — | 待评测 |
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800 | — | — | — | — | — | 待评测 |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1200 | — | — | — | — | — | 待评测 |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800 | — | — | — | — | — | 待评测 |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1200 | — | — | — | — | — | 待评测 |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800 | — | — | — | — | — | 待评测 |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1200 | — | — | — | — | — | 待评测 |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800 | — | — | — | — | — | 待评测 |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1200 | — | — | — | — | — | 待评测 |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800 | — | — | — | — | — | 待评测 |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1200 | — | — | — | — | — | 待评测 |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800 | — | — | — | — | — | 待评测 |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1200 | — | — | — | — | — | 待评测 |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800 | — | — | — | — | — | 待评测 |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1200 | — | — | — | — | — | 待评测 |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800 | — | — | — | — | — | 待评测 |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1200 | — | — | — | — | — | 待评测 |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800 | — | — | — | — | — | 待评测 |
+|---|---|---|---|---|---|---|---|---|
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1200 | 14.376 | 0.418 | 0.615 | 0.521 | 62.817 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1200/validation/seed_42/discrete/summary.json) |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800 | 14.370 | 0.419 | 0.614 | 0.522 | 61.776 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1800/validation/seed_42/discrete/summary.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1200 | 14.316 | 0.420 | 0.617 | 0.518 | 63.155 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1200/validation/seed_42/discrete/summary.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800 | 14.376 | 0.418 | 0.615 | 0.521 | 63.152 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1800/validation/seed_42/discrete/summary.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1200 | — | — | — | — | — | 本地评测未同步 |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800 | — | — | — | — | — | 本地评测未同步 |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1200 | 14.272 | 0.415 | 0.618 | 0.519 | 63.766 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1200/validation/seed_42/discrete/summary.json) |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800 | 14.361 | 0.414 | 0.615 | 0.521 | 62.558 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1800/validation/seed_42/discrete/summary.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1200 | 14.368 | 0.420 | 0.617 | 0.518 | 63.110 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1200/validation/seed_42/discrete/summary.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800 | 14.455 | 0.421 | 0.615 | 0.521 | 62.625 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1800/validation/seed_42/discrete/summary.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1200 | 14.345 | 0.419 | 0.617 | 0.519 | 63.259 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1200/validation/seed_42/discrete/summary.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800 | 14.364 | 0.418 | 0.615 | 0.521 | 62.206 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1800/validation/seed_42/discrete/summary.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1200 | — | — | — | — | — | 本地评测未同步 |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800 | — | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1200 | — | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800 | — | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1200 | — | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800 | — | — | — | — | — | 本地评测未同步 |
 
-### 九组 test local 1800（待评测）
 
-test 只在 local 1800 的同一 checkpoint 执行；定位和离散生成使用 `seen_discrete_test`（每图各 2,000 条，共 6,000 条），连续生成使用 `seen_continuous`（每图 20×64=1,280 帧，共 3,840 帧）。`--split test --task all` 自动路由三项推理；`metrics` 复用定位输出并生成离散、连续生成各自的三图汇总，连续生成沿用 clip_length=16、stride=16、FVD size=224。测试结果只报告，不参与是否执行后两组的判断。
+<a id="u5-aux05-20261027"></a>
 
-| ID | Experiment | 定位（XY／Z／Pitch／Yaw） | 离散生成（PSNR／SSIM／LPIPS／Boundary F1／FID） | 连续生成（PSNR／SSIM／LPIPS／时序指标／FVD） |
+## U5_S2_J8 aux-loc 终值 0.5 补充（未启动）
+
+U5 是九组之后的独立补充，不改写 2026-10-23 九组矩阵或 2026-10-26 的历史结果。它完整继承 U2_S2_J8 配方，唯一训练差异是 aux-loc loss 权重的 local `[0,120] → [0,1]` 改为 `[0,120] → [0,0.5]`，之后恒定 0.5；perception 关闭。U2 仅作为配置参考，U5 首次训练只加载 J8@5850 的 `model.safetensors`，从 local step 0 新建 optimizer、scheduler、Trainer/RNG，绝非从 U2@1800 续训。[静态配置](csgo_configs/exp32_3maps_U5_S2_J8.yaml)、[Stage 2 设计说明](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#u5-aux05-20261027)与 [record.md 手动命令](record.md#exp32_3maps-u5_s2_j8-2026-10-27-手动命令)记录了来源和执行方式。
+
+| ID | Experiment | 参考配方 | 唯一变化 | 固定训练设置 | 保存 | validation | test |
+|---|---|---|---|---|---|---|---|
+| U5_S2_J8 | `exp32_3maps_U5_S2_J8` | U2_S2_J8 | aux-loc `[0,120] → [0,0.5]`，之后恒定；perception 关 | paired joint；αloc=8；普通组峰值 LR 2e-5，Action connector/norm/projector 1e-4；warmup 60；max_steps=1800；seed=42；单卡 microbatch=4、有效 batch=128 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
+
+| ID | 训练 | validation 1200 | validation 1800 | test 1800 | 证据 |
+|---|---|---|---|---|---|
+| U5_S2_J8 | 未启动；无 checkpoint | 待评 | 待评 | 待评 | 仅[静态配置](csgo_configs/exp32_3maps_U5_S2_J8.yaml)；不得将 U2 结果记为 U5 |
+
+以下均为待填占位，`—` 表示没有结果，不代表 0。validation 使用 seen_validation、seed=42、三图各 500 条和同一 checkpoint 的定位／离散生成结果；所有步数均为 Stage 2 local step。
+
+### U5 定位 validation
+
+| ID | local step | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 源文件 |
+|---|---:|---:|---:|---:|---:|---|
+| U5_S2_J8 | 1200 | — | — | — | — | 待评 |
+| U5_S2_J8 | 1800 | — | — | — | — | 待评 |
+
+### U5 离散生成 validation
+
+| ID | local step | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 源文件 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| U5_S2_J8 | 1200 | — | — | — | — | — | 待评 |
+| U5_S2_J8 | 1800 | — | — | — | — | — | 待评 |
+
+### U5 test local 1800
+
+test 仅在 local1800 执行：seen_discrete_test 定位／离散生成各图 2,000 条，seen_continuous 连续生成各图 20×64 帧；seed=42，结果用于报告，不用于回选配置。
+
+| ID | 定位 test | 离散生成 test | 连续生成 test | 源文件 |
 |---|---|---|---|---|
-| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | —（待评测） | —（待评测） | —（待评测） |
-| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | —（待评测） | —（待评测） | —（待评测） |
-| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | —（待评测） | —（待评测） | —（待评测） |
-| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | —（待评测） | —（待评测） | —（待评测） |
-| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | —（待评测） | —（待评测） | —（待评测） |
-| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | —（待评测） | —（待评测） | —（待评测） |
-| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | —（待评测） | —（待评测） | —（待评测） |
-| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | —（待评测） | —（待评测） | —（待评测） |
-| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | —（待评测） | —（待评测） | —（待评测） |
+| U5_S2_J8 | 待评 | 待评 | 待评 | 待同步 |
+
+<a id="p5-perception025-20261028"></a>
+
+## P5_S1_J8 perception 终值 0.025 补充（未启动）
+
+P5 是原九组与 U5 之外的独立补充，不改写原九组矩阵或历史结果。它完整继承 P3_S1_J8 配方，唯一训练差异是 perception loss 权重的 local `[0,120] → [0,0.05]` 改为 `[0,120] → [0,0.025]`，之后恒定 0.025；保留 ramp，aux-loc 关闭。P3 仅作为配方参考；P5 首次训练只加载 J8@5850 的 `model.safetensors`，从 local step 0 新建 optimizer、scheduler、Trainer/RNG，不从 P3@1800 续训。[静态配置](csgo_configs/exp32_3maps_P5_S1_J8.yaml)、[Stage 2 设计说明](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#p5-perception025-20261028)与 [record.md 手动命令](record.md#exp32_3maps-p5_s1_j8-2026-10-28-手动命令)记录了来源和执行方式。
+
+| ID | Experiment | 参考配方 | 唯一变化 | 固定训练设置 | 保存 | validation | test |
+|---|---|---|---|---|---|---|---|
+| P5_S1_J8 | `exp32_3maps_P5_S1_J8` | P3_S1_J8 | perception `[0,120] → [0,0.025]`，之后恒定；aux-loc 关 | paired joint；αloc=8；普通组峰值 LR 2e-5，Action connector/norm/projector 1e-4；AdamW；cosine min LR `min_lr_rate=0.1`；warmup 60；max_steps=1800；seed=42；单卡 microbatch=4、目标有效 batch=128 | local 600／1200／1800 | local 1200／1800：定位＋离散生成 | local 1800：定位＋离散＋连续生成 |
+
+| ID | 训练 | validation 1200 | validation 1800 | test 1800 | 证据 |
+|---|---|---|---|---|---|
+| P5_S1_J8 | 未启动；无 checkpoint | 待评 | 待评 | 待评 | 仅[静态配置](csgo_configs/exp32_3maps_P5_S1_J8.yaml)；不得将 P3 结果记为 P5 |
+
+以下均为待填占位，`—` 表示没有结果，不代表 0；源文件待生成。validation 使用 seen_validation、seed=42、三图各 500 条和同一 checkpoint 的定位／离散生成结果；所有步数均为 Stage 2 local step。
+
+### P5 定位 validation
+
+| ID | local step | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 源文件 |
+|---|---:|---:|---:|---:|---:|---|
+| P5_S1_J8 | 1200 | — | — | — | — | 待生成 |
+| P5_S1_J8 | 1800 | — | — | — | — | 待生成 |
+
+### P5 离散生成 validation
+
+| ID | local step | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 源文件 |
+|---|---:|---:|---:|---:|---:|---:|---|
+| P5_S1_J8 | 1200 | — | — | — | — | — | 待生成 |
+| P5_S1_J8 | 1800 | — | — | — | — | — | 待生成 |
+
+### P5 test local 1800
+
+test 仅在 local1800 执行：seen_discrete_test 定位／离散生成各图 2,000 条，seen_continuous 连续生成各图 20×64 帧；seed=42，结果用于报告，不用于回选配置。
+
+| ID | 定位 test | 离散生成 test | 连续生成 test | 源文件 |
+|---|---|---|---|---|
+| P5_S1_J8 | 待评 | 待评 | 待评 | 待生成 |
+
+
+## test local 1800
+
+以下报告已完成的 12 组 test：L0／G0／J8 为单阶段 checkpoint-5850，S0_J8～S3_J8 与 P1／U1／P2／P3／U2 为 Stage 2 local checkpoint-1800。checkpoint 列明确训练节点；不同训练预算仅作同 split 描述，不视为等预算因果比较，也不与上方 validation 混比。定位与离散生成使用 `seen_discrete_test`，三图各 2,000 条；连续生成使用 `seen_continuous`，三图各 1,280 帧、每图 20 条轨迹。推理 seed=42；已填十二组的源 JSON 均核实地图、split、checkpoint、seed 与样本数；离散和连续生成还核实逐图 `Coverage_GT=Coverage_Pred=1`。数字为 `metrics_macro_map` 三图宏平均。`—` 在 L0 的生成或 G0 的定位表示该单任务模型不适用；在尚无本地结果的消融组中表示指标缺失，绝不按 0 处理。
+
+<a id="test-overall-20261027"></a>
+
+### test结果总表（2026-10-27）
+
+范围为下列 12 个已完成模型；各列加粗表示在适用模型中按 JSON 完整精度确定的最优宏平均，显示值统一保留三位小数。L0／G0／J8 是单阶段 5850 步，S0～S3 与 P1／U1／P2／P3／U2 是 J8 初始化后另训 local 1800 步，预算不同。TWE = Temporal_Warping_Error，TDE = Temporal_Difference_Error，OFE = Optical_Flow_EPE。`—` 为单任务模型不适用；完整路径见下方三张明细表。
+
+| ID | checkpoint | 定位 XY↓ | 定位 Z↓ | 定位 Pitch↓ | 定位 Yaw↓ | 离散 PSNR↑ | 离散 SSIM↑ | 离散 LPIPS↓ | 离散 Boundary_F1↑ | 离散 FID↓ | 连续 PSNR↑ | 连续 SSIM↑ | 连续 LPIPS↓ | 连续 Boundary_F1↑ | 连续 TWE↓ | 连续 TDE↓ | 连续 OFE↓ | 连续 FVD↓ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| L0 | 5850（单阶段） | 58.757 | 3.131 | 3.048 | 31.862 | — | — | — | — | — | — | — | — | — | — | — | — | — |
+| G0 | 5850（单阶段） | — | — | — | — | 14.078 | 0.400 | **0.630** | 0.515 | 37.025 | 14.834 | 0.428 | 0.600 | 0.531 | 34.884 | 39.939 | 16.210 | 894.198 |
+| J8 | 5850（单阶段） | 55.512 | 2.972 | 2.800 | 30.797 | 14.018 | 0.400 | 0.636 | 0.514 | **35.557** | 14.675 | 0.428 | 0.608 | 0.530 | 34.121 | 39.406 | 16.187 | 932.428 |
+| S0_J8 | 1800（Stage 2 local） | 54.078 | 2.940 | 2.687 | 30.168 | 14.062 | 0.399 | 0.632 | 0.518 | 36.732 | 14.860 | 0.429 | 0.598 | 0.536 | 33.450 | 38.706 | 16.284 | 907.361 |
+| S1_J8 | 1800（Stage 2 local） | 54.109 | 2.881 | 2.716 | 30.102 | 14.101 | 0.399 | 0.632 | 0.517 | 37.025 | 14.944 | 0.431 | 0.594 | 0.536 | 33.586 | 38.782 | 16.254 | 931.717 |
+| S2_J8 | 1800（Stage 2 local） | 54.154 | 2.963 | **2.592** | **29.930** | 14.078 | 0.399 | 0.632 | 0.517 | 37.629 | 15.040 | 0.434 | 0.588 | 0.538 | 32.961 | 38.232 | 16.140 | **874.741** |
+| S3_J8 | 1800（Stage 2 local） | 52.968 | **2.849** | 2.637 | 30.107 | 14.056 | 0.399 | 0.632 | 0.516 | 36.928 | 14.918 | 0.432 | 0.598 | 0.531 | 34.146 | 39.339 | 16.170 | 932.101 |
+| P1_S1_J8 | 1800（local） | 55.536 | 3.064 | 2.849 | 30.190 | 14.063 | 0.400 | 0.632 | 0.516 | 36.002 | 15.015 | 0.435 | 0.589 | 0.537 | 33.978 | 39.136 | 16.168 | 902.529 |
+| U1_S2_J8 | 1800（local） | 53.439 | 2.917 | 2.774 | 30.006 | 14.059 | 0.400 | 0.631 | 0.516 | 36.312 | 15.084 | 0.436 | 0.584 | 0.540 | 33.369 | 38.544 | 16.037 | 894.689 |
+| P2_S1_J8 | 1800（local） | 53.527 | 2.924 | 2.690 | 30.532 | 14.028 | 0.394 | 0.632 | 0.517 | 36.117 | 15.024 | 0.432 | 0.586 | 0.538 | 33.349 | 38.536 | 16.136 | 895.861 |
+| P3_S1_J8 | 1800（local） | 54.174 | 2.930 | 2.637 | 30.087 | **14.132** | **0.402** | 0.632 | 0.518 | 36.537 | **15.170** | **0.440** | **0.582** | **0.542** | **32.272** | **37.577** | **15.884** | 916.047 |
+| U2_S2_J8 | 1800（local） | **52.848** | 2.890 | 2.759 | 29.938 | 14.093 | 0.399 | 0.631 | **0.518** | 37.156 | 14.947 | 0.433 | 0.594 | 0.534 | 33.707 | 38.960 | 16.158 | 896.949 |
+
+
+### 定位 test（seen_discrete_test）
+
+| ID | Experiment | checkpoint | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 源文件 |
+|---|---|---|---|---|---|---|---|
+| L0 | `exp32_3maps_loc_single` | 5850（单阶段） | 58.757 | 3.131 | 3.048 | 31.862 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_loc_single/checkpoint-5850/test/seed_42/loc_metrics.json) |
+| G0 | `exp32_3maps_gen_single` | 5850（单阶段） | — | — | — | — | 不适用（单任务模型） |
+| J8 | `exp32_3maps_joint_constloc8` | 5850（单阶段） | 55.512 | 2.972 | 2.800 | 30.797 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-5850/test/seed_42/loc_metrics.json) |
+| S0_J8 | `exp32_3maps_stage2_control_j8` | 1800（Stage 2 local） | 54.078 | 2.940 | 2.687 | 30.168 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_stage2_control_j8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| S1_J8 | `exp32_3maps_stage2_perception_j8` | 1800（Stage 2 local） | 54.109 | 2.881 | 2.716 | 30.102 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_stage2_perception_j8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| S2_J8 | `exp32_3maps_stage2_auxloc_j8` | 1800（Stage 2 local） | 54.154 | 2.963 | 2.592 | 29.930 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_stage2_auxloc_j8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| S3_J8 | `exp32_3maps_stage2_both_j8` | 1800（Stage 2 local） | 52.968 | 2.849 | 2.637 | 30.107 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_stage2_both_j8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800（local） | 55.536 | 3.064 | 2.849 | 30.190 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800（local） | 53.439 | 2.917 | 2.774 | 30.006 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800（计划 local） | — | — | — | — | 本地评测未同步 |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800（local） | 53.527 | 2.924 | 2.690 | 30.532 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800（local） | 54.174 | 2.930 | 2.637 | 30.087 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800（local） | 52.848 | 2.890 | 2.759 | 29.938 | [loc_metrics.json](outputs_loc/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1800/test/seed_42/loc_metrics.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800（计划 local） | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800（计划 local） | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800（计划 local） | — | — | — | — | 本地评测未同步 |
+
+### 离散生成 test（seen_discrete_test）
+
+| ID | Experiment | checkpoint | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 源文件 |
+|---|---|---|---|---|---|---|---|---|
+| L0 | `exp32_3maps_loc_single` | 5850（单阶段） | — | — | — | — | — | 不适用（单任务模型） |
+| G0 | `exp32_3maps_gen_single` | 5850（单阶段） | 14.078 | 0.400 | 0.630 | 0.515 | 37.025 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-5850/test/seed_42/discrete/summary.json) |
+| J8 | `exp32_3maps_joint_constloc8` | 5850（单阶段） | 14.018 | 0.400 | 0.636 | 0.514 | 35.557 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-5850/test/seed_42/discrete/summary.json) |
+| S0_J8 | `exp32_3maps_stage2_control_j8` | 1800（Stage 2 local） | 14.062 | 0.399 | 0.632 | 0.518 | 36.732 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_control_j8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| S1_J8 | `exp32_3maps_stage2_perception_j8` | 1800（Stage 2 local） | 14.101 | 0.399 | 0.632 | 0.517 | 37.025 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_perception_j8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| S2_J8 | `exp32_3maps_stage2_auxloc_j8` | 1800（Stage 2 local） | 14.078 | 0.399 | 0.632 | 0.517 | 37.629 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_auxloc_j8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| S3_J8 | `exp32_3maps_stage2_both_j8` | 1800（Stage 2 local） | 14.056 | 0.399 | 0.632 | 0.516 | 36.928 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_both_j8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800（local） | 14.063 | 0.400 | 0.632 | 0.516 | 36.002 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800（local） | 14.059 | 0.400 | 0.631 | 0.516 | 36.312 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800（计划 local） | — | — | — | — | — | 本地评测未同步 |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800（local） | 14.028 | 0.394 | 0.632 | 0.517 | 36.117 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800（local） | 14.132 | 0.402 | 0.632 | 0.518 | 36.537 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800（local） | 14.093 | 0.399 | 0.631 | 0.518 | 37.156 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1800/test/seed_42/discrete/summary.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800（计划 local） | — | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800（计划 local） | — | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800（计划 local） | — | — | — | — | — | 本地评测未同步 |
+
+### 连续生成 test（seen_continuous）
+
+| ID | Experiment | checkpoint | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | Temporal_Warping_Error↓ | Temporal_Difference_Error↓ | Optical_Flow_EPE↓ | FVD↓ | 源文件 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| L0 | `exp32_3maps_loc_single` | 5850（单阶段） | — | — | — | — | — | — | — | — | 不适用（单任务模型） |
+| G0 | `exp32_3maps_gen_single` | 5850（单阶段） | 14.834 | 0.428 | 0.600 | 0.531 | 34.884 | 39.939 | 16.210 | 894.198 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-5850/test/seed_42/continuous/summary.json) |
+| J8 | `exp32_3maps_joint_constloc8` | 5850（单阶段） | 14.675 | 0.428 | 0.608 | 0.530 | 34.121 | 39.406 | 16.187 | 932.428 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_constloc8/checkpoint-5850/test/seed_42/continuous/summary.json) |
+| S0_J8 | `exp32_3maps_stage2_control_j8` | 1800（Stage 2 local） | 14.860 | 0.429 | 0.598 | 0.536 | 33.450 | 38.706 | 16.284 | 907.361 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_control_j8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| S1_J8 | `exp32_3maps_stage2_perception_j8` | 1800（Stage 2 local） | 14.944 | 0.431 | 0.594 | 0.536 | 33.586 | 38.782 | 16.254 | 931.717 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_perception_j8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| S2_J8 | `exp32_3maps_stage2_auxloc_j8` | 1800（Stage 2 local） | 15.040 | 0.434 | 0.588 | 0.538 | 32.961 | 38.232 | 16.140 | 874.741 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_auxloc_j8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| S3_J8 | `exp32_3maps_stage2_both_j8` | 1800（Stage 2 local） | 14.918 | 0.432 | 0.598 | 0.531 | 34.146 | 39.339 | 16.170 | 932.101 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_stage2_both_j8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| P1_S1_J8 | `exp32_3maps_P1_S1_J8` | 1800（local） | 15.015 | 0.435 | 0.589 | 0.537 | 33.978 | 39.136 | 16.168 | 902.529 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P1_S1_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| U1_S2_J8 | `exp32_3maps_U1_S2_J8` | 1800（local） | 15.084 | 0.436 | 0.584 | 0.540 | 33.369 | 38.544 | 16.037 | 894.689 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U1_S2_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| B1_S3_J8 | `exp32_3maps_B1_S3_J8` | 1800（计划 local） | — | — | — | — | — | — | — | — | 本地评测未同步 |
+| P2_S1_J8 | `exp32_3maps_P2_S1_J8` | 1800（local） | 15.024 | 0.432 | 0.586 | 0.538 | 33.349 | 38.536 | 16.136 | 895.861 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P2_S1_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| P3_S1_J8 | `exp32_3maps_P3_S1_J8` | 1800（local） | 15.170 | 0.440 | 0.582 | 0.542 | 32.272 | 37.577 | 15.884 | 916.047 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_P3_S1_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| U2_S2_J8 | `exp32_3maps_U2_S2_J8` | 1800（local） | 14.947 | 0.433 | 0.594 | 0.534 | 33.707 | 38.960 | 16.158 | 896.949 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U2_S2_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
+| U3_S2_J8 | `exp32_3maps_U3_S2_J8` | 1800（计划 local） | — | — | — | — | — | — | — | — | 本地评测未同步 |
+| P4_S1_J8 | `exp32_3maps_P4_S1_J8` | 1800（计划 local） | — | — | — | — | — | — | — | — | 本地评测未同步 |
+| U4_S2_J8 | `exp32_3maps_U4_S2_J8` | 1800（计划 local） | — | — | — | — | — | — | — | — | 本地评测未同步 |
+
+<a id="stage2-new-results-20261026"></a>
+
+## 2026-10-26：九组新消融的阶段性结果分析
+
+更新于 **2026-10-27**：本节纳入新同步的 U1、P3，替换原先仅含 P1／P2／U2 的阶段性判断。九组中 **P1／U1／P2／P3／U2 五组**的 local1200／1800 validation 与 local1800 test 已齐全；B1／U3／P4／U4 尚无本地完整结果，不据此推断远端进度。L0／G0／J8 与 S0～S3 的最终 test 也已同步，完整指标见 [test结果总表](#test-overall-20261027)。
+
+**辅助目标已经带来可辨认的增量收益，但收益分布在不同任务和指标上。** P3 是当前 perception 路线较均衡的候选；U2 的 XY 收益最清楚，U1 改善部分定位分量并在连续生成上优于无辅助续训 S0。与此同时，P3 仍有 Z／边界等退化项，U1／U2 都损失 Pitch 精度。当前结果支持有条件的辅助收益，尚不支持“辅助＋联合 > 联合 > 单任务”的全面排序；是否有贡献也不应只以一个模型是否包揽全部指标最优来判断。
+
+**比较口径。** 以下主表使用相同的 local1800 validation，local1200 仅用于观察训练走势，不拼接两个 checkpoint 的最佳指标。五组首次初始化均为 J8@5850；P1／U1 取消的是各自辅助 **loss 权重 ramp**，仍保留学习率的 60 步 warmup。L0／G0／J8 的 5850 步结果作为参照，辅助目标的增量主要对照同为 Stage 2 local1800 的 S0，单因素改变则分别对照 S1 或 S2。本节不以显卡数量、依赖版本的小幅差异或单 seed 随机性作为主要解释，也不据此安排重跑。
+
+表内数字为源 JSON 的 `metrics_macro_map` 三图等权宏平均，保留三位小数；**加粗仅比较九个 Stage 2 模型**（S0～S3＋新五组），按完整精度确定，不包含预算不同的前三个参照。`—` 表示单任务模型不适用，原始数值与路径见上方 validation 明细表。
+
+| 实验 | checkpoint | XY↓ | Z↓ | Pitch↓ | Yaw↓ | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | FID↓ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| L0 | 5850（单阶段） | 48.459 | 2.878 | 2.818 | 26.235 | — | — | — | — | — |
+| G0 | 5850（单阶段） | — | — | — | — | 14.402 | 0.418 | 0.613 | 0.520 | 62.252 |
+| J8 | 5850（单阶段） | 47.113 | 2.665 | 2.548 | 25.070 | 14.222 | 0.416 | 0.623 | 0.517 | 61.569 |
+| S0_J8 | 1800（Stage 2 local） | 45.243 | 2.642 | 2.460 | 24.058 | 14.337 | 0.416 | 0.617 | **0.522** | 62.816 |
+| S1_J8 | 1800（Stage 2 local） | 45.275 | 2.598 | 2.473 | 24.254 | 14.376 | 0.417 | 0.616 | 0.521 | 63.214 |
+| S2_J8 | 1800（Stage 2 local） | 44.773 | 2.673 | **2.348** | 23.847 | 14.370 | 0.417 | 0.615 | 0.521 | 62.791 |
+| S3_J8 | 1800（Stage 2 local） | 44.358 | **2.591** | 2.431 | 24.088 | 14.353 | 0.418 | 0.617 | 0.520 | 62.596 |
+| P1_S1_J8 | 1800（Stage 2 local） | 46.943 | 2.743 | 2.632 | 24.436 | 14.370 | 0.419 | **0.614** | 0.522 | **61.776** |
+| U1_S2_J8 | 1800（Stage 2 local） | 44.178 | 2.603 | 2.543 | **23.610** | 14.376 | 0.418 | 0.615 | 0.521 | 63.152 |
+| P2_S1_J8 | 1800（Stage 2 local） | 45.049 | 2.653 | 2.431 | 24.061 | 14.361 | 0.414 | 0.615 | 0.521 | 62.558 |
+| P3_S1_J8 | 1800（Stage 2 local） | 45.031 | 2.645 | 2.406 | 23.977 | **14.455** | **0.421** | 0.615 | 0.521 | 62.625 |
+| U2_S2_J8 | 1800（Stage 2 local） | **43.858** | 2.611 | 2.533 | 24.263 | 14.364 | 0.418 | 0.615 | 0.521 | 62.206 |
+
+**P3：perception 权重 0.1→0.05、保留 ramp，是当前更值得保留的 perception 配方。** 相比 S1@1800，validation 的 XY／Pitch／Yaw 分别下降 0.54%／2.68%／1.15%，但 Z 增加 1.81%；PSNR 从 14.376 升至 14.455，SSIM 从 0.417079 升至 0.420720，LPIPS 降低 0.001572、FID 降低 0.588，Boundary F1 降低 0.000494。相对 S0，P3 的 XY／Pitch／Yaw 及 PSNR／SSIM／LPIPS／FID 也更好，代价是 Z 增加 0.10%、Boundary F1 降低 0.001578。其 local1200→1800 的九项 validation 宏平均全部改善；最终 PSNR／SSIM 为本表 Stage 2 最优。P3 相对高权重 P2 的四项定位、PSNR／SSIM 更好，LPIPS 几乎相同，FID／Boundary F1 则略差。因此优先保留 0.05＋ramp 这一候选，无需立即扩大 perception 权重网格，也不能把它称为所有指标都最优的默认配方。
+
+**U1：去掉 aux-loc ramp 改善空间定位与 validation Yaw，但没有消除角度分量的取舍。** 相比 S2@1800，validation 的 XY／Z／Yaw 分别下降 1.33%／2.62%／0.99%，Pitch 却增加 8.30%，且三图 Pitch 均变差。PSNR／SSIM／LPIPS 改善，FID 从 62.791 增至 63.152，Boundary F1 略降。相对 S0，U1 的 XY／Z／Yaw 下降 2.35%／1.49%／1.86%，但 Pitch 增加 3.40%；它取得当前 Stage 2 最低的 validation Yaw=23.610。local1200→1800 时 XY／Z／Yaw 继续改善，Pitch 由 2.446 增至 2.543、SSIM 也下降，不能概括为后半程所有指标都改善。U1 与 U2 同时存在 ramp 和终值两项差异，二者可用于比较最终表现，不能把它们的差值归因于单独一个超参数。
+
+**U2：aux-loc 权重 2→1 的 XY 收益仍成立，但不意味着权重越小越好。** 相比 S2@1800，validation 的 XY 从 44.773 降至 43.858（−2.04%）、Z 下降 2.31%，Pitch／Yaw 却增加 7.87%／1.75%；XY 三图均改善，Pitch 三图均变差。相对 S0，XY 下降 3.06%，也是当前表内最低值，但 Pitch／Yaw 更差。生成相对 S0 的 PSNR／SSIM／LPIPS／FID 改善，Boundary F1 降低 0.00133。local1200→1800 的三图四项定位指标全部改善，支持保留完整 1800 步作为既定终点。U2 适合作为 XY 优先候选，S2 则继续作为 Pitch 与连续生成的重要参照；既有 U5（终值 0.5）应检验这种取舍是否继续扩大，而不是预设进一步降权一定改善整体表现。
+
+**P1／P2：作为启用时机和较高权重的对照保留，不支持更早启用或更大权重普遍更好。** P1 去掉 perception ramp 后，相对 S1 的 validation 四项定位均变差，XY 增加 3.68%；local1200→1800 的 XY／Z／Pitch 也恶化。它仍取得当前 Stage 2 最低的 validation LPIPS／FID，但 SSIM 最优已由 P3 取得，不能再沿用原先三项生成指标都最好的说法。P2 将 perception 权重增至 0.2 后，相对 S1 的 validation XY／Pitch／Yaw 略好、Z 更差；LPIPS／FID 改善，PSNR／SSIM／Boundary F1 下降，其中 SSIM 三图均下降。P3 的结果使较低权重路线更值得保留，P1／P2 仍用于展示定位与生成之间的取舍。
+
+**test 现在可以与旧参照在同一 split 上比较，但不用于反选超参数或 checkpoint。** 下表均比较预先指定的 local1800 test 宏平均；定位与离散生成各为三图 6,000 条，连续生成为 3,840 帧。改善或退化按 JSON 完整精度判断，逐项方向不构成跨指标总分。连续生成没有本节对应的 validation 结果，不能称为连续指标的“验证趋势复现”。
+
+| 新组／对照 | 定位 test | 离散生成 test | 连续生成 test |
+|---|---|---|---|
+| P1／S1 | 四项误差均更高 | SSIM／LPIPS／FID 改善；PSNR／Boundary F1 下降 | PSNR／SSIM／LPIPS／Boundary F1／OFE／FVD 改善；TWE／TDE 更差 |
+| U1／S2 | XY／Z 改善；Pitch／Yaw 更差 | SSIM／LPIPS／FID 改善；PSNR／Boundary F1 下降 | PSNR／SSIM／LPIPS／Boundary F1／OFE 改善；TWE／TDE／FVD 更差 |
+| P2／S1 | XY／Pitch 改善；Z／Yaw 更差 | 仅 FID 改善，其余四项更差 | 八项宏平均均改善 |
+| P3／S1 | Pitch／Yaw 改善；XY／Z 更差 | PSNR／SSIM／Boundary F1／FID 改善；LPIPS 略差 | 八项宏平均均改善 |
+| U2／S2 | XY／Z 改善；Pitch／Yaw 更差 | 五项宏平均均改善 | 八项宏平均均更差 |
+
+P3 的 test 离散 PSNR=14.132、SSIM=0.401906，以及连续 PSNR／SSIM／LPIPS／Boundary F1／TWE／TDE／OFE，为当前 **12 组总表**最优；但连续 FVD=916.047，仍差于 S0 的 907.361 和 S2 的 874.741。U1 的连续八项宏平均则全部优于 S0，包括 FVD 从 907.361 降至 894.689；同时其 test Pitch 比 S0 高 3.24%，不能忽略定位代价。U2 的 test XY=52.848，仍是总表最优，相对 S0 下降 2.28%；但它相对 S2 的“离散五项改善、连续八项退化”说明离散图像与连续序列的收益并不等价。
+
+部分方向在 validation 与 test 之间发生变化：U1 相对 S2 的 Yaw 在 validation 下降 0.99%，test 却增加 0.25%；其离散 FID 则由 validation 更差变为 test 更好。P3 相对 S1 的 XY 和离散 LPIPS 在 validation 更好，test 略差。这些都是各自 split 内的对照，不把 validation 和 test 数值相减，也不把 FID 在不同样本集上的大小用于跨 split 排名。
+
+**对论文贡献的当前判断。** P3 已超过 G0 的 validation／test 离散 PSNR（14.455 对 14.402；14.132 对 14.078），因此应删除原文“新组 PSNR 都低于单任务生成”的结论。但 G0 的离散 LPIPS 仍更好，J8 的离散 FID 仍优于各 Stage 2 模型；完整 pose 与生成也没有同一个候选在所有指标上占优。五个新组的 validation／test 四项定位宏平均均优于 L0，不过 J8 自身已经具备这一优势，且 Stage 2 多训练了 1800 步。S0 的 test XY 从 J8 的 55.512 降至 54.078，说明续训本身就有收益；辅助贡献应在此基础上说明，例如 U2 的 XY、U1 的连续生成、P3 的生成及部分朝向收益，并完整报告退化项。当前可以报告这些具体增益，尚不能声称全面的三级排序、全部增益均来自辅助 loss，或仅凭追加步数证明方法节省算力。
+
+**下一步优先级（仅计划，2026-10-28 三组配方已修订，本次未启动实验）：**
+
+1. 先补齐原定“先七组”中 B1、U3 的训练与评测证据。B1 联合 P3 的 perception 0.05 ramp 与 U2 的 aux-loc 1 ramp；在相同 validation local1200／1800 节点与 S0、P3、U2 形成四格比较，检验联合作用，不能从单项 loss 的结果预设收益相加。U3 补齐 aux-loc 终值 4 的既定权重端点，不改变数据划分或评测设置。
+2. 基于 validation 保留明确分工：P3 为 perception 候选，U2 为 XY 候选，U1 为 XY／Z 与 Yaw 取舍候选，S2 为 Pitch 参照；S0 保持同更新预算的无辅助对照。P1／P2 继续作为取消 ramp 和增大权重的对照，不立即扩大 perception 网格。
+3. 按已有设计补齐独立 U5（aux-loc 终值 0.5）：重点观察 validation XY 是否继续下降，以及 Pitch／Yaw 和生成指标是否出现进一步代价。把它作为权重下降方向的边界检验，不预设它优于 U2，也不因此继续新增 0.25 等更小权重实验。
+4. 看完前七组的 validation 后，再按原计划人工决定 P4／U4：P4 只把 P3 的 attention weighting 改为 false，直接对照 P3；U4 只把 U2 的 candidate_tau 改为 0.001，直接对照 U2。候选配方与 checkpoint 以 validation 为依据，test 报告既定终点；保留完整定位、离散与连续指标，避免事后只选有利列。三图筛选完成后，再考虑将有明确任务收益的候选迁移至 Seen-10，而非直接把当前结果视为完整 benchmark 结论。
+
 
 2026-10-14 当前执行命名：以下 2026-10-12／13 的历史分析中“A1～A3 用 J8”表示当时的研究建议；实际执行请使用独立 `A1_J8`／`A2_J8`／`A3_J8` 运行名。旧 A1～A3 保持 J4 默认，不能通过给旧名字加 `--joint-base J8` 覆盖旧实验目录。上述为当时命名约定；A1_J8 与 Stage 2 已于 2026-10-22 更新结果，见本表。
 
