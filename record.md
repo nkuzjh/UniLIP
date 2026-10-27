@@ -7756,15 +7756,15 @@ Slurm 作业在 1200 前中断且本组已有完整 checkpoint 时，用同一�
 ### 第一批：先手动运行七组
 
 #### P1_S1_J8：perception 从 step 0 恒定 0.1；aux-loc 关
-
+h100
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_P1_S1_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29661
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
@@ -7777,17 +7777,17 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### U1_S2_J8：aux-loc 从 step 0 恒定 2；perception 关
-
+h100
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_U1_S2_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29662
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute  --resume
 for STEP in 1200 1800; do
   python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -7819,15 +7819,15 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### P2_S1_J8：perception `[0,120] → [0,0.2]`；aux-loc 关
-
+65
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_P2_S1_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29664
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
@@ -7840,17 +7840,17 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### P3_S1_J8：perception `[0,120] → [0,0.05]`；aux-loc 关
-
+h100
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_P3_S1_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=3
+EVAL_GPU=3
 MASTER_PORT=29665
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute --resume
 for STEP in 1200 1800; do
   python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -7861,7 +7861,7 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### U2_S2_J8：aux-loc `[0,120] → [0,1]`；perception 关
-
+67
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
@@ -7882,17 +7882,17 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### U3_S2_J8：aux-loc `[0,120] → [0,4]`；perception 关
-
+65
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_U3_S2_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29667
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute --resume
 for STEP in 1200 1800; do
   python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
