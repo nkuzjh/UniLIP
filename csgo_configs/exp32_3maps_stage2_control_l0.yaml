@@ -1,0 +1,91 @@
+# L0 stage 2: strict model-only initialization from loc_single checkpoint-5850.
+# Fresh 1800-step AdamW/cosine schedule; save full checkpoints at 600/1200/1800.
+# Default minimal assets; for full data use --asset-mode full --data-dir /path/to/preprocessed_data.
+# Resume only from this arm with --resume; source weights are not needed after initialization.
+debug: false
+is_multi_task: true
+is_multi_task_balanced: false
+task_mix_ratio: 1.0
+alpha_loc_loss: 1.0
+is_loc_aux_loss: false
+is_aux_loc_em_loss: false
+is_aux_loc_uncertainty_loss: false
+is_aux_loc_combined_em_unc_loss: false
+is_loc_perception_loss: false
+is_loc_repa_loss: false
+is_repa_loss: false
+is_gen_aux_loss: false
+is_action_dit_dense_timestep: true
+is_action_dit_projector: true
+action_dit_projector_lr: 0.0001
+action_dit_lr: 2.0e-05
+is_aciton_dit_vae_small_init: false
+use_pi05_action_dit: true
+pi05_pytorch_weight_path: /home/jiahao/.cache/openpi/openpi-assets/checkpoints/pi05_base
+img_size: 224
+use_short_instruction: true
+benchmark_v2_manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+benchmark_v2_split: seen_train
+data_dir: data/preprocessed_data
+train_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+val_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+test_maps:
+- de_ancient
+- de_dust2
+- de_nuke
+is_lora: true
+llm_train_mode: lora
+lora_r: 32
+lora_alpha: 64
+lora_dropout: 0.05
+llm_lora_lr: 2.0e-05
+enable_language_model_lora: true
+enable_gen_head_lora: false
+enable_loc_head_lora: true
+freeze_inactive_head: true
+fix_vit: true
+fix_llm: false
+fix_connect: true
+fix_dit: true
+learning_rate: 2.0e-05
+mm_projector_lr: 2.0e-05
+weight_decay: 0.0
+warmup_ratio: 0.0
+lr_scheduler_type: cosine_with_min_lr
+lr_scheduler_kwargs:
+  min_lr_rate: 0.1
+benchmark_v2_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+batch_size: 1
+guidance_scale: 4.5
+mllm_hf_path: OpenGVLab/InternVL3-1B-hf
+action_dim: 5
+seed: 42
+csgo_loss_per_microbatch_mean: true
+alpha_loc_aux_loss: 0.0
+aux_loc_combined_num_samples: 2
+aux_loc_combined_candidate_tau: 1.0
+aux_loc_combined_unc_metric: residual_l1_normed
+aux_loc_combined_unc_tau: 1.0
+aux_loc_combined_unc_min_weight: 0.05
+aux_loc_combined_share_loc_noise: true
+aux_loc_combined_unc_eps: 1.0e-06
+aux_loc_timestep_weight_type: exp_sigma
+aux_loc_exp_weight_lambda: 5.0
+aux_loc_timestep_weight_renorm: none
+alpha_loc_perception_loss: 0.0
+is_noisy_loc_loss: false
+llm_connector_lora_lr: 2.0e-05
+gen_dit_lora_lr: 2.0e-05
+action_dit_norm_lr: 0.0001
+action_io_mlp_lr: 2.0e-05
+action_dit_lora_lr: 2.0e-05
+action_dit_connector_lr: 0.0001
+exp32_3maps_experiment: exp32_3maps_stage2_control_l0
+finetune_init_ckpt_path: outputs/csgo_1b/exp32_3maps_loc_single/checkpoint-5850/model.safetensors
+finetune_init_strict: true

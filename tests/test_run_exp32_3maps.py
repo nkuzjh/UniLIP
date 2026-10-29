@@ -77,7 +77,8 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             RUNNER.ROUND2, ("aux_control", "perception", "auxloc", "both")
         )
         self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 35)
+        self.assertEqual(len(RUNNER.LEGACY_EXPERIMENTS), 35)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 37)
         self.assertEqual(len(RUNNER.STAGE2_J8), 4)
         self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 11)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
@@ -190,7 +191,7 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
                     ("test", "seen_discrete_test"),
                 ):
                     with self.subTest(experiment=experiment, command=command, split=split):
-                        step = (1200 if split == "validation" else 1800) if experiment in RUNNER.STAGE2_NEW_EXPERIMENTS else 2400
+                        step = (1200 if split == "validation" else 1800) if experiment in RUNNER.STAGE2_NEW_EXPERIMENTS + RUNNER.STAGE2_SINGLE_EXPERIMENTS else 2400
                         args = self.args(command, experiment, "--checkpoint-step", str(step),
                                          "--split", split)
                         _, _, evaluation = RUNNER.evaluation_plan(args, train)
@@ -859,6 +860,191 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
             RUNNER.preflight_stage2_source(config)
 
 
+
+
+    def test_single_stage2_recipes_runtime_and_legacy_defaults(self):
+        for name, base in (("g0", "gen_single"), ("l0", "loc_single")):
+            experiment = RUNNER.PREFIX + "stage2_control_" + name
+            args = self.args("train", experiment)
+            config = RUNNER.resolve_config(args, for_training=True)
+            RUNNER.validate_config(config)
+            parent = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + base))
+            for key in ("is_multi_task", "is_multi_task_balanced", "task_mix_ratio",
+                        "alpha_loc_loss", "enable_gen_head_lora", "enable_loc_head_lora",
+                        "freeze_inactive_head", "fix_vit", "fix_llm", "fix_connect", "fix_dit",
+                        "lora_r", "lora_alpha", "lora_dropout"):
+                self.assertEqual(config[key], parent[key])
+            for key, peak in RUNNER.STAGE2_LR_PEAKS.items():
+                self.assertEqual(config[key], peak)
+            self.assertEqual(config["finetune_init_ckpt_path"], RUNNER.stage2_source_path(experiment))
+            self.assertTrue(config["finetune_init_strict"])
+            self.assertNotIn("training_stop_after_step", config)
+            commands, metadata, _ = RUNNER.training_plan(args, config)
+            self.assertEqual(metadata["runtime"]["micro_batch"], 4)
+            self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 32)
+            self.assertEqual(metadata["runtime"]["save_steps"], 600)
+            self.assertEqual(option(commands[0], "--save_steps"), "600")
+            self.assertEqual(option(commands[0], "--max_steps"), "1800")
+            self.assertEqual(option(commands[0], "--warmup_steps"), "60")
+            self.assertNotIn("--resume_from_checkpoint", commands[0])
+            for key, value in (("alpha_loc_loss", 8.0), ("task_mix_ratio", 0.5),
+                               ("enable_gen_head_lora", not config["enable_gen_head_lora"]),
+                               ("is_loc_aux_loss", True), ("finetune_init_strict", False)):
+                invalid = copy.deepcopy(config)
+                invalid[key] = value
+                with self.assertRaisesRegex(ValueError, "single-task stage 2"):
+                    RUNNER.validate_config(invalid)
+            for stop in (None, 0, -1, "1200", 1801):
+                invalid = copy.deepcopy(config)
+                invalid["training_stop_after_step"] = stop
+                with self.assertRaisesRegex(ValueError, "stage 2 stop|Stage 2 stop"):
+                    RUNNER.validate_config(invalid)
+        old_args = self.args("train", RUNNER.PREFIX + "stage2_control_j8")
+        old_config = RUNNER.resolve_config(old_args, for_training=True)
+        old_commands, old_metadata, _ = RUNNER.training_plan(old_args, old_config)
+        self.assertEqual(old_metadata["runtime"]["micro_batch"], 64)
+        self.assertEqual(old_metadata["runtime"]["gradient_accumulation_steps"], 2)
+        self.assertEqual(option(old_commands[0], "--save_steps"), "300")
+
+    def test_single_stage2_evaluation_routes_only_active_task_at_saved_nodes(self):
+        for name, active, inactive in (("g0", "generation", "localization"),
+                                       ("l0", "localization", "generation")):
+            experiment = RUNNER.PREFIX + "stage2_control_" + name
+            config = RUNNER.resolve_config(self.args("train", experiment), for_training=True)
+            for split, step in (("validation", 1200), ("validation", 1800), ("test", 1800)):
+                for action in ("infer", "metrics"):
+                    for task in ("all", active):
+                        args = self.args(action, experiment, "--split", split,
+                                         "--checkpoint-step", str(step), "--task", task)
+                        commands, _, _ = RUNNER.evaluation_plan(args, config)
+                        scripts = [command[1] for command in commands]
+                        if name == "g0":
+                            self.assertEqual(scripts.count("eval_csgo_loc.py"), 0)
+                            self.assertEqual(scripts.count("eval_csgo.py"),
+                                             (1 if split == "validation" else 2) if action == "infer" else 0)
+                            self.assertEqual(len(commands), (1 if split == "validation" else 2)
+                                             if action == "infer" else (4 if split == "validation" else 8))
+                        else:
+                            self.assertEqual(scripts, ["eval_csgo_loc.py"] if action == "infer" else [])
+                    with self.assertRaisesRegex(ValueError, "inactive"):
+                        RUNNER.evaluation_plan(self.args(action, experiment, "--split", split,
+                                                         "--checkpoint-step", str(step),
+                                                         "--task", inactive), config)
+            for split, step in (("validation", 600), ("test", 600), ("test", 1200)):
+                with self.assertRaisesRegex(ValueError, "requires checkpoint step"):
+                    RUNNER.evaluation_plan(self.args("infer", experiment, "--split", split,
+                                                     "--checkpoint-step", str(step)), config)
+            self.final_fixture(experiment, 1800)
+            final = self.args("infer", experiment, "--checkpoint-step", "final", "--split", "test")
+            commands, _, _ = RUNNER.evaluation_plan(final, config)
+            self.assertEqual(len(commands), 2 if name == "g0" else 1)
+
+
+    def test_single_stage2_source_preflight_checks_identity_state_and_header(self):
+        import torch
+        from safetensors.torch import save_file
+
+        heads = ("language_model.lm_head.weight", "model.action_dit_norm.weight",
+                 "model.action_dit_connector.0.bias", "model.action_dit_projector.0.bias",
+                 "multi_modal_projector.0.bias")
+        for name, base in (("g0", "gen_single"), ("l0", "loc_single")):
+            experiment = RUNNER.PREFIX + "stage2_control_" + name
+            source = RUNNER.repo_path(RUNNER.stage2_source_path(experiment))
+            source.parent.mkdir(parents=True)
+            recipe = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + base))
+            recipe["model_name_or_path"] = "UniLIP-1B"
+            recipe.pop("training_stop_after_step", None)
+            recipe_path = source.parent.parent / "resolved_config.yaml"
+            recipe_path.write_text(yaml.safe_dump(recipe))
+            (source.parent / "trainer_state.json").write_text(
+                json.dumps({"global_step": 5850, "max_steps": 5850}))
+            _, total, lora_total, prefixes, forbidden = RUNNER.STAGE2_SINGLE_SOURCES[experiment]
+            state = {key: torch.zeros(1) for key in heads}
+            state.update({f"{prefix}layer.lora_A.weight": torch.zeros(1) for prefix in prefixes})
+            state.update({f"x.lora_{i}": torch.zeros(1) for i in range(lora_total - len(prefixes))})
+            state.update({f"x.weight_{i}": torch.zeros(1) for i in range(total - lora_total - len(heads))})
+            save_file(state, str(source))
+            config = RUNNER.resolve_config(self.args("train", experiment), for_training=True)
+            provenance = RUNNER.preflight_stage2_source(config)
+            self.assertEqual(provenance["path"], RUNNER.stage2_source_path(experiment))
+            self.assertEqual((provenance["tensor_count"], provenance["lora_tensor_count"]),
+                             (total, lora_total))
+            self.assertEqual(len(provenance["sha256"]), 64)
+            recipe["task_mix_ratio"] = 0.5
+            recipe_path.write_text(yaml.safe_dump(recipe))
+            with self.assertRaisesRegex(ValueError, "source recipe differs"):
+                RUNNER.preflight_stage2_source(config)
+            recipe["task_mix_ratio"] = 0.0 if name == "g0" else 1.0
+            recipe_path.write_text(yaml.safe_dump(recipe))
+            state_path = source.parent / "trainer_state.json"
+            state_path.rename(source.parent.parent / "trainer_state.json")
+            RUNNER.preflight_stage2_source(config)
+            (source.parent.parent / "trainer_state.json").write_text(
+                json.dumps({"global_step": 5700, "max_steps": 5850}))
+            with self.assertRaisesRegex(ValueError, "not complete"):
+                RUNNER.preflight_stage2_source(config)
+            (source.parent.parent / "trainer_state.json").write_text(
+                json.dumps({"global_step": 5850, "max_steps": 5850}))
+            bad = dict(state)
+            bad.pop(next(k for k in bad if k.startswith("x.lora_")))
+            save_file(bad, str(source))
+            with self.assertRaisesRegex(ValueError, "tensor header"):
+                RUNNER.preflight_stage2_source(config)
+            bad[f"{forbidden[0]}layer.lora_A.weight"] = torch.zeros(1)
+            save_file(bad, str(source))
+            with self.assertRaisesRegex(ValueError, "inactive-head LoRA"):
+                RUNNER.preflight_stage2_source(config)
+            recipe["model_name_or_path"] = "wrong-model"
+            recipe_path.write_text(yaml.safe_dump(recipe))
+            with self.assertRaisesRegex(ValueError, "model identity"):
+                RUNNER.preflight_stage2_source(config)
+            recipe["model_name_or_path"] = "UniLIP-1B"
+            recipe_path.write_text(yaml.safe_dump(recipe))
+            source.unlink()
+            with self.assertRaisesRegex(ValueError, "Missing single-task source model"):
+                RUNNER.preflight_stage2_source(config)
+
+    def test_single_stage2_resume_retains_provenance_without_source_file(self):
+        for name in ("g0", "l0"):
+            experiment = RUNNER.PREFIX + "stage2_control_" + name
+            args = self.args("train", experiment)
+            config = RUNNER.resolve_config(args, for_training=True)
+            _, metadata, out = RUNNER.training_plan(args, config)
+            out.mkdir(parents=True)
+            source = {"path": RUNNER.stage2_source_path(experiment), "sha256": "fixture"}
+            metadata["source_checkpoint"] = source
+            (out / "experiment_plan.json").write_text(json.dumps(metadata))
+            (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+            checkpoint = out / "checkpoint-600"
+            checkpoint.mkdir()
+            (checkpoint / "trainer_state.json").write_text(
+                json.dumps({"global_step": 600, "max_steps": 1800}))
+            for filename in ("training_args.bin", "model.safetensors", "rng_state.pth",
+                             "optimizer.pt", "scheduler.pt"):
+                (checkpoint / filename).touch()
+            resume_args = self.args("train", experiment, "--resume")
+            resumed = RUNNER.resolve_config(resume_args, for_training=True)
+            commands, result, _ = RUNNER.training_plan(resume_args, resumed)
+            self.assertEqual(result["source_checkpoint"], source)
+            self.assertEqual(result["resume_checkpoint"], RUNNER.relative(checkpoint))
+            self.assertEqual(result["fingerprint"], metadata["fingerprint"])
+            self.assertNotIn("--resume_from_checkpoint", commands[0])
+            wrong = copy.deepcopy(metadata)
+            wrong["source_checkpoint"]["path"] = RUNNER.STAGE2_SOURCE
+            (out / "experiment_plan.json").write_text(json.dumps(wrong))
+            with self.assertRaisesRegex(ValueError, "source provenance"):
+                RUNNER.training_plan(resume_args, resumed)
+
+    def test_single_stage2_dry_run_has_no_side_effects(self):
+        for experiment in RUNNER.STAGE2_SINGLE_EXPERIMENTS:
+            for action, extra in (("train", []),
+                                  ("infer", ["--split", "test", "--checkpoint-step", "1800"]),
+                                  ("metrics", ["--split", "test", "--checkpoint-step", "1800"])):
+                with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main([action, "--experiment", experiment, *extra]), 0)
+                    run.assert_not_called()
+                self.assertFalse((self.root / "outputs/csgo_1b" / experiment).exists())
+                self.assertFalse((self.root / "outputs_eval/benchmark_v2" / experiment).exists())
 
     def test_new_stage2_recipes_change_only_the_declared_factor(self):
         expected_names = (
