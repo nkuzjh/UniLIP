@@ -7798,15 +7798,15 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### B1_S3_J8：联合 P3 的 perception `[0,120] → [0,0.05]` 与 U2 的 aux-loc `[0,120] → [0,1]`；attention=true、candidate_tau=1
-
+h100 wait
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_B1_S3_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29663
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
@@ -7905,7 +7905,7 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ### 第二批：前七组完成并人工查看后，再手动运行两组
 
 #### P4_S1_J8：完整沿用 P3，perception `[0,120] → [0,0.05]`、aux-loc 关；仅 attention=false
-
+67
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
@@ -7926,15 +7926,15 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 #### U4_S2_J8：完整沿用 U2，aux-loc `[0,120] → [0,1]`、perception 关；仅 candidate_tau=0.001
-
+h100 wait
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_U4_S2_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=3
+EVAL_GPU=3
 MASTER_PORT=29669
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
@@ -7963,7 +7963,7 @@ python scripts/run_exp32_3maps.py train --resume --experiment "$EXPERIMENT" --st
 <a id="exp32_3maps-u5_s2_j8-2026-10-27-手动命令"></a>
 
 ## exp32_3maps U5_S2_J8：2026-10-27 aux-loc 终值 0.5（仅手动执行）
-
+67
 本组是九组消融之外的独立补充，配置为 [`csgo_configs/exp32_3maps_U5_S2_J8.yaml`](csgo_configs/exp32_3maps_U5_S2_J8.yaml)。完整继承 U2_S2_J8，只将 aux-loc 权重 local `[0,120] → [0,1]` 改为 `[0,120] → [0,0.5]`，之后恒定 0.5；perception 关。首次训练只加载 J8@5850 `model.safetensors` 模型权重，从 local step 0 新建 optimizer、scheduler、Trainer/RNG，不从 U2 终点续训，也不加 `--resume`。保留 paired joint、αloc=8、普通组峰值 LR 2e-5、Action connector/norm/projector 峰值 1e-4、warmup 60、max_steps=1800、seed=42；单卡 microbatch=4 对应目标有效 batch=128。local 600／1200／1800 保存完整 checkpoint，1200／1800 做定位＋离散生成 validation，1800 做定位＋离散＋连续生成 test。
 
 以下代码块仅供人工在确认 J8@5850 来源文件、GPU 和数据路径后手动启动；本次未执行。默认 minimal 资源；若首次训练使用 full 资源，在 `train` 命令加入 `--asset-mode full --data-dir /path/to/preprocessed_data`。后续 infer/metrics 从 U5 保存的 `resolved_config.yaml` 继承后端。若中断，从 U5 自己的完整 checkpoint 恢复，将同一 `train` 命令加上 `--resume`（即 `train --resume --experiment ... --stop-after-step 0`），保持首次训练的 GPU 数、microbatch、数据后端与路径，并补做未完成的评测；不得从 J8 或 U2 完整恢复 optimizer。`--checkpoint-step` 均为 Stage 2 local step。
@@ -7991,7 +7991,7 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <a id="exp32_3maps-p5_s1_j8-2026-10-28-手动命令"></a>
 
 ## exp32_3maps P5_S1_J8：2026-10-28 perception 终值 0.025（仅手动执行）
-
+65
 本组是原九组与 U5 之外的独立补充，配置为 [`csgo_configs/exp32_3maps_P5_S1_J8.yaml`](csgo_configs/exp32_3maps_P5_S1_J8.yaml)。完整继承 P3_S1_J8，只将 perception 权重 local `[0,120] → [0,0.05]` 改为 `[0,120] → [0,0.025]`，之后恒定 0.025；保留 ramp，aux-loc 关。首次训练只加载 J8@5850 `model.safetensors` 模型权重，从 local step 0 新建 optimizer、scheduler、Trainer/RNG，不从 P3 终点续训，也不加 `--resume`。保留 paired joint、αloc=8、普通组峰值 LR 2e-5、Action connector/norm/projector 峰值 1e-4、AdamW、cosine min LR `min_lr_rate=0.1`、warmup 60、max_steps=1800、seed=42；单卡 microbatch=4 对应目标有效 batch=128。local 600／1200／1800 保存完整 checkpoint，1200／1800 做定位＋离散生成 validation，1800 做定位＋离散＋连续生成 test。
 
 以下代码块仅供人工在确认 J8@5850 来源文件、GPU 和数据路径后手动启动；本次仅配置，未执行。默认 minimal 资源；若首次训练使用 full 资源，在 `train` 命令加入 `--asset-mode full --data-dir /path/to/preprocessed_data`。后续 infer/metrics 从 P5 保存的 `resolved_config.yaml` 继承后端。若中断，只从 P5 自己的完整 checkpoint 恢复，将同一 `train` 命令加上 `--resume`（即 `train --resume --experiment ... --stop-after-step 0`），保持首次训练的 GPU 数、microbatch、数据后端与路径，并补做未完成的评测。`--checkpoint-step` 均为 Stage 2 local step。
@@ -8002,8 +8002,8 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_P5_S1_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29671
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
