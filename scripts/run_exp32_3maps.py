@@ -51,12 +51,15 @@ STAGE2_NEW_ARMS = {
                                     "alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
     "U5_S2_J8": ("stage2_auxloc_j8", {"alpha_loc_aux_schedule_values": [0.0, 0.5]}, ()),
     "P5_S1_J8": ("stage2_perception_j8", {"alpha_loc_perception_schedule_values": [0.0, 0.025]}, ()),
+    "B2_S3_J8": ("stage2_both_j8", {"loc_perception_use_attention_weight": False,
+                                   "alpha_loc_perception_schedule_values": [0.0, 0.05],
+                                   "alpha_loc_aux_schedule_values": [0.0, 1.0]}, ()),
 }
 STAGE2_NEW_EXPERIMENTS = tuple(PREFIX + name for name in STAGE2_NEW_ARMS)
 STAGE2_SINGLE = ("stage2_control_g0", "stage2_control_l0")
 STAGE2_SINGLE_EXPERIMENTS = tuple(PREFIX + name for name in STAGE2_SINGLE)
-LEGACY_EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8 + tuple(STAGE2_NEW_ARMS))
-EXPERIMENTS = LEGACY_EXPERIMENTS + STAGE2_SINGLE_EXPERIMENTS
+LEGACY_EXPERIMENTS = tuple(PREFIX + name for name in ROUND1 + ROUND1_EXTRA + ROUND2 + ROUND2_J8 + STAGE2_J8 + tuple(name for name in STAGE2_NEW_ARMS if name != "B2_S3_J8"))
+EXPERIMENTS = LEGACY_EXPERIMENTS + STAGE2_SINGLE_EXPERIMENTS + (PREFIX + "B2_S3_J8",)
 JOINT_BASES = tuple(PREFIX + name for name in ROUND1[2:] + ROUND1_EXTRA)
 MAPS = ["de_ancient", "de_dust2", "de_nuke"]
 DEFAULT_BASE = PREFIX + "joint_sharedlr_constloc"
@@ -314,9 +317,9 @@ def validate_stage2_config(config: dict) -> None:
     perception = reference in ("stage2_perception_j8", "stage2_both_j8")
     aux_ramp = aux and suffix != "U1_S2_J8"
     perception_ramp = perception and suffix != "P1_S1_J8"
-    aux_end = {"B1_S3_J8": 1.0, "U2_S2_J8": 1.0, "U3_S2_J8": 4.0,
+    aux_end = {"B1_S3_J8": 1.0, "B2_S3_J8": 1.0, "U2_S2_J8": 1.0, "U3_S2_J8": 4.0,
                "U4_S2_J8": 1.0, "U5_S2_J8": 0.5}.get(suffix, 2.0)
-    perception_end = {"B1_S3_J8": 0.05, "P2_S1_J8": 0.2, "P3_S1_J8": 0.05,
+    perception_end = {"B1_S3_J8": 0.05, "B2_S3_J8": 0.05, "P2_S1_J8": 0.2, "P3_S1_J8": 0.05,
                       "P4_S1_J8": 0.05, "P5_S1_J8": 0.025}.get(suffix, 0.1)
     expected = (("is_loc_aux_loss", aux),
                 ("is_aux_loc_combined_em_unc_loss", aux),

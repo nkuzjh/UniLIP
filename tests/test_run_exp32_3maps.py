@@ -78,9 +78,11 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
         )
         self.assertEqual(RUNNER.ROUND2_J8, ("perception_j8", "auxloc_j8", "both_j8"))
         self.assertEqual(len(RUNNER.LEGACY_EXPERIMENTS), 35)
-        self.assertEqual(len(RUNNER.EXPERIMENTS), 37)
+        self.assertEqual(len(RUNNER.EXPERIMENTS), 38)
+        self.assertEqual(RUNNER.EXPERIMENTS[-1], RUNNER.PREFIX + "B2_S3_J8")
+        self.assertNotIn(RUNNER.PREFIX + "B2_S3_J8", RUNNER.LEGACY_EXPERIMENTS)
         self.assertEqual(len(RUNNER.STAGE2_J8), 4)
-        self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 11)
+        self.assertEqual(len(RUNNER.STAGE2_NEW_ARMS), 12)
         self.assertEqual(len(RUNNER.JOINT_BASES), 11)
         for experiment in RUNNER.EXPERIMENTS:
             config = RUNNER.resolve_config(self.args(experiment=experiment), for_training=True)
@@ -1050,7 +1052,7 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
         expected_names = (
             "P1_S1_J8", "U1_S2_J8", "B1_S3_J8", "P2_S1_J8", "P3_S1_J8",
             "U2_S2_J8", "U3_S2_J8", "P4_S1_J8", "U4_S2_J8", "U5_S2_J8",
-            "P5_S1_J8",
+            "P5_S1_J8", "B2_S3_J8",
         )
         self.assertEqual(tuple(RUNNER.STAGE2_NEW_ARMS), expected_names)
         for suffix, (base_suffix, changes, removed) in RUNNER.STAGE2_NEW_ARMS.items():
@@ -1115,6 +1117,93 @@ class Exp32ThreeMapsRunnerTests(unittest.TestCase):
         self.assertEqual(b1["alpha_loc_aux_loss"], 0.0)
         self.assertTrue(b1["loc_perception_use_attention_weight"])
         self.assertEqual(b1["aux_loc_combined_candidate_tau"], 1.0)
+
+    def test_b2_combines_p4_perception_and_u2_auxloc_from_j8_only(self):
+        b1_name = RUNNER.PREFIX + "B1_S3_J8"
+        b2_name = RUNNER.PREFIX + "B2_S3_J8"
+        b1 = RUNNER.read_yaml(RUNNER.config_path(b1_name))
+        b2 = RUNNER.read_yaml(RUNNER.config_path(b2_name))
+        p4 = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + "P4_S1_J8"))
+        u2 = RUNNER.read_yaml(RUNNER.config_path(RUNNER.PREFIX + "U2_S2_J8"))
+        expected = copy.deepcopy(b1)
+        expected["exp32_3maps_experiment"] = b2_name
+        expected["loc_perception_use_attention_weight"] = False
+        self.assertEqual(b2, expected)
+        for key in ("loc_perception_use_attention_weight", "loc_perception_feature_source",
+                    "loc_perception_loss_type", "alpha_loc_perception_loss",
+                    "alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values"):
+            self.assertEqual(b2[key], p4[key], key)
+        for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss",
+                    "alpha_loc_aux_loss", "alpha_loc_aux_schedule_steps",
+                    "alpha_loc_aux_schedule_values", "aux_loc_combined_num_samples",
+                    "aux_loc_combined_candidate_tau"):
+            self.assertEqual(b2[key], u2[key], key)
+        self.assertEqual(b2["finetune_init_ckpt_path"], RUNNER.STAGE2_SOURCE)
+        self.assertEqual(b2["exp32_3maps_joint_base"], RUNNER.J8_BASE)
+        self.assertNotIn("B1_S3_J8", b2["finetune_init_ckpt_path"])
+        self.assertEqual(b2["train_maps"], ["de_ancient", "de_dust2", "de_nuke"])
+
+    def test_b2_guards_attention_ramps_and_source(self):
+        name = RUNNER.PREFIX + "B2_S3_J8"
+        config = RUNNER.resolve_config(self.args("train", name), for_training=True)
+        RUNNER.validate_config(config)
+        for key, value in (("loc_perception_use_attention_weight", True),
+                           ("alpha_loc_perception_schedule_steps", [0, 180]),
+                           ("alpha_loc_perception_schedule_values", [0.0, 0.1]),
+                           ("alpha_loc_aux_schedule_values", [0.0, 2.0]),
+                           ("finetune_init_ckpt_path", "outputs/csgo_1b/exp32_3maps_B1_S3_J8/checkpoint-1800/model.safetensors")):
+            with self.subTest(key=key):
+                invalid = copy.deepcopy(config)
+                invalid[key] = value
+                with self.assertRaisesRegex(ValueError, "single-factor"):
+                    RUNNER.validate_config(invalid)
+
+    def test_b2_explicit_microbatch_training_and_eval_plan(self):
+        name = RUNNER.PREFIX + "B2_S3_J8"
+        args = self.args("train", name, "--micro-batch", "4")
+        config = RUNNER.resolve_config(args, for_training=True)
+        RUNNER.validate_config(config)
+        commands, metadata, output = RUNNER.training_plan(args, config)
+        runtime = metadata["runtime"]
+        self.assertEqual((runtime["micro_batch"], runtime["gradient_accumulation_steps"]), (4, 32))
+        self.assertEqual((runtime["max_steps"], runtime["warmup_steps"], runtime["save_steps"],
+                          runtime["save_total_limit"], runtime["optimizer"]),
+                         (1800, 60, 600, 6, "adamw_torch"))
+        self.assertEqual(option(commands[0], "--per_device_train_batch_size"), "4")
+        self.assertEqual(option(commands[0], "--gradient_accumulation_steps"), "32")
+        self.assertEqual(option(commands[0], "--max_grad_norm"), "1.0")
+        self.assertEqual(config["csgo_loss_per_microbatch_mean"], True)
+        self.assertEqual(config["seed"], 42)
+        self.assertEqual(config["weight_decay"], 0.0)
+        self.assertEqual(config["lr_scheduler_type"], "cosine_with_min_lr")
+        self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": 0.1})
+        self.assertIsNone(metadata["resume_checkpoint"])
+        self.assertFalse(output.exists())
+        default_args = self.args("train", name)
+        default_config = RUNNER.resolve_config(default_args, for_training=True)
+        _, default_metadata, _ = RUNNER.training_plan(default_args, default_config)
+        self.assertEqual(default_metadata["runtime"]["micro_batch"], 64)
+        for split, step, infer_count, metric_count in (("validation", 1200, 2, 4),
+                                                       ("validation", 1800, 2, 4),
+                                                       ("test", 1800, 3, 8)):
+            for task, count in (("infer", infer_count), ("metrics", metric_count)):
+                with self.subTest(split=split, step=step, task=task):
+                    eval_args = self.args(task, name, "--split", split, "--checkpoint-step", str(step))
+                    routed, path, evaluated = RUNNER.evaluation_plan(eval_args, config)
+                    self.assertEqual(len(routed), count)
+                    self.assertIn(f"/{name}/checkpoint-{step}/{split}/", str(path))
+                    self.assertEqual(evaluated["ckpt_path"],
+                                     f"outputs/csgo_1b/{name}/checkpoint-{step}/model.safetensors")
+                    self.assertFalse(path.exists())
+        for split, step in (("validation", 600), ("test", 1200)):
+            with self.assertRaisesRegex(ValueError, "requires checkpoint step"):
+                RUNNER.evaluation_plan(self.args("infer", name, "--split", split,
+                                                 "--checkpoint-step", str(step)), config)
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["train", "--experiment", name, "--micro-batch", "4"]), 0)
+            run.assert_not_called()
+        self.assertFalse((self.root / "outputs").exists())
+        self.assertFalse((self.root / "outputs_eval").exists())
 
     def test_p4_and_u4_change_only_one_field_from_p3_and_u2(self):
         for source_suffix, target_suffix, key, value in (

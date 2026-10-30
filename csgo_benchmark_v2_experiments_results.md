@@ -1174,3 +1174,44 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | CrossMap-4 few-shot | Continuous generation | exp36_1_de_vertigo | 50 | 12.213 | 0.4485 | 0.6503 | 23.231 | 31.611 | 867.434 |
 | Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 50 | 13.272 | 0.4495 | 0.6603 | 27.879 | 35.415 | 1282.012 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 |
+
+# exp37 Seen-10 两阶段实验（2026-10-30 新计划）
+
+本节是独立的新实验结果占位，协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [`record.md`](record.md)。不改动上述历史主表、消融表和补充表的已有顺序及数值。五组训练和评测尚未执行；下表的“待执行”不能解读为指标为零。所有数值须由完整 Seen-10 十图 manifest、相同资产后端及等地图宏平均的实际产物填入。
+
+| 实验版本 | 来源与训练身份 | 训练 | validation | test / metrics | 表格 checkpoint |
+|---|---|---|---|---|---|
+| `exp37` | 原始 UniLIP + π0.5；joint J8、αloc=8、无辅助，50 epochs | 待执行 | @8000、实际 final 待执行 | 定位/离散/连续待执行 | 实际 final；Stage 1 参照 |
+| `exp37_s2_gen` | 旧 Seen-10 `exp32_gen@19500` 仅模型；生成单任务 | 待执行；local 0→6000 | @4000、6000 待执行 | 离散/连续待执行 | local 6000 |
+| `exp37_s2_loc` | 旧 Seen-10 `exp32_loc@19500` 仅模型；定位单任务 | 待执行；local 0→6000 | @4000、6000 待执行 | 定位待执行 | local 6000 |
+| `exp37_s2` | 新 `exp37` 完整 Stage 1 实际 final 仅模型；joint 无辅助 | 等待 `exp37` 完成；local 0→6000 | @4000、6000 待执行 | 定位/离散/连续待执行 | local 6000 |
+| `exp37_s2_both` | 同一新 `exp37` 实际 final 仅模型；joint P4+U2 | 等待 `exp37` 完成；local 0→6000 | @4000、6000 待执行 | 定位/离散/连续待执行 | local 6000 |
+
+Stage 2 首次运行只加载模型权重，optimizer、scheduler、Trainer local step 和 RNG 均重建；`--resume` 只恢复本组自身完整 checkpoint。Stage 1 实际 final 不预写固定步数。四个 Stage 2 的预算一致为 local 6000、有效 batch 128；两阶段联合结果应报告累计训练预算，不能据此声称与旧单阶段 baseline FLOPs 相等。旧 B1=P3+U2 且 attention=true，`exp37_s2_both`=P4+U2 且 attention=false，不能把 B1 历史表现当作新组的已证实收益。
+
+## exp37 定位（Seen-10；test macro，指标待填）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_loc` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+## exp37 离散生成（Seen-10；test macro，指标待填）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_gen` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+## exp37 连续生成（Seen-10；test macro，指标待填）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_gen` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |

@@ -124,3 +124,17 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 - **Show-o2‡**：Total = 含未合并 LoRA 的 backbone 3,136,184,544 + WanVAE 126,892,531；生成直接调用底层模型，Active 扣未调用的 `lm_head` 232,963,584。该 final 配方已将输入 embedding 与 lm_head 克隆解耦，参数审计确认无存储别名，Total 应分别计数。现有正式 checkpoint／预测绑定支持该候选配方，不能据此自动改写本表尚为空的实验标识或生成指标。
 - **Puffin§**：同配方审计 Total 4,560,857,827；文本 pose、`reasoning=False` 的生成路径使用 VAE 处理雷达，RADIO 视觉编码器 651,642,880 和视觉 projector 10,226,688 闲置，故 Active 为 3,898,988,259；LoRA 保持未合并。当前本机可找到的完整 legacy 评测与表中指标不符，未以 legacy 权重冒充 aligned 正式产物；此处列的是 aligned 配置参数，待对应 checkpoint／清单同步后复核。
 - **UniLIP**：定位 Active = 视觉塔 304,012,288 + 多模态投影 4,482,816 + LLM（含 LoRA）511,398,016 + 定位私有模块 466,025,248 = 1,285,918,368。生成入口只构建生成实例，没有调用 `initialize_localization_modules`，所以相同联合 checkpoint 在生成任务的 **Total 小于定位任务**；这不是把完整训练模型声称为更小模型。生成 Total 1,822,415,843，Active 再扣从未调用的 `lm_head` 135,903,488 和 VAE `down_blocks/down_mlp` 4,859,200，仅保留实际 decoder。完整训练 checkpoint 参数量分别为：`exp32_loc` 2,269,423,363，`exp32_gen` 2,274,580,227，`exp32/exp32_1` 2,288,441,091。主表 Total 始终使用任务推理实例口径；辅助 loss 未引入额外推理模块，联合两组的训练参数并集相同。
+
+## exp37 新实验身份与 Table 1 待填项（2026-10-30）
+
+本节登记五次新训练的候选身份，协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。**尚未训练、评测或审计参数**，故不把新组替换进上方历史 Table 1 有效数值行，也不借用 `exp32` 的参数量。未来只有在模型结构、任务推理路径、优化器覆盖、完整十图指标和正式 checkpoint 均核对后，才可将相应新行加入正式表格。
+
+| 候选 Experiment | Table 1 任务行 | 固定报告 checkpoint | 当前指标 | 参数量 |
+|---|---|---|---|---|
+| `exp37` | 定位、离散生成、连续生成 | Stage 1 实际 final，仅参照 | 待执行 | 待审计 |
+| `exp37_s2_gen` | 离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
+| `exp37_s2_loc` | 定位 | Stage 2 local 6000 | 待执行 | 待审计 |
+| `exp37_s2` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
+| `exp37_s2_both` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
+
+`exp37_s2_gen`/`loc` 分别来自旧 Seen-10 `exp32_gen@19500`/`exp32_loc@19500` 的模型权重；两个 joint Stage 2 来自同一个新 `exp37` 完整 Stage 1 最终模型。Stage 2 首次初始化重置训练状态，不能将来源 checkpoint 的旧指标冒充新组结果。所有新结果按十图等权宏平均，定位和离散生成 test 各 20,000 条，连续生成 12,800 帧。两阶段联合组须同时披露训练预算；现有资料不足以主张与旧 baseline FLOPs 相等。旧 B1=P3+U2、attention=true；新 both=P4+U2、attention=false，效果尚待实测。
