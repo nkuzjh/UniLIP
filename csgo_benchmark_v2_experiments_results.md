@@ -1,6 +1,8 @@
 # csgo benchmark v2 实验设计与表格维护规则
 ===========================================
 
+最新 Seen-3 LoRA 补充：第 38 个计划运行名 `exp32_3maps_B2_S3_J8` 的独立配置、进度和指标占位见 [B2 消融补充](#exp32-3maps-b2-s3-j8-20261030)；截至 2026-10-29 的 16 个已完成 test 模型统计保持原日期口径。
+
 ## 1. exp31~exp36 实验设计定位
 
 | 实验系列 | 设计定位 |
@@ -71,6 +73,7 @@
 | `exp32_3maps_stage2_perception_j8`（S1_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
 | `exp32_3maps_stage2_auxloc_j8`（S2_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
 | `exp32_3maps_stage2_both_j8`（S3_J8） | 已配置／未启动；J8@5850 权重初始化，Stage 2 1800 local steps、首停 1200 | 待评测；定位＋离散 validation，选定后 test | 待评测；定位推理内计算，生成 metric 单独执行 | 计划 seen_validation 两任务各三图各 500 条；seed=42 | 计划 local 600／1200；按需 1800；尚无 Stage 2 checkpoint |
+| `exp32_3maps_B2_S3_J8`（B2；2026-10-30 新增） | 已配置／未启动；J8@5850 仅模型初始化，Stage 2 local1800 | 待评：validation 定位＋离散；test 定位＋离散＋连续 | 待评；定位随 infer 计算，生成由 metrics 计算 | 计划 local1200／1800，seen_validation 三图各500；seed=42 | 计划 local600／1200／1800，每600保存完整状态；test固定local1800；尚无本组checkpoint |
 
 上述 exp32_3maps 第一轮结果的源 JSON 与运行证据见 [两轮实验记录和结果表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。J5～J10 的远端训练完成由用户确认；截至 2026-10-13 的同步快照，J5～J9 的本地 Trainer 状态均为 50 epochs、5850/5850、train batch=64，运行计划均记录单 GPU、microbatch=64、GAS=2、seed=42。J5 本地模型 1200／2400／3600／4800／5850 均已到；J6/J7/J8 本地模型 2400／5850 已到；J9 本地模型 1200／2400／3600／4800／5850 已到；上述各组均有根目录模型。J10 的本地训练元数据及模型尚待同步。J5～J9 所列模型仅核对 safetensors 头部声明的长度与文件大小吻合，未做校验和或 optimizer、scheduler、RNG 等完整恢复文件核查；快照随同步变化。其余计划节点不代表已生成 checkpoint；不依据命令示例推断实际运行进度。`validation` 列记录筛选集及验证状态，`checkpoint steps` 列按各行说明区分本地已有与计划评测节点；旧 exp31 行的两列暂记为 `—`，原有进度保留。所有新实验每 1200 optimizer steps 保存完整 checkpoint，1200 为可选异常检查点；第一轮默认在 2400 停止，第二轮默认在 3600 停止，随后手动推理、计算指标及决定是否续训。最终 step 以实际训练为准，约 5900 仅为估计。设置与命令见 [record.md](record.md) 和 [两轮实验说明](CSGO_BENCHMARK_V2_EXP32_3MAPS.md)。
 
@@ -244,6 +247,8 @@
 
 
 # ablation 3 maps表
+
+2026-10-30 新增 B2_S3_J8（P4＋U2，attention=false）的设计、validation／test 结果占位见[独立 B2 消融补充](#b2-ablation-summary-20261030)。B2 尚未执行，不计入已有实测结果；本组保存与评测节点以新增 B2 行为准。
 
 `exp32_3maps_*` 按 L0、G0、J0～J4、补充对照 J5～J10、原第二轮 A0～A3、再到新增 A1_J8～A3_J8 的顺序加入各自有效任务表。固定地图为 `de_ancient`、`de_dust2`、`de_nuke`；S3 为 `[0,3000,5400,8400] -> [2,5,10,20]` 的分段线性 αloc 调度。原第二轮 A0～A3 保留 J4 默认配方；2026-10-14 新增 A1_J8～A3_J8 固定 J8 配方且独立输出。纳入 J9/J10 后，[2026-10-13 结果分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#j9-j10-results-20261013)仍建议 J8 作为新辅助组主配方，J9 保留为定位优先候选；实际运行以训练保存的 `resolved_config.yaml` 为准。
 
@@ -1215,3 +1220,27 @@ Stage 2 首次运行只加载模型权重，optimizer、scheduler、Trainer loca
 | `exp37_s2_gen` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
 | `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
 | `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+<a id="exp32-3maps-b2-s3-j8-20261030"></a>
+
+<a id="b2-ablation-summary-20261030"></a>
+
+# exp32_3maps B2_S3_J8 消融补充（2026-10-30；计划中）
+
+本节属于 **ablation 3 maps**，不进入 Seen-10 主表，也不改变此前 24／33／35／37 组的历史快照及已完成 16 模型 test 排名。B2 是新增的第 38 个计划运行名；[Seen-3 详细配方与结果占位](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)、[Stage 2 设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#b2-stage2-j8-20261030)、[手动命令](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)分别记录方案、比较口径及运行方式。下列表格尚无实测指标。
+
+## ablation 3 maps：B2 配置与进度
+
+| 实验版本 | 来源／配方 | 训练 | seen_validation local1200 | seen_validation local1800 | test local1800 |
+|---|---|---|---|---|---|
+| `exp32_3maps_B2_S3_J8` | J8@5850 仅模型权重；P4＋U2，perception attention=false；αloc=8；三图 paired joint | 待执行；local0→1800，单卡 micro4/GAS32，有效 batch128 | 待评：定位＋离散 | 待评：定位＋离散 | 待评：定位＋离散＋连续 |
+
+## ablation 3 maps：B2 指标占位
+
+| Split／checkpoint | 定位 XY／Z／Pitch／Yaw ↓ | 离散 PSNR↑／SSIM↑／LPIPS↓／Boundary F1↑／FID↓ | 连续 PSNR↑／SSIM↑／LPIPS↓／Boundary F1↑／TWE↓／TDE↓／OFE↓／FVD↓ | 状态 |
+|---|---|---|---|---|
+| seen_validation／local1200 | 待评 | 待评 | N/A | 未执行 |
+| seen_validation／local1800 | 待评 | 待评 | N/A | 未执行 |
+| seen_discrete_test＋seen_continuous／local1800 | 待评 | 待评 | 待评 | 未执行 |
+
+同 local1200／1800 验证节点比较 S0_J8、P4、U2、B2 的无辅助／单项／联合四格；B1 与 B2 只比较 perception attention=true／false。test 仅用于报告，不能将 B2 的待评行计为已完成结果。Seen-10 `exp37_s2_both` 与 B2 同为 P4＋U2 形式，但使用十图、ramp400、local6000，结果必须分开呈现。

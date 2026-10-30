@@ -1018,3 +1018,31 @@ A0 可以复用选定的联合配置，只新增三组。这里复用的是**配
 此表的“待评”表示计划中的活动任务尚无指标；N/A 表示该模型没有对应活动任务，不能计作评测缺失。test 仅用于报告，不用于反向选择 checkpoint 或更改新组配方。
 
 工程验收（2026-10-30）：41 项 CPU 测试、37 份静态配方校验通过；新组 minimal／full 共 28 个 train/infer/metrics dry run 通过，未创建新实验输出目录。旧 35 组共 210 个训练／评测计划、runtime、fingerprint 及原 YAML 字节与变更前一致。G0／L0 的真实源文件已完成只读配方、5850 完成状态、safetensors 头与 SHA-256 预检；完整大模型加载和训练／推理／评测尚未执行。
+
+<a id="b2-stage2-j8-20261030"></a>
+
+## 2026-10-30：B2_S3_J8 联合低权重辅助补充（待执行）
+
+B2=`exp32_3maps_B2_S3_J8` 是第 38 个**计划中的独立运行名**，不改动旧 35／37 组的日期快照或截至 2026-10-29 已有 test 的 16 模型统计。完整配方见 [Stage 2 设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#b2-stage2-j8-20261030)，手动命令见 [record.md](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。B2 从 J8@5850 严格仅加载模型权重，新建 optimizer、scheduler、Trainer/RNG，local step 从 0 开始；P4、U2、B1 均只是配方或比较来源，不提供模型权重。
+
+| ID | 独立运行名／配置 | 唯一权重来源 | 配方 | 训练与评测 |
+|---|---|---|---|---|
+| B2_S3_J8 | [`exp32_3maps_B2_S3_J8`](csgo_configs/exp32_3maps_B2_S3_J8.yaml) | `exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors` | P4＋U2：perception 0→0.05、aux-loc combined 0→1，均在 local 0～120 ramp；perception `attention=false`，aux-loc `aux_loc_combined_candidate_tau=1`、`aux_loc_combined_num_samples=2` | paired joint、αloc=8；local1800；600／1200／1800 保存；1200／1800 validation 定位＋离散，1800 test 定位＋离散＋连续 |
+
+沿用 J8 联合分支的架构、LoRA、冻结与采样设置。三图为 `de_ancient`、`de_dust2`、`de_nuke`；seed=42，源样本目标有效 batch=128，单卡显式 microbatch=4、GAS=32。普通参数峰值 LR=2e-5，Action connector／norm／projector 峰值 LR=1e-4；AdamW β=(0.9,0.999)、eps=1e-8、weight decay=0、clip norm=1；cosine_with_min_lr、warmup=60、`min_lr_rate=0.1`。完整训练 local1800，`save_total_limit=6`。默认 minimal 资产；首次 train 可加 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续评测读取本组 `resolved_config.yaml`。中断后仅从 B2 自身完整 checkpoint 用 `--resume --stop-after-step 0` 恢复，保持 GPU 数、microbatch 和资产后端／路径。
+
+比较固定同一 local step 和同一任务的 seen_validation 指标：S0_J8、P4_S1_J8、U2_S2_J8、B2 构成无辅助、两项单辅助及联合辅助四格；B1 与 B2 的直接差别仅为 perception `attention=true→false`。不从单项收益推断联合收益。local1200／1800 的 validation 每图 500 条，仅用于选择与诊断；local1800 的 seen_discrete_test 每图 2,000 条，seen_continuous 每图 20×64 帧，仅用于报告。所有 `--checkpoint-step` 都是 Stage 2 local step，1200／1800 的两阶段累计步数为 7050／7650。Seen-10 `exp37_s2_both` 使用同一 P4＋U2 辅助形式，但 ramp 400、local horizon 6000 和 Seen-10 十图数据均不同，不能合并为同一次实验或直接当作同口径结果。
+
+### B2 进度与结果占位（不计入既有完成统计）
+
+| 训练 local1800 | validation local1200 | validation local1800 | test local1800 | 指标来源 |
+|---|---|---|---|---|
+| 待执行 | 待评：定位＋离散生成 | 待评：定位＋离散生成 | 待评：定位＋离散＋连续生成 | 本组训练／推理产物待产生；以下均无实测值 |
+
+| Split | local step | 定位 XY／Z／Pitch／Yaw | 离散 PSNR／SSIM／LPIPS／Boundary F1／FID | 连续 PSNR／SSIM／LPIPS／Boundary F1／TWE／TDE／OFE／FVD |
+|---|---:|---|---|---|
+| seen_validation | 1200 | 待评 | 待评 | N/A（validation 不做连续） |
+| seen_validation | 1800 | 待评 | 待评 | N/A（validation 不做连续） |
+| seen_discrete_test＋seen_continuous | 1800 | 待评 | 待评 | 待评 |
+
+工程验收（2026-10-30）：44 项 CPU 测试、38 份静态配方校验通过；B2 的 minimal／full 共 14 个 train/infer/metrics dry-run 计划通过，两段执行／恢复命令通过 `bash -n`。B2 与 B1 的 YAML 值仅在实验身份和 perception attention 开关上不同；原有 37 份 YAML 字节及 74 个 minimal／full 训练计划、runtime 和 fingerprint 与变更前一致。未创建 B2 训练／评测输出目录，未启动训练、推理或指标计算。

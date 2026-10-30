@@ -8191,3 +8191,42 @@ EXPERIMENT=exp37_s2
 python scripts/run_exp37_seen10.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices 0 --master-port 29683 --asset-mode minimal --execute
 ' >> fst_outs/exp37_s2.nohup.out 2>&1 < /dev/null &
 ```
+
+<a id="exp32_3maps-b2_s3_j8-2026-10-30-手动命令"></a>
+
+## 2026-10-30：B2_S3_J8=P4＋U2 Seen-3 Stage 2（手动命令；未启动）
+
+B2 是第 38 个计划中的独立运行名，配置为 [`csgo_configs/exp32_3maps_B2_S3_J8.yaml`](csgo_configs/exp32_3maps_B2_S3_J8.yaml)；设计及结果占位见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)。只从 J8@5850 严格加载 `model.safetensors` 模型权重，重建 optimizer、scheduler、Trainer/RNG，并从 local step 0 训练。P4、U2、B1 均不提供初始化权重。B2 与 B1 的配方仅相差 perception `attention=false`（B1 为 true）；perception 权重 local 0～120 从 0 到 0.05，aux-loc combined 权重同段从 0 到 1，aux-loc `aux_loc_combined_candidate_tau=1`、`aux_loc_combined_num_samples=2`；其余分支设置沿用 P4／U2。保持 paired joint、αloc=8、三图 ancient／dust2／nuke、seed42、有效 batch128（单卡显式 microbatch4、GAS32）、普通组峰值 LR2e-5、Action connector／norm／projector 峰值 LR1e-4、warmup60、cosine min_lr_rate0.1、AdamW β=(0.9,0.999)、eps1e-8、WD0、clip norm1。完整训练 local1800，保存 600／1200／1800、最多六份；validation 只做 1200／1800 定位＋离散，test 只做 1800 定位＋离散＋连续。
+
+下面默认使用 minimal 资产，执行前按机器设置空闲 `TRAIN_GPUS`／`EVAL_GPU` 并检查端口。29685 只是建议端口，不表示已核实可用。首次使用 full 资产时，仅在 train 行追加 `--asset-mode full --data-dir /path/to/preprocessed_data`；后续 infer/metrics 读取 B2 自身的 `resolved_config.yaml`。首次 train 不带 `--resume`。`--stop-after-step 0` 表示完整跑到 local1800；`--checkpoint-step` 均为 B2 local step。命令顺序为训练成功后逐一做 validation infer/metrics，最后做 test infer/metrics；`set -euo pipefail` 使失败后停止后续评测。下列模板不会自行启动。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_B2_S3_J8
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29685
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+for STEP in 1200 1800; do
+  python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 1800 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp32_3maps_B2_S3_J8.nohup.out 2>&1 < /dev/null &
+```
+
+只有 B2 自身完整 checkpoint 中断后才用 `--resume` 恢复；保持首次运行的 GPU 数、microbatch4、有效 batch128 与资产后端／路径。若首次使用 full，恢复 train 也加入同一 `--asset-mode full --data-dir` 参数；恢复后只补做未完成的评测。不能从 J8、P4、U2 或 B1 的 optimizer／scheduler 状态恢复。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_B2_S3_J8
+TRAIN_GPUS=0
+MASTER_PORT=29685
+python scripts/run_exp32_3maps.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+' >> fst_outs/exp32_3maps_B2_S3_J8.nohup.out 2>&1 < /dev/null &
+```
