@@ -6,6 +6,7 @@
 - **2026-10-28 补充 P5_S1_J8**：再新增独立运行名 `exp32_3maps_P5_S1_J8`，当前计划总数由 34 增至 35（原九组＋U5＋P5 共 11 个新增独立运行名）；仅将 P3_S1_J8 的 perception ramp 终值 0.05 降至 0.025，此次仅登记配置，未由此次配置操作启动训练或评测；最新进度与结果见[独立 P5 补充](#p5-perception025-20261028)。
 - **2026-10-29 本地同步**：九组消融中 P1／P2／P3／P4／U1／U2／U3 共 7/9 组完成 local1800 的两节点 validation 与三项 test；B1／U4 尚无 1200／1800 评测；最终复核未见本地 checkpoint，文件状态变化见下方进度说明。九组外 U5／P5 均完成，新增 P/U 共 9/10 组完整。连同 L0／G0／J8 与 S0～S3，共 16 个模型有 test；结果见 [test 总表](#test-overall-20261029)，新增分析见 [2026-10-29 P/U 结果分析](#stage2-pu-results-20261029)。
 - **2026-10-30 设计增补**：新增单任务续训对照 S0_G0／S0_L0 两个独立运行名，计划总数由 35 增至 37；目前仅配置与命令准备，训练、validation 和 test 均未启动。此前 16 个已有 test 的统计仍是截至 2026-10-29 的完成快照，不计入这两组。新组的独立矩阵、进度与结果占位见[单任务续训对照](#single-stage2-controls-20261030)，配方解释见 [Stage 2 设计补充](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#single-stage2-controls-20261030)。
+- **2026-10-30 B2 设计增补**：再增加独立的 `exp32_3maps_B2_S3_J8`，当前计划为 **38 个独立运行名**。B2 是 P4＋U2 的联合配方；与 B1 只比较 perception attention 开关。训练与评测尚未执行，不计入截至 2026-10-29 的 16 个已完成 test 模型。[B2 独立设计与结果占位](#b2-stage2-j8-20261030) · [Stage 2 配方](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#b2-stage2-j8-20261030) · [手动命令](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。
 - 固定 Seen-3：`de_ancient, de_dust2, de_nuke`，来自定版 Benchmark v2；训练 15,000 个源样本，验证每地图 500 条。架构沿用 exp32 的共享 LLM LoRA＋两个任务 head LoRA，不切换为 exp31 的冻结 LLM／全量 heads。
 - 原两轮统一 LoRA `r=32, alpha=64, dropout=0.05`、224 encoder input、短指令、源样本有效 batch 128、最多 50 epoch；新 Stage 2 保留相同模型与名义有效 batch，但显式使用 1800 optimizer steps 的新调度。满批设计口径下，单任务每次更新 128 个任务样本，paired joint 每次更新各 128 个定位／生成样本，目标是匹配每任务数据曝光而非计算量；本次 Stage 2 的实际布局存在 epoch 尾批例外，曝光并非严格匹配，见结果分析。
 - 初始方案为单 GPU、micro batch 4、GAS 32；本批已完成的第一轮七组实际保存的运行参数均为单 GPU、micro batch 64、GAS 2，源样本有效 batch 仍为 128。实际运行布局以各实验 `experiment_plan.json`／Trainer 状态为准；恢复时不改变卡数或 micro batch，跨服务器可改变具体 GPU 编号。
@@ -478,14 +479,14 @@ test 仅在 local1800 执行：seen_discrete_test 定位／离散生成各图 2,
 | S2_J8 | 1800（Stage 2 local） | 54.154 | 2.963 | **2.592** | 29.930 | 14.078 | 0.399 | 0.632 | 0.517 | 37.629 | 15.040 | 0.434 | 0.588 | 0.538 | 32.961 | 38.232 | 16.140 | 874.741 |
 | S3_J8 | 1800（Stage 2 local） | 52.968 | **2.849** | 2.637 | 30.107 | 14.056 | 0.399 | 0.632 | 0.516 | 36.928 | 14.918 | 0.432 | 0.598 | 0.531 | 34.146 | 39.339 | 16.170 | 932.101 |
 | P1_S1_J8 | 1800（local） | 55.536 | 3.064 | 2.849 | 30.190 | 14.063 | 0.400 | 0.632 | 0.516 | 36.002 | 15.015 | 0.435 | 0.589 | 0.537 | 33.978 | 39.136 | 16.168 | 902.529 |
-| U1_S2_J8 | 1800（local） | 53.439 | 2.917 | 2.774 | 30.006 | 14.059 | 0.400 | 0.631 | 0.516 | 36.312 | 15.084 | 0.436 | 0.584 | 0.540 | 33.369 | 38.544 | 16.037 | 894.689 |
 | P2_S1_J8 | 1800（local） | 53.527 | 2.924 | 2.690 | 30.532 | 14.028 | 0.394 | 0.632 | 0.517 | 36.117 | 15.024 | 0.432 | 0.586 | 0.538 | 33.349 | 38.536 | 16.136 | 895.861 |
 | P3_S1_J8 | 1800（local） | 54.174 | 2.930 | 2.637 | 30.087 | **14.132** | 0.402 | 0.632 | 0.518 | 36.537 | **15.170** | **0.440** | **0.582** | **0.542** | **32.272** | **37.577** | **15.884** | 916.047 |
+| P4_S1_J8 | 1800（local） | 53.405 | 2.891 | 2.608 | 30.268 | 14.109 | **0.403** | 0.631 | 0.517 | 36.473 | 14.941 | 0.434 | 0.594 | 0.535 | 33.843 | 39.048 | 16.173 | 885.200 |
+| P5_S1_J8 | 1800（local） | 53.546 | 2.920 | 2.691 | 30.532 | 14.027 | 0.395 | 0.632 | 0.517 | 36.037 | 15.002 | 0.432 | 0.587 | 0.538 | 33.560 | 38.737 | 16.119 | **874.238** |
+| U1_S2_J8 | 1800（local） | 53.439 | 2.917 | 2.774 | 30.006 | 14.059 | 0.400 | 0.631 | 0.516 | 36.312 | 15.084 | 0.436 | 0.584 | 0.540 | 33.369 | 38.544 | 16.037 | 894.689 |
 | U2_S2_J8 | 1800（local） | 52.848 | 2.890 | 2.759 | 29.938 | 14.093 | 0.399 | 0.631 | 0.518 | 37.156 | 14.947 | 0.433 | 0.594 | 0.534 | 33.707 | 38.960 | 16.158 | 896.949 |
 | U3_S2_J8 | 1800（local） | 52.919 | 2.897 | 2.802 | **29.839** | 13.989 | 0.392 | 0.634 | 0.516 | 36.870 | 14.835 | 0.428 | 0.596 | 0.534 | 34.332 | 39.503 | 16.181 | 916.805 |
-| P4_S1_J8 | 1800（local） | 53.405 | 2.891 | 2.608 | 30.268 | 14.109 | **0.403** | 0.631 | 0.517 | 36.473 | 14.941 | 0.434 | 0.594 | 0.535 | 33.843 | 39.048 | 16.173 | 885.200 |
 | U5_S2_J8 | 1800（local） | **52.805** | 2.891 | 2.775 | 30.037 | 14.084 | 0.398 | 0.631 | **0.519** | 37.123 | 14.988 | 0.434 | 0.592 | 0.535 | 33.569 | 38.823 | 16.123 | 909.259 |
-| P5_S1_J8 | 1800（local） | 53.546 | 2.920 | 2.691 | 30.532 | 14.027 | 0.395 | 0.632 | 0.517 | 36.037 | 15.002 | 0.432 | 0.587 | 0.538 | 33.560 | 38.737 | 16.119 | **874.238** |
 
 ### 定位 test（seen_discrete_test）
 
@@ -621,6 +622,12 @@ P4 相对 S0 的 test XY／Z／Pitch 改善1.24%／1.67%／2.94%，Yaw 增加0.3
 2. 核实 U4 远端运行并补齐结果；本地早期曾见 local600、最终复核输出目录不可见，不能据此判断远端是否停止。按既定 local1200／1800 validation与 local1800 test补齐。直接对照 U2，单独判断 candidate_tau=0.001的收益与代价；没有指标前不评价其有效性。
 3. 暂停扩展权重网格，按 validation 保留 P3／P4 两个 perception 候选、U2 作为 XY与生成折中候选、U3作为最小XY的代价端点；U1／S2／S3分别继续承担 Yaw／Pitch／Z参照，S0保留同预算控制。P5／U5提供边界证据，不因 test个别列更好升级为默认配方。
 4. 待 B1／U4 完成后，先确定面向生成、完整 pose 或 XY的主要指标和可接受代价，再用已有 validation 作一次统一选择并冻结后续方案；保留所有 test终点和退化列。若后续主要目标是完整 pose 与离散 SSIM／LPIPS，P4 可优先进入 Seen-10；若主要目标是离散 PSNR，P3 应优先，不能用连续 test 的七项最优替代这一 validation 选择依据。三图候选收敛后，再按既定资源计划扩展到 Seen-10验证地图覆盖，不把当前三图结果外推为完整 benchmark结论。
+
+
+根据valid和test我的选择：
+    按照validatio选择：P4 + U2 作为下一步both实验
+    按照test选择：P3 + U5
+
 
 <a id="stage2-new-results-20261026"></a>
 
@@ -1011,3 +1018,31 @@ A0 可以复用选定的联合配置，只新增三组。这里复用的是**配
 此表的“待评”表示计划中的活动任务尚无指标；N/A 表示该模型没有对应活动任务，不能计作评测缺失。test 仅用于报告，不用于反向选择 checkpoint 或更改新组配方。
 
 工程验收（2026-10-30）：41 项 CPU 测试、37 份静态配方校验通过；新组 minimal／full 共 28 个 train/infer/metrics dry run 通过，未创建新实验输出目录。旧 35 组共 210 个训练／评测计划、runtime、fingerprint 及原 YAML 字节与变更前一致。G0／L0 的真实源文件已完成只读配方、5850 完成状态、safetensors 头与 SHA-256 预检；完整大模型加载和训练／推理／评测尚未执行。
+
+<a id="b2-stage2-j8-20261030"></a>
+
+## 2026-10-30：B2_S3_J8 联合低权重辅助补充（待执行）
+
+B2=`exp32_3maps_B2_S3_J8` 是第 38 个**计划中的独立运行名**，不改动旧 35／37 组的日期快照或截至 2026-10-29 已有 test 的 16 模型统计。完整配方见 [Stage 2 设计](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#b2-stage2-j8-20261030)，手动命令见 [record.md](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。B2 从 J8@5850 严格仅加载模型权重，新建 optimizer、scheduler、Trainer/RNG，local step 从 0 开始；P4、U2、B1 均只是配方或比较来源，不提供模型权重。
+
+| ID | 独立运行名／配置 | 唯一权重来源 | 配方 | 训练与评测 |
+|---|---|---|---|---|
+| B2_S3_J8 | [`exp32_3maps_B2_S3_J8`](csgo_configs/exp32_3maps_B2_S3_J8.yaml) | `exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors` | P4＋U2：perception 0→0.05、aux-loc combined 0→1，均在 local 0～120 ramp；perception `attention=false`，aux-loc `aux_loc_combined_candidate_tau=1`、`aux_loc_combined_num_samples=2` | paired joint、αloc=8；local1800；600／1200／1800 保存；1200／1800 validation 定位＋离散，1800 test 定位＋离散＋连续 |
+
+沿用 J8 联合分支的架构、LoRA、冻结与采样设置。三图为 `de_ancient`、`de_dust2`、`de_nuke`；seed=42，源样本目标有效 batch=128，单卡显式 microbatch=4、GAS=32。普通参数峰值 LR=2e-5，Action connector／norm／projector 峰值 LR=1e-4；AdamW β=(0.9,0.999)、eps=1e-8、weight decay=0、clip norm=1；cosine_with_min_lr、warmup=60、`min_lr_rate=0.1`。完整训练 local1800，`save_total_limit=6`。默认 minimal 资产；首次 train 可加 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续评测读取本组 `resolved_config.yaml`。中断后仅从 B2 自身完整 checkpoint 用 `--resume --stop-after-step 0` 恢复，保持 GPU 数、microbatch 和资产后端／路径。
+
+比较固定同一 local step 和同一任务的 seen_validation 指标：S0_J8、P4_S1_J8、U2_S2_J8、B2 构成无辅助、两项单辅助及联合辅助四格；B1 与 B2 的直接差别仅为 perception `attention=true→false`。不从单项收益推断联合收益。local1200／1800 的 validation 每图 500 条，仅用于选择与诊断；local1800 的 seen_discrete_test 每图 2,000 条，seen_continuous 每图 20×64 帧，仅用于报告。所有 `--checkpoint-step` 都是 Stage 2 local step，1200／1800 的两阶段累计步数为 7050／7650。Seen-10 `exp37_s2_both` 使用同一 P4＋U2 辅助形式，但 ramp 400、local horizon 6000 和 Seen-10 十图数据均不同，不能合并为同一次实验或直接当作同口径结果。
+
+### B2 进度与结果占位（不计入既有完成统计）
+
+| 训练 local1800 | validation local1200 | validation local1800 | test local1800 | 指标来源 |
+|---|---|---|---|---|
+| 待执行 | 待评：定位＋离散生成 | 待评：定位＋离散生成 | 待评：定位＋离散＋连续生成 | 本组训练／推理产物待产生；以下均无实测值 |
+
+| Split | local step | 定位 XY／Z／Pitch／Yaw | 离散 PSNR／SSIM／LPIPS／Boundary F1／FID | 连续 PSNR／SSIM／LPIPS／Boundary F1／TWE／TDE／OFE／FVD |
+|---|---:|---|---|---|
+| seen_validation | 1200 | 待评 | 待评 | N/A（validation 不做连续） |
+| seen_validation | 1800 | 待评 | 待评 | N/A（validation 不做连续） |
+| seen_discrete_test＋seen_continuous | 1800 | 待评 | 待评 | 待评 |
+
+工程验收（2026-10-30）：44 项 CPU 测试、38 份静态配方校验通过；B2 的 minimal／full 共 14 个 train/infer/metrics dry-run 计划通过，两段执行／恢复命令通过 `bash -n`。B2 与 B1 的 YAML 值仅在实验身份和 perception attention 开关上不同；原有 37 份 YAML 字节及 74 个 minimal／full 训练计划、runtime 和 fingerprint 与变更前一致。未创建 B2 训练／评测输出目录，未启动训练、推理或指标计算。

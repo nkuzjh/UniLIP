@@ -150,3 +150,22 @@ local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定
 比较目标是把单任务 source@5850 与同任务 local1200／1800 放在对应任务指标上，看继续更新后的变化，再与 J8@5850→S0_J8 这条完整联合两阶段路径并列分析。可设计匹配 Stage 2 更新数、每任务源样本目标曝光和续训 schedule；**总算力不同**，且 G0／L0 使用各自不同的 Stage 1 权重，不能把跨模型差值解释为单一组件效应。辅助 loss 的同源增量比较仍然使用 S0_J8。当前只有配置计划，没有新组 validation／test 数值，不推断性能。
 
 首次来源同步只要求源 `model.safetensors`、源 `resolved_config.yaml` 和完成 5850 的 `trainer_state.json`（优先 checkpoint 内，可回退根目录最终状态）；不需要源 optimizer／scheduler／RNG。首次预检区分 G0／L0／J8 的任务和 LoRA 结构并记录 SHA-256。本组中断后的 `--resume` 才要求本组完整 checkpoint，恢复不再要求来源模型仍在场。2026-10-30 配置、路由及来源只读预检已通过，验收记录见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-stage2-controls-20261030)。
+
+<a id="b2-stage2-j8-20261030"></a>
+
+## 2026-10-30：B2_S3_J8=P4＋U2 的联合补充设计
+
+原 37 个计划运行名之外新增 `exp32_3maps_B2_S3_J8`，当前计划总数为 **38**。这是独立的 Seen-3 Stage 2 运行，旧九组、U5／P5 与单任务 S0_G0／S0_L0 的历史矩阵、数字和结果保持其日期口径。B2 尚未训练或评测；[主实验文档的独立进度与指标占位](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)不代表实测结果。
+
+| 维度 | B2 固定设置 | 可归因比较 |
+|---|---|---|
+| 初始化 | 仅从 J8@5850 `outputs/csgo_1b/exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors` 严格加载模型权重；重建 optimizer／scheduler／Trainer/RNG，local step=0 | P4／U2／B1 都不是权重来源 |
+| 联合主任务 | paired joint、αloc=8、原 J8 联合分支架构／LoRA／冻结／采样设置；三图 ancient、dust2、nuke | S0_J8 同源无辅助对照 |
+| perception | P4 配方，perception 权重 local `[0,120]→[0,0.05]`，之后恒定；`attention=false`；其余 perception 分支设置沿用 P4 | B1 唯一差别是 `attention=true` |
+| aux-loc | U2 配方，combined 权重 local `[0,120]→[0,1]`，之后恒定；`aux_loc_combined_candidate_tau=1`、`aux_loc_combined_num_samples=2`；其余 aux-loc 分支设置沿用 U2 | 与 P4 单辅助比较联合效应 |
+| 优化 | seed=42；源样本有效 batch=128，单 GPU microbatch=4、GAS=32；普通组 peak LR 2e-5，Action connector／norm／projector peak LR 1e-4；AdamW β=(0.9,0.999)、eps=1e-8、WD=0、clip norm=1；cosine_with_min_lr、warmup 60、min_lr_rate=0.1 | S0／P4／U2／B2 同 local 步数 |
+| 节点 | local1800 完整训练；600／1200／1800 保存，最多 6 份；1200／1800 validation 定位＋离散，1800 test 定位＋离散＋连续 | 不按 test 结果选配方 |
+
+默认 minimal 资产；首次 train 选 full 时加 `--asset-mode full --data-dir /path/to/preprocessed_data`，infer/metrics 读取 B2 自身 `resolved_config.yaml`。首次 train 不加 `--resume`；只有 B2 自身完整 checkpoint 的中断恢复才加 `--resume --stop-after-step 0`，保持原 GPU 数、microbatch、有效 batch 与数据后端／路径。local1200／1800 分别对应两阶段累计 7050／7650 步，但 CLI `--checkpoint-step` 一律用 local step。执行模板见 [record.md](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。
+
+以同 checkpoint、同 split 的验证指标比较 S0／P4／U2／B2 四格；B1 对 B2 单独检验 attention 开关。测试只报告：seen_discrete_test 定位和离散每图 2,000 条，seen_continuous 每图 20×64 帧。Seen-10 `exp37_s2_both` 共享 P4＋U2 辅助配方，但使用 Seen-10、ramp 400、local6000；本组 Seen-3 的 ramp120、local1800 与其不可混为同口径实验。
