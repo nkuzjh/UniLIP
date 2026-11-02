@@ -128,13 +128,13 @@ local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定
 
 ## 2026-10-29：P/U 消融结果同步
 
-原九组中 P1／P2／P3／P4／U1／U2／U3 共 7/9 组已在本地完成 local1800，两节点 seen_validation 定位／离散生成和 local1800 test 三任务齐全；B1／U4 尚无 1200／1800 评测；本次早期曾见 local600，最终复核时 B1 仅剩计划／配置、U4 训练目录不可见，不能将其登记为当前可用 checkpoint。九组外 U5／P5 也完成，P/U 共 9/10 组完整。完整组当前本地模型 checkpoint 为 local1200／1800；设计中的 local600 保存节点不代表现在仍已同步。数值、来源与当前状态见[主文档九组结果](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#nine-ablation-results-20261026)、[U5 补充](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#u5-aux05-20261027)、[P5 补充](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#p5-perception025-20261028)和[新分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#stage2-pu-results-20261029)。
+原九组中 P1／P2／P3／P4／U1／U2／U3 共 7/9 组已在本地完成 local1800，两节点 seen_validation 定位／离散生成和 local1800 test 三任务齐全；B1／U4 尚无 1200／1800 评测；本次早期曾见 local600，最终复核时 B1 仅剩计划／配置、U4 训练目录不可见，不能将其登记为当前可用 checkpoint。九组外 U5／P5 也完成，P/U 共 9/10 组完整。完整组当前本地模型 checkpoint 为 local1200／1800；设计中的 local600 保存节点不代表现在仍已同步。数值、来源与当时状态见[主文档九组结果](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#nine-ablation-results-20261026)、[U5 补充](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#u5-aux05-20261027)、[P5 补充](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#p5-perception025-20261028)和[新分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#stage2-pu-results-20261029)。
 
 <a id="single-stage2-controls-20261030"></a>
 
 ## 2026-10-30：G0／L0 单任务 Stage 2 无辅助续训设计
 
-在此前 35 个独立运行名之外新增 S0_G0=`exp32_3maps_stage2_control_g0`、S0_L0=`exp32_3maps_stage2_control_l0`，总计划数为 37。它们是单任务的额外更新对照，与历史 S0_J8～S3_J8 四组、九组消融及 U5／P5 各占独立输出目录。G0@5850 和 L0@5850 的来源模型 checkpoint 已确认存在；新组的严格模型加载和实际训练尚未执行。执行模板见 [record.md](record.md#single-stage2-controls-20261030)，进度及指标占位见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-stage2-controls-20261030)。
+在此前 35 个独立运行名之外新增 S0_G0=`exp32_3maps_stage2_control_g0`、S0_L0=`exp32_3maps_stage2_control_l0`，总计划数为 37。它们是单任务的额外更新对照，与历史 S0_J8～S3_J8 四组、九组消融及 U5／P5 各占独立输出目录。G0@5850 和 L0@5850 的来源模型 checkpoint 已确认存在；截至 2026-10-31，S0_G0 与 S0_L0 均完成 local1800。S0_G0 已同步 local1200／1800 离散生成 validation，以及 local1800 离散与连续生成 test；S0_L0 已同步 local1200／1800 定位 validation 与 local1800 定位 test。执行模板见 [record.md](record.md#single-stage2-controls-20261030)，最新进度及指标见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-stage2-controls-20261030)。
 
 | ID | 唯一 Stage 1 权重来源 | 任务采样 | 继承架构／冻结 | 有效验证与 test |
 |---|---|---|---|---|
@@ -147,7 +147,7 @@ local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定
 
 默认 minimal asset；首次改用 full 时 train 追加 `--asset-mode full --data-dir /path/to/preprocessed_data`。本组后续 infer/metrics 读取保存的 `resolved_config.yaml`，不能中途切换后端或路径。中断后只从同组完整 checkpoint 加 `--resume --stop-after-step 0`，保持相同 GPU 数、microbatch、有效 batch 和数据后端／路径；可改 GPU 编号。首次训练不传 `--resume`。命令是手动模板，不构成实验自动队列。
 
-比较目标是把单任务 source@5850 与同任务 local1200／1800 放在对应任务指标上，看继续更新后的变化，再与 J8@5850→S0_J8 这条完整联合两阶段路径并列分析。可设计匹配 Stage 2 更新数、每任务源样本目标曝光和续训 schedule；**总算力不同**，且 G0／L0 使用各自不同的 Stage 1 权重，不能把跨模型差值解释为单一组件效应。辅助 loss 的同源增量比较仍然使用 S0_J8。当前只有配置计划，没有新组 validation／test 数值，不推断性能。
+比较目标是把单任务 source@5850 与同任务 local1200／1800 放在对应任务指标上，看继续更新后的变化，再与 J8@5850→S0_J8 这条完整联合两阶段路径并列分析。可设计匹配 Stage 2 更新数、每任务源样本目标曝光和续训 schedule；**总算力不同**，且 G0／L0 使用各自不同的 Stage 1 权重，不能把跨模型差值解释为单一组件效应。辅助 loss 的同源增量比较仍然使用 S0_J8。S0_L0 当前已取得三个节点的定位指标；local1800 在 validation 与 test 的四项误差均低于 L0@5850，而相对 S0_J8 为 Pitch 更低、XY／Z／Yaw 更高。S0_G0 相对 S0_J8 的 validation 五项生成指标均更好，test 连续八项均更好；联合路径的生成短板因此需要以完整单任务续训为参照重新评价。具体数值、源 JSON 与 checkpoint 同步状态见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-stage2-controls-20261030)；完整路径与同源辅助增量的区别、B2／B1 的后续优先级见[2026-10-31 综合分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-task-controls-analysis-20261031)。
 
 首次来源同步只要求源 `model.safetensors`、源 `resolved_config.yaml` 和完成 5850 的 `trainer_state.json`（优先 checkpoint 内，可回退根目录最终状态）；不需要源 optimizer／scheduler／RNG。首次预检区分 G0／L0／J8 的任务和 LoRA 结构并记录 SHA-256。本组中断后的 `--resume` 才要求本组完整 checkpoint，恢复不再要求来源模型仍在场。2026-10-30 配置、路由及来源只读预检已通过，验收记录见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#single-stage2-controls-20261030)。
 
@@ -155,7 +155,7 @@ local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定
 
 ## 2026-10-30：B2_S3_J8=P4＋U2 的联合补充设计
 
-原 37 个计划运行名之外新增 `exp32_3maps_B2_S3_J8`，当前计划总数为 **38**。这是独立的 Seen-3 Stage 2 运行，旧九组、U5／P5 与单任务 S0_G0／S0_L0 的历史矩阵、数字和结果保持其日期口径。B2 尚未训练或评测；[主实验文档的独立进度与指标占位](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)不代表实测结果。
+原 37 个计划运行名之外新增 `exp32_3maps_B2_S3_J8`，当前计划总数为 **38**。这是独立的 Seen-3 Stage 2 运行，旧九组、U5／P5 与单任务 S0_G0／S0_L0 的历史矩阵、数字和结果保持其日期口径。2026-10-30 设计验收时 B2 尚未训练或评测；[主实验文档当时的独立进度与指标占位](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)在 2026-11-01 已填入实测值。
 
 | 维度 | B2 固定设置 | 可归因比较 |
 |---|---|---|
@@ -169,3 +169,9 @@ local 1200／1800 使用 seen_validation 三图、seed 42，每图 500 条，定
 默认 minimal 资产；首次 train 选 full 时加 `--asset-mode full --data-dir /path/to/preprocessed_data`，infer/metrics 读取 B2 自身 `resolved_config.yaml`。首次 train 不加 `--resume`；只有 B2 自身完整 checkpoint 的中断恢复才加 `--resume --stop-after-step 0`，保持原 GPU 数、microbatch、有效 batch 与数据后端／路径。local1200／1800 分别对应两阶段累计 7050／7650 步，但 CLI `--checkpoint-step` 一律用 local step。执行模板见 [record.md](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。
 
 以同 checkpoint、同 split 的验证指标比较 S0／P4／U2／B2 四格；B1 对 B2 单独检验 attention 开关。测试只报告：seen_discrete_test 定位和离散每图 2,000 条，seen_continuous 每图 20×64 帧。Seen-10 `exp37_s2_both` 共享 P4＋U2 辅助配方，但使用 Seen-10、ramp 400、local6000；本组 Seen-3 的 ramp120、local1800 与其不可混为同口径实验。
+
+## 2026-11-01：九组与 B2 本地结果同步
+
+U4_S2_J8、B1_S3_J8 的 local1800 训练状态、local1200／1800 定位＋离散生成 validation、local1800 定位＋离散＋连续生成 test 均已在本地核实；原九组完成 **9/9**，计入独立 P5／U5 后 P／U 系列完成 **10/10**。B2_S3_J8 也有同一组评测节点与任务，作为九组外的独立补充。已完成 test 共 **21 个模型**，其中 **18 个 Stage 2 模型**；validation 对比总表同为21个模型（3个单阶段5850步参照＋18个Stage 2 local1800模型）。三组的源 JSON 均核对三图、seed=42、split、checkpoint 与生成样本数；本地 `experiment_plan.json`、`resolved_config.yaml`、Trainer 状态及 local1200／1800 模型存在。B1 另有 local600 模型，U4／B2 当前未见 local600 模型。B2 计划记录双卡 microbatch=4、GAS=16，B1／U4 单卡 microbatch=4、GAS=32，名义有效 batch 均为128。模型与元数据存在不等于完整恢复材料已核实。此前 2026-10-29／30 的待执行文字是当日快照。数值和源文件见[九组进度及 validation](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#nine-ablation-results-20261026)、[test 总表](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#test-overall-20261101)及[独立 B2 结果](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)。
+
+本轮分析：U4 缓解 U2 的 Pitch 代价但损失部分 XY 精度；B1 未保留 P3／U2 的各自优势，B2 改善多数 B1 validation 指标，但尚未证明组合优于单辅助 P4。下一步优先诊断主任务与辅助梯度贡献，暂不扩大权重网格；本次仅更新结果与方案。量化比较和解释边界见[2026-11-01 分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#u4-both-analysis-20261101)。

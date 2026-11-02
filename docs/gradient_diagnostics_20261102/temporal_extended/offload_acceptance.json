@@ -1,0 +1,71 @@
+{
+  "accepted": true,
+  "wrapper_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14",
+  "original_code_sha256": "0897dab849a6ab19408d51e11800412642d0b6fa64afaa6a42566c5c8b11bc48",
+  "vector_reference_acceptance": {
+    "scope": "B2@1800 two sources, micro1 x2, seed17; existing resident reference versus selective offload",
+    "wrapper_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14",
+    "source_equal": true,
+    "parameter_names_equal": true,
+    "coordinate_equal": true,
+    "losses_equal": true,
+    "rng_state_after_equal": true,
+    "vectors_bitwise": {
+      "raw": {
+        "gen": true,
+        "loc": true,
+        "perception": true,
+        "aux_loc": true
+      },
+      "weighted": {
+        "gen": true,
+        "loc": true,
+        "perception": true,
+        "aux_loc": true,
+        "other": true,
+        "main": true,
+        "total": true
+      }
+    },
+    "repeat_passed": true,
+    "backward_passed": true,
+    "aux_freeze_passed": true,
+    "first_micro_direct_checks": {
+      "scope": "first_microbatch_direct_vjp",
+      "main_vs_components": {
+        "passed": true,
+        "difference_norm": 3.14328115292742e-08,
+        "reference_norm": 0.5889045921999481,
+        "relative_difference": 5.337504910914663e-08,
+        "rtol": 0.002,
+        "atol": 1e-05
+      },
+      "total_vs_components": {
+        "passed": true,
+        "difference_norm": 5.504327608964307e-06,
+        "reference_norm": 0.5886886642272359,
+        "relative_difference": 9.350150501351624e-06,
+        "rtol": 0.002,
+        "atol": 1e-05
+      }
+    },
+    "resident_peak_gib": 26.275333881378174,
+    "offload_peak_gib": 22.606167793273926,
+    "passed": true
+  },
+  "microbatch2_acceptance": {
+    "microbatch2": true,
+    "source_matches_anchor_prefix": true,
+    "weights_match_anchor": true,
+    "coordinate_matches_anchor": true,
+    "repeat_passed": true,
+    "backward_passed": true,
+    "aux_freeze_passed": true,
+    "first_main_passed": true,
+    "first_total_passed": true,
+    "peak_below40_gib": true
+  },
+  "microbatch2_peak_gib": 36.271363735198975,
+  "microbatch2_report": "outputs_diagnostics/grad_20261102_temporal_extended/B1_offload_micro2_smoke.json",
+  "limitations": "Bitwise resident/offload parity measured on B2 two-source micro1; B1 micro2 validated internal direct/repeated/backward/freeze checks and memory, not a separately measured resident micro2 parity run. Formal reports retain all checks."
+}

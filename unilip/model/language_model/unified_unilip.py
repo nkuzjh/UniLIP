@@ -4815,6 +4815,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         image_sizes: Optional[List[List[int]]] = None, # None
         return_dict: Optional[bool] = None, # None
         task_id: Optional[torch.FloatTensor] = None, # [NEW] [BS] -> 0: Loc, 1: Gen #torch.Size([128])
+        return_loss_tensors: bool = False,
         **kwargs #dict_keys(['map_id', 'raw_prompt', 'map_name', 'pose_dict', 'num_items_in_batch']) #'num_items_in_batch': tensor(18631, device='cuda:0')
     ) -> Union[Tuple, CausalLMOutputWithPast]:
         # bs=8显存占用=5896MiB
@@ -5628,6 +5629,31 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             hidden_states=None, #outputs.hidden_states if outputs is not None else None,
             attentions=None, #outputs.attentions if outputs is not None else None,
         )
+
+        if return_loss_tensors:
+            if loss_mask is None:
+                raise ValueError("return_loss_tensors requires a training batch with loss_mask")
+            # Keep these tensors on the original graph. The ordinary scalar extras below
+            # remain detached so normal training and logging retain their old behavior.
+            CausalLMOutputs.loss_tensors = {
+                "total": total_loss,
+                "gen": masked_gen_loss,
+                "loc": masked_loc_loss,
+                "repa": masked_repa_loss,
+                "loc_repa": masked_loc_repa_loss,
+                "perception": masked_loc_perception_loss,
+                "aux_loc": masked_loc_aux_loss,
+                "gen_aux": masked_gen_aux_loss,
+                "weights": {
+                    "gen": 1.0,
+                    "loc": float(alpha_loc_loss),
+                    "repa": float(alpha_repa_loss),
+                    "loc_repa": float(alpha_loc_repa_loss),
+                    "perception": float(alpha_loc_perception_loss),
+                    "aux_loc": float(alpha_loc_aux_loss),
+                    "gen_aux": float(alpha_gen_aux_loss),
+                },
+            }
 
         CausalLMOutputs.extras = {
             "other_info": {

@@ -1,0 +1,249 @@
+{
+  "source": "docs/gradient_diagnostics_20261102/temporal_extended/temporal_pairs.json",
+  "source_sha256": "adbc684c6f67024c6439aee13151417d2e96e271483bfd3ad9a506f0f7a5f59e",
+  "complete": true,
+  "pairs": 12,
+  "plotted": [
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        -0.12043543883211036,
+        -0.43706825436398017
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        -1.0040065117054895,
+        -0.010732748686613182
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        0.34390103679687206,
+        -0.24234665374877998
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        -0.11265138658687784,
+        -0.01632564930439207
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        0.24810866172674959,
+        -0.01179198151104361
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        0.14967874101151837,
+        0.010160723490741638
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        -0.37048523515526627,
+        -0.36023049009608255
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        -0.5940169421979269,
+        0.11931399830372187
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        -0.3116462653129744,
+        0.15537389299013663
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        -0.40787043056430655,
+        -0.08881432759209669
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        -0.018496975193816944,
+        -0.2232966473296801
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        -0.21874292147529376,
+        -0.10252616880143825
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        1.6208458786419246,
+        -0.8235752905343098
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        0.12298289489334796,
+        1.7806996747749193
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        -0.03177339738348474,
+        0.20394643781815464
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 0,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        0.13732034316000705,
+        0.06501966977794843
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        -0.4204116060723173,
+        -1.98101855108408
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        0.01625337810905468,
+        -0.3718122516261613
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        0.14125516391636803,
+        0.08090843627871776
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 128,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        0.34613869975115596,
+        0.3282294220486956
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 17,
+      "task": "gen",
+      "values": [
+        0.22080829669374505,
+        -0.05426332129022823
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 17,
+      "task": "loc",
+      "values": [
+        -0.10778908663283732,
+        -0.11597351539322233
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 29,
+      "task": "gen",
+      "values": [
+        0.2900158012397857,
+        -0.5203846137296003
+      ]
+    },
+    {
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "source_offset": 256,
+      "noise_seed": 29,
+      "task": "loc",
+      "values": [
+        0.08846310555885946,
+        0.030259329262862317
+      ]
+    }
+  ],
+  "interpretation": "Paired window/seed observations; not independent training repeats or a pooled 384-source gradient."
+}

@@ -2471,19 +2471,31 @@ def smart_matching_state_dict_keys(state_dict, model):
     logging.info(f"replace multi_modal_projector. to model.multi_modal_projector.")
     return new_state_dict
 
-def train(attn_implementation=None):
+def train(attn_implementation=None, *, probe_request=None):
 
     global local_rank
 
     set_seed()
 
     parser = transformers.HfArgumentParser((ModelArguments, DataArguments, TrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    training_args.deepspeed="deepspeed_scripts/zero0.json"
+    model_args, data_args, training_args = parser.parse_args_into_dataclasses(
+        args=probe_request["argv"] if probe_request is not None else None
+    )
+    if probe_request is None:
+        training_args.deepspeed="deepspeed_scripts/zero0.json"
     training_args.lr_scheduler_kwargs = {"min_lr": 1e-5}
 
     with open(data_args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
+    if probe_request is not None:
+        # Build the checkpoint's complete structure through the training path,
+        # but load the requested checkpoint as weights only. Never resume Trainer.
+        csgo_config = dict(csgo_config)
+        csgo_config.update(probe_request.get("config_overrides", {}))
+        for key in ("base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path", "resume_ckpt_path"):
+            csgo_config.pop(key, None)
+        csgo_config["finetune_init_ckpt_path"] = str(probe_request["checkpoint_weights"])
+        csgo_config["finetune_init_strict"] = True
 
     training_stop_after_step = csgo_config.get("training_stop_after_step")
     if training_stop_after_step is not None:
@@ -2531,8 +2543,10 @@ def train(attn_implementation=None):
 
     cur_time_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     log_dir = f"{training_args.output_dir.replace('outputs', 'logs')}/train_{cur_time_str}"
-    os.makedirs(log_dir, exist_ok=True)
-    logging.basicConfig(
+    if probe_request is None:
+        os.makedirs(log_dir, exist_ok=True)
+    if probe_request is None:
+        logging.basicConfig(
         level=logging.INFO if training_args.local_rank in [-1, 0] else logging.WARN,
             format=f'%(asctime)s - %(levelname)s - %(message)s - (%(process)d:%(filename)s:%(lineno)s)',
             datefmt='%Y-%m-%d %H:%M:%S',
@@ -2560,7 +2574,7 @@ def train(attn_implementation=None):
     if hasattr(training_args, "dataloader_pin_memory"):
         training_args.dataloader_pin_memory = csgo_config.get("dataloader_pin_memory", True)
 
-    if "wandb" in training_args.report_to and training_args.local_rank in [-1, 0]:
+    if probe_request is None and "wandb" in training_args.report_to and training_args.local_rank in [-1, 0]:
         # 如果 args 里有 run_name 就用，没有就自动生成
         run_name = training_args.run_name if training_args.run_name else f"{pathlib.Path(training_args.output_dir).name}"
 
@@ -3446,7 +3460,7 @@ def train(attn_implementation=None):
 
     finetune_destination_checkpoint = (
         get_latest_checkpoint_path(training_args.output_dir)
-        if has_finetune_init
+        if has_finetune_init and probe_request is None
         else None
     )
     if has_finetune_init and finetune_destination_checkpoint is None:
@@ -3514,7 +3528,7 @@ def train(attn_implementation=None):
         train_dataset = CSGOWorldModelDataset(csgo_config, tokenizer, data_args)
         eval_dataset = None
         data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
-    if local_rank in [-1, 0]:
+    if probe_request is None and local_rank in [-1, 0]:
         if csgo_config.get("is_multi_task_balanced", False):
             visualize_dataset_samples_paired(
                 train_dataset,
@@ -3532,6 +3546,46 @@ def train(attn_implementation=None):
             )
 
 
+
+    if probe_request is not None:
+        step = int(probe_request["checkpoint_step"])
+        schedule_specs = (
+            ("alpha_loc_loss", "alpha_loc_schedule_steps", "alpha_loc_schedule_values", AlphaLocScheduleCallback),
+            ("alpha_loc_aux_loss", "alpha_loc_aux_schedule_steps", "alpha_loc_aux_schedule_values", AlphaLocAuxControlCallback),
+            ("alpha_loc_perception_loss", "alpha_loc_perception_schedule_steps", "alpha_loc_perception_schedule_values", AlphaLocPerceptionControlCallback),
+        )
+        if csgo_config.get("is_aux_loss_alternating", False):
+            AlternatingAuxLossControlCallback(
+                loc_steps=csgo_config.get("alpha_loc_aux_schedule_steps"),
+                loc_values=csgo_config.get("alpha_loc_aux_schedule_values"),
+                gen_steps=csgo_config.get("alpha_gen_aux_schedule_steps"),
+                gen_values=csgo_config.get("alpha_gen_aux_schedule_values"),
+                base_loc_alpha=float(csgo_config.get("alpha_loc_aux_loss", 1.0)),
+                base_gen_alpha=float(csgo_config.get("alpha_gen_aux_loss", 0.0)),
+                cycle_steps=int(csgo_config.get("aux_loss_alternate_cycle_steps", 2)),
+                loc_active_phase=int(csgo_config.get("aux_loc_active_phase", 0)),
+                gen_active_phase=int(csgo_config.get("aux_gen_active_phase", 1)),
+                start_step=int(csgo_config.get("aux_loss_alternate_start_step", 0)),
+            )._set_alphas(model, step)
+        for value_key, steps_key, values_key, callback_type in schedule_specs:
+            if value_key == "alpha_loc_aux_loss" and csgo_config.get("is_aux_loss_alternating", False):
+                continue
+            if csgo_config.get(steps_key) is None:
+                continue
+            callback_type(csgo_config[steps_key], csgo_config[values_key])._set_alpha(model, step)
+        if csgo_config.get("is_loc_aux_step_gate", False) and not csgo_config.get("is_aux_loss_alternating", False):
+            AlphaLocAuxControlCallback(
+                steps=csgo_config.get("alpha_loc_aux_schedule_steps"),
+                values=csgo_config.get("alpha_loc_aux_schedule_values"),
+                use_step_gate=True,
+                gate_cycle_steps=int(csgo_config.get("loc_aux_gate_cycle_steps", 0)),
+                gate_on_steps=int(csgo_config.get("loc_aux_gate_on_steps", 0)),
+                gate_start_step=int(csgo_config.get("loc_aux_gate_start_step", 0)),
+                base_alpha=float(csgo_config.get("alpha_loc_aux_loss", 1.0)),
+            )._set_alpha(model, step)
+        if csgo_loss_per_microbatch_mean:
+            enable_microbatch_mean_loss(model)
+        return model, train_dataset, data_collator
 
     # 自定义resume训练加载ckpt，支持resume的单卡多卡切换
     if resume_ckpt_path is not None:

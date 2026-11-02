@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "pair_count": 12,
+  "endpoint_observations": 24,
+  "pair_settings_and_rng_checks_passed": true,
+  "documentation_numeric_cells_checked": 72,
+  "all_document_local_links_exist": true,
+  "combined_csv_rows": 62,
+  "original_54_csv_rows_preserved_exactly": true,
+  "plot_source_sha256_passed": true,
+  "plot_value_checks_passed": true,
+  "formal_reports": 31,
+  "language_layer_observations": 1200,
+  "primary_layer_total_ascent_count": 0,
+  "primary_layer_main_only_ascent_count": 0,
+  "analysis_scripts_sha256": {
+    "scripts/analyze_gradient_temporal_pairs.py": "74dd891841e2bd82a58984538e9d8dd7c8b180e142dd94ee5435081c246c8d88",
+    "scripts/plot_gradient_temporal_pairs.py": "69cbda9fbc82391eb21f1f1961ba072de3775b896948c5a5103728c4c94ae1a6",
+    "scripts/export_gradient_temporal_evidence.py": "a6174929db470d5c6ae30f70b9a236c7caccdfdcd9264eae4ccdc0ea5714df44"
+  }
+}

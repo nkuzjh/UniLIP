@@ -1,0 +1,269 @@
+{
+  "passed": true,
+  "cpu_only": true,
+  "counts": {
+    "original_reports": 27,
+    "supplement_reports": 4,
+    "original_observations": 54,
+    "supplement_observations": 8,
+    "global_observations": 62,
+    "original_freeze_checks": 1984,
+    "supplement_freeze_checks": 512,
+    "global_freeze_checks": 2496,
+    "original_language_layer_observations": 1008,
+    "supplement_language_layer_observations": 192,
+    "global_language_layer_observations": 1200
+  },
+  "direction_counts": {
+    "all": {
+      "gen_raw_total_first_order": {
+        "descent_negative": 62,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 62
+      },
+      "gen_raw_main_first_order": {
+        "descent_negative": 62,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 62
+      },
+      "loc_raw_total_first_order": {
+        "descent_negative": 62,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 62
+      },
+      "loc_raw_main_first_order": {
+        "descent_negative": 62,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 62
+      },
+      "p_base_dot": {
+        "negative": 3,
+        "positive": 41,
+        "zero": 0,
+        "available": 44,
+        "undefined_or_inactive": 18
+      },
+      "p_other_dot": {
+        "negative": 5,
+        "positive": 23,
+        "zero": 16,
+        "available": 44,
+        "undefined_or_inactive": 18
+      },
+      "p_derived_total_dot": {
+        "negative": 2,
+        "positive": 42,
+        "zero": 0,
+        "available": 44,
+        "undefined_or_inactive": 18
+      },
+      "p_cos_to_total": {
+        "negative": 2,
+        "positive": 42,
+        "zero": 0,
+        "available": 44,
+        "undefined_or_inactive": 18
+      },
+      "u_base_dot": {
+        "negative": 0,
+        "positive": 36,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 26
+      },
+      "u_other_dot": {
+        "negative": 5,
+        "positive": 23,
+        "zero": 8,
+        "available": 36,
+        "undefined_or_inactive": 26
+      },
+      "u_derived_total_dot": {
+        "negative": 0,
+        "positive": 36,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 26
+      },
+      "u_cos_to_total": {
+        "negative": 0,
+        "positive": 36,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 26
+      }
+    },
+    "original": {
+      "gen_raw_total_first_order": {
+        "descent_negative": 54,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 54
+      },
+      "gen_raw_main_first_order": {
+        "descent_negative": 54,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 54
+      },
+      "loc_raw_total_first_order": {
+        "descent_negative": 54,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 54
+      },
+      "loc_raw_main_first_order": {
+        "descent_negative": 54,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 54
+      },
+      "p_base_dot": {
+        "negative": 2,
+        "positive": 34,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 18
+      },
+      "p_other_dot": {
+        "negative": 4,
+        "positive": 16,
+        "zero": 16,
+        "available": 36,
+        "undefined_or_inactive": 18
+      },
+      "p_derived_total_dot": {
+        "negative": 1,
+        "positive": 35,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 18
+      },
+      "p_cos_to_total": {
+        "negative": 1,
+        "positive": 35,
+        "zero": 0,
+        "available": 36,
+        "undefined_or_inactive": 18
+      },
+      "u_base_dot": {
+        "negative": 0,
+        "positive": 28,
+        "zero": 0,
+        "available": 28,
+        "undefined_or_inactive": 26
+      },
+      "u_other_dot": {
+        "negative": 4,
+        "positive": 16,
+        "zero": 8,
+        "available": 28,
+        "undefined_or_inactive": 26
+      },
+      "u_derived_total_dot": {
+        "negative": 0,
+        "positive": 28,
+        "zero": 0,
+        "available": 28,
+        "undefined_or_inactive": 26
+      },
+      "u_cos_to_total": {
+        "negative": 0,
+        "positive": 28,
+        "zero": 0,
+        "available": 28,
+        "undefined_or_inactive": 26
+      }
+    },
+    "temporal_extended": {
+      "gen_raw_total_first_order": {
+        "descent_negative": 8,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 8
+      },
+      "gen_raw_main_first_order": {
+        "descent_negative": 8,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 8
+      },
+      "loc_raw_total_first_order": {
+        "descent_negative": 8,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 8
+      },
+      "loc_raw_main_first_order": {
+        "descent_negative": 8,
+        "ascent_positive": 0,
+        "zero": 0,
+        "available": 8
+      },
+      "p_base_dot": {
+        "negative": 1,
+        "positive": 7,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "p_other_dot": {
+        "negative": 1,
+        "positive": 7,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "p_derived_total_dot": {
+        "negative": 1,
+        "positive": 7,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "p_cos_to_total": {
+        "negative": 1,
+        "positive": 7,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "u_base_dot": {
+        "negative": 0,
+        "positive": 8,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "u_other_dot": {
+        "negative": 1,
+        "positive": 7,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "u_derived_total_dot": {
+        "negative": 0,
+        "positive": 8,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      },
+      "u_cos_to_total": {
+        "negative": 0,
+        "positive": 8,
+        "zero": 0,
+        "available": 8,
+        "undefined_or_inactive": 0
+      }
+    }
+  },
+  "direction_note": "Primary first-order values are negative for descent and positive for ascent. Auxiliary P/U own-direction dot and cosine signs are reported without assuming positive alignment.",
+  "original_54_rows_preserved": true,
+  "supplement_stage": "temporal_extended",
+  "no_training_or_gradient_recomputation": true
+}

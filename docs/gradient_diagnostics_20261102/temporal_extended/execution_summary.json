@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "overall_status": "complete",
+  "outer_controller_exit": {
+    "exit_code": 0,
+    "provenance": "Root polled original exec session 32386; tool result chunk_id b41903; stdout redirected."
+  },
+  "counts": {
+    "formal_reports": 4,
+    "observations": 8,
+    "source_rows_per_report": [
+      128,
+      128,
+      128,
+      128
+    ],
+    "aux_freeze_microbatch_checks": 512
+  },
+  "execution_scope": {
+    "experiments": [
+      "exp32_3maps_B1_S3_J8",
+      "exp32_3maps_B2_S3_J8"
+    ],
+    "checkpoint_step": 1200,
+    "source_offsets": [
+      128,
+      256
+    ],
+    "noise_seeds": [
+      17,
+      29
+    ],
+    "microbatch_size": 2,
+    "accumulations": 64,
+    "measurement_mode": "component_sum",
+    "probe_stage_in_report": "effective",
+    "analysis_stage": "temporal"
+  },
+  "freeze_checks": {
+    "definition": "Per-observation aux_freeze checks across accumulation microbatches; each is checked, supported, passed, with zero routed parameters.",
+    "all_passed": true,
+    "per_observation_checks": 64,
+    "total_checks": 512,
+    "checked_parameters_per_check": [
+      273
+    ]
+  },
+  "code_hashes": {
+    "original_core_sha256": "0897dab849a6ab19408d51e11800412642d0b6fa64afaa6a42566c5c8b11bc48",
+    "wrapper_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14",
+    "manifest_recorded_wrapper_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14"
+  },
+  "frozen_input_hash_checks": {
+    "/home/jiahao/task/UniLIP/csgo_configs/gradient_diagnostics_seen3_temporal_extended.yaml": {
+      "expected_sha256": "f0d1d5f03b5516b3467edf5585d60d9b66cdaebee6d4ba822160b86ce46aa2ec",
+      "actual_sha256": "f0d1d5f03b5516b3467edf5585d60d9b66cdaebee6d4ba822160b86ce46aa2ec",
+      "matched": true
+    },
+    "/home/jiahao/task/UniLIP/csgo_configs/gradient_diagnostics_seen3.yaml": {
+      "expected_sha256": "e2056e9a92aaac38b8e2e9bee9265dc6cc042105b33d291bf26b6f746d7a3bdb",
+      "actual_sha256": "e2056e9a92aaac38b8e2e9bee9265dc6cc042105b33d291bf26b6f746d7a3bdb",
+      "matched": true
+    },
+    "/home/jiahao/task/UniLIP/scripts/run_gradient_temporal_supplement.py": {
+      "expected_sha256": "f029d6bcb0a6404a6e8621eb0fa587ac87d0ffb79f5862f6b75838959643f48c",
+      "actual_sha256": "f029d6bcb0a6404a6e8621eb0fa587ac87d0ffb79f5862f6b75838959643f48c",
+      "matched": true
+    },
+    "/home/jiahao/task/UniLIP/scripts/probe_multitask_gradients_offload.py": {
+      "expected_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14",
+      "actual_sha256": "bb91e5abc7a37dcb575cc15a64b8cdee6aaba31f784ecb47da1315d71d88ef14",
+      "matched": true
+    }
+  },
+  "reports": [
+    {
+      "item": "temporal.exp32_3maps_B1_S3_J8.step1200.offset128",
+      "status": "complete",
+      "item_exit_code": 0,
+      "checks": "passed",
+      "started_at": "2026-11-02T09:32:01.231520+00:00",
+      "finished_at": "2026-11-02T10:11:01.378719+00:00",
+      "wall_seconds": 2340.147199,
+      "report": "/home/jiahao/task/UniLIP/outputs_diagnostics/gradient_seen3_temporal_extended/temporal/exp32_3maps_B1_S3_J8.step1200.offset128.json",
+      "report_sha256": "16aae72d158d320c15ec0c77a7b31da1e46863d8933badd0c79713a903df51c7",
+      "analysis_semantics": "Temporal supplement at checkpoint step 1200; measurements read from temporal output. The report-internal probe stage is effective.",
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "checkpoint_step": 1200,
+      "source_offset": 128,
+      "source_rows": 128,
+      "microbatch_size": 2,
+      "accumulations": 64,
+      "measurement_mode": "component_sum",
+      "observation_count": 2,
+      "paired_original_anchor": {
+        "report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B1_S3_J8.step1800.offset128.json",
+        "exists": true,
+        "status": "passed",
+        "pairing_basis": "Controller report_checks passed, including source identity, fixed microbatch, metadata, coordinate partition, task order and per-seed weights.",
+        "anchor_metadata_differences": [
+          "checkpoint",
+          "checkpoint_step",
+          "finetune_init_source",
+          "local_step",
+          "saved_tensor_offload"
+        ]
+      },
+      "observations": [
+        {
+          "noise_seed": 17,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 1124.247270334512,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.13098325958946175
+        },
+        {
+          "noise_seed": 29,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 1118.2059138994664,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.15424491853489364
+        }
+      ]
+    },
+    {
+      "item": "temporal.exp32_3maps_B1_S3_J8.step1200.offset256",
+      "status": "complete",
+      "item_exit_code": 0,
+      "checks": "passed",
+      "started_at": "2026-11-02T10:11:09.657992+00:00",
+      "finished_at": "2026-11-02T10:47:50.414389+00:00",
+      "wall_seconds": 2200.756397,
+      "report": "/home/jiahao/task/UniLIP/outputs_diagnostics/gradient_seen3_temporal_extended/temporal/exp32_3maps_B1_S3_J8.step1200.offset256.json",
+      "report_sha256": "b06569ecd46bfbfa314d610d73c73511125511841e393bfef06c27ba7b471367",
+      "analysis_semantics": "Temporal supplement at checkpoint step 1200; measurements read from temporal output. The report-internal probe stage is effective.",
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "checkpoint_step": 1200,
+      "source_offset": 256,
+      "source_rows": 128,
+      "microbatch_size": 2,
+      "accumulations": 64,
+      "measurement_mode": "component_sum",
+      "observation_count": 2,
+      "paired_original_anchor": {
+        "report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B1_S3_J8.step1800.offset256.json",
+        "exists": true,
+        "status": "passed",
+        "pairing_basis": "Controller report_checks passed, including source identity, fixed microbatch, metadata, coordinate partition, task order and per-seed weights.",
+        "anchor_metadata_differences": [
+          "checkpoint",
+          "checkpoint_step",
+          "finetune_init_source",
+          "local_step",
+          "saved_tensor_offload"
+        ]
+      },
+      "observations": [
+        {
+          "noise_seed": 17,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 1118.8462836388499,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.14567885715359238
+        },
+        {
+          "noise_seed": 29,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 988.1741620544344,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.153346912642735
+        }
+      ]
+    },
+    {
+      "item": "temporal.exp32_3maps_B2_S3_J8.step1200.offset128",
+      "status": "complete",
+      "item_exit_code": 0,
+      "checks": "passed",
+      "started_at": "2026-11-02T10:47:57.896647+00:00",
+      "finished_at": "2026-11-02T11:16:45.329024+00:00",
+      "wall_seconds": 1727.432377,
+      "report": "/home/jiahao/task/UniLIP/outputs_diagnostics/gradient_seen3_temporal_extended/temporal/exp32_3maps_B2_S3_J8.step1200.offset128.json",
+      "report_sha256": "47e972babc42b58abb219c910d9f4d27639058341b3f51e54461d55f088aed88",
+      "analysis_semantics": "Temporal supplement at checkpoint step 1200; measurements read from temporal output. The report-internal probe stage is effective.",
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "checkpoint_step": 1200,
+      "source_offset": 128,
+      "source_rows": 128,
+      "microbatch_size": 2,
+      "accumulations": 64,
+      "measurement_mode": "component_sum",
+      "observation_count": 2,
+      "paired_original_anchor": {
+        "report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B2_S3_J8.step1800.offset128.json",
+        "exists": true,
+        "status": "passed",
+        "pairing_basis": "Controller report_checks passed, including source identity, fixed microbatch, metadata, coordinate partition, task order and per-seed weights.",
+        "anchor_metadata_differences": [
+          "checkpoint",
+          "checkpoint_step",
+          "finetune_init_source",
+          "local_step",
+          "saved_tensor_offload"
+        ]
+      },
+      "observations": [
+        {
+          "noise_seed": 17,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 999.2544605154544,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.10035045165287884
+        },
+        {
+          "noise_seed": 29,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 645.9270894248039,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.2144880150556257
+        }
+      ]
+    },
+    {
+      "item": "temporal.exp32_3maps_B2_S3_J8.step1200.offset256",
+      "status": "complete",
+      "item_exit_code": 0,
+      "checks": "passed",
+      "started_at": "2026-11-02T11:16:53.646005+00:00",
+      "finished_at": "2026-11-02T11:38:45.939664+00:00",
+      "wall_seconds": 1312.293659,
+      "report": "/home/jiahao/task/UniLIP/outputs_diagnostics/gradient_seen3_temporal_extended/temporal/exp32_3maps_B2_S3_J8.step1200.offset256.json",
+      "report_sha256": "cb674eabd87b49104c62ab8961bc76c28f224a0b9adad380a94dbc089cb6a4a9",
+      "analysis_semantics": "Temporal supplement at checkpoint step 1200; measurements read from temporal output. The report-internal probe stage is effective.",
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "checkpoint_step": 1200,
+      "source_offset": 256,
+      "source_rows": 128,
+      "microbatch_size": 2,
+      "accumulations": 64,
+      "measurement_mode": "component_sum",
+      "observation_count": 2,
+      "paired_original_anchor": {
+        "report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B2_S3_J8.step1800.offset256.json",
+        "exists": true,
+        "status": "passed",
+        "pairing_basis": "Controller report_checks passed, including source identity, fixed microbatch, metadata, coordinate partition, task order and per-seed weights.",
+        "anchor_metadata_differences": [
+          "checkpoint",
+          "checkpoint_step",
+          "finetune_init_source",
+          "local_step",
+          "saved_tensor_offload"
+        ]
+      },
+      "observations": [
+        {
+          "noise_seed": 17,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 607.8635498117656,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.21785357198383318
+        },
+        {
+          "noise_seed": 29,
+          "microbatch_progress": "64/64",
+          "measure_time_seconds": 637.0202926378697,
+          "peak_cuda_gib": 36.271363735198975,
+          "aux_freeze": {
+            "status": "checked",
+            "passed": true,
+            "checks": 64,
+            "detail_count": 64,
+            "checked_parameters_per_check": [
+              273
+            ],
+            "routed_parameters_per_check": [
+              0
+            ],
+            "all_supported": true,
+            "all_passed": true
+          },
+          "first_micro_direct_checks_passed": true,
+          "repeated_total_vjp_passed": true,
+          "total_backward_check_passed": true,
+          "shared_language_layer_count": 24,
+          "total_gradient_norm": 0.2205173329034049
+        }
+      ]
+    }
+  ]
+}

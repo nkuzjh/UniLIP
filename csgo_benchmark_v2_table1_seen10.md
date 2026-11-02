@@ -127,7 +127,7 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 
 ## exp37 新实验身份与 Table 1 待填项（2026-10-30）
 
-本节登记五次新训练的候选身份，协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。**尚未训练、评测或审计参数**，故不把新组替换进上方历史 Table 1 有效数值行，也不借用 `exp32` 的参数量。未来只有在模型结构、任务推理路径、优化器覆盖、完整十图指标和正式 checkpoint 均核对后，才可将相应新行加入正式表格。
+本节原于 2026-10-30 登记五次新训练，2026-11-01 追加独立 `exp37_s2_both_b1` 候选；现为 1 次 Stage 1 + 5 次 Stage 2，共六次新训练。协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。**尚未训练、评测或审计参数**，故不把新组替换进上方历史 Table 1 有效数值行，也不借用 `exp32` 的参数量。未来只有在模型结构、任务推理路径、优化器覆盖、完整十图指标和正式 checkpoint 均核对后，才可将相应新行加入正式表格；新增 B1 候选也不预先指定为最终 Ours。
 
 | 候选 Experiment | Table 1 任务行 | 固定报告 checkpoint | 当前指标 | 参数量 |
 |---|---|---|---|---|
@@ -136,5 +136,6 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | `exp37_s2_loc` | 定位 | Stage 2 local 6000 | 待执行 | 待审计 |
 | `exp37_s2` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
 | `exp37_s2_both` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
+| `exp37_s2_both_b1` | 定位、离散生成、连续生成；独立 B1 候选 | Stage 2 local 6000 | 待执行 | 待审计 |
 
-`exp37_s2_gen`/`loc` 分别来自旧 Seen-10 `exp32_gen@19500`/`exp32_loc@19500` 的模型权重；两个 joint Stage 2 来自同一个新 `exp37` 完整 Stage 1 最终模型。Stage 2 首次初始化重置训练状态，不能将来源 checkpoint 的旧指标冒充新组结果。所有新结果按十图等权宏平均，定位和离散生成 test 各 20,000 条，连续生成 12,800 帧。两阶段联合组须同时披露训练预算；现有资料不足以主张与旧 baseline FLOPs 相等。旧 B1=P3+U2、attention=true；新 both=P4+U2、attention=false，效果尚待实测。
+`exp37_s2_gen`/`loc` 分别来自旧 Seen-10 `exp32_gen@19500`/`exp32_loc@19500` 的模型权重；三个 joint Stage 2 来自同一个新 `exp37` 完整 Stage 1 最终模型。Stage 2 首次初始化重置 optimizer、scheduler、Trainer local step 与 RNG，`--resume` 仅恢复本组完整 checkpoint，不能将来源 checkpoint 的旧指标冒充新组结果。所有新结果按十图等权宏平均，定位和离散生成 test 各 20,000 条，连续生成 12,800 帧。两阶段联合组须同时披露训练预算；现有资料不足以主张与旧 baseline FLOPs 相等。旧三图 B1=P3+U2、attention=true；Seen-10 `exp37_s2_both`=P4+U2、attention=false，新增 `exp37_s2_both_b1`=P3+U2、attention=true，两组 Seen-10 配方仅 attention 开关不同，效果尚待实测。

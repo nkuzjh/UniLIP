@@ -1,0 +1,49 @@
+{
+  "same_source_ids": true,
+  "same_coordinate": true,
+  "same_rng_states": true,
+  "same_mean_losses": true,
+  "raw_bitwise": {
+    "gen": true,
+    "loc": true,
+    "perception": true,
+    "aux_loc": true
+  },
+  "weighted_component_bitwise": {
+    "gen": true,
+    "loc": true,
+    "perception": true,
+    "aux_loc": true,
+    "other": true
+  },
+  "derived_comparison": {
+    "main": {
+      "difference_norm": 2.8876513726825355e-08,
+      "reference_norm": 0.4195706853165535,
+      "relative": 6.882395443103679e-08,
+      "passed": true
+    },
+    "total": {
+      "difference_norm": 6.6277458120159545e-06,
+      "reference_norm": 0.418984938102262,
+      "relative": 1.581857773225804e-05,
+      "passed": true
+    }
+  },
+  "layer_errors": {
+    "full": [],
+    "component_sum": []
+  },
+  "first_micro_errors": [],
+  "full_checks": true,
+  "sum_checks": true,
+  "elapsed_seconds": {
+    "full": 25.487369500100613,
+    "component_sum": 21.99915906973183
+  },
+  "peak_gib": {
+    "full": 26.22716999053955,
+    "component_sum": 26.275333881378174
+  },
+  "passed": true
+}

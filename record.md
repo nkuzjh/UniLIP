@@ -8071,7 +8071,9 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```
 
 <a id="exp37-seen10-2026-10-30"></a>
-## 2026-10-30：exp37 Seen-10 两阶段五组（仅手动执行）
+## exp37 Seen-10 两阶段原五组（仅手动执行）
+
+2026-11-01 已增加第六组 [exp37_s2_both_b1（P3＋U2）](#exp37-s2-both-b1-2026-11-01)，当前总计1次Stage1＋5次Stage2；本段保留原五组的命令，新增组见后文独立章节。
 
 协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，结果占位见 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md)。五组目前均未启动。首次运行默认 minimal 资产，下面显式传 `--asset-mode minimal`，由 `data/csgo_benchmark_v2/minimal_dataset_report.json` 映射资产；manifest 为 `data/csgo_benchmark_v2/benchmark_manifest.json`，必须保留完整十张 Seen 地图。若需全量资产，仅在首次 train 将 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`，恢复时保持同一后端与路径。infer/metrics 从各组 `resolved_config.yaml` 继承相同后端。下列命令是五个分别启动的任务，不是自动队列；选定空闲 GPU 并避免同卡同时启动。端口 29680～29684 写入时未发现监听，实际启动前仍检查占用。
 
@@ -8085,13 +8087,13 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-TRAIN_GPUS=0
+TRAIN_GPUS=0,2
 EVAL_GPU=0
 MASTER_PORT=29680
 EXPERIMENT=exp37
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 8000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 8000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
+python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 12000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 12000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --cuda-devices "$EVAL_GPU" --execute
@@ -8109,7 +8111,7 @@ TRAIN_GPUS=0
 EVAL_GPU=0
 MASTER_PORT=29681
 EXPERIMENT=exp37_s2_gen
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -8125,11 +8127,11 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1
+EVAL_GPU=1
 MASTER_PORT=29682
 EXPERIMENT=exp37_s2_loc
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -8145,11 +8147,11 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1,3
+EVAL_GPU=1
 MASTER_PORT=29683
 EXPERIMENT=exp37_s2
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -8165,7 +8167,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-TRAIN_GPUS=0
+TRAIN_GPUS=0,2
 EVAL_GPU=0
 MASTER_PORT=29684
 EXPERIMENT=exp37_s2_both
@@ -8179,22 +8181,37 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 ' >> fst_outs/exp37_s2_both.nohup.out 2>&1 < /dev/null &
 ```
 
-### 仅本组完整 checkpoint 的中断恢复
 
-若某组训练中断，先确认本组完整 checkpoint 与首次运行的 GPU 数、microbatch、资产路径一致，再运行该组 train 命令并加 `--resume`（示例见下）；只补做未完成的 infer/metrics。`--stop-after-step 0` 仍表示跑满本组既定预算。不要对来源 `exp32_gen@19500`、`exp32_loc@19500` 或 `exp37` 的 checkpoint 使用 `--resume` 来启动 Stage 2。
+<a id="exp37-s2-both-b1-2026-11-01"></a>
+
+### exp37_s2_both_b1：Seen-10 Stage 2 独立 P3+U2 候选（仅手动执行；2026-11-01）
+
+本组在原五组之外新增；六次新训练的总数为 Stage 1 一次、Stage 2 五次。配置为 [`csgo_configs/exp37_s2_both_b1.yaml`](csgo_configs/exp37_s2_both_b1.yaml)，协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。首次运行只从同一个新 `exp37` 完整 Stage 1 实际 final 加载模型权重；optimizer、scheduler、Trainer local step 和 RNG 全新建立。不得以 `--resume` 从 Stage 1 或旧三图 B1 启动。此组与 `exp37_s2_both` 同为 joint、αloc=8、P/U ramp local [0,400]→0.05/1、U2 candidate_tau=1；唯一训练配方差异是 perception attention=true（原 both=false），实验身份和训练状态也分别独立。保留普通组 LR=2e-5、Action connector/norm/projector LR=1e-4、AdamW、cosine min_lr_rate=0.1、warmup 200、有效 batch=128。训练 local 0→6000，完整 checkpoint @2000/4000/6000，validation @4000/6000 定位＋离散，test @6000 定位＋离散＋连续；指标待实测，不指定最终 Ours。
+
+以下是一段独立 nohup 顺序命令，训练成功后才依次执行 4000 validation infer/metrics、6000 validation infer/metrics、6000 test infer/metrics；`--task all` 使用本组 joint 三任务路由。默认 minimal 资产；首次全量训练将 train 行 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`，infer/metrics 从本组 `resolved_config.yaml` 读取同一后端和路径。`TRAIN_GPUS`／`EVAL_GPU` 可按空闲卡修改；保持有效 batch 和恢复布局。建议端口 29686 在写入时无监听，实际启动前再查占用。本模板不会自行启动。
 
 ```bash
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-EXPERIMENT=exp37_s2
-python scripts/run_exp37_seen10.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices 0 --master-port 29683 --asset-mode minimal --execute
-' >> fst_outs/exp37_s2.nohup.out 2>&1 < /dev/null &
+TRAIN_GPUS=1,3
+EVAL_GPU=1
+MASTER_PORT=29686
+EXPERIMENT=exp37_s2_both_b1
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+for STEP in 4000 6000; do
+  python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
+done
+python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp37_s2_both_b1.nohup.out 2>&1 < /dev/null &
 ```
+
 
 <a id="exp32_3maps-b2_s3_j8-2026-10-30-手动命令"></a>
 
-## 2026-10-30：B2_S3_J8=P4＋U2 Seen-3 Stage 2（手动命令；未启动）
+## B2_S3_J8=P4＋U2 Seen-3 Stage 2（手动命令；未启动）
 
 B2 是第 38 个计划中的独立运行名，配置为 [`csgo_configs/exp32_3maps_B2_S3_J8.yaml`](csgo_configs/exp32_3maps_B2_S3_J8.yaml)；设计及结果占位见[主实验文档](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#b2-stage2-j8-20261030)。只从 J8@5850 严格加载 `model.safetensors` 模型权重，重建 optimizer、scheduler、Trainer/RNG，并从 local step 0 训练。P4、U2、B1 均不提供初始化权重。B2 与 B1 的配方仅相差 perception `attention=false`（B1 为 true）；perception 权重 local 0～120 从 0 到 0.05，aux-loc combined 权重同段从 0 到 1，aux-loc `aux_loc_combined_candidate_tau=1`、`aux_loc_combined_num_samples=2`；其余分支设置沿用 P4／U2。保持 paired joint、αloc=8、三图 ancient／dust2／nuke、seed42、有效 batch128（单卡显式 microbatch4、GAS32）、普通组峰值 LR2e-5、Action connector／norm／projector 峰值 LR1e-4、warmup60、cosine min_lr_rate0.1、AdamW β=(0.9,0.999)、eps1e-8、WD0、clip norm1。完整训练 local1800，保存 600／1200／1800、最多六份；validation 只做 1200／1800 定位＋离散，test 只做 1800 定位＋离散＋连续。
 
@@ -8205,8 +8222,8 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_B2_S3_J8
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1,3
+EVAL_GPU=1
 MASTER_PORT=29685
 python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 for STEP in 1200 1800; do
@@ -8218,15 +8235,3 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ' >> fst_outs/exp32_3maps_B2_S3_J8.nohup.out 2>&1 < /dev/null &
 ```
 
-只有 B2 自身完整 checkpoint 中断后才用 `--resume` 恢复；保持首次运行的 GPU 数、microbatch4、有效 batch128 与资产后端／路径。若首次使用 full，恢复 train 也加入同一 `--asset-mode full --data-dir` 参数；恢复后只补做未完成的评测。不能从 J8、P4、U2 或 B1 的 optimizer／scheduler 状态恢复。
-
-```bash
-mkdir -p fst_outs
-nohup bash -c '
-set -euo pipefail
-EXPERIMENT=exp32_3maps_B2_S3_J8
-TRAIN_GPUS=0
-MASTER_PORT=29685
-python scripts/run_exp32_3maps.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
-' >> fst_outs/exp32_3maps_B2_S3_J8.nohup.out 2>&1 < /dev/null &
-```

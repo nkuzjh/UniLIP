@@ -1,0 +1,125 @@
+{
+  "scope": "CPU-only sampled LoRA tensors, not full-file equality proof",
+  "pairs": [
+    {
+      "pair": "B1",
+      "left": "outputs/csgo_1b/exp32_3maps_B1_S3_J8/checkpoint-1200/model.safetensors",
+      "right": "outputs/csgo_1b/exp32_3maps_B1_S3_J8/checkpoint-1800/model.safetensors",
+      "samples": [
+        {
+          "key": "language_model.model.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            896,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.014307142235338688,
+          "left_norm": 0.6171764135360718,
+          "right_norm": 0.6173649430274963
+        },
+        {
+          "key": "model.dit.base_model.model.caption_projection.linear_1.lora_B.default.weight",
+          "shape": [
+            1152,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.0173579603433609,
+          "left_norm": 1.223405361175537,
+          "right_norm": 1.2254420518875122
+        },
+        {
+          "key": "model.action_dit.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            1024,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.01150051224976778,
+          "left_norm": 0.527847945690155,
+          "right_norm": 0.5291287899017334
+        }
+      ]
+    },
+    {
+      "pair": "B2",
+      "left": "outputs/csgo_1b/exp32_3maps_B2_S3_J8/checkpoint-1200/model.safetensors",
+      "right": "outputs/csgo_1b/exp32_3maps_B2_S3_J8/checkpoint-1800/model.safetensors",
+      "samples": [
+        {
+          "key": "language_model.model.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            896,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.013331364840269089,
+          "left_norm": 0.6180317997932434,
+          "right_norm": 0.6184914708137512
+        },
+        {
+          "key": "model.dit.base_model.model.caption_projection.linear_1.lora_B.default.weight",
+          "shape": [
+            1152,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.017795315012335777,
+          "left_norm": 1.224230408668518,
+          "right_norm": 1.2265506982803345
+        },
+        {
+          "key": "model.action_dit.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            1024,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.01140337809920311,
+          "left_norm": 0.52601158618927,
+          "right_norm": 0.5269356966018677
+        }
+      ]
+    },
+    {
+      "pair": "J8_to_S0",
+      "left": "outputs/csgo_1b/exp32_3maps_joint_constloc8/checkpoint-5850/model.safetensors",
+      "right": "outputs/csgo_1b/exp32_3maps_stage2_control_j8/checkpoint-1800/model.safetensors",
+      "samples": [
+        {
+          "key": "language_model.model.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            896,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.06409719586372375,
+          "left_norm": 0.6145898103713989,
+          "right_norm": 0.6177103519439697
+        },
+        {
+          "key": "model.dit.base_model.model.caption_projection.linear_1.lora_B.default.weight",
+          "shape": [
+            1152,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.09245742112398148,
+          "left_norm": 1.204526662826538,
+          "right_norm": 1.2273982763290405
+        },
+        {
+          "key": "model.action_dit.base_model.model.layers.0.mlp.down_proj.lora_B.default.weight",
+          "shape": [
+            1024,
+            32
+          ],
+          "equal": false,
+          "difference_norm": 0.06490328907966614,
+          "left_norm": 0.5182856321334839,
+          "right_norm": 0.5279057621955872
+        }
+      ]
+    }
+  ]
+}

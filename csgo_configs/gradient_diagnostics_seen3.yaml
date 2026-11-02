@@ -1,0 +1,60 @@
+schema_version: 1
+source_seed: 20261102
+samples_per_map: 128
+noise_seeds: [17, 29]
+device: cuda:0
+bf16: true  # Rebuild the saved training structure first; actual probe precision is set below.
+gradient_checkpointing: true
+precision_reference: true  # Cast the strictly loaded model and floating batches to FP32.
+deterministic_probe: true
+coordinate: shared
+output_root: outputs_diagnostics/gradient_seen3_fp32
+python: /home/jiahao/miniconda3/envs/UniLIP/bin/python
+preferred_microbatch:
+  exp32_3maps_stage2_control_j8: 8
+  exp32_3maps_joint_constloc8: 8
+  exp32_3maps_P3_S1_J8: 2
+  exp32_3maps_P4_S1_J8: 2
+  exp32_3maps_U2_S2_J8: 1
+  exp32_3maps_B1_S3_J8: 1
+  exp32_3maps_B2_S3_J8: 1
+screen:
+  experiments:
+    - exp32_3maps_stage2_control_j8
+    - exp32_3maps_P3_S1_J8
+    - exp32_3maps_P4_S1_J8
+    - exp32_3maps_U2_S2_J8
+    - exp32_3maps_B1_S3_J8
+    - exp32_3maps_B2_S3_J8
+  checkpoint_step: 1800
+  noise_seeds: [17, 29]
+  check_total_backward: true
+  numerical_check: true
+  measurement_mode: full  # Direct component, main, and total VJPs on every microbatch.
+confirm:
+  experiments:
+    - exp32_3maps_stage2_control_j8
+    - exp32_3maps_P3_S1_J8
+    - exp32_3maps_P4_S1_J8
+    - exp32_3maps_U2_S2_J8
+    - exp32_3maps_B1_S3_J8
+    - exp32_3maps_B2_S3_J8
+  checkpoint_step: 1800
+  source_offsets: [0, 128, 256]
+  noise_seeds: [17, 29]
+  check_total_backward: true
+  numerical_check: true
+  measurement_mode: component_sum  # Direct components; derive main/total, independently check first microbatch.
+temporal:
+  checkpoints:
+    - experiment: exp32_3maps_B1_S3_J8
+      step: 1200
+    - experiment: exp32_3maps_B2_S3_J8
+      step: 1200
+    - experiment: exp32_3maps_joint_constloc8
+      step: 5850
+  source_offset: 0
+  noise_seeds: [17, 29]
+  numerical_check: true
+  check_total_backward: true
+  measurement_mode: component_sum  # Same scope as confirm; raw components and layer statistics remain measured.

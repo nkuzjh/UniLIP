@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "counts": {
+    "reports": 27,
+    "observations": 54,
+    "aux_freeze_checks": 1984,
+    "layer_observations": 1008,
+    "global_primary_ascent": 0,
+    "layer_primary_ascent": 0
+  },
+  "report_checks_errors": [],
+  "code_sha256": "0897dab849a6ab19408d51e11800412642d0b6fa64afaa6a42566c5c8b11bc48",
+  "portable_and_default_csv_identical": true,
+  "outer_exec_session_exit_code": 143,
+  "outer_exec_exit_cause": "not established",
+  "probe_success_semantics": "controller writes complete only when probe exit_code==0 and report_checks pass",
+  "optimizer_steps_executed": 0
+}

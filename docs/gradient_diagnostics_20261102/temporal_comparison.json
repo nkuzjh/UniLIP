@@ -1,0 +1,951 @@
+{
+  "scope": "same offset0 source window, seeds17/29; within-pair microbatch and loss weights matched; not independent training repeats",
+  "pairs": [
+    {
+      "label": "B1",
+      "before_report": "outputs_diagnostics/gradient_seen3_fp32/temporal/exp32_3maps_B1_S3_J8.step1200.offset0.json",
+      "after_report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B1_S3_J8.step1800.offset0.json",
+      "source_identity_equal": true,
+      "microbatch": 2,
+      "accumulations": 64,
+      "seeds": [
+        {
+          "seed": 17,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_B1_S3_J8",
+            "checkpoint_step": 1200,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": 0.008400402381997647,
+            "weighted_norms": {
+              "gen": 0.08477375672419994,
+              "loc": 0.0760533947015055,
+              "perception": 0.0006996210770776485,
+              "aux_loc": 0.043393148648775755
+            },
+            "mean_losses": {
+              "gen": 0.7201815517619252,
+              "loc": 0.0011193557961632905,
+              "perception": 0.025642442909884267,
+              "aux_loc": 0.001948006704594718,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.732366528827697
+            },
+            "aux_over_main_pct": 37.95745537107645,
+            "cos_perception_aux_loc": 0.015323080921943927,
+            "main_other_offset_pct": {
+              "gen": -0.7536284136705674,
+              "loc": -0.9363601331825379
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 5.39952384147869e-06,
+                "other_aux_dot": 4.651897575524218e-07,
+                "derived_total_dot": 5.864713599031111e-06,
+                "direct_cosine_to_total": 0.06822176331673059,
+                "direct_total_dot": 5.864713600285468e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 1.25435669202879e-15,
+                "other_aux_offset_vs_base_pct": -8.615384822988892,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.0019453924261105136,
+                "other_aux_dot": 4.651897575524218e-07,
+                "derived_total_dot": 0.001945857615868066,
+                "direct_cosine_to_total": 0.36494625440822914,
+                "direct_total_dot": 0.001945857614284146,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -1.5839200610823223e-12,
+                "other_aux_offset_vs_base_pct": -0.023912386586314147,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": -0.12043543883211036,
+            "gen_total_direction": -0.0072494704425501814,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              1.9680351170717163
+            ],
+            "loc_aux_effect_pct": -1.0040065117054895,
+            "loc_total_direction": -0.0007371119662423221,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              5,
+              2.284368740182279
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_B1_S3_J8",
+            "checkpoint_step": 1800,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": 0.003940332768306574,
+            "weighted_norms": {
+              "gen": 0.0871376362092942,
+              "loc": 0.07928520648345672,
+              "perception": 0.0008449750322342773,
+              "aux_loc": 0.033467439254193716
+            },
+            "mean_losses": {
+              "gen": 0.7194852293469012,
+              "loc": 0.0009830699941630883,
+              "perception": 0.02560384366370272,
+              "aux_loc": 0.001973272115947111,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7306032502092421
+            },
+            "aux_over_main_pct": 28.36365961350279,
+            "cos_perception_aux_loc": 0.002957388763372736,
+            "main_other_offset_pct": {
+              "gen": -0.3585248702390154,
+              "loc": -0.433058446256177
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 5.4891063927835275e-06,
+                "other_aux_dot": 8.363244211159171e-08,
+                "derived_total_dot": 5.572738834895119e-06,
+                "direct_cosine_to_total": 0.05363069123870527,
+                "direct_total_dot": 5.572738839546683e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 4.651563592042874e-15,
+                "other_aux_offset_vs_base_pct": -1.5236075988897289,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.0011492773967907864,
+                "other_aux_dot": 8.363244211159171e-08,
+                "derived_total_dot": 0.001149361029232898,
+                "direct_cosine_to_total": 0.27926889343226763,
+                "direct_total_dot": 0.0011493610296666476,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 4.3374960741193735e-13,
+                "other_aux_offset_vs_base_pct": -0.007276958752092825,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": -0.43706825436398017,
+            "gen_total_direction": -0.007653495753924059,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              4.080687727123744
+            ],
+            "loc_aux_effect_pct": -0.010732748686613182,
+            "loc_total_direction": -0.0007892555301488869,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              2,
+              3.430174930498068
+            ]
+          }
+        },
+        {
+          "seed": 29,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_B1_S3_J8",
+            "checkpoint_step": 1200,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": 0.009168133813553846,
+            "weighted_norms": {
+              "gen": 0.0959058663667197,
+              "loc": 0.12408883966976524,
+              "perception": 0.0008622304766260981,
+              "aux_loc": 0.013661149719653955
+            },
+            "mean_losses": {
+              "gen": 0.714395365677774,
+              "loc": 0.0012094719841115875,
+              "perception": 0.025298796128481627,
+              "aux_loc": 0.001307616266558398,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.726643699221313
+            },
+            "aux_over_main_pct": 8.70793581141176,
+            "cos_perception_aux_loc": 0.033575172471173725,
+            "main_other_offset_pct": {
+              "gen": -1.1862288825074594,
+              "loc": -0.7085873465292295
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 3.7507783380557095e-06,
+                "other_aux_dot": 3.9548395876105683e-07,
+                "derived_total_dot": 4.146262296816766e-06,
+                "direct_cosine_to_total": 0.030429556634156515,
+                "direct_total_dot": 4.146262262901111e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -3.391565491178781e-14,
+                "other_aux_offset_vs_base_pct": -10.544050410775908,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.00016908167234507205,
+                "other_aux_dot": 3.9548395876105683e-07,
+                "derived_total_dot": 0.0001694771563038331,
+                "direct_cosine_to_total": 0.07850297996058796,
+                "direct_total_dot": 0.00016947715647863413,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 1.748010373600617e-13,
+                "other_aux_offset_vs_base_pct": -0.23390113977222166,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": 0.34390103679687206,
+            "gen_total_direction": -0.009275036748798204,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              11,
+              2.824827574056863
+            ],
+            "loc_aux_effect_pct": -0.11265138658687784,
+            "loc_total_direction": -0.0019405772144353785,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              8,
+              2.168739620911979
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_B1_S3_J8",
+            "checkpoint_step": 1800,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": 0.009782038427901877,
+            "weighted_norms": {
+              "gen": 0.10312998113082669,
+              "loc": 0.14760057128439566,
+              "perception": 0.0008027507879245892,
+              "aux_loc": 0.012241316286824074
+            },
+            "mean_losses": {
+              "gen": 0.7139144851826131,
+              "loc": 0.0010931488841379178,
+              "perception": 0.02519731380743906,
+              "aux_loc": 0.0012519944498308178,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7251715403981507
+            },
+            "aux_over_main_pct": 6.776280529492987,
+            "cos_perception_aux_loc": -0.012861979236994977,
+            "main_other_offset_pct": {
+              "gen": -1.4000142775674864,
+              "loc": -0.6834807140053357
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 1.6583768460753361e-06,
+                "other_aux_dot": -1.2639114956726174e-07,
+                "derived_total_dot": 1.5319856965080744e-06,
+                "direct_cosine_to_total": 0.010516793629318004,
+                "direct_total_dot": 1.5319856685575366e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -2.7950537824373146e-14,
+                "other_aux_offset_vs_base_pct": 7.621376882243331,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.00017855320908937098,
+                "other_aux_dot": -1.2639114956726174e-07,
+                "derived_total_dot": 0.00017842681793980373,
+                "direct_cosine_to_total": 0.08032327369200926,
+                "direct_total_dot": 0.00017842681775188262,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -1.8792110337458034e-13,
+                "other_aux_offset_vs_base_pct": 0.07078626601664682,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": -0.24234665374877998,
+            "gen_total_direction": -0.010810831980867908,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              8,
+              3.2445304926337397
+            ],
+            "loc_aux_effect_pct": -0.01632564930439207,
+            "loc_total_direction": -0.0027423015347041186,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              8,
+              2.124978194459238
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "B2",
+      "before_report": "outputs_diagnostics/gradient_seen3_fp32/temporal/exp32_3maps_B2_S3_J8.step1200.offset0.json",
+      "after_report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_B2_S3_J8.step1800.offset0.json",
+      "source_identity_equal": true,
+      "microbatch": 2,
+      "accumulations": 64,
+      "seeds": [
+        {
+          "seed": 17,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_B2_S3_J8",
+            "checkpoint_step": 1200,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": -0.0014799026666610106,
+            "weighted_norms": {
+              "gen": 0.07698290861359643,
+              "loc": 0.03232356268765047,
+              "perception": 0.0006908405796397117,
+              "aux_loc": 0.027893057955031896
+            },
+            "mean_losses": {
+              "gen": 0.7182261543348432,
+              "loc": 0.0008043763723435404,
+              "perception": 0.026815363991772756,
+              "aux_loc": 0.0011606738205500733,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7271626088768244
+            },
+            "aux_over_main_pct": 33.36232000786142,
+            "cos_perception_aux_loc": -0.08812615061002982,
+            "main_other_offset_pct": {
+              "gen": 0.062138112834294386,
+              "loc": 0.35245870897798415
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 1.463898222453603e-05,
+                "other_aux_dot": -1.698160635551428e-06,
+                "derived_total_dot": 1.2940821588984601e-05,
+                "direct_cosine_to_total": 0.21566154325992606,
+                "direct_total_dot": 1.2940821582037999e-05,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -6.9466019037272425e-15,
+                "other_aux_offset_vs_base_pct": 11.600264345598998,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.0006665829418123644,
+                "other_aux_dot": -1.698160635551428e-06,
+                "derived_total_dot": 0.0006648847811768129,
+                "direct_cosine_to_total": 0.27443466151344814,
+                "direct_total_dot": 0.0006648847817806333,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 6.03820379113662e-13,
+                "other_aux_offset_vs_base_pct": 0.25475608945742284,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": 1.6208458786419246,
+            "gen_total_direction": -0.005826688078384321,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              6,
+              1.2886643768757873
+            ],
+            "loc_aux_effect_pct": 0.12298289489334796,
+            "loc_total_direction": -0.00012998121997566378,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              12,
+              10.2677426412887
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_B2_S3_J8",
+            "checkpoint_step": 1800,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": -0.0017777712191998252,
+            "weighted_norms": {
+              "gen": 0.07827036346871517,
+              "loc": 0.028162882027248766,
+              "perception": 0.0006306669656148857,
+              "aux_loc": 0.02445932643358774
+            },
+            "mean_losses": {
+              "gen": 0.7180243106558919,
+              "loc": 0.000666258895307692,
+              "perception": 0.026764840135001577,
+              "aux_loc": 0.0011020244057249329,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7257946534082294
+            },
+            "aux_over_main_pct": 29.47251835695768,
+            "cos_perception_aux_loc": 0.055167834527157615,
+            "main_other_offset_pct": {
+              "gen": 0.06396694597920813,
+              "loc": 0.4940786932117278
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 7.163631080134453e-06,
+                "other_aux_dot": 8.510018683070956e-07,
+                "derived_total_dot": 8.014632948441548e-06,
+                "direct_cosine_to_total": 0.14592027506443772,
+                "direct_total_dot": 8.014632954765242e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 6.32369387431643e-15,
+                "other_aux_offset_vs_base_pct": -11.879476466439186,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.0006278609639503201,
+                "other_aux_dot": 8.510018683070956e-07,
+                "derived_total_dot": 0.0006287119658186272,
+                "direct_cosine_to_total": 0.29514764227453155,
+                "direct_total_dot": 0.0006287119663714597,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 5.528325193460137e-13,
+                "other_aux_offset_vs_base_pct": -0.13553985948622085,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": -0.8235752905343098,
+            "gen_total_direction": -0.0061727530305518115,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              21,
+              0.8721316178024018
+            ],
+            "loc_aux_effect_pct": 1.7806996747749193,
+            "loc_total_direction": -9.689691852566932e-05,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              12,
+              5.6526069985872205
+            ]
+          }
+        },
+        {
+          "seed": 29,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_B2_S3_J8",
+            "checkpoint_step": 1200,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": -0.004878954889410082,
+            "weighted_norms": {
+              "gen": 0.09192604074202493,
+              "loc": 0.18042231225095226,
+              "perception": 0.0006945824748388798,
+              "aux_loc": 0.0131976923388995
+            },
+            "mean_losses": {
+              "gen": 0.7095028888434172,
+              "loc": 0.0014308924742181262,
+              "perception": 0.02643274540605489,
+              "aux_loc": 0.0008786609050730476,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7231503324583173
+            },
+            "aux_over_main_pct": 6.5571783567964985,
+            "cos_perception_aux_loc": 0.05126270884691618,
+            "main_other_offset_pct": {
+              "gen": 0.9575875512639483,
+              "loc": 0.24858511142379272
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 7.1692183278768316e-06,
+                "other_aux_dot": 4.6991939815280877e-07,
+                "derived_total_dot": 7.63913772602964e-06,
+                "direct_cosine_to_total": 0.05436086256051962,
+                "direct_total_dot": 7.639137725476368e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -5.532717567511419e-16,
+                "other_aux_offset_vs_base_pct": -6.554681091599225,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.00012556188867740936,
+                "other_aux_dot": 4.6991939815280877e-07,
+                "derived_total_dot": 0.00012603180807556217,
+                "direct_cosine_to_total": 0.04720065094148585,
+                "direct_total_dot": 0.00012603180826425034,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 1.8868817641161384e-13,
+                "other_aux_offset_vs_base_pct": -0.3742532093954995,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": -0.03177339738348474,
+            "gen_total_direction": -0.0083721362797945,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              18.3435893537807
+            ],
+            "loc_aux_effect_pct": 0.13732034316000705,
+            "loc_total_direction": -0.004053337639205983,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              2,
+              3.3304430784055197
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_B2_S3_J8",
+            "checkpoint_step": 1800,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": -0.004119813994761922,
+            "weighted_norms": {
+              "gen": 0.08332078760246836,
+              "loc": 0.23177707890452165,
+              "perception": 0.0006362789438910999,
+              "aux_loc": 0.014185095297735309
+            },
+            "mean_losses": {
+              "gen": 0.7087481748312712,
+              "loc": 0.0013783533490823174,
+              "perception": 0.026408918696688488,
+              "aux_loc": 0.0008937292328141666,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7219891753047705
+            },
+            "aux_over_main_pct": 5.788018123499056,
+            "cos_perception_aux_loc": 0.059446163843447,
+            "main_other_offset_pct": {
+              "gen": 1.146026676910095,
+              "loc": 0.14810185219421115
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 6.1531006978678826e-06,
+                "other_aux_dot": 5.365419007902728e-07,
+                "derived_total_dot": 6.689642598658156e-06,
+                "direct_cosine_to_total": 0.042705867244093844,
+                "direct_total_dot": 6.689642588475369e-06,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": -1.0182786993435337e-14,
+                "other_aux_offset_vs_base_pct": -8.719862182268372,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "available",
+                "base_dot": 0.00014659502231581596,
+                "other_aux_dot": 5.365419007902728e-07,
+                "derived_total_dot": 0.00014713156421660624,
+                "direct_cosine_to_total": 0.04213138904674424,
+                "direct_total_dot": 0.00014713156465239382,
+                "direct_total_status": "available",
+                "direct_minus_derived_total_dot": 4.3578758223555836e-13,
+                "other_aux_offset_vs_base_pct": -0.36600280985965367,
+                "base_positive_to_total_negative": false,
+                "direct_total_scope": "component_sum_derived_total"
+              }
+            },
+            "gen_aux_effect_pct": 0.20394643781815464,
+            "gen_total_direction": -0.006848796000051745,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              13.660948180841489
+            ],
+            "loc_aux_effect_pct": 0.06501966977794843,
+            "loc_total_direction": -0.006700771980984048,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              2,
+              1.587333557364275
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "label": "J8_to_S0",
+      "before_report": "outputs_diagnostics/gradient_seen3_fp32/temporal/exp32_3maps_joint_constloc8.step5850.offset0.json",
+      "after_report": "outputs_diagnostics/gradient_seen3_fp32/confirm/exp32_3maps_stage2_control_j8.step1800.offset0.json",
+      "source_identity_equal": true,
+      "microbatch": 8,
+      "accumulations": 16,
+      "seeds": [
+        {
+          "seed": 17,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_joint_constloc8",
+            "checkpoint_step": 5850,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": -0.0008963011507237814,
+            "weighted_norms": {
+              "gen": 0.08658180911490254,
+              "loc": 0.18919109238566434,
+              "perception": 0.0,
+              "aux_loc": 0.0
+            },
+            "mean_losses": {
+              "gen": 0.7353563383221626,
+              "loc": 0.001842623669290333,
+              "perception": 0.0,
+              "aux_loc": 0.0,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7500973269343376
+            },
+            "aux_over_main_pct": 0.0,
+            "cos_perception_aux_loc": null,
+            "main_other_offset_pct": {
+              "gen": 0.19585198732325088,
+              "loc": 0.041018514224359016
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              }
+            },
+            "gen_aux_effect_pct": -0.0,
+            "gen_total_direction": -0.0074817278013439145,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              13.184293019131966
+            ],
+            "loc_aux_effect_pct": -0.0,
+            "loc_total_direction": -0.004472323447296091,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              2,
+              2.7604657361946474
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_stage2_control_j8",
+            "checkpoint_step": 1800,
+            "seed": 17,
+            "source_offset": 0,
+            "cos_gen_loc": -0.0052244975198904205,
+            "weighted_norms": {
+              "gen": 0.10086515806548178,
+              "loc": 0.1810594721509063,
+              "perception": 0.0,
+              "aux_loc": 0.0
+            },
+            "mean_losses": {
+              "gen": 0.7327109724283218,
+              "loc": 0.0016486693129991181,
+              "perception": 0.0,
+              "aux_loc": 0.0,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.745900321751833
+            },
+            "aux_over_main_pct": 0.0,
+            "cos_perception_aux_loc": null,
+            "main_other_offset_pct": {
+              "gen": 0.9378310423020109,
+              "loc": 0.29104788713691554
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              },
+              "aux_loc": {
+                "seed": "17",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              }
+            },
+            "gen_aux_effect_pct": -0.0,
+            "gen_total_direction": -0.010078367243074484,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              2,
+              22.278981661150716
+            ],
+            "loc_aux_effect_pct": -0.0,
+            "loc_total_direction": -0.0040858899478243785,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              2,
+              7.806597467798006
+            ]
+          }
+        },
+        {
+          "seed": 29,
+          "rng_state_after_equal": true,
+          "before": {
+            "experiment": "exp32_3maps_joint_constloc8",
+            "checkpoint_step": 5850,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": -0.003296170790147402,
+            "weighted_norms": {
+              "gen": 0.09514720969628378,
+              "loc": 0.1798798254822394,
+              "perception": 0.0,
+              "aux_loc": 0.0
+            },
+            "mean_losses": {
+              "gen": 0.7191035524010658,
+              "loc": 0.0013055296549282502,
+              "perception": 0.0,
+              "aux_loc": 0.0,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7295477874577045
+            },
+            "aux_over_main_pct": 0.0,
+            "cos_perception_aux_loc": null,
+            "main_other_offset_pct": {
+              "gen": 0.6231550335359206,
+              "loc": 0.17435054349432083
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              }
+            },
+            "gen_aux_effect_pct": -0.0,
+            "gen_total_direction": -0.008996577340636523,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              5,
+              10.896444310446574
+            ],
+            "loc_aux_effect_pct": -0.0,
+            "loc_total_direction": -0.004037542180151793,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              5,
+              3.1346059304739544
+            ]
+          },
+          "after": {
+            "experiment": "exp32_3maps_stage2_control_j8",
+            "checkpoint_step": 1800,
+            "seed": 29,
+            "source_offset": 0,
+            "cos_gen_loc": -0.00025174574911049623,
+            "weighted_norms": {
+              "gen": 0.10625292459825039,
+              "loc": 0.25358357549850746,
+              "perception": 0.0,
+              "aux_loc": 0.0
+            },
+            "mean_losses": {
+              "gen": 0.7161029502749443,
+              "loc": 0.0009859967340162257,
+              "perception": 0.0,
+              "aux_loc": 0.0,
+              "repa": 0.0,
+              "loc_repa": 0.0,
+              "gen_aux": 0.0,
+              "total": 0.7239909246563911
+            },
+            "aux_over_main_pct": 0.0,
+            "cos_perception_aux_loc": null,
+            "main_other_offset_pct": {
+              "gen": 0.060081722378341994,
+              "loc": 0.010548286514843725
+            },
+            "auxiliary_objective": {
+              "perception": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              },
+              "aux_loc": {
+                "seed": "29",
+                "source_offset": 0,
+                "status": "inactive",
+                "base_dot": null,
+                "other_aux_dot": null,
+                "derived_total_dot": null,
+                "direct_cosine_to_total": null,
+                "direct_total_dot": null,
+                "direct_total_status": "inactive",
+                "direct_minus_derived_total_dot": null,
+                "other_aux_offset_vs_base_pct": null,
+                "base_positive_to_total_negative": null
+              }
+            },
+            "gen_aux_effect_pct": -0.0,
+            "gen_total_direction": -0.011282900949026968,
+            "gen_layer_total_ascent_count": 0,
+            "gen_max_layer_main_offset": [
+              3,
+              6.398278246192266
+            ],
+            "loc_aux_effect_pct": -0.0,
+            "loc_total_direction": -0.008037230840685965,
+            "loc_layer_total_ascent_count": 0,
+            "loc_max_layer_main_offset": [
+              5,
+              0.8516166736623846
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan or explicitly execute the five fixed exp37 Seen10 arms.
+"""Plan or explicitly execute the six fixed exp37 Seen10 arms.
 
 The default is read-only planning. --execute is required to write snapshots or
 launch a training, inference, or metrics process. No queue is launched.
@@ -21,9 +21,9 @@ from types import SimpleNamespace
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPERIMENTS = ("exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both")
+EXPERIMENTS = ("exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 SINGLES = ("exp37_s2_gen", "exp37_s2_loc")
-JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both")
+JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 MANIFEST = json.loads((ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json").read_text())
 MAPS = MANIFEST["protocol"]["seen_maps"]
 EXPECTED_COUNTS = {"train": 50000, "validation": 5000, "discrete_test": 20000, "continuous_frames": 12800}
@@ -36,6 +36,7 @@ SOURCE_SHAPES = {
     "exp37_s2_loc": (2290, 588, ("language_model.model.", "model.action_dit."), ("model.llm_connector.", "model.dit.")),
     "exp37_s2": (2830, 1128, ("language_model.model.", "model.llm_connector.", "model.dit.", "model.action_dit."), ()),
     "exp37_s2_both": (2830, 1128, ("language_model.model.", "model.llm_connector.", "model.dit.", "model.action_dit."), ()),
+    "exp37_s2_both_b1": (2830, 1128, ("language_model.model.", "model.llm_connector.", "model.dit.", "model.action_dit."), ()),
 }
 LR_STAGE2 = {k: 2e-5 for k in ("learning_rate", "mm_projector_lr", "action_dit_lr", "llm_lora_lr", "llm_connector_lora_lr", "gen_dit_lora_lr", "action_dit_lora_lr", "action_io_mlp_lr")}
 LR_STAGE2.update({k: 1e-4 for k in ("action_dit_projector_lr", "action_dit_connector_lr", "action_dit_norm_lr")})
@@ -460,12 +461,14 @@ def preflight_stage2_source(config: dict) -> dict:
     result = {"path": source_name, "sha256": digest_file(source), "size_bytes": source.stat().st_size,
               "step": step, "state_path": relative(checkpoint / "trainer_state.json"), **header, **evidence}
     if experiment in JOINT_STAGE2:
-        sibling = "exp37_s2_both" if experiment == "exp37_s2" else "exp37_s2"
-        sibling_plan = output_dir(sibling) / "experiment_plan.json"
-        if sibling_plan.is_file():
-            peer = json.loads(sibling_plan.read_text()).get("source_checkpoint")
-            if not isinstance(peer, dict) or (peer.get("path"), peer.get("sha256")) != (result["path"], result["sha256"]):
-                raise ValueError("Joint Stage 2 sibling uses a different Stage 1 source hash")
+        for sibling in JOINT_STAGE2:
+            if sibling == experiment:
+                continue
+            sibling_plan = output_dir(sibling) / "experiment_plan.json"
+            if sibling_plan.is_file():
+                peer = json.loads(sibling_plan.read_text()).get("source_checkpoint")
+                if not isinstance(peer, dict) or (peer.get("path"), peer.get("sha256")) != (result["path"], result["sha256"]):
+                    raise ValueError(f"Joint Stage 2 sibling {sibling} uses a different Stage 1 source path/hash")
     return result
 
 

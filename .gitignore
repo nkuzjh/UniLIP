@@ -1237,3 +1237,6 @@ _vis_results/_trainner_batch.jpg
 third_party/PyTorch-Frechet-Video-Distance
 data/csgo_benchmark_v2/radars
 data/csgo_benchmark_v2/images
+
+# Local gradient probe reports, logs and optional gradient vectors.
+outputs_diagnostics/

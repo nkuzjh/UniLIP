@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "checked_at_utc": "2026-11-02T00:09:27.719628+00:00",
+  "cpu_only": true,
+  "fixtures_in_memory_only": true,
+  "temporary_output_removed": true,
+  "zero_norm_cases": [
+    {
+      "case": "gen_positive_loc_zero",
+      "expected": [
+        0.0,
+        null
+      ],
+      "actual": [
+        0.0,
+        null
+      ],
+      "passed": true
+    },
+    {
+      "case": "gen_zero_loc_positive",
+      "expected": [
+        null,
+        0.0
+      ],
+      "actual": [
+        null,
+        0.0
+      ],
+      "passed": true
+    },
+    {
+      "case": "both_zero",
+      "expected": [
+        null,
+        null
+      ],
+      "actual": [
+        null,
+        null
+      ],
+      "passed": true
+    }
+  ],
+  "active_aux_freeze": {
+    "baseline_valid": true,
+    "active_missing_rejected": true,
+    "active_missing_errors": [
+      "seed 17: aux freeze schema"
+    ],
+    "active_skipped_rejected": true,
+    "active_skipped_errors": [
+      "seed 17: active aux freeze"
+    ]
+  },
+  "require_complete": {
+    "exit_code": 2,
+    "stdout": "incomplete: 24/27 reports, 48/54 valid seed rows; missing=3, invalid=0; exports untouched",
+    "stderr": "",
+    "preexisting_files_unchanged": true,
+    "expected_rejection": true
+  },
+  "formal_export_sha256_before": {
+    "observations.csv": "2a73fda0b63d32f5db573d503d392d53c533b71a449dc51a208537f1785934a0",
+    "evidence_manifest.json": "24238c42da4d203f4445510e8022858ebb76571c20eb0597490a9e60adc3dd98"
+  },
+  "formal_export_sha256_after": {
+    "observations.csv": "2a73fda0b63d32f5db573d503d392d53c533b71a449dc51a208537f1785934a0",
+    "evidence_manifest.json": "24238c42da4d203f4445510e8022858ebb76571c20eb0597490a9e60adc3dd98"
+  },
+  "formal_export_unchanged": true,
+  "passed": true
+}

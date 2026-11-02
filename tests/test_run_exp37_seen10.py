@@ -25,6 +25,7 @@ SPEC.loader.exec_module(RUNNER)
 
 EXPERIMENTS = (
     "exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both",
+    "exp37_s2_both_b1",
 )
 SEEN_MAPS = json.loads(
     (REPO_ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json").read_text()
@@ -157,7 +158,7 @@ class Exp37RunnerTests(unittest.TestCase):
                 self.assertEqual(config["benchmark_v2_split"], "seen_train")
                 self.assertTrue(config["csgo_loss_per_microbatch_mean"])
                 self.assertEqual(config["alpha_loc_loss"],
-                                 8.0 if experiment in ("exp37", "exp37_s2", "exp37_s2_both") else 1.0)
+                                 8.0 if experiment in ("exp37", *RUNNER.JOINT_STAGE2) else 1.0)
                 commands, metadata, out = RUNNER.training_plan(
                     self.args("train", experiment), config
                 )
@@ -185,6 +186,7 @@ class Exp37RunnerTests(unittest.TestCase):
         gen = self.config("exp37_s2_gen")
         loc = self.config("exp37_s2_loc")
         both = self.config("exp37_s2_both")
+        b1 = self.config("exp37_s2_both_b1")
         control = self.config("exp37_s2")
         for config, ratio, gen_head, loc_head in (
             (gen, 0.0, True, False), (loc, 1.0, False, True),
@@ -199,7 +201,7 @@ class Exp37RunnerTests(unittest.TestCase):
             self.assertNotIn("3maps", config["finetune_init_ckpt_path"])
         self.assertIn("exp32_gen", gen["finetune_init_ckpt_path"])
         self.assertIn("exp32_loc", loc["finetune_init_ckpt_path"])
-        for config in (control, both):
+        for config in (control, both, b1):
             self.assertIn("outputs/csgo_1b/exp37/checkpoint-", config["finetune_init_ckpt_path"])
             self.assertTrue(config["finetune_init_strict"])
         self.assertFalse(control["is_loc_aux_loss"])
@@ -214,6 +216,13 @@ class Exp37RunnerTests(unittest.TestCase):
         self.assertEqual(both["alpha_loc_aux_schedule_values"], [0.0, 1.0])
         self.assertEqual(both["aux_loc_combined_candidate_tau"], 1.0)
         self.assertEqual(both["aux_loc_combined_num_samples"], 2)
+        differences = {key for key in both.keys() | b1.keys()
+                       if both.get(key) != b1.get(key)}
+        self.assertEqual(differences, {"exp37_experiment", "loc_perception_use_attention_weight"})
+        self.assertTrue(b1["loc_perception_use_attention_weight"])
+        self.assertEqual(b1["alpha_loc_perception_schedule_values"], [0.0, 0.05])
+        self.assertEqual(b1["alpha_loc_aux_schedule_values"], [0.0, 1.0])
+        self.assertEqual(b1["aux_loc_combined_candidate_tau"], 1.0)
 
     def test_final_selects_completed_state_and_joint_source_is_dynamic(self):
         checkpoint = self.completed_checkpoint("exp37", 19337)
@@ -224,7 +233,7 @@ class Exp37RunnerTests(unittest.TestCase):
         )
         (later / "model.safetensors").touch()
         self.assertEqual(RUNNER.final_checkpoint_step("exp37"), 19337)
-        for experiment in ("exp37_s2", "exp37_s2_both"):
+        for experiment in RUNNER.JOINT_STAGE2:
             with self.subTest(experiment=experiment):
                 config = self.config(experiment)
                 self.assertEqual(
@@ -374,6 +383,7 @@ class Exp37RunnerTests(unittest.TestCase):
             ("exp37_s2_loc", ["eval_csgo_loc.py"]),
             ("exp37_s2", ["eval_csgo_loc.py", "eval_csgo.py", "eval_csgo.py"]),
             ("exp37_s2_both", ["eval_csgo_loc.py", "eval_csgo.py", "eval_csgo.py"]),
+            ("exp37_s2_both_b1", ["eval_csgo_loc.py", "eval_csgo.py", "eval_csgo.py"]),
         )
         for experiment, scripts in cases:
             self.snapshot_recipe(experiment)
@@ -589,28 +599,104 @@ class Exp37RunnerTests(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, "Missing Stage 2 source"):
                         RUNNER.preflight_stage2_source(config)
 
-    def test_joint_arms_pin_same_completed_stage1_source_hash(self):
+    def test_joint_arms_pin_same_completed_stage1_source_path_and_hash(self):
         checkpoint = self.completed_checkpoint("exp37", 19337)
         source_name = RUNNER.relative(checkpoint / "model.safetensors")
-        sibling = self.root / "outputs/csgo_1b/exp37_s2"
-        sibling.mkdir(parents=True)
-        sibling_plan = sibling / "experiment_plan.json"
-        sibling_plan.write_text(json.dumps({"source_checkpoint": {
-            "path": source_name, "sha256": "b" * 64,
-        }}))
-        config = self.config("exp37_s2_both")
+        joint = RUNNER.JOINT_STAGE2
         with patch.object(RUNNER, "tensor_header", return_value={
             "tensor_count": 2830, "lora_tensor_count": 1128,
             "shape_validation": "mocked header",
         }), patch.object(RUNNER, "digest_file", return_value="a" * 64):
-            with self.assertRaisesRegex(ValueError, "sibling uses a different"):
-                RUNNER.preflight_stage2_source(config)
-            sibling_plan.write_text(json.dumps({"source_checkpoint": {
-                "path": source_name, "sha256": "a" * 64,
-            }}))
-            provenance = RUNNER.preflight_stage2_source(config)
-        self.assertEqual(provenance["path"], source_name)
-        self.assertEqual(provenance["sha256"], "a" * 64)
+            # Every arm can start first, and every existing peer must agree.
+            for experiment in joint:
+                config = self.config(experiment)
+                with self.subTest(first=experiment):
+                    provenance = RUNNER.preflight_stage2_source(config)
+                    self.assertEqual(provenance["path"], source_name)
+                    self.assertEqual(provenance["sha256"], "a" * 64)
+                for peer in joint:
+                    if peer == experiment:
+                        continue
+                    plan_path = RUNNER.output_dir(peer) / "experiment_plan.json"
+                    plan_path.parent.mkdir(parents=True, exist_ok=True)
+                    for case, pinned in (
+                        ("missing", None),
+                        ("path", {"path": source_name.replace("19337", "19336"), "sha256": "a" * 64}),
+                        ("hash", {"path": source_name, "sha256": "b" * 64}),
+                    ):
+                        plan_path.write_text(json.dumps({"source_checkpoint": pinned}))
+                        with self.subTest(experiment=experiment, peer=peer, case=case):
+                            with self.assertRaisesRegex(ValueError, "sibling .* different Stage 1 source path/hash"):
+                                RUNNER.preflight_stage2_source(config)
+                    plan_path.write_text(json.dumps({"source_checkpoint": {
+                        "path": source_name, "sha256": "a" * 64,
+                    }}))
+                    with self.subTest(experiment=experiment, peer=peer, case="matching"):
+                        self.assertEqual(RUNNER.preflight_stage2_source(config)["path"], source_name)
+                    plan_path.unlink()
+                first_peer, second_peer = (peer for peer in joint if peer != experiment)
+                first_plan = RUNNER.output_dir(first_peer) / "experiment_plan.json"
+                second_plan = RUNNER.output_dir(second_peer) / "experiment_plan.json"
+                first_plan.write_text(json.dumps({"source_checkpoint": {
+                    "path": source_name, "sha256": "a" * 64,
+                }}))
+                for case, pinned in (
+                    ("path", {"path": source_name.replace("19337", "19336"), "sha256": "a" * 64}),
+                    ("hash", {"path": source_name, "sha256": "b" * 64}),
+                ):
+                    second_plan.write_text(json.dumps({"source_checkpoint": pinned}))
+                    with self.subTest(experiment=experiment, first_peer=first_peer,
+                                      second_peer=second_peer, case=case):
+                        with self.assertRaisesRegex(ValueError, f"sibling {second_peer} .* source path/hash"):
+                            RUNNER.preflight_stage2_source(config)
+                first_plan.unlink()
+                second_plan.unlink()
+            (checkpoint / "model.safetensors").unlink()
+            with self.assertRaisesRegex(ValueError, "Final checkpoint is incomplete|Missing Stage 2 source"):
+                RUNNER.preflight_stage2_source(self.config("exp37_s2_both_b1"))
+
+    def test_b1_resume_uses_own_checkpoint_after_stage1_source_is_removed(self):
+        source = self.completed_checkpoint("exp37", 19337) / "model.safetensors"
+        checkpoint, metadata = self.managed_resume_checkpoint("exp37_s2_both_b1")
+        self.assertIn("checkpoint-19337/model.safetensors", metadata["source_checkpoint"]["path"])
+        (checkpoint / "rng_state.pth").touch()
+        source.unlink()
+        args = self.args("train", "exp37_s2_both_b1", "--resume")
+        config = RUNNER.resolve_config(args, for_training=True)
+        RUNNER.validate_config(config)
+        commands, resumed, _ = RUNNER.training_plan(args, config)
+        self.assertEqual(resumed["source_checkpoint"], metadata["source_checkpoint"])
+        self.assertEqual(resumed["resume_checkpoint"], RUNNER.relative(checkpoint))
+        self.assertNotIn("--resume_from_checkpoint", commands[0])
+        self.assertFalse(RUNNER.output_dir("exp37_s2").exists())
+        self.assertFalse(RUNNER.output_dir("exp37_s2_both").exists())
+
+    def test_b1_evaluation_steps_and_recipe_are_frozen(self):
+        experiment = "exp37_s2_both_b1"
+        self.snapshot_recipe(experiment)
+        config = self.config(experiment, for_training=False)
+        for step in (4000, 6000):
+            args = self.args("infer", experiment, "--checkpoint-step", str(step))
+            commands, _, evaluated = RUNNER.evaluation_plan(args, config)
+            self.assertEqual([command[1] for command in commands],
+                             ["eval_csgo_loc.py", "eval_csgo.py"])
+            self.assertTrue(evaluated["loc_perception_use_attention_weight"])
+            self.assertFalse(evaluated["is_loc_aux_loss"])
+            self.assertFalse(evaluated["is_loc_perception_loss"])
+        with self.assertRaisesRegex(ValueError, "requires checkpoint"):
+            RUNNER.evaluation_plan(
+                self.args("infer", experiment, "--checkpoint-step", "4000", "--split", "test"), config)
+        commands, _, _ = RUNNER.evaluation_plan(
+            self.args("infer", experiment, "--checkpoint-step", "6000", "--split", "test"), config)
+        self.assertEqual([command[1] for command in commands],
+                         ["eval_csgo_loc.py", "eval_csgo.py", "eval_csgo.py"])
+        metrics, _, _ = RUNNER.evaluation_plan(
+            self.args("metrics", experiment, "--checkpoint-step", "6000", "--split", "test"), config)
+        self.assertEqual(len(metrics), 22)
+        changed = copy.deepcopy(config)
+        changed["loc_perception_use_attention_weight"] = False
+        with self.assertRaisesRegex(ValueError, "fixed field loc_perception_use_attention_weight"):
+            RUNNER.validate_config(changed)
 
 
 if __name__ == "__main__":

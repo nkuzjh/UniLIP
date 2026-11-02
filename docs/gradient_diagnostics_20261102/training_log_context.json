@@ -1,0 +1,358 @@
+{
+  "title": "Training log gradient norm context",
+  "created_date": "2026-11-02",
+  "scope": "CPU-only extraction from the specified trainer_state.json log_history; no model weights loaded. J8 training_args.bin was loaded on CPU only to read max_grad_norm scalar.",
+  "definitions": {
+    "all_recorded": "Finite numeric grad_norm values among log_history records that contain grad_norm.",
+    "last_600_steps": "Inclusive training-step interval [checkpoint_global_step-599, checkpoint_global_step]; summarized over recorded grad_norm entries in that interval.",
+    "p90": "Linear interpolation percentile at 0.9.",
+    "gt1": "Count and share of recorded finite grad_norm values strictly greater than 1.0; this is not an all-step clipping rate."
+  },
+  "records": [
+    {
+      "label": "S0_J8",
+      "experiment": "exp32_3maps_stage2_control_j8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_stage2_control_j8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.27230849862098694,
+        "median": 0.5160809457302094,
+        "p90": 0.8270267724990845,
+        "max": 1.7941389083862305,
+        "gt1_count": 9,
+        "gt1_fraction": 0.05
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.27230849862098694,
+          "median": 0.36663898825645447,
+          "p90": 0.583969110250473,
+          "max": 1.7263537645339966,
+          "gt1_count": 1,
+          "gt1_fraction": 0.016666666666666666
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "P3",
+      "experiment": "exp32_3maps_P3_S1_J8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_P3_S1_J8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.22131823003292084,
+        "median": 0.4800628572702408,
+        "p90": 0.6951265096664428,
+        "max": 1.1717809438705444,
+        "gt1_count": 2,
+        "gt1_fraction": 0.011111111111111112
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.22131823003292084,
+          "median": 0.3551703095436096,
+          "p90": 0.5755817592144012,
+          "max": 0.811427116394043,
+          "gt1_count": 0,
+          "gt1_fraction": 0.0
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "P4",
+      "experiment": "exp32_3maps_P4_S1_J8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_P4_S1_J8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.24846112728118896,
+        "median": 0.45873042941093445,
+        "p90": 0.7204572677612305,
+        "max": 1.207680583000183,
+        "gt1_count": 2,
+        "gt1_fraction": 0.011111111111111112
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.24846112728118896,
+          "median": 0.3397059589624405,
+          "p90": 0.4607747614383698,
+          "max": 0.8838492631912231,
+          "gt1_count": 0,
+          "gt1_fraction": 0.0
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "U2",
+      "experiment": "exp32_3maps_U2_S2_J8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_U2_S2_J8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.25813138484954834,
+        "median": 0.4969276487827301,
+        "p90": 0.7178306996822356,
+        "max": 1.3086202144622803,
+        "gt1_count": 6,
+        "gt1_fraction": 0.03333333333333333
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.25813138484954834,
+          "median": 0.3681192547082901,
+          "p90": 0.5903072893619538,
+          "max": 1.2217885255813599,
+          "gt1_count": 2,
+          "gt1_fraction": 0.03333333333333333
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "B1",
+      "experiment": "exp32_3maps_B1_S3_J8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_B1_S3_J8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.248398095369339,
+        "median": 0.494448646903038,
+        "p90": 0.799098914861679,
+        "max": 1.4811480045318604,
+        "gt1_count": 3,
+        "gt1_fraction": 0.016666666666666666
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.248398095369339,
+          "median": 0.3726605921983719,
+          "p90": 0.7071226239204407,
+          "max": 1.0000392198562622,
+          "gt1_count": 1,
+          "gt1_fraction": 0.016666666666666666
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "B2",
+      "experiment": "exp32_3maps_B2_S3_J8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_B2_S3_J8/checkpoint-1800/trainer_state.json",
+      "global_step": 1800,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 180,
+      "grad_norm_record_count": 180,
+      "step_coverage": {
+        "first": 10,
+        "last": 1800,
+        "unique_step_count": 180,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 180,
+        "min": 0.2520318925380707,
+        "median": 0.4609631896018982,
+        "p90": 0.7252065479755402,
+        "max": 1.7782785892486572,
+        "gt1_count": 5,
+        "gt1_fraction": 0.027777777777777776
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          1201,
+          1800
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.2520318925380707,
+          "median": 0.3430592715740204,
+          "p90": 0.5548917531967164,
+          "max": 1.7782785892486572,
+          "gt1_count": 1,
+          "gt1_fraction": 0.016666666666666666
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": 1.0,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": null
+      }
+    },
+    {
+      "label": "J8",
+      "experiment": "exp32_3maps_joint_constloc8",
+      "trainer_state": "outputs/csgo_1b/exp32_3maps_joint_constloc8/checkpoint-5850/trainer_state.json",
+      "global_step": 5850,
+      "grad_norm_present": true,
+      "grad_norm_field": "grad_norm",
+      "log_history_records": 585,
+      "grad_norm_record_count": 585,
+      "step_coverage": {
+        "first": 10,
+        "last": 5850,
+        "unique_step_count": 585,
+        "step_stride_values": [
+          10
+        ]
+      },
+      "all_recorded": {
+        "n_finite": 585,
+        "min": 0.278855562210083,
+        "median": 0.8916822075843811,
+        "p90": 1.5035142183303836,
+        "max": 8.494802474975586,
+        "gt1_count": 232,
+        "gt1_fraction": 0.39658119658119656
+      },
+      "last_600_steps": {
+        "range_inclusive": [
+          5251,
+          5850
+        ],
+        "stats": {
+          "n_finite": 60,
+          "min": 0.278855562210083,
+          "median": 0.4339708536863327,
+          "p90": 0.5657002329826355,
+          "max": 0.8426389694213867,
+          "gt1_count": 0,
+          "gt1_fraction": 0.0
+        }
+      },
+      "other_clipping_fields": [],
+      "max_grad_norm_sources": {
+        "experiment_plan_runtime_max_grad_norm": null,
+        "experiment_plan_present": true,
+        "checkpoint_training_args_bin": 1.0
+      },
+      "alpha_loc_loss_config": {
+        "resolved_config_yaml": 8.0,
+        "log_history_other_info_alpha_loc_first": 8.0
+      }
+    }
+  ],
+  "limitations": [
+    "Trainer log_history is sampled (10-step intervals for these runs); statistics describe logged points only.",
+    "grad_norm is the norm value logged by the trainer; a value above max_grad_norm does not establish a task-conflict or metric-degradation cause.",
+    "No explicit clipping-event/count field appears in log_history. Configuration of max_grad_norm does not reveal how many optimizer steps were clipped."
+  ]
+}

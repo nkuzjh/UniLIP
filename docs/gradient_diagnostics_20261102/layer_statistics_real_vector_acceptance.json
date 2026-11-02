@@ -1,0 +1,1551 @@
+{
+  "source": "outputs_diagnostics/grad_20261102/B2_check_fp32_v7.seed17.vectors.pt",
+  "statistics": {
+    "status": "ok",
+    "shared_parameter_count": 336,
+    "shared_numel": 17596416,
+    "global_shared_weighted_gen_loc_dot": -0.00024166015430185074,
+    "global_shared_weighted_gen_norm": 0.9976229691069899,
+    "global_shared_weighted_loc_norm": 0.03440632195042751,
+    "global_alignment_denominator": 0.03432453706023649,
+    "layers": {
+      "0": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.14888913859667585,
+            "weighted_norm": 0.14888913859667585
+          },
+          "loc": {
+            "raw_norm": 0.0004008399133433092,
+            "weighted_norm": 0.0032067193067464735
+          },
+          "perception": {
+            "raw_norm": 0.0076534631496823005,
+            "weighted_norm": 0.00038267316403662607
+          },
+          "aux_loc": {
+            "raw_norm": 0.0037194273619901596,
+            "weighted_norm": 0.0037194273619901596
+          }
+        },
+        "total_norm": 0.14894390817256642,
+        "weighted_gen_loc_dot": -4.324082321673528e-06,
+        "weighted_gen_total_dot": 0.022164242010536763,
+        "weighted_loc_total_dot": 5.841893183706241e-06,
+        "raw_loc_total_dot": 7.302366479632801e-07,
+        "weighted_gen_aux_dot": 5.802747932425689e-07,
+        "weighted_loc_aux_dot": -1.170672224972391e-07,
+        "weighted_gen_loc_cosine": -0.009056700155323536,
+        "raw_gen_loc_cosine": -0.009056700155323536,
+        "weighted_gen_total_cosine": 0.9994639201520386,
+        "weighted_loc_total_cosine": 0.01223122400700599,
+        "raw_loc_total_cosine": 0.01223122400700599,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0000000000000002,
+            "loc": -0.009056700155323536,
+            "perception": 0.022413662932306504,
+            "aux_loc": -0.0012581898713474168
+          },
+          "loc": {
+            "gen": -0.009056700155323536,
+            "loc": 1.0,
+            "perception": -0.0002484610500860158,
+            "aux_loc": -0.009789617495708697
+          },
+          "perception": {
+            "gen": 0.022413662932306504,
+            "loc": -0.0002484610500860158,
+            "perception": 1.0000000000000002,
+            "aux_loc": -0.08765417236894556
+          },
+          "aux_loc": {
+            "gen": -0.0012581898713474168,
+            "loc": -0.009789617495708697,
+            "perception": -0.08765417236894556,
+            "aux_loc": 0.9999999999999999
+          }
+        },
+        "negative_dot_contribution": 4.324082321673528e-06,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.0001259764207186582
+      },
+      "1": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.13900228429767922,
+            "weighted_norm": 0.13900228429767922
+          },
+          "loc": {
+            "raw_norm": 0.0005348307908837645,
+            "weighted_norm": 0.004278646327070116
+          },
+          "perception": {
+            "raw_norm": 0.007040263592654784,
+            "weighted_norm": 0.00035201318570042447
+          },
+          "aux_loc": {
+            "raw_norm": 0.003569185278832278,
+            "weighted_norm": 0.003569185278832278
+          }
+        },
+        "total_norm": 0.138982231472299,
+        "weighted_gen_loc_dot": -5.374362633474723e-06,
+        "weighted_gen_total_dot": 0.019303483547560615,
+        "weighted_loc_total_dot": 1.2821233027345109e-05,
+        "raw_loc_total_dot": 1.6026541284181386e-06,
+        "weighted_gen_aux_dot": -1.2785678891823948e-05,
+        "weighted_loc_aux_dot": -1.1129439129863453e-07,
+        "weighted_gen_loc_cosine": -0.009036466449485062,
+        "raw_gen_loc_cosine": -0.009036466449485062,
+        "weighted_gen_total_cosine": 0.9992047090926458,
+        "weighted_loc_total_cosine": 0.021560762916659666,
+        "raw_loc_total_cosine": 0.021560762916659666,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0000000000000002,
+            "loc": -0.009036466449485062,
+            "perception": 0.011306301800729734,
+            "aux_loc": -0.026886179782966382
+          },
+          "loc": {
+            "gen": -0.009036466449485062,
+            "loc": 1.0,
+            "perception": -0.006910313615770921,
+            "aux_loc": -0.006606288554128996
+          },
+          "perception": {
+            "gen": 0.011306301800729734,
+            "loc": -0.006910313615770921,
+            "perception": 1.0,
+            "aux_loc": -0.08690645725212759
+          },
+          "aux_loc": {
+            "gen": -0.026886179782966382,
+            "loc": -0.006606288554128996,
+            "perception": -0.08690645725212759,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 5.374362633474723e-06,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.00015657494881994176
+      },
+      "2": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.20530630988372983,
+            "weighted_norm": 0.20530630988372983
+          },
+          "loc": {
+            "raw_norm": 0.0007457776145356991,
+            "weighted_norm": 0.005966220916285593
+          },
+          "perception": {
+            "raw_norm": 0.008621288341772115,
+            "weighted_norm": 0.0004310644246992182
+          },
+          "aux_loc": {
+            "raw_norm": 0.005034511203276028,
+            "weighted_norm": 0.005034511203276028
+          }
+        },
+        "total_norm": 0.20613684644624125,
+        "weighted_gen_loc_dot": -0.00010142010373520524,
+        "weighted_gen_total_dot": 0.042293946761820016,
+        "weighted_loc_total_dot": -6.826310906404848e-05,
+        "raw_loc_total_dot": -8.53288863300606e-06,
+        "weighted_gen_aux_dot": 0.00024472233866485094,
+        "weighted_loc_aux_dot": -2.4393748696153526e-06,
+        "weighted_gen_loc_cosine": -0.08279849120480548,
+        "raw_gen_loc_cosine": -0.08279849120480548,
+        "weighted_gen_total_cosine": 0.9993561497271095,
+        "weighted_loc_total_cosine": -0.05550487211785249,
+        "raw_loc_total_cosine": -0.05550487211785249,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": -0.08279849120480548,
+            "perception": -0.1298310610450473,
+            "aux_loc": 0.24787947573750352
+          },
+          "loc": {
+            "gen": -0.08279849120480548,
+            "loc": 1.0,
+            "perception": 0.011926528860089653,
+            "aux_loc": -0.08223348951826613
+          },
+          "perception": {
+            "gen": -0.1298310610450473,
+            "loc": 0.011926528860089653,
+            "perception": 1.0,
+            "aux_loc": -0.24445748906757972
+          },
+          "aux_loc": {
+            "gen": 0.24787947573750352,
+            "loc": -0.08223348951826613,
+            "perception": -0.24445748906757972,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.00010142010373520524,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.0029547406147742658
+      },
+      "3": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.15396812465917997,
+            "weighted_norm": 0.15396812465917997
+          },
+          "loc": {
+            "raw_norm": 0.000868595021007401,
+            "weighted_norm": 0.006948760168059208
+          },
+          "perception": {
+            "raw_norm": 0.007509895244826334,
+            "weighted_norm": 0.0003754947694731979
+          },
+          "aux_loc": {
+            "raw_norm": 0.00417372504148693,
+            "weighted_norm": 0.00417372504148693
+          }
+        },
+        "total_norm": 0.15436751971137683,
+        "weighted_gen_loc_dot": -4.554441613596117e-05,
+        "weighted_gen_total_dot": 0.023736692000822457,
+        "weighted_loc_total_dot": 1.174789461590619e-06,
+        "raw_loc_total_dot": 1.4684868269882739e-07,
+        "weighted_gen_aux_dot": 7.604134759989346e-05,
+        "weighted_loc_aux_dot": -1.566599895358226e-06,
+        "weighted_gen_loc_cosine": -0.0425693477867791,
+        "raw_gen_loc_cosine": -0.0425693477867791,
+        "weighted_gen_total_cosine": 0.9986963169874953,
+        "weighted_loc_total_cosine": 0.00109520846859131,
+        "raw_loc_total_cosine": 0.00109520846859131,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": -0.0425693477867791,
+            "perception": -0.07425780902099229,
+            "aux_loc": 0.12501078105593394
+          },
+          "loc": {
+            "gen": -0.0425693477867791,
+            "loc": 1.0000000000000002,
+            "perception": 0.03608662444675291,
+            "aux_loc": -0.057263143117549146
+          },
+          "perception": {
+            "gen": -0.07425780902099229,
+            "loc": 0.03608662444675291,
+            "perception": 1.0,
+            "aux_loc": -0.1858927354341823
+          },
+          "aux_loc": {
+            "gen": 0.12501078105593394,
+            "loc": -0.057263143117549146,
+            "perception": -0.1858927354341823,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 4.554441613596117e-05,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.0013268763408530403
+      },
+      "4": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.1478731141004464,
+            "weighted_norm": 0.1478731141004464
+          },
+          "loc": {
+            "raw_norm": 0.0006528222853430582,
+            "weighted_norm": 0.005222578282744465
+          },
+          "perception": {
+            "raw_norm": 0.007468976179000174,
+            "weighted_norm": 0.0003734488153296698
+          },
+          "aux_loc": {
+            "raw_norm": 0.0038684681784451904,
+            "weighted_norm": 0.0038684681784451904
+          }
+        },
+        "total_norm": 0.14827793471368456,
+        "weighted_gen_loc_dot": 8.07416145706003e-06,
+        "weighted_gen_total_dot": 0.02190531831456238,
+        "weighted_loc_total_dot": 3.540438112441302e-05,
+        "raw_loc_total_dot": 4.425547640551628e-06,
+        "weighted_gen_aux_dot": 3.077721050211954e-05,
+        "weighted_loc_aux_dot": 5.492727616798851e-08,
+        "weighted_gen_loc_cosine": 0.010454981105303634,
+        "raw_gen_loc_cosine": 0.010454981105303634,
+        "weighted_gen_total_cosine": 0.9990421719662674,
+        "weighted_loc_total_cosine": 0.04571887344397476,
+        "raw_loc_total_cosine": 0.04571887344397476,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": 0.010454981105303634,
+            "perception": 0.012960564308356789,
+            "aux_loc": 0.052551151523468516
+          },
+          "loc": {
+            "gen": 0.010454981105303634,
+            "loc": 0.9999999999999999,
+            "perception": 0.01017684291092157,
+            "aux_loc": 0.0017362795112116376
+          },
+          "perception": {
+            "gen": 0.012960564308356789,
+            "loc": 0.01017684291092157,
+            "perception": 1.0,
+            "aux_loc": -0.11133648999396104
+          },
+          "aux_loc": {
+            "gen": 0.052551151523468516,
+            "loc": 0.0017362795112116376,
+            "perception": -0.11133648999396104,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00023523001760782962,
+        "negative_alignment_mass": 0.0
+      },
+      "5": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.15750302321170487,
+            "weighted_norm": 0.15750302321170487
+          },
+          "loc": {
+            "raw_norm": 0.0006866567418296083,
+            "weighted_norm": 0.005493253934636866
+          },
+          "perception": {
+            "raw_norm": 0.007766809153189509,
+            "weighted_norm": 0.0003883404642605485
+          },
+          "aux_loc": {
+            "raw_norm": 0.003801233274793281,
+            "weighted_norm": 0.003801233274793281
+          }
+        },
+        "total_norm": 0.15792664105877713,
+        "weighted_gen_loc_dot": 1.975784760114168e-05,
+        "weighted_gen_total_dot": 0.02485148646087489,
+        "weighted_loc_total_dot": 5.022614047788477e-05,
+        "raw_loc_total_dot": 6.278267559735596e-06,
+        "weighted_gen_aux_dot": 2.4503111818404937e-05,
+        "weighted_loc_aux_dot": 2.924799279879181e-07,
+        "weighted_gen_loc_cosine": 0.022836054008577595,
+        "raw_gen_loc_cosine": 0.022836054008577595,
+        "weighted_gen_total_cosine": 0.9990979729582564,
+        "weighted_loc_total_cosine": 0.0578954898841868,
+        "raw_loc_total_cosine": 0.0578954898841868,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.022836054008577595,
+            "perception": -0.008936591505939348,
+            "aux_loc": 0.04183978080789381
+          },
+          "loc": {
+            "gen": 0.022836054008577595,
+            "loc": 1.0,
+            "perception": -0.023610891043181134,
+            "aux_loc": 0.01641902371610264
+          },
+          "perception": {
+            "gen": -0.008936591505939348,
+            "loc": -0.023610891043181134,
+            "perception": 1.0000000000000002,
+            "aux_loc": -0.10391761385098887
+          },
+          "aux_loc": {
+            "gen": 0.04183978080789381,
+            "loc": 0.01641902371610264,
+            "perception": -0.10391761385098887,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0005756187641065173,
+        "negative_alignment_mass": 0.0
+      },
+      "6": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.13941352175814417,
+            "weighted_norm": 0.13941352175814417
+          },
+          "loc": {
+            "raw_norm": 0.000663986255841897,
+            "weighted_norm": 0.005311890046735176
+          },
+          "perception": {
+            "raw_norm": 0.007626311522920788,
+            "weighted_norm": 0.0003813155825528934
+          },
+          "aux_loc": {
+            "raw_norm": 0.0036389569525434517,
+            "weighted_norm": 0.0036389569525434517
+          }
+        },
+        "total_norm": 0.1399100655254304,
+        "weighted_gen_loc_dot": 1.9725315151330937e-05,
+        "weighted_gen_total_dot": 0.019484552292330613,
+        "weighted_loc_total_dot": 4.816116454672881e-05,
+        "raw_loc_total_dot": 6.020145568341101e-06,
+        "weighted_gen_aux_dot": 2.869611239467748e-05,
+        "weighted_loc_aux_dot": 2.198026218502776e-07,
+        "weighted_gen_loc_cosine": 0.02663605946076074,
+        "raw_gen_loc_cosine": 0.02663605946076074,
+        "weighted_gen_total_cosine": 0.9989334891869226,
+        "weighted_loc_total_cosine": 0.0648035716870355,
+        "raw_loc_total_cosine": 0.0648035716870355,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.02663605946076074,
+            "perception": -0.07093478460596107,
+            "aux_loc": 0.06399719498717686
+          },
+          "loc": {
+            "gen": 0.02663605946076074,
+            "loc": 0.9999999999999999,
+            "perception": -0.014896667243407083,
+            "aux_loc": 0.012932192959117812
+          },
+          "perception": {
+            "gen": -0.07093478460596107,
+            "loc": -0.014896667243407083,
+            "perception": 1.0,
+            "aux_loc": -0.06872760618510579
+          },
+          "aux_loc": {
+            "gen": 0.06399719498717686,
+            "loc": 0.012932192959117812,
+            "perception": -0.06872760618510579,
+            "aux_loc": 0.9999999999999999
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0005746709741988587,
+        "negative_alignment_mass": 0.0
+      },
+      "7": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.1355749913575142,
+            "weighted_norm": 0.1355749913575142
+          },
+          "loc": {
+            "raw_norm": 0.0006020571370478142,
+            "weighted_norm": 0.004816457096382514
+          },
+          "perception": {
+            "raw_norm": 0.00714807245293286,
+            "weighted_norm": 0.00035740362890329967
+          },
+          "aux_loc": {
+            "raw_norm": 0.0034031819157406135,
+            "weighted_norm": 0.0034031819157406135
+          }
+        },
+        "total_norm": 0.1359428714761305,
+        "weighted_gen_loc_dot": 4.49186793985687e-06,
+        "weighted_gen_total_dot": 0.01841310929983154,
+        "weighted_loc_total_dot": 2.7748779387983987e-05,
+        "raw_loc_total_dot": 3.4685974234979984e-06,
+        "weighted_gen_aux_dot": 2.8032051524578355e-05,
+        "weighted_loc_aux_dot": 5.868630086141538e-08,
+        "weighted_gen_loc_cosine": 0.006878911119743148,
+        "raw_gen_loc_cosine": 0.006878911119743148,
+        "weighted_gen_total_cosine": 0.999058931157477,
+        "weighted_loc_total_cosine": 0.042379882565042985,
+        "raw_loc_total_cosine": 0.042379882565042985,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999998,
+            "loc": 0.006878911119743148,
+            "perception": -0.011974964383619252,
+            "aux_loc": 0.06201375009059231
+          },
+          "loc": {
+            "gen": 0.006878911119743148,
+            "loc": 1.0000000000000002,
+            "perception": 0.0068806262604296335,
+            "aux_loc": 0.002857730408589692
+          },
+          "perception": {
+            "gen": -0.011974964383619252,
+            "loc": 0.0068806262604296335,
+            "perception": 0.9999999999999998,
+            "aux_loc": -0.0824248970083173
+          },
+          "aux_loc": {
+            "gen": 0.06201375009059231,
+            "loc": 0.002857730408589692,
+            "perception": -0.0824248970083173,
+            "aux_loc": 0.9999999999999999
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00013086463284192425,
+        "negative_alignment_mass": 0.0
+      },
+      "8": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.14465639586317594,
+            "weighted_norm": 0.14465639586317594
+          },
+          "loc": {
+            "raw_norm": 0.0005931912949587406,
+            "weighted_norm": 0.0047455303596699245
+          },
+          "perception": {
+            "raw_norm": 0.008129008182507388,
+            "weighted_norm": 0.00040645041620583703
+          },
+          "aux_loc": {
+            "raw_norm": 0.0036813958363120787,
+            "weighted_norm": 0.0036813958363120787
+          }
+        },
+        "total_norm": 0.14521155538932318,
+        "weighted_gen_loc_dot": 1.4361364420226594e-05,
+        "weighted_gen_total_dot": 0.020987703916960473,
+        "weighted_loc_total_dot": 3.705401642981786e-05,
+        "raw_loc_total_dot": 4.631752053727233e-06,
+        "weighted_gen_aux_dot": 4.7858133080036074e-05,
+        "weighted_loc_aux_dot": 1.7253576070209143e-07,
+        "weighted_gen_loc_cosine": 0.02092056002575447,
+        "raw_gen_loc_cosine": 0.02092056002575447,
+        "weighted_gen_total_cosine": 0.9991394595612175,
+        "weighted_loc_total_cosine": 0.053771153903501685,
+        "raw_loc_total_cosine": 0.053771153903501685,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": 0.02092056002575447,
+            "perception": -6.5228624274502e-05,
+            "aux_loc": 0.0898753091103393
+          },
+          "loc": {
+            "gen": 0.02092056002575447,
+            "loc": 1.0,
+            "perception": -0.00861657598961017,
+            "aux_loc": 0.010827344384589375
+          },
+          "perception": {
+            "gen": -6.5228624274502e-05,
+            "loc": -0.00861657598961017,
+            "perception": 0.9999999999999999,
+            "aux_loc": -0.0409366158696155
+          },
+          "aux_loc": {
+            "gen": 0.0898753091103393,
+            "loc": 0.010827344384589375,
+            "perception": -0.0409366158696155,
+            "aux_loc": 1.0000000000000002
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00041839936238684543,
+        "negative_alignment_mass": 0.0
+      },
+      "9": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.1503946937030941,
+            "weighted_norm": 0.1503946937030941
+          },
+          "loc": {
+            "raw_norm": 0.00045361837613283834,
+            "weighted_norm": 0.0036289470090627067
+          },
+          "perception": {
+            "raw_norm": 0.008064884250540222,
+            "weighted_norm": 0.0004032442193009136
+          },
+          "aux_loc": {
+            "raw_norm": 0.00361927242985147,
+            "weighted_norm": 0.00361927242985147
+          }
+        },
+        "total_norm": 0.15073783196685078,
+        "weighted_gen_loc_dot": -1.344253129106185e-05,
+        "weighted_gen_total_dot": 0.022657241547824104,
+        "weighted_loc_total_dot": -4.435396494239576e-07,
+        "raw_loc_total_dot": -5.54424561779947e-08,
+        "weighted_gen_aux_dot": 5.2105104761157936e-05,
+        "weighted_loc_aux_dot": -1.7020635406795258e-07,
+        "weighted_gen_loc_cosine": -0.024630198730627016,
+        "raw_gen_loc_cosine": -0.024630198730627016,
+        "weighted_gen_total_cosine": 0.9994297122491786,
+        "weighted_loc_total_cosine": -0.0008108295311550147,
+        "raw_loc_total_cosine": -0.0008108295311550147,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": -0.024630198730627016,
+            "perception": 0.0929933554036298,
+            "aux_loc": 0.0853643134281482
+          },
+          "loc": {
+            "gen": -0.024630198730627016,
+            "loc": 1.0,
+            "perception": -0.001197763609822996,
+            "aux_loc": -0.012825621137676402
+          },
+          "perception": {
+            "gen": 0.0929933554036298,
+            "loc": -0.001197763609822996,
+            "perception": 1.0,
+            "aux_loc": -0.039718649365611335
+          },
+          "aux_loc": {
+            "gen": 0.0853643134281482,
+            "loc": -0.012825621137676402,
+            "perception": -0.039718649365611335,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 1.344253129106185e-05,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.00039163037413939217
+      },
+      "10": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.1456086953462819,
+            "weighted_norm": 0.1456086953462819
+          },
+          "loc": {
+            "raw_norm": 0.0005038705251505662,
+            "weighted_norm": 0.004030964201204529
+          },
+          "perception": {
+            "raw_norm": 0.00819651920266101,
+            "weighted_norm": 0.00040982596739386846
+          },
+          "aux_loc": {
+            "raw_norm": 0.003528718350540236,
+            "weighted_norm": 0.003528718350540236
+          }
+        },
+        "total_norm": 0.14589346398119318,
+        "weighted_gen_loc_dot": 6.1225056995716785e-06,
+        "weighted_gen_total_dot": 0.021229505171034575,
+        "weighted_loc_total_dot": 2.204563389497831e-05,
+        "raw_loc_total_dot": 2.7557042368722888e-06,
+        "weighted_gen_aux_dot": 2.1474819796979966e-05,
+        "weighted_loc_aux_dot": -3.255533964725144e-07,
+        "weighted_gen_loc_cosine": 0.010431168149769786,
+        "raw_gen_loc_cosine": 0.010431168149769786,
+        "weighted_gen_total_cosine": 0.9993479477443497,
+        "weighted_loc_total_cosine": 0.03748675205994484,
+        "raw_loc_total_cosine": 0.03748675205994484,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.010431168149769786,
+            "perception": 0.08208561066583323,
+            "aux_loc": 0.032261648648347574
+          },
+          "loc": {
+            "gen": 0.010431168149769786,
+            "loc": 1.0,
+            "perception": 2.4649094407173763e-05,
+            "aux_loc": -0.022890253987087158
+          },
+          "perception": {
+            "gen": 0.08208561066583323,
+            "loc": 2.4649094407173763e-05,
+            "perception": 1.0,
+            "aux_loc": -0.14935207612229504
+          },
+          "aux_loc": {
+            "gen": 0.032261648648347574,
+            "loc": -0.022890253987087158,
+            "perception": -0.14935207612229504,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0001783711077829609,
+        "negative_alignment_mass": 0.0
+      },
+      "11": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.14135012355849724,
+            "weighted_norm": 0.14135012355849724
+          },
+          "loc": {
+            "raw_norm": 0.0005756185803405322,
+            "weighted_norm": 0.004604948642724258
+          },
+          "perception": {
+            "raw_norm": 0.007566948599986835,
+            "weighted_norm": 0.00037834743653536153
+          },
+          "aux_loc": {
+            "raw_norm": 0.003499408229627738,
+            "weighted_norm": 0.003499408229627738
+          }
+        },
+        "total_norm": 0.14184073440528572,
+        "weighted_gen_loc_dot": 2.9916112841567872e-06,
+        "weighted_gen_total_dot": 0.02003254296410435,
+        "weighted_loc_total_dot": 2.4370893874075177e-05,
+        "raw_loc_total_dot": 3.046361734259397e-06,
+        "weighted_gen_aux_dot": 4.96771481589299e-05,
+        "weighted_loc_aux_dot": 1.737675648169575e-07,
+        "weighted_gen_loc_cosine": 0.004596044015449884,
+        "raw_gen_loc_cosine": 0.004596044015449884,
+        "weighted_gen_total_cosine": 0.9991689261777036,
+        "weighted_loc_total_cosine": 0.03731175664828975,
+        "raw_loc_total_cosine": 0.03731175664828975,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0000000000000002,
+            "loc": 0.004596044015449884,
+            "perception": 0.046243872467558504,
+            "aux_loc": 0.09543077909052253
+          },
+          "loc": {
+            "gen": 0.004596044015449884,
+            "loc": 1.0,
+            "perception": -0.022929918754526653,
+            "aux_loc": 0.013262367673975364
+          },
+          "perception": {
+            "gen": 0.046243872467558504,
+            "loc": -0.022929918754526653,
+            "perception": 1.0,
+            "aux_loc": -0.14190141555785662
+          },
+          "aux_loc": {
+            "gen": 0.09543077909052253,
+            "loc": 0.013262367673975364,
+            "perception": -0.14190141555785662,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 8.715663896374704e-05,
+        "negative_alignment_mass": 0.0
+      },
+      "12": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.1563758034570253,
+            "weighted_norm": 0.1563758034570253
+          },
+          "loc": {
+            "raw_norm": 0.00047139821115599947,
+            "weighted_norm": 0.0037711856892479957
+          },
+          "perception": {
+            "raw_norm": 0.008637032360005422,
+            "weighted_norm": 0.00043185162560707913
+          },
+          "aux_loc": {
+            "raw_norm": 0.0039035944978951256,
+            "weighted_norm": 0.0039035944978951256
+          }
+        },
+        "total_norm": 0.15674041325552432,
+        "weighted_gen_loc_dot": 6.372132391930605e-07,
+        "weighted_gen_total_dot": 0.02449625850181302,
+        "weighted_loc_total_dot": 1.4403671125535612e-05,
+        "raw_loc_total_dot": 1.8004588906919515e-06,
+        "weighted_gen_aux_dot": 4.221495483354894e-05,
+        "weighted_loc_aux_dot": -4.5542124042113174e-07,
+        "weighted_gen_loc_cosine": 0.0010805312190792558,
+        "raw_gen_loc_cosine": 0.0010805312190792558,
+        "weighted_gen_total_cosine": 0.9994227123770092,
+        "weighted_loc_total_cosine": 0.02436768613145474,
+        "raw_loc_total_cosine": 0.02436768613145474,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": 0.0010805312190792558,
+            "perception": 0.05845900797164766,
+            "aux_loc": 0.06268907761763136
+          },
+          "loc": {
+            "gen": 0.0010805312190792558,
+            "loc": 1.0000000000000002,
+            "perception": -0.016223537669518624,
+            "aux_loc": -0.029141666253725697
+          },
+          "perception": {
+            "gen": 0.05845900797164766,
+            "loc": -0.016223537669518624,
+            "perception": 1.0,
+            "aux_loc": -0.08974709635844531
+          },
+          "aux_loc": {
+            "gen": 0.06268907761763136,
+            "loc": -0.029141666253725697,
+            "perception": -0.08974709635844531,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 1.856436513840837e-05,
+        "negative_alignment_mass": 0.0
+      },
+      "13": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.14804825005117037,
+            "weighted_norm": 0.14804825005117037
+          },
+          "loc": {
+            "raw_norm": 0.00043571645404697396,
+            "weighted_norm": 0.0034857316323757916
+          },
+          "perception": {
+            "raw_norm": 0.008213703722152563,
+            "weighted_norm": 0.0004106851933989242
+          },
+          "aux_loc": {
+            "raw_norm": 0.0036814266917524776,
+            "weighted_norm": 0.0036814266917524776
+          }
+        },
+        "total_norm": 0.14833010456015538,
+        "weighted_gen_loc_dot": 1.1490795593028179e-08,
+        "weighted_gen_total_dot": 0.021947350391448482,
+        "weighted_loc_total_dot": 1.2125716943308928e-05,
+        "raw_loc_total_dot": 1.515714617913616e-06,
+        "weighted_gen_aux_dot": 2.9040076931183683e-05,
+        "weighted_loc_aux_dot": -3.606731398498849e-08,
+        "weighted_gen_loc_cosine": 2.2266546973838435e-05,
+        "raw_gen_loc_cosine": 2.2266546973838435e-05,
+        "weighted_gen_total_cosine": 0.9994234056724003,
+        "weighted_loc_total_cosine": 0.023452231667433626,
+        "raw_loc_total_cosine": 0.023452231667433626,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": 2.2266546973838435e-05,
+            "perception": 0.021403830689701375,
+            "aux_loc": 0.05089400573091066
+          },
+          "loc": {
+            "gen": 2.2266546973838435e-05,
+            "loc": 1.0,
+            "perception": 0.0004340130052659279,
+            "aux_loc": -0.0028590468710625763
+          },
+          "perception": {
+            "gen": 0.021403830689701375,
+            "loc": 0.0004340130052659279,
+            "perception": 1.0,
+            "aux_loc": -0.1306915882228102
+          },
+          "aux_loc": {
+            "gen": 0.05089400573091066,
+            "loc": -0.0028590468710625763,
+            "perception": -0.1306915882228102,
+            "aux_loc": 0.9999999999999999
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 3.3476913535244073e-07,
+        "negative_alignment_mass": 0.0
+      },
+      "14": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.16939477345644624,
+            "weighted_norm": 0.16939477345644624
+          },
+          "loc": {
+            "raw_norm": 0.0005466980052535073,
+            "weighted_norm": 0.004373584042028059
+          },
+          "perception": {
+            "raw_norm": 0.009272521990641207,
+            "weighted_norm": 0.0004636261075983843
+          },
+          "aux_loc": {
+            "raw_norm": 0.004222035188283356,
+            "weighted_norm": 0.004222035188283356
+          }
+        },
+        "total_norm": 0.16997096221345442,
+        "weighted_gen_loc_dot": -1.741400695999831e-06,
+        "weighted_gen_total_dot": 0.028774302731767048,
+        "weighted_loc_total_dot": 1.7111893257123758e-05,
+        "raw_loc_total_dot": 2.1389866571404698e-06,
+        "weighted_gen_aux_dot": 8.143643157699201e-05,
+        "weighted_loc_aux_dot": -2.749476598636563e-07,
+        "weighted_gen_loc_cosine": -0.0023505052797660013,
+        "raw_gen_loc_cosine": -0.0023505052797660013,
+        "weighted_gen_total_cosine": 0.9993786542490884,
+        "weighted_loc_total_cosine": 0.02301896821409293,
+        "raw_loc_total_cosine": 0.02301896821409293,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": -0.0023505052797660013,
+            "perception": 0.019953392015330425,
+            "aux_loc": 0.11167563536222055
+          },
+          "loc": {
+            "gen": -0.0023505052797660013,
+            "loc": 1.0000000000000002,
+            "perception": -0.003828292107419762,
+            "aux_loc": -0.01446947426467181
+          },
+          "perception": {
+            "gen": 0.019953392015330425,
+            "loc": -0.003828292107419762,
+            "perception": 1.0000000000000002,
+            "aux_loc": -0.12920272049478693
+          },
+          "aux_loc": {
+            "gen": 0.11167563536222055,
+            "loc": -0.01446947426467181,
+            "perception": -0.12920272049478693,
+            "aux_loc": 1.0000000000000002
+          }
+        },
+        "negative_dot_contribution": 1.741400695999831e-06,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 5.073340662814559e-05
+      },
+      "15": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.19632143814691125,
+            "weighted_norm": 0.19632143814691125
+          },
+          "loc": {
+            "raw_norm": 0.0005823526301723444,
+            "weighted_norm": 0.004658821041378755
+          },
+          "perception": {
+            "raw_norm": 0.010354930027189289,
+            "weighted_norm": 0.0005177465102577501
+          },
+          "aux_loc": {
+            "raw_norm": 0.004668707911549486,
+            "weighted_norm": 0.004668707911549486
+          }
+        },
+        "total_norm": 0.19710572864538453,
+        "weighted_gen_loc_dot": -6.393825125754018e-06,
+        "weighted_gen_total_dot": 0.03867528055952288,
+        "weighted_loc_total_dot": 1.4774406092916358e-05,
+        "raw_loc_total_dot": 1.8468007616145448e-06,
+        "weighted_gen_aux_dot": 0.00013954526135746023,
+        "weighted_loc_aux_dot": -5.363355689053977e-07,
+        "weighted_gen_loc_cosine": -0.006990640985002289,
+        "raw_gen_loc_cosine": -0.006990640985002289,
+        "weighted_gen_total_cosine": 0.9994624893510603,
+        "weighted_loc_total_cosine": 0.016089211361345095,
+        "raw_loc_total_cosine": 0.016089211361345095,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": -0.006990640985002289,
+            "perception": 0.04049998189787983,
+            "aux_loc": 0.14775633918591183
+          },
+          "loc": {
+            "gen": -0.006990640985002289,
+            "loc": 0.9999999999999999,
+            "perception": 0.0015133191830274913,
+            "aux_loc": -0.024826164568962653
+          },
+          "perception": {
+            "gen": 0.04049998189787983,
+            "loc": 0.0015133191830274913,
+            "perception": 1.0000000000000002,
+            "aux_loc": -0.09941396516099646
+          },
+          "aux_loc": {
+            "gen": 0.14775633918591183,
+            "loc": -0.024826164568962653,
+            "perception": -0.09941396516099646,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 6.393825125754018e-06,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.00018627564049978086
+      },
+      "16": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.24430937001933906,
+            "weighted_norm": 0.24430937001933906
+          },
+          "loc": {
+            "raw_norm": 0.0009017725635227448,
+            "weighted_norm": 0.007214180508181958
+          },
+          "perception": {
+            "raw_norm": 0.013049439278639314,
+            "weighted_norm": 0.0006524719752315688
+          },
+          "aux_loc": {
+            "raw_norm": 0.006126652050259601,
+            "weighted_norm": 0.006126652050259601
+          }
+        },
+        "total_norm": 0.2452144957339611,
+        "weighted_gen_loc_dot": 2.070069050485164e-05,
+        "weighted_gen_total_dot": 0.059863919327910964,
+        "weighted_loc_total_dot": 7.265969528775644e-05,
+        "raw_loc_total_dot": 9.082461910969555e-06,
+        "weighted_gen_aux_dot": 0.00015609766048309777,
+        "weighted_loc_aux_dot": -8.556703073085203e-08,
+        "weighted_gen_loc_cosine": 0.011745126636724532,
+        "raw_gen_loc_cosine": 0.011745126636724532,
+        "weighted_gen_total_cosine": 0.9992608750517872,
+        "weighted_loc_total_cosine": 0.041073378545408004,
+        "raw_loc_total_cosine": 0.041073378545408004,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.011745126636724532,
+            "perception": 0.06008107918972003,
+            "aux_loc": 0.09788921805647975
+          },
+          "loc": {
+            "gen": 0.011745126636724532,
+            "loc": 0.9999999999999999,
+            "perception": 0.007173043653156008,
+            "aux_loc": -0.0026998692484193755
+          },
+          "perception": {
+            "gen": 0.06008107918972003,
+            "loc": 0.007173043653156008,
+            "perception": 0.9999999999999999,
+            "aux_loc": -0.05672806689824369
+          },
+          "aux_loc": {
+            "gen": 0.09788921805647975,
+            "loc": -0.0026998692484193755,
+            "perception": -0.05672806689824369,
+            "aux_loc": 0.9999999999999998
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0006030872453872802,
+        "negative_alignment_mass": 0.0
+      },
+      "17": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.2181210084190237,
+            "weighted_norm": 0.2181210084190237
+          },
+          "loc": {
+            "raw_norm": 0.0005872830215760072,
+            "weighted_norm": 0.004698264172608058
+          },
+          "perception": {
+            "raw_norm": 0.011081227181034993,
+            "weighted_norm": 0.0005540613686705104
+          },
+          "aux_loc": {
+            "raw_norm": 0.005118431725334928,
+            "weighted_norm": 0.005118431725334928
+          }
+        },
+        "total_norm": 0.2188641186366813,
+        "weighted_gen_loc_dot": 6.636815480108726e-06,
+        "weighted_gen_total_dot": 0.04771538888589733,
+        "weighted_loc_total_dot": 2.843372335165969e-05,
+        "raw_loc_total_dot": 3.554215418957461e-06,
+        "weighted_gen_aux_dot": 0.00013194597226669005,
+        "weighted_loc_aux_dot": -2.768840720279165e-07,
+        "weighted_gen_loc_cosine": 0.006476268024154013,
+        "raw_gen_loc_cosine": 0.006476268024154013,
+        "weighted_gen_total_cosine": 0.9995082962441223,
+        "weighted_loc_total_cosine": 0.027651693441927718,
+        "raw_loc_total_cosine": 0.027651693441927718,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.006476268024154013,
+            "perception": 0.023221620285336524,
+            "aux_loc": 0.11567112747034898
+          },
+          "loc": {
+            "gen": 0.006476268024154013,
+            "loc": 1.0000000000000002,
+            "perception": 0.0038626353671572587,
+            "aux_loc": -0.011932054686079458
+          },
+          "perception": {
+            "gen": 0.023221620285336524,
+            "loc": 0.0038626353671572587,
+            "perception": 1.0,
+            "aux_loc": -0.09234829357530694
+          },
+          "aux_loc": {
+            "gen": 0.11567112747034898,
+            "loc": -0.011932054686079458,
+            "perception": -0.09234829357530694,
+            "aux_loc": 1.0000000000000002
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00019335484316836403,
+        "negative_alignment_mass": 0.0
+      },
+      "18": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.20520171830950112,
+            "weighted_norm": 0.20520171830950112
+          },
+          "loc": {
+            "raw_norm": 0.0006210763510583337,
+            "weighted_norm": 0.0049686108084666695
+          },
+          "perception": {
+            "raw_norm": 0.010028808204960936,
+            "weighted_norm": 0.000501440418938985
+          },
+          "aux_loc": {
+            "raw_norm": 0.004686238604631128,
+            "weighted_norm": 0.004686238604631128
+          }
+        },
+        "total_norm": 0.2059649416780936,
+        "weighted_gen_loc_dot": 1.3439659346090018e-05,
+        "weighted_gen_total_dot": 0.04224163489170686,
+        "weighted_loc_total_dot": 3.783064793730759e-05,
+        "raw_loc_total_dot": 4.728830992163449e-06,
+        "weighted_gen_aux_dot": 0.0001204281620593433,
+        "weighted_loc_aux_dot": -2.9615692711088905e-07,
+        "weighted_gen_loc_cosine": 0.013181726240714812,
+        "raw_gen_loc_cosine": 0.013181726240714812,
+        "weighted_gen_total_cosine": 0.9994623116927758,
+        "weighted_loc_total_cosine": 0.03696710973264247,
+        "raw_loc_total_cosine": 0.03696710973264247,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.013181726240714812,
+            "perception": 0.004011453172129077,
+            "aux_loc": 0.12480488331022574
+          },
+          "loc": {
+            "gen": 0.013181726240714812,
+            "loc": 0.9999999999999999,
+            "perception": 0.0006606548863421746,
+            "aux_loc": -0.01278997160257992
+          },
+          "perception": {
+            "gen": 0.004011453172129077,
+            "loc": 0.0006606548863421746,
+            "perception": 1.0000000000000002,
+            "aux_loc": -0.057926503687610355
+          },
+          "aux_loc": {
+            "gen": 0.12480488331022574,
+            "loc": -0.01278997160257992,
+            "perception": -0.057926503687610355,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00039154670382020356,
+        "negative_alignment_mass": 0.0
+      },
+      "19": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.23711220638267094,
+            "weighted_norm": 0.23711220638267094
+          },
+          "loc": {
+            "raw_norm": 0.0006629171093016788,
+            "weighted_norm": 0.00530333687441343
+          },
+          "perception": {
+            "raw_norm": 0.012156971522998071,
+            "weighted_norm": 0.000607848586512499
+          },
+          "aux_loc": {
+            "raw_norm": 0.005813144169387082,
+            "weighted_norm": 0.005813144169387082
+          }
+        },
+        "total_norm": 0.23798827997444366,
+        "weighted_gen_loc_dot": 2.2789427299538653e-05,
+        "weighted_gen_total_dot": 0.056399872936444495,
+        "weighted_loc_total_dot": 5.037309271061223e-05,
+        "raw_loc_total_dot": 6.296636588826529e-06,
+        "weighted_gen_aux_dot": 0.00015487685799718014,
+        "weighted_loc_aux_dot": -5.41650667062644e-07,
+        "weighted_gen_loc_cosine": 0.01812300811001442,
+        "raw_gen_loc_cosine": 0.01812300811001442,
+        "weighted_gen_total_cosine": 0.9994674240503427,
+        "weighted_loc_total_cosine": 0.039911112211558894,
+        "raw_loc_total_cosine": 0.039911112211558894,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": 0.01812300811001442,
+            "perception": 0.00646218836180877,
+            "aux_loc": 0.11168681817212878
+          },
+          "loc": {
+            "gen": 0.01812300811001442,
+            "loc": 1.0,
+            "perception": 0.006295656703890924,
+            "aux_loc": -0.01822778492864981
+          },
+          "perception": {
+            "gen": 0.00646218836180877,
+            "loc": 0.006295656703890924,
+            "perception": 1.0,
+            "aux_loc": -0.046287440641396435
+          },
+          "aux_loc": {
+            "gen": 0.11168681817212878,
+            "loc": -0.01822778492864981,
+            "perception": -0.046287440641396435,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0006639398299690175,
+        "negative_alignment_mass": 0.0
+      },
+      "20": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.30827441694616614,
+            "weighted_norm": 0.30827441694616614
+          },
+          "loc": {
+            "raw_norm": 0.0013252840934743066,
+            "weighted_norm": 0.010602272747794452
+          },
+          "perception": {
+            "raw_norm": 0.01605717240525085,
+            "weighted_norm": 0.0008028586341866928
+          },
+          "aux_loc": {
+            "raw_norm": 0.007915283634067754,
+            "weighted_norm": 0.007915283634067754
+          }
+        },
+        "total_norm": 0.30960060173235854,
+        "weighted_gen_loc_dot": -2.3387274607736498e-05,
+        "weighted_gen_total_dot": 0.09535725868428697,
+        "weighted_loc_total_dot": 8.71079127432411e-05,
+        "raw_loc_total_dot": 1.0888489092905138e-05,
+        "weighted_gen_aux_dot": 0.00034748759116292986,
+        "weighted_loc_aux_dot": -1.912690601498558e-06,
+        "weighted_gen_loc_cosine": -0.0071555522550517765,
+        "raw_gen_loc_cosine": -0.0071555522550517765,
+        "weighted_gen_total_cosine": 0.9991126930517692,
+        "weighted_loc_total_cosine": 0.026537306402659677,
+        "raw_loc_total_cosine": 0.026537306402659677,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 0.9999999999999999,
+            "loc": -0.0071555522550517765,
+            "perception": -0.008900644906690788,
+            "aux_loc": 0.14331111558251866
+          },
+          "loc": {
+            "gen": -0.0071555522550517765,
+            "loc": 1.0000000000000002,
+            "perception": -0.01161535281857322,
+            "aux_loc": -0.02161367182395585
+          },
+          "perception": {
+            "gen": -0.008900644906690788,
+            "loc": -0.01161535281857322,
+            "perception": 1.0,
+            "aux_loc": -0.0584551288827483
+          },
+          "aux_loc": {
+            "gen": 0.14331111558251866,
+            "loc": -0.02161367182395585,
+            "perception": -0.0584551288827483,
+            "aux_loc": 1.0000000000000002
+          }
+        },
+        "negative_dot_contribution": 2.3387274607736498e-05,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.0006813573207613529
+      },
+      "21": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.33507818988146626,
+            "weighted_norm": 0.33507818988146626
+          },
+          "loc": {
+            "raw_norm": 0.002051575667137919,
+            "weighted_norm": 0.016412605337103352
+          },
+          "perception": {
+            "raw_norm": 0.016598239617218326,
+            "weighted_norm": 0.0008299119959309235
+          },
+          "aux_loc": {
+            "raw_norm": 0.008115774170193223,
+            "weighted_norm": 0.008115774170193223
+          }
+        },
+        "total_norm": 0.3354997583978261,
+        "weighted_gen_loc_dot": -0.00023016588516242743,
+        "weighted_gen_total_dot": 0.11225632504292127,
+        "weighted_loc_total_dot": 3.419263499920709e-05,
+        "raw_loc_total_dot": 4.274079374900886e-06,
+        "weighted_gen_aux_dot": 0.00020903188858418335,
+        "weighted_loc_aux_dot": -5.014524697475225e-06,
+        "weighted_gen_loc_cosine": -0.041852101169881875,
+        "raw_gen_loc_cosine": -0.041852101169881875,
+        "weighted_gen_total_cosine": 0.9985560518280089,
+        "weighted_loc_total_cosine": 0.006209588657121121,
+        "raw_loc_total_cosine": 0.006209588657121121,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0000000000000002,
+            "loc": -0.041852101169881875,
+            "perception": -0.06859755413815921,
+            "aux_loc": 0.08388110635005742
+          },
+          "loc": {
+            "gen": -0.041852101169881875,
+            "loc": 1.0,
+            "perception": -0.006801076820783253,
+            "aux_loc": -0.036950827427740855
+          },
+          "perception": {
+            "gen": -0.06859755413815921,
+            "loc": -0.006801076820783253,
+            "perception": 1.0,
+            "aux_loc": -0.07894573406566371
+          },
+          "aux_loc": {
+            "gen": 0.08388110635005742,
+            "loc": -0.036950827427740855,
+            "perception": -0.07894573406566371,
+            "aux_loc": 0.9999999999999998
+          }
+        },
+        "negative_dot_contribution": 0.00023016588516242743,
+        "positive_alignment_mass": 0.0,
+        "negative_alignment_mass": 0.006705578716429792
+      },
+      "22": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.2942622275996737,
+            "weighted_norm": 0.2942622275996737
+          },
+          "loc": {
+            "raw_norm": 0.001763426255063877,
+            "weighted_norm": 0.014107410040511015
+          },
+          "perception": {
+            "raw_norm": 0.014784225492223704,
+            "weighted_norm": 0.0007392112870489291
+          },
+          "aux_loc": {
+            "raw_norm": 0.0077108233922836954,
+            "weighted_norm": 0.0077108233922836954
+          }
+        },
+        "total_norm": 0.29555045325512486,
+        "weighted_gen_loc_dot": 1.0951308011903767e-05,
+        "weighted_gen_total_dot": 0.08684048266780513,
+        "weighted_loc_total_dot": 0.00021042688683693193,
+        "raw_loc_total_dot": 2.630336085461649e-05,
+        "weighted_gen_aux_dot": 0.00023923419256101225,
+        "weighted_loc_aux_dot": 4.56871011295781e-07,
+        "weighted_gen_loc_cosine": 0.0026380570669261557,
+        "raw_gen_loc_cosine": 0.0026380570669261557,
+        "weighted_gen_total_cosine": 0.9985184194460958,
+        "weighted_loc_total_cosine": 0.0504687223924983,
+        "raw_loc_total_cosine": 0.0504687223924983,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.0026380570669261557,
+            "perception": -0.006394002295445096,
+            "aux_loc": 0.10604874264516606
+          },
+          "loc": {
+            "gen": 0.0026380570669261557,
+            "loc": 1.0,
+            "perception": -0.0025118432190359375,
+            "aux_loc": 0.004440766045443384
+          },
+          "perception": {
+            "gen": -0.006394002295445096,
+            "loc": -0.0025118432190359375,
+            "perception": 1.0,
+            "aux_loc": -0.04967808604284603
+          },
+          "aux_loc": {
+            "gen": 0.10604874264516606,
+            "loc": 0.004440766045443384,
+            "perception": -0.04967808604284603,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.00031905187803946784,
+        "negative_alignment_mass": 0.0
+      },
+      "23": {
+        "parameter_count": 14,
+        "numel": 733184,
+        "components": {
+          "gen": {
+            "raw_norm": 0.3249400434217359,
+            "weighted_norm": 0.3249400434217359
+          },
+          "loc": {
+            "raw_norm": 0.001336848741090577,
+            "weighted_norm": 0.010694789928724616
+          },
+          "perception": {
+            "raw_norm": 0.015791824287715805,
+            "weighted_norm": 0.0007895912284063797
+          },
+          "aux_loc": {
+            "raw_norm": 0.008398520488858023,
+            "weighted_norm": 0.008398520488858023
+          }
+        },
+        "total_norm": 0.3265432278270798,
+        "weighted_gen_loc_dot": 3.94424491768203e-05,
+        "weighted_gen_total_dot": 0.10601633731293258,
+        "weighted_loc_total_dot": 0.0001533015560639837,
+        "raw_loc_total_dot": 1.9162694507997963e-05,
+        "weighted_gen_aux_dot": 0.0003908270418476419,
+        "weighted_loc_aux_dot": -5.190540326694457e-07,
+        "weighted_gen_loc_cosine": 0.011349804529710766,
+        "raw_gen_loc_cosine": 0.011349804529710766,
+        "weighted_gen_total_cosine": 0.9991458307052301,
+        "weighted_loc_total_cosine": 0.043896876944735326,
+        "raw_loc_total_cosine": 0.043896876944735326,
+        "pairwise_weighted_cosine": {
+          "gen": {
+            "gen": 1.0,
+            "loc": 0.011349804529710766,
+            "perception": 0.0017604051956905992,
+            "aux_loc": 0.1430462226969497
+          },
+          "loc": {
+            "gen": 0.011349804529710766,
+            "loc": 1.0,
+            "perception": -0.014854312076493304,
+            "aux_loc": -0.004382262351252694
+          },
+          "perception": {
+            "gen": 0.0017604051956905992,
+            "loc": -0.014854312076493304,
+            "perception": 1.0,
+            "aux_loc": -0.04949890408006881
+          },
+          "aux_loc": {
+            "gen": 0.1430462226969497,
+            "loc": -0.004382262351252694,
+            "perception": -0.04949890408006881,
+            "aux_loc": 1.0
+          }
+        },
+        "negative_dot_contribution": 0.0,
+        "positive_alignment_mass": 0.0011491036021142056,
+        "negative_alignment_mass": 0.0
+      }
+    },
+    "unassigned": null,
+    "layers_by_negative_dot_contribution": [
+      "21",
+      "2",
+      "3",
+      "20",
+      "9",
+      "15",
+      "1",
+      "0",
+      "14"
+    ],
+    "positive_alignment_mass": 0.005539294734660983,
+    "negative_alignment_mass": 0.012579743783624368,
+    "checks": {
+      "named_layer_dot_sum": -0.00024166015430185053,
+      "named_layer_dot_matches_global": true,
+      "partition_dot_sum": -0.00024166015430185053,
+      "partition_dot_difference": 2.168404344971009e-19,
+      "partition_dot_matches_global": true,
+      "covered_parameter_count": 336,
+      "covered_numel": 17596416,
+      "parameter_count_matches_global": true,
+      "numel_matches_global": true
+    }
+  }
+}

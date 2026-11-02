@@ -1,0 +1,99 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "case": "positive_offset",
+      "task": "perception",
+      "status": "available",
+      "base_dot": 2.0,
+      "other_aux_dot": -0.5,
+      "derived_total_dot": 1.5,
+      "offset_pct": 25.0,
+      "flip": false
+    },
+    {
+      "case": "negative_offset",
+      "task": "perception",
+      "status": "available",
+      "base_dot": 2.0,
+      "other_aux_dot": 0.5,
+      "derived_total_dot": 2.5,
+      "offset_pct": -25.0,
+      "flip": false
+    },
+    {
+      "case": "flip",
+      "task": "perception",
+      "status": "available",
+      "base_dot": 1.0,
+      "other_aux_dot": -2.0,
+      "derived_total_dot": -1.0,
+      "offset_pct": 200.0,
+      "flip": true
+    },
+    {
+      "case": "P_inactive",
+      "task": "perception",
+      "status": "inactive",
+      "base_dot": null,
+      "other_aux_dot": null,
+      "derived_total_dot": null,
+      "offset_pct": null,
+      "flip": null
+    },
+    {
+      "case": "U_inactive",
+      "task": "aux_loc",
+      "status": "inactive",
+      "base_dot": null,
+      "other_aux_dot": null,
+      "derived_total_dot": null,
+      "offset_pct": null,
+      "flip": null
+    },
+    {
+      "case": "base_nonpositive",
+      "task": "perception",
+      "status": "undefined_base_nonpositive",
+      "base_dot": -1.0,
+      "other_aux_dot": 0.5,
+      "derived_total_dot": -0.5,
+      "offset_pct": null,
+      "flip": false
+    },
+    {
+      "case": "missing_cosine",
+      "task": "perception",
+      "status": "pending",
+      "base_dot": null,
+      "other_aux_dot": -0.5,
+      "direct_cosine_to_total": 1.0
+    },
+    {
+      "case": "repeated_seed_offsets",
+      "source_offsets": [
+        0,
+        128
+      ],
+      "seed_values": [
+        "17",
+        "17"
+      ],
+      "measurement_scope": "component_sum_derived_total"
+    },
+    {
+      "case": "real_B2_screen_seed29",
+      "source_offset": 0,
+      "seed": "29",
+      "status": "available",
+      "base_dot": 2.5399135897553836e-06,
+      "other_aux_dot": -1.6169671338685641e-06,
+      "derived_total_dot": 9.229464558868195e-07,
+      "offset_pct": 63.662289157809205,
+      "direct_cosine_to_total": 0.00789310918300171,
+      "direct_total_dot": 9.22961065549854e-07,
+      "direct_minus_derived_total_dot": 1.460966303446984e-11
+    }
+  ],
+  "note": "CPU-only scalar fixture plus existing B2 screen seed29; no confirm generalization."
+}

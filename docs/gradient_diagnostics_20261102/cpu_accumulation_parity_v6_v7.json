@@ -1,0 +1,20 @@
+{
+  "all_tensors_bitwise_equal": true,
+  "components": {
+    "raw": {
+      "gen": true,
+      "loc": true,
+      "perception": true,
+      "aux_loc": true
+    },
+    "weighted": {
+      "gen": true,
+      "loc": true,
+      "perception": true,
+      "aux_loc": true,
+      "other": true,
+      "main": true,
+      "total": true
+    }
+  }
+}

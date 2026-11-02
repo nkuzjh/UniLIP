@@ -1,0 +1,16 @@
+schema_version: 1
+base_config: csgo_configs/gradient_diagnostics_seen3.yaml
+anchor_root: outputs_diagnostics/gradient_seen3_fp32
+output_root: outputs_diagnostics/gradient_seen3_temporal_extended
+wrapper: scripts/probe_multitask_gradients_offload.py
+offload_acceptance: outputs_diagnostics/grad_20261102_temporal_extended/offload_acceptance.json
+python: /home/jiahao/miniconda3/envs/UniLIP/bin/python
+device: cuda:0
+experiments:
+  - exp32_3maps_B1_S3_J8
+  - exp32_3maps_B2_S3_J8
+checkpoint_step: 1200
+source_offsets: [128, 256]
+microbatch: 2
+min_free_gib: 46  # micro2 offload measured at 36.3 GiB; keep allocator and device headroom
+reserve_gib: 6
