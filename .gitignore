@@ -1241,4 +1241,4 @@ data/csgo_benchmark_v2/images
 # Local gradient probe reports, logs and optional gradient vectors.
 outputs_diagnostics/
 
-/fst_outs/*.nohup.out
+# /fst_outs/*.nohup.out
