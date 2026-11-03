@@ -2,6 +2,17 @@
 
 Snapshot date: 2026-08-31
 
+Current protocol addendum (2026-11-03): the exp37 Unseen-4 extension uses
+independent per-map few-shot adaptation, explicitly confirmed by the user.
+See `CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md`,
+`csgo_configs/benchmark_v2_exp37_unseen4.yaml`, and
+`scripts/run_exp37_unseen4.py`. Five completed Seen Stage2@6000 sources,
+four maps, four shots, 400 optimizer steps per point; zero-shot is a separate
+evaluation of each unchanged parent. New runs enable opt-in sampler epoch
+forwarding; historical recipes and results retain their prior behavior.
+The historical shared-checkpoint branch below remains documented but paused.
+Configuration/CPU validation is not evidence of training or evaluation.
+
 Scope: This document is the high-signal project entry for the UniLIP-CSGO
 localization and generation benchmark in this checkout. It records the task,
 data contract, implementation map, evidence boundary, current experiments,

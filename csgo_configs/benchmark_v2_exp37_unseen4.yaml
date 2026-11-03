@@ -1,0 +1,57 @@
+schema_version: 1
+# This is a fixed protocol. The runner validates every declared field and
+# rejects drift rather than silently treating the YAML as an override.
+# Dry planning uses this matrix without loading the large Seen checkpoints.
+# Execution requires each matching exp37_s2 checkpoint-6000 and its completed
+# Trainer state, managed recipe/plan, and verified model tensor header/hash.
+manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+minimal_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+maps: [cs_office, de_golden, de_palacio, de_vertigo]
+seen_maps: [cs_agency, cs_italy, de_ancient, de_anubis, de_dust2, de_inferno, de_mirage, de_nuke, de_overpass, de_train]
+shots: [100, 50, 20, 10]
+support_seed: 0
+seed: 42
+max_steps: 400
+training:
+  save_strategy: "no"
+  eval_strategy: "no"
+  joint_micro_batch: 4
+  joint_gradient_accumulation_steps: 32
+  single_micro_batch: shots
+  single_gradient_accumulation_steps: 1
+  csgo_loss_per_microbatch_mean: true
+  csgo_forward_sampler_epoch: true
+  alpha_loc_joint: 8.0
+  alpha_loc_single: 1.0
+  alpha_loc_aux_both: 1.0
+  alpha_loc_perception_both: 0.05
+  active_lora_lr: 2.0e-05
+  action_connector_norm_projector_lr: 1.0e-04
+  optimizer: adamw_torch
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-08
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  scheduler: cosine_with_min_lr
+  min_lr_rate: 0.1
+  warmup_ratio: 0.003
+# Minimal is the default backend. --asset-mode full --data-dir PATH selects
+# the original full assets for first train or first zero-shot inference.
+families:
+  exp37_fs_gen: {source: exp37_s2_gen, route: gen}
+  exp37_fs_loc: {source: exp37_s2_loc, route: loc}
+  exp37_fs_joint: {source: exp37_s2, route: joint}
+  exp37_fs_both: {source: exp37_s2_both, route: joint}
+  exp37_fs_both_b1: {source: exp37_s2_both_b1, route: joint}
+evaluation:
+  batch_size: 1
+  paired_size: 448
+  frame_diff_threshold: 2
+  min_track_len: 4
+  clip_length: 16
+  clip_stride: 16
+  fvd_size: 224
+  external_loc_repo_root: csgosquare
+  external_loc_config_path: configs_reg_newdata/exp5_2.yaml
+  external_loc_checkpoint_path: checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth

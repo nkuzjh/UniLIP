@@ -133,6 +133,12 @@ The complete contract, output layout, and interpretation rules are in
 
 ## 4. CrossMap Few-Shot Adaptation
 
+The following exp33/exp34 description records the original shared-checkpoint
+protocol. As of 2026-11-03, the active exp37 extension uses **independent
+per-map adaptation**, with five Seen Stage2 sources, four maps and four shot
+counts; see [the current protocol](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md).
+This does not alter the frozen data split or relabel any historical result.
+
 The primary protocol uses the default frozen support draw (`seed_0`). The
 reported localization curve uses 100/50/20/10 support frames per CrossMap map,
 or 400/200/80/40 source frames in total. Every point starts independently from
@@ -382,9 +388,13 @@ checksums have been verified.
 
 ## 8. Map-specific CrossMap Few-shot Adaptation
 
-This is an additional adaptation setting and does not change the active
-`exp31`-`exp34` protocol or its status. It evaluates whether specializing one
-model to one CrossMap map changes few-shot transfer quality.
+This was introduced as an additional adaptation setting and preserves the
+historical `exp31`-`exp34` results. It evaluates whether specializing one model
+to one CrossMap map changes few-shot transfer quality. On 2026-11-03, the user
+confirmed this per-map setting as the active setting for the new exp37 line;
+the exp33/exp34 shared-checkpoint branch remains paused. New exp37 recipes,
+fixed mature auxiliary weights, short warmup, and manual commands are defined
+in [the exp37 Unseen-4 protocol](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md).
 
 | Family | Model names | Seen initialization | CrossMap support |
 | --- | --- | --- | --- |

@@ -1,5 +1,10 @@
 # CSGO Benchmark v2：exp37 Seen-10 两阶段实验协议
 
+后续接口（2026-11-03）：五个Stage2的实际完成 `checkpoint-6000` 将作为
+[Unseen-4每图独立few-shot](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)的来源。
+适配使用独立runner和400步新optimizer，不改变本文Seen训练配方或恢复方式。
+两个both候选都保留配置；Unseen query不得用于选择最终候选或调参。
+
 状态：**配置与命令待执行**。本文登记六个新的训练运行：`exp37`、`exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2`、`exp37_s2_both`、`exp37_s2_both_b1`（1 次 Stage 1 + 5 次 Stage 2）。目前不报告训练完成、checkpoint、参数量或指标。运行入口为 [`scripts/run_exp37_seen10.py`](scripts/run_exp37_seen10.py)，手动命令见 [`record.md`](record.md)。本协议只覆盖 Benchmark v2 manifest 中完整十张 Seen 地图，不是三图消融。
 
 ## 研究问题与比较边界

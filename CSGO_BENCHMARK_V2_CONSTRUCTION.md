@@ -120,9 +120,14 @@ The query and continuous sets are fixed across all published draws. Support
 sets may overlap one another, but every support record is from a pool disjoint
 from every query and continuous record.
 
-The primary 100-shot result adapts one Seen-10 model jointly on the 400
-`seed_0` support frames. A per-map adaptation result can be reported as an
-optional analysis, but it is not interchangeable with the primary protocol.
+The original 100-shot protocol adapted one Seen-10 model jointly on the 400
+`seed_0` support frames. **Execution update (2026-11-03): the active exp37
+few-shot line uses independent per-map adaptation**, as explicitly confirmed
+by the user. Each model sees only its target map's support; four separately
+adapted checkpoints form the equal-map result. The original shared-checkpoint
+protocol remains a historical setting and is not interchangeable with this
+one. Dataset construction, support draws, query rows, and clip boundaries are
+unchanged. See [the exp37 Unseen-4 protocol](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md).
 
 ## 4. Trajectory Identity and Isolation
 

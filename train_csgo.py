@@ -277,6 +277,7 @@ class TrainingArguments(transformers.TrainingArguments):
     profile_dir="./profiler_logs", # PyTorch Profiler精确查看训练时间耗费
     enable_step_timing: bool = True
     step_timing_sync_cuda: bool = True
+    csgo_forward_sampler_epoch: bool = False
     resume_preserve_effective_batch_size: bool = True
     resume_target_effective_batch_size: Optional[int] = None
     resume_rewrite_trainer_state_batch_size: bool = True
@@ -2508,6 +2509,10 @@ def train(attn_implementation=None, *, probe_request=None):
     csgo_loss_per_microbatch_mean = csgo_config.get("csgo_loss_per_microbatch_mean", False)
     if not isinstance(csgo_loss_per_microbatch_mean, bool):
         raise ValueError("csgo_loss_per_microbatch_mean must be a boolean")
+    csgo_forward_sampler_epoch = csgo_config.get("csgo_forward_sampler_epoch", False)
+    if not isinstance(csgo_forward_sampler_epoch, bool):
+        raise ValueError("csgo_forward_sampler_epoch must be a boolean")
+    training_args.csgo_forward_sampler_epoch = csgo_forward_sampler_epoch
 
     # Keep Benchmark v2 sampling in the YAML for reproducibility, while
     # allowing a CLI override for support-seed and shot-scaling experiments.

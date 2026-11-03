@@ -1186,3 +1186,26 @@ before the scheduler opens the next shot count, but completion is not a barrier:
 later shots may run while earlier pipelines finish inference and metrics. The
 scheduler handles live VRAM concurrency and each child pipeline preserves
 train, inference, metric, and aggregation order.
+
+
+## exp37 Unseen-4 map-specific extension (2026-11-03)
+
+`benchmark_v2_exp37_unseen4.yaml` registers five few-shot families from the
+completed `exp37_s2_gen`, `exp37_s2_loc`, `exp37_s2`, `exp37_s2_both`, and
+`exp37_s2_both_b1` checkpoint-6000 sources. The dedicated
+`scripts/run_exp37_unseen4.py` derives each map/shot recipe and pins a resolved
+snapshot at execution. Four maps times 100/50/20/10-shot gives 80 independent
+400-step model-only adaptations; do not chain maps or shots. The two both arms
+use fixed aux=1/perception=.05 (no ramp), alpha_loc=8 and attention=false/true;
+loc-only alpha=1. Ordinary LR2e-5, selected Action groups1e-4, cosine minimum
+ratio.1, warmup ratio.003. Default assets are minimal, with explicit full-mode
+switching in the matrix comments and command record.
+
+Only these new recipes enable `csgo_forward_sampler_epoch=true`; the default
+for existing training stays false. This forwards epoch to the sampler so the
+two dropped rows at 50/10-shot are not permanently excluded. Joint micro4/GAS32
+has actual per-update base counts100/48/20/8, not128; singles use batch=shots.
+Keep `csgo_loss_per_microbatch_mean=true`. See
+`CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md` for evaluation, final-only saving,
+zero-shot, strict source identity and no-resume semantics. Neither configuration
+presence nor CPU tests imply experiment completion.

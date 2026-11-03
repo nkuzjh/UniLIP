@@ -5,6 +5,14 @@
 适配四张 CrossMap 地图。本文档记录 exp35/exp36 以及新增的 exp36_1
 实验协议，不改变 exp31-exp34 的训练、推理、评测或已有记录。
 
+**2026-11-03 扩展：** 用户确认后续继续采用每图独立适配。新增
+`exp37_fs_gen/loc/joint/both/both_b1` 五个family，分别从对应Seen Stage2
+local6000独立开始，四图×100/50/20/10-shot、每点400步。新入口为
+`scripts/run_exp37_unseen4.py`，完整方案及原配方差异见
+[exp37 Unseen-4协议](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)。下面的exp35/36/36_1
+数值和历史运行状态保留；不将旧alpha20/aux2/perception0.1套用到exp37，
+也不因新增代码而宣称新实验已完成。
+
 ## 1. 研究目的
 
 exp33/exp34 使用一个模型同时读取四张 CrossMap 地图的 support（用于

@@ -1327,3 +1327,127 @@ U4、B1 均从 J8@5850 仅模型权重初始化，完成 local1800；本地计�
 | `exp32_3maps_U4_S2_J8` | seen_continuous | 1800 | 14.990 | 0.431 | 0.593 | 0.535 | 33.720 | 38.901 | 16.162 | 874.366 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_U4_S2_J8/checkpoint-1800/test/seed_42/continuous/summary.json) |
 
 U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-01 消融分析](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#u4-both-analysis-20261101)。
+
+<a id="exp37-unseen4-results-20261103"></a>
+
+# exp37 Unseen-4 每图独立 few-shot（2026-11-03 计划）
+
+本节登记新实验计划，不改变历史表格顺序和已有数值。协议见 [exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见 [record.md](record.md#exp37-unseen4-fewshot-20261103)。五个Seen Stage2@6000来源、四图、100/50/20/10-shot，共80次独立400步适配；若预先只选一个both则实际64次。以下均为待执行，不表示指标为零；本次未运行任何训练、推理或评测。
+
+## zero-shot 实验进度
+
+| Family | 未适配Seen来源 | 推理 | Metric | 正式checkpoint |
+|---|---|---|---|---|
+| exp37_fs_gen | exp37_s2_gen | 待执行（gen） | 待执行 | Seen local6000 |
+| exp37_fs_loc | exp37_s2_loc | 待执行（loc） | 待执行 | Seen local6000 |
+| exp37_fs_joint | exp37_s2 | 待执行（joint） | 待执行 | Seen local6000 |
+| exp37_fs_both | exp37_s2_both | 待执行（joint） | 待执行 | Seen local6000 |
+| exp37_fs_both_b1 | exp37_s2_both_b1 | 待执行（joint） | 待执行 | Seen local6000 |
+
+## few-shot 实验进度
+
+各shot单元格依次记录训练／目标地图query／全Seen10 retention；每个单元格是一次独立适配，而不是从前一个shot继续训练。新实验开启sampler epoch转发；joint实际每步100/48/20/8个base样本，详见协议。
+
+| 实验版本 | 100-shot：训练／Q／R | 50-shot：训练／Q／R | 20-shot：训练／Q／R | 10-shot：训练／Q／R | checkpoint／validation |
+|---|---|---|---|---|---|
+| exp37_fs_gen_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+
+zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个目标图专用checkpoint，以 `map-models` 聚合，保留map→checkpoint对应关系。每个适配模型的Seen-retention单独记录，不将四个模型拼为单模型retention。下面只登记四图宏平均占位；逐图及retention结果由本节进度表对应到该运行输出。
+
+生成输出位于 `outputs_eval/benchmark_v2/<family>_<map>/shot_<N>/seed_0/`，定位位于同结构的 `outputs_loc/benchmark_v2/`；retention为本次运行的独立子目录。zero-shot单独使用 `<family>/zero_shot/seed_42/`。只在严格核对来源、step、seed、shot、manifest、后端及覆盖后填数值。
+
+## exp37 Unseen-4 定位（四图宏平均，待实测）
+
+| Family | Shot／设置 | Checkpoint | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ |
+|---|---|---|---:|---:|---:|---:|
+| exp37_fs_loc | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_loc | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_loc | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_loc | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_loc | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+## exp37 Unseen-4 离散生成（四图宏平均，待实测）
+
+| Family | Shot／设置 | Checkpoint | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
+|---|---|---|---:|---:|---:|---:|
+| exp37_fs_gen | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+## exp37 Unseen-4 连续生成（四图宏平均，待实测）
+
+| Family | Shot／设置 | Checkpoint | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ |
+|---|---|---|---:|---:|---:|---:|---:|
+| exp37_fs_gen | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+
+历史待补项与本节新增实验分开：exp35 joint四shot共16次、exp35_gen/loc的20/10-shot各8次，共32次原主线训练缺口；exp35_gen_de_vertigo 50-shot本地缺metric摘要。exp36_1四图四shot已登记完成，其原配方结果不改名为exp37。暂停的exp33/34/36不由本计划自动恢复。

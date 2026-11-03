@@ -310,6 +310,13 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
 if is_sagemaker_mp_enabled():
     from transformers.trainer_pt_utils import smp_forward_backward
 
+class SamplerEpochDataLoader(DataLoader):
+    """Forward Trainer's epoch update to the existing batch sampler."""
+
+    def set_epoch(self, epoch: int) -> None:
+        self.batch_sampler.set_epoch(epoch)
+
+
 class NonMixTrainer(Trainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -428,7 +435,12 @@ class NonMixTrainer(Trainer):
             drop_last=self.args.dataloader_drop_last,
         )
 
-        return DataLoader(
+        loader_class = (
+            SamplerEpochDataLoader
+            if getattr(self.args, "csgo_forward_sampler_epoch", False)
+            else DataLoader
+        )
+        return loader_class(
             self.train_dataset,
             batch_sampler=batch_sampler,
             collate_fn=self.data_collator,
