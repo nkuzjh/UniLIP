@@ -282,7 +282,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     gas = 128 // (len(devices) * micro)
     stage2 = args.experiment != "exp37"
     runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
-                   gradient_accumulation_steps=gas, seed=args.seed, save_steps=2000 if stage2 else 4000,
+                   gradient_accumulation_steps=gas, seed=args.seed, save_steps=1000 if stage2 else 4000,
                    save_total_limit=6, report_to=args.report_to, max_steps=6000 if stage2 else None,
                    warmup_steps=200 if stage2 else None, warmup_ratio=config["warmup_ratio"],
                    optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
