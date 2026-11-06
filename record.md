@@ -8609,7 +8609,7 @@ query/continuous只报告，不用于调参或早停。记录逐图checkpoint身
 
 <a id="exp37-batched-inference-20261106"></a>
 
-## 2026-11-06：exp37 Seen-10／Unseen-4 批量推理（仅手动执行）
+## exp37 Seen-10／Unseen-4 批量推理（仅手动执行）
 
 推理新增 `--test-loc-batch-size`（默认32）和 `--test-gen-batch-size`（默认16）。分别控制同时推理的样本数，适用于 `infer/metrics`，Unseen四图 `aggregate` 也接受同一参数来选择结果。训练有效batch、步数、seed、来源权重和指标计算器自身的batch不变。旧3maps及历史benchmark runner显式使用batch=1以保持原结果路径；本节针对exp37入口。
 
@@ -8638,7 +8638,8 @@ python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step 
 3. 离散生成推理：
 
 ```bash
-python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen --test-gen-batch-size 16 --cuda-devices 0 --execute
+python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen --test-gen-batch-size 64 --cuda-devices 0 --execute &&
+python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step final --split test --task gen --test-gen-batch-size 64 --cuda-devices 0 --execute
 ```
 
 4. 离散生成评测（含十图汇总）：
@@ -8650,7 +8651,8 @@ python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step 
 5. 连续生成推理：
 
 ```bash
-python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen_continuous --test-gen-batch-size 16 --cuda-devices 0 --execute
+python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen_continuous --test-gen-batch-size 64 --cuda-devices 1 --execute &&
+python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step final --split test --task gen_continuous --test-gen-batch-size 64 --cuda-devices 1 --execute
 ```
 
 6. 连续生成评测（含十图汇总）：
