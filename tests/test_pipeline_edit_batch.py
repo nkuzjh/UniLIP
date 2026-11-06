@@ -45,7 +45,9 @@ class FakeCore:
     device = torch.device("cpu")
 
     def __init__(self):
-        self.config = SimpleNamespace(dit_path="unused", unilip_factor=1.0, action_dim=5)
+        self.config = model_module.Unified_UniLIP_InternVLConfig()
+        self.config.dit_path = "unused"
+        self.config.unilip_factor = 1.0
         self.language_model = FakeLanguageModel()
         self.latent_queries = torch.zeros(1, 1, 2)
         self.llm_connector = lambda inputs_embeds, **kwargs: SimpleNamespace(hidden_states=[inputs_embeds])
@@ -120,6 +122,24 @@ class BatchPipelineTests(unittest.TestCase):
         self.assertTrue(kwargs["legacy_ordered_noise"])
         self.assertEqual(kwargs["num_inference_steps"], 20)
 
+    def test_sixteen_images_with_base_config_and_five_dim_actions(self):
+        model = FakeModel()
+        self.assertFalse(hasattr(model.model.config, "action_dim"))
+        pipeline = self.make_pipeline(model)
+        scheduler = DPMSolverMultistepScheduler(
+            algorithm_type="dpmsolver++", use_flow_sigmas=True, prediction_type="flow_prediction"
+        )
+        samples = [
+            [f"{11 + i} <image>", f"{31 + i} <image>", Image.new("RGB", (2, 2))]
+            for i in range(16)
+        ]
+        actions = torch.arange(80).reshape(16, 5)
+        with patch.object(model_module.DPMSolverMultistepScheduler, "from_pretrained", return_value=scheduler):
+            self.assertEqual(len(pipeline.generate_batch(samples, actions=actions)), 16)
+            self.assertTrue(torch.equal(model.actions_seen, torch.cat([actions, actions]).float()))
+            with self.assertRaisesRegex(ValueError, r"Actions must have shape \[16, 5\]"):
+                pipeline.generate_batch(samples, actions=torch.zeros(16, 4))
+
     def test_tail_batch_and_patch_mismatch(self):
         model = FakeModel()
         pipeline = self.make_pipeline(model)
@@ -128,11 +148,29 @@ class BatchPipelineTests(unittest.TestCase):
         )
         sample = [["11 <image>", "31 <image>", Image.new("RGB", (2, 2))]]
         with patch.object(model_module.DPMSolverMultistepScheduler, "from_pretrained", return_value=scheduler):
-            self.assertEqual(len(pipeline.generate_batch(sample)), 1)
+            self.assertEqual(len(pipeline.generate_batch(sample, actions=[torch.arange(5)])), 1)
+            self.assertEqual(model.actions_seen.tolist(), [list(range(5))] * 2)
             with self.assertRaisesRegex(ValueError, "image tokens"):
                 pipeline.generate_batch([["11 no image", "31 <image>", sample[0][2]]])
             with self.assertRaisesRegex(ValueError, "Actions must have shape"):
                 pipeline.generate_batch(sample, actions=[torch.zeros(4)])
+
+    def test_explicit_action_dim_keeps_strict_batch_shape(self):
+        model = FakeModel()
+        model.model.config.action_dim = 3
+        pipeline = self.make_pipeline(model)
+        scheduler = DPMSolverMultistepScheduler(
+            algorithm_type="dpmsolver++", use_flow_sigmas=True, prediction_type="flow_prediction"
+        )
+        samples = [
+            ["11 <image>", "31 <image>", Image.new("RGB", (2, 2))],
+            ["12 <image>", "32 <image>", Image.new("RGB", (2, 2))],
+        ]
+        with patch.object(model_module.DPMSolverMultistepScheduler, "from_pretrained", return_value=scheduler):
+            self.assertEqual(len(pipeline.generate_batch(samples, actions=torch.zeros(2, 3))), 2)
+            self.assertEqual(model.actions_seen.shape, (4, 3))
+            with self.assertRaisesRegex(ValueError, r"Actions must have shape \[2, 3\]"):
+                pipeline.generate_batch(samples, actions=torch.zeros(2, 5))
 
     def test_unvalidated_scheduler_rejected(self):
         model = FakeModel()

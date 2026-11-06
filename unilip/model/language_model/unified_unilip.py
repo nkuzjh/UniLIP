@@ -6257,8 +6257,10 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         if actions is not None:
             actions = actions.to(device=device, dtype=torch.float32).reshape(actions.shape[0], -1)
             if return_batch:
-                if actions.shape != (image_batch_size, int(self.model.config.action_dim)):
-                    raise ValueError(f"Actions must have shape [{image_batch_size}, {self.model.config.action_dim}]")
+                # Generation-only base configs may omit localization fields; CSGO poses default to 5D.
+                action_dim = int(getattr(self.model.config, "action_dim", 5))
+                if actions.shape != (image_batch_size, action_dim):
+                    raise ValueError(f"Actions must have shape [{image_batch_size}, {action_dim}]")
                 actions = torch.cat([actions, actions], dim=0)
             elif actions.shape[0] == 1 and input_ids.shape[0] > 1:
                 actions = actions.expand(input_ids.shape[0], -1)
