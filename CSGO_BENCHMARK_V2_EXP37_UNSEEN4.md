@@ -68,7 +68,24 @@
 
 `--task all` 根据来源路由：joint=定位＋离散生成＋连续生成，gen=两类生成，loc=仅定位。`--task loc/gen/gen_continuous` 可单独执行一项，方便在远程作业中断后补齐缺项。定位指标由定位infer产出；生成metrics使用项目严格coverage/provenance检查。连续帧仍按64帧manifest clip组织，FVD窗口16、stride16、size224，不跨clip。paired图像指标size448，推理seed42。
 
-query 不能用于学习率、训练长度、checkpoint或最终辅助候选的选择；所有适配配方在观察Unseen结果前冻结。每个适配模型都回测完整Seen-10，报告其各自retention；不把四个模型的retention误当成同一个模型的成绩。
+query 不能用于学习率、训练长度、checkpoint或最终辅助候选的选择；所有适配配方在观察Unseen结果前冻结。原协议为每个适配模型回测完整Seen-10并报告各自retention，不把四个模型的retention误当成同一个模型的成绩。根据后续计算预算安排，**剩余 retention 推理／评测已暂停**；保留已有结果和入口，当前只补训练与 query，不将缺少 retention 记为已完成。
+
+### 2026-11-06：批量推理与结果兼容
+
+`scripts/run_exp37_unseen4.py infer/metrics/aggregate` 支持 `--test-loc-batch-size`（默认 **32**）与 `--test-gen-batch-size`（默认 **16**）。分别用于定位和离散／连续生成；`--task all` 仍按 family 的单任务／联合路线分发，不要求单任务模型运行另一任务。zero-shot、few-shot query 以及保留的 retention 入口使用同一规则；参数不写入训练配置、不改变 400 步适配或来源权重身份。
+
+| 情况 | 默认批量结果路径（相对 `outputs_loc/benchmark_v2` 或 `outputs_eval/benchmark_v2`） |
+|---|---|
+| 每图 few-shot 定位 | `{family}_{map}/shot_{N}/seed_0/infer_bs32/` |
+| 每图 few-shot 生成 | `{family}_{map}/shot_{N}/seed_0/infer_bs16/{discrete,continuous}/` |
+| zero-shot | `{family}/zero_shot/seed_42/infer_bs32/` 或 `infer_bs16/{discrete,continuous}/` |
+| 四图 few-shot 汇总 | `{family}/shot_{N}/seed_0/infer_bs{B}/map_models/` |
+
+保留的 retention 路径在 `infer_bs{B}` 后追加 `seen_retention`，生成再追加 discrete／continuous。`infer`、`metrics`、`aggregate` 要传同一组批量值；汇总校验每张地图的快照、执行元数据与原覆盖率，不混用不同 batch 的四图结果。显式设为 `1` 时沿用原路径、原快照格式；**只补旧结果的指标或四图汇总，必须显式传相应参数为 `1`**，无需重跑已完整的旧推理。
+
+生成每批真正并行执行编码、20 步 DiT、VAE；定位为 10 步 flow。尾批不丢弃，连续帧保持 manifest 顺序与 clip 身份。按旧单样本次序抽取初始噪声，执行清单记录批量、样本顺序哈希、耗时／吞吐及峰值显存。保留 seed=42、CFG、分辨率、数据划分与指标定义。现有生成入口在加载后注入 LoRA，当前 PEFT 下新增 Dropout 可保持 training 模式；本次保留该行为并在 B>1 元数据中记录实际 active Dropout，未默默改为全模型 eval。其 mask 分配会随 batch 改变，故新旧结果的差异不只有浮点误差，不能假定逐像素相同。应固定批量比较新结果；关闭生成 Dropout 属于需单独评估的协议修正。未自动进行 OOM 降档或逐图片断点续跑。首次可用 GPU 上应先核验小批结果和显存，再安排完整 query。
+
+Seen／Unseen 的可执行示例统一见 [record.md](record.md#exp37-batched-inference-20261106)。目前仅通过 CPU 路由、批处理及 RNG 回归，未占用本机正在运行任务的 GPU 验证真实模型的默认批量或测速；未启动任何完整实验。
 
 `aggregate` 对同family同shot的四个目标图结果执行 `map-models` 等地图宏平均，保留map→checkpoint映射。zero-shot使用一个父模型覆盖四图，采用普通 `maps` 聚合；两者统计身份不同。单任务缺失的任务列写N/A，未执行的有效任务写待执行，不写0。
 
@@ -125,7 +142,7 @@ zero-shot五组以及四图宏平均结果同步维护在 [`csgo_benchmark_v2_ex
 
 ## 历史工作与执行优先级
 
-优先：冻结Seen来源与适配配方 → 五组zero-shot → 所选family四图100-shot及retention → 从相同Seen来源独立运行50/20/10-shot及retention。为每个family/shot完成四图后再聚合，不用未完成子集冒充四图macro。
+当前优先：冻结Seen来源与适配配方 → 五组zero-shot → 所选family四图100-shot query → 从相同Seen来源独立运行50/20/10-shot query；剩余retention暂停。为每个family/shot完成四图后再聚合，不用未完成子集冒充四图macro。
 
 原主线若需补齐：`exp35` joint缺四图×四shot=16次，`exp35_gen/loc`各缺四图×20/10-shot=8次，共32次历史适配；`exp35_gen_de_vertigo` 50-shot本地已有四类推理manifest但缺metric摘要；`exp31_loc/exp32_loc`原表尚缺Unseen zero-shot。`exp36_1`四图四shot已登记完成；这些结果保持原来源和配方，不改名充作exp37结果。历史配置和手动命令已存在，本次不重新创建或启动它们。
 

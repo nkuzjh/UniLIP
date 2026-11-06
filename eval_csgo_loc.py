@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import numpy as np
 import yaml
 import random
+import time
 from pathlib import Path
 import datetime
 from PIL import Image, ImageDraw
@@ -25,6 +26,12 @@ from csgo_datasets.benchmark_v2 import (
     benchmark_v2_image_path,
     is_benchmark_v2_config,
     load_benchmark_v2_selection,
+)
+from csgo_datasets.inference_batching import (
+    DEFAULT_TEST_LOC_BATCH_SIZE,
+    InferenceExecutionTracker,
+    guard_inference_output,
+    positive_batch_size,
 )
 from unilip.angle_utils import shortest_angle_distance
 from scripts.aggregate_csgo_benchmark_v2_metrics import (
@@ -213,6 +220,7 @@ def _write_inference_manifest(
     ckpt_path,
     seed,
     selection=None,
+    inference_execution=None,
 ):
     payload = {
         "config_path": os.fspath(config_path),
@@ -228,6 +236,8 @@ def _write_inference_manifest(
     }
     if selection is not None:
         payload.update(_benchmark_v2_asset_provenance(config, selection))
+    if inference_execution is not None:
+        payload["inference_execution"] = inference_execution
     manifest_path = os.path.abspath(os.path.join(output_dir, "inference_manifest.json"))
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
@@ -963,6 +973,43 @@ class DataCollatorForLoc(object):
         return batch
 
 
+def _validate_loc_inference_batch(batch, requested_batch_size):
+    """Fail before model inference when any paired input lost its sample axis."""
+    current_bs = len(batch["ids"])
+    if current_bs < 1 or current_bs > requested_batch_size:
+        raise ValueError(f"Invalid localization batch length: {current_bs}")
+    for key in ("map_name", "pose_dict", "raw_prompt", "map_img", "fps_img", "z_range"):
+        if len(batch[key]) != current_bs:
+            raise ValueError(f"Localization {key} count differs from ids count")
+    for key in ("input_ids", "attention_mask", "labels", "und_image", "aux_image"):
+        value = batch[key]
+        if not isinstance(value, torch.Tensor) or value.shape[0] != current_bs:
+            raise ValueError(f"Localization {key} must be a tensor with batch axis {current_bs}")
+    if batch["und_image"].ndim != 4 or batch["aux_image"].ndim != 4:
+        raise ValueError("Localization FPS and map images must each have shape [B,C,H,W]")
+    actions = batch["actions"]
+    if not isinstance(actions, torch.Tensor) or actions.shape != (current_bs, 1, 5):
+        raise ValueError(f"Localization actions must have shape [{current_bs},1,5]")
+    if batch["input_ids"].shape != batch["attention_mask"].shape or batch["input_ids"].shape != batch["labels"].shape:
+        raise ValueError("Localization token, mask, and label shapes differ")
+    return current_bs
+
+
+def _validate_loc_head_batch(loc_head_type, batch_size):
+    if batch_size > 1 and loc_head_type in ("lm_bin_ce", "lm_st_ext_vocab"):
+        raise ValueError("Token localization heads only support --test-loc-batch-size 1")
+
+
+def _generate_flow_locations(model, input_ids, attention_mask, labels,
+                             und_image, aux_image, requested_batch_size):
+    kwargs = {"num_steps": 10}
+    if requested_batch_size > 1:
+        kwargs["legacy_ordered_noise"] = True
+    return model.generate_action2(
+        input_ids, attention_mask, labels, und_image, aux_image, **kwargs
+    ).squeeze(1).float().cpu()
+
+
 
 def unnormalize_pose(pred_tensor, z_range):
     x_norm, y_norm, z_norm, v_norm, h_norm = [float(v) for v in pred_tensor.cpu().numpy()]
@@ -1213,6 +1260,7 @@ def main():
     parser.add_argument("--benchmark_v2_support_seed", type=int, default=None)
     parser.add_argument("--benchmark_v2_shots_per_map", type=int, default=None)
     parser.add_argument("--benchmark_v2_asset_manifest", type=str, default=None)
+    parser.add_argument("--test-loc-batch-size", type=int, default=DEFAULT_TEST_LOC_BATCH_SIZE)
     args = parser.parse_args()
     with open(args.csgo_config, 'r') as f:
         csgo_config = yaml.safe_load(f)
@@ -1230,6 +1278,16 @@ def main():
         csgo_config['benchmark_v2_shots_per_map'] = args.benchmark_v2_shots_per_map
     if args.benchmark_v2_asset_manifest is not None:
         csgo_config['benchmark_v2_asset_manifest'] = args.benchmark_v2_asset_manifest
+    try:
+        inference_batch_size = positive_batch_size(args.test_loc_batch_size)
+    except ValueError as exc:
+        parser.error(str(exc))
+    if inference_batch_size > 1:
+        try:
+            _validate_loc_head_batch(csgo_config.get("loc_head_type"), inference_batch_size)
+        except ValueError as exc:
+            parser.error(str(exc))
+        csgo_config["test_loc_batch_size"] = inference_batch_size
     seed = 42 if args.seed is None else args.seed
 
     disable_torch_init()
@@ -1370,8 +1428,13 @@ def main():
 
     # 8. Init Localization Inference Dataset
     test_dataset = CSGOLocInferenceDataset(csgo_config, tokenizer, map_path_dict, image_processor, image_aspect_ratio)
+    guard_inference_output(
+        output_dir, "loc", inference_batch_size,
+        checkpoint=ckpt_path, split=csgo_config.get("benchmark_v2_split"),
+        seed=seed, maps=test_dataset.map_names,
+    )
     data_collator = DataCollatorForLoc(tokenizer=tokenizer)
-    dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=data_collator)
+    dataloader = DataLoader(test_dataset, batch_size=inference_batch_size, shuffle=False, collate_fn=data_collator)
 
     # 9. Inference Loop
     results_json = []
@@ -1382,7 +1445,15 @@ def main():
     # Reset after model/checkpoint setup so initialization RNG use cannot change sampling.
     set_seed(seed)
     print("🚀 Starting Localization Inference...")
-    for batch in tqdm(dataloader):
+    tracker = InferenceExecutionTracker("loc", inference_batch_size) if inference_batch_size > 1 else None
+    if torch.cuda.is_available() and device == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+    inference_start = time.perf_counter()
+    inference_sample_count = 0
+    progress = tqdm(dataloader, total=len(dataloader), unit="batch")
+    for batch in progress:
+        if inference_batch_size > 1:
+            _validate_loc_inference_batch(batch, inference_batch_size)
         map_name = batch["map_name"]
         ids = batch["ids"]
 
@@ -1459,18 +1530,16 @@ def main():
                     loc_bin_num=csgo_config.get("loc_bin_num", 100),
                 )
             else:
-                pred_norm_loc_tensor = model.generate_action2(
-                    input_ids,
-                    attention_mask,
-                    labels,
-                    und_image,
-                    aux_image,
-                    num_steps=10
-                ).squeeze(1).float().cpu()
+                pred_norm_loc_tensor = _generate_flow_locations(
+                    model, input_ids, attention_mask, labels,
+                    und_image, aux_image, inference_batch_size,
+                )
                 generated_loc_text_full_vocab = None
                 generated_loc_token_counts_full_vocab = None
 
         current_bs = pred_norm_loc_tensor.size(0)
+        if current_bs != len(ids):
+            raise ValueError(f"Localization model returned {current_bs} predictions for {len(ids)} samples")
         for sample_idx in range(current_bs):
             # 1. 归一化数据
             pred_norm = pred_norm_loc_tensor[sample_idx]
@@ -1530,6 +1599,36 @@ def main():
                     vis_num_per_map=10 # 每张地图随机选5个样本可视化
                 )
                 vis_data_flag = False # 只可视化一次，避免重复生成
+        inference_sample_count += current_bs
+        if tracker is not None:
+            identities = []
+            for sample_idx in range(current_bs):
+                entry = test_dataset.data_entries[inference_sample_count - current_bs + sample_idx]
+                if entry["map"] != map_name[sample_idx] or entry["file_frame"] != ids[sample_idx]:
+                    raise ValueError("Localization dataset and batch sample order differ")
+                identity = {"map_name": map_name[sample_idx], "file_frame": ids[sample_idx]}
+                if "clip_id" in entry:
+                    identity.update(clip_id=entry["clip_id"], frame_index=entry["frame_index"])
+                identities.append(identity)
+            tracker.update(identities)
+        progress.set_postfix(samples=inference_sample_count, total=len(test_dataset))
+
+    inference_seconds = time.perf_counter() - inference_start
+    if inference_sample_count != len(test_dataset):
+        raise ValueError(f"Localized {inference_sample_count} samples; expected {len(test_dataset)}")
+    throughput = inference_sample_count / inference_seconds if inference_seconds else float("inf")
+    peak_memory_bytes = (torch.cuda.max_memory_allocated(device)
+                         if torch.cuda.is_available() and device == "cuda" else None)
+    print(f"Inference: {inference_sample_count} samples in {inference_seconds:.2f}s "
+          f"({throughput:.2f} samples/s)" +
+          (f"; peak CUDA allocated={peak_memory_bytes / (1024 ** 3):.2f} GiB"
+           if peak_memory_bytes is not None else ""))
+    inference_execution = tracker.finish(
+        inference_steps=10,
+        rng_device=device,
+        rng_dtype=str(next(model.parameters()).dtype),
+        peak_cuda_memory_bytes=peak_memory_bytes,
+    ) if tracker is not None else None
 
     benchmark_v2_inference_manifest_path = None
     benchmark_v2_inference_manifest_payload = None
@@ -1551,6 +1650,7 @@ def main():
             ckpt_path,
             seed,
             selection=test_dataset.benchmark_v2_selection,
+            inference_execution=inference_execution,
         )
 
     # 3. Calculate Metrics (L2 5D, SmoothL1, etc.)
@@ -1613,6 +1713,7 @@ def main():
             len(results_json),
             ckpt_path,
             seed,
+            inference_execution=inference_execution,
         )
 
     print(f"✅ Finished. Results at: {output_dir}")

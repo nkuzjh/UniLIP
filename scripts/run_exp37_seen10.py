@@ -21,6 +21,12 @@ from types import SimpleNamespace
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from csgo_datasets.inference_batching import (  # noqa: E402
+    DEFAULT_TEST_GEN_BATCH_SIZE, DEFAULT_TEST_LOC_BATCH_SIZE,
+    positive_batch_size, validate_execution_metadata,
+)
+from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
 EXPERIMENTS = ("exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 SINGLES = ("exp37_s2_gen", "exp37_s2_loc")
 JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
@@ -486,6 +492,53 @@ def ground_truth_dir(config: dict, map_name: str) -> str:
     return relative(report_path.parent / target.parent)
 
 
+def evaluation_snapshots(args: argparse.Namespace, legacy_path: Path, config: dict) -> dict[Path, dict]:
+    """Resolve task-specific inference configs without changing the batch-one layout."""
+    target = legacy_path.parent.relative_to(ROOT / "outputs_eval/benchmark_v2")
+    loc = args.experiment != "exp37_s2_gen" and args.task in ("all", "localization")
+    gen = args.experiment != "exp37_s2_loc" and args.task in ("all", "generation")
+    snapshots: dict[Path, dict] = {}
+    if loc:
+        path = legacy_path if args.test_loc_batch_size == 1 else ROOT / "outputs_loc/benchmark_v2" / target / f"infer_bs{args.test_loc_batch_size}" / "evaluation_config.yaml"
+        value = copy.deepcopy(config)
+        if args.test_loc_batch_size > 1:
+            value["test_loc_batch_size"] = args.test_loc_batch_size
+        snapshots[path] = value
+    if gen:
+        for kind in (("discrete",) if args.split == "validation" else ("discrete", "continuous")):
+            path = legacy_path if args.test_gen_batch_size == 1 else ROOT / "outputs_eval/benchmark_v2" / target / f"infer_bs{args.test_gen_batch_size}" / kind / "evaluation_config.yaml"
+            value = copy.deepcopy(config)
+            if kind == "continuous" and args.test_gen_batch_size > 1:
+                value["benchmark_v2_split"] = "seen_continuous"
+            if args.test_gen_batch_size > 1:
+                value["test_gen_batch_size"] = args.test_gen_batch_size
+            snapshots[path] = value
+    return snapshots
+
+
+def validate_batched_localization_summary(config_path: Path, config: dict,
+                                          manifest: dict, split: str, seed: int) -> None:
+    """Require the completed localization result before treating batched metrics as ready."""
+    output = config_path.parent
+    summary_path = output / "benchmark_csgo_v2_loc.json"
+    if not summary_path.is_file():
+        raise ValueError(f"Missing localization summary: {relative(summary_path)}")
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    aggregates._validate_localization_summary(summary, path=summary_path)
+    expected_count = EXPECTED_COUNTS["validation"] if split == "validation" else EXPECTED_COUNTS["discrete_test"]
+    expected = {"split": config["benchmark_v2_split"], "maps": MAPS,
+                "sample_count": expected_count, "seed": seed, "kind": "localization"}
+    if any(summary.get(key) != value for key, value in expected.items()):
+        raise ValueError(f"Localization summary split/maps/count/seed differs: {relative(summary_path)}")
+    if (path_in_repo(summary.get("checkpoint", "")) != path_in_repo(config["ckpt_path"]) or
+        path_in_repo(summary.get("manifest", "")) != path_in_repo(config["benchmark_v2_manifest"])):
+        raise ValueError(f"Localization summary checkpoint/manifest differs: {relative(summary_path)}")
+    provenance = summary.get("inference_provenance", {})
+    if (path_in_repo(provenance.get("path", "")) != output / "inference_manifest.json" or
+        provenance.get("payload") != manifest):
+        raise ValueError(f"Localization summary inference provenance differs: {relative(summary_path)}")
+
+
 def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], Path, dict]:
     step = final_checkpoint_step(args.experiment) if args.checkpoint_step == "final" else args.checkpoint_step
     if type(step) is not int or step <= 0:
@@ -534,19 +587,24 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
         raise ValueError("Requested task is inactive in this checkpoint")
     loc = loc and args.task in ("all", "localization")
     gen = gen and args.task in ("all", "generation")
-    common = ["--csgo_config", relative(eval_config), "--ckpt_path", str(checkpoint),
+    common = ["--ckpt_path", str(checkpoint),
               "--seed", str(args.seed), "--benchmark_v2_maps", *MAPS]
     commands = []
     if args.command == "infer" and loc:
-        commands.append([sys.executable, "eval_csgo_loc.py", *common,
-                         "--output_dir", f"outputs_loc/benchmark_v2/{target}", "--benchmark_v2_split", split])
+        output = f"outputs_loc/benchmark_v2/{target}" + ("" if args.test_loc_batch_size == 1 else f"/infer_bs{args.test_loc_batch_size}")
+        path = eval_config if args.test_loc_batch_size == 1 else ROOT / output / "evaluation_config.yaml"
+        commands.append([sys.executable, "eval_csgo_loc.py", "--csgo_config", relative(path), *common,
+                         "--output_dir", output, "--benchmark_v2_split", split,
+                         "--test-loc-batch-size", str(args.test_loc_batch_size)])
     if gen:
         tasks = [("discrete", split)] + ([("continuous", "seen_continuous")] if args.split == "test" else [])
         for kind, selected_split in tasks:
-            output = f"outputs_eval/benchmark_v2/{target}/{kind}"
+            output = f"outputs_eval/benchmark_v2/{target}" + ("" if args.test_gen_batch_size == 1 else f"/infer_bs{args.test_gen_batch_size}") + f"/{kind}"
             if args.command == "infer":
-                commands.append([sys.executable, "eval_csgo.py", *common, "--output_dir", output,
-                                 "--benchmark_v2_split", selected_split])
+                path = eval_config if args.test_gen_batch_size == 1 else ROOT / output / "evaluation_config.yaml"
+                commands.append([sys.executable, "eval_csgo.py", "--csgo_config", relative(path), *common, "--output_dir", output,
+                                 "--benchmark_v2_split", selected_split,
+                                 "--test-gen-batch-size", str(args.test_gen_batch_size)])
                 continue
             for map_name in MAPS:
                 cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",
@@ -590,6 +648,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--checkpoint-step", type=parse_checkpoint_step)
     p.add_argument("--split", choices=("validation", "test"), default="validation")
     p.add_argument("--task", choices=("all", "localization", "generation"), default="all")
+    p.add_argument("--test-loc-batch-size", type=positive_batch_size, default=DEFAULT_TEST_LOC_BATCH_SIZE)
+    p.add_argument("--test-gen-batch-size", type=positive_batch_size, default=DEFAULT_TEST_GEN_BATCH_SIZE)
     p.add_argument("--asset-mode", choices=("minimal", "full"))
     p.add_argument("--data-dir")
     p.add_argument("--model-path")
@@ -636,9 +696,29 @@ def main(argv: list[str] | None = None) -> int:
                       (out / "experiment_plan.json", json.dumps(metadata, indent=2) + "\n")]
         else:
             commands, path, eval_config = evaluation_plan(args, config)
-            if path.is_file() and read_yaml(path) != eval_config:
-                raise ValueError(f"Existing evaluation settings differ: {relative(path)}")
-            writes = [(path, yaml.safe_dump(eval_config, sort_keys=False))]
+            snapshots = evaluation_snapshots(args, path, eval_config)
+            writes = []
+            for snapshot_path, snapshot_cfg in snapshots.items():
+                if snapshot_path.is_file():
+                    if read_yaml(snapshot_path) != snapshot_cfg:
+                        raise ValueError(f"Existing evaluation settings differ: {relative(snapshot_path)}")
+                elif args.execute and args.command == "metrics" and snapshot_path != path:
+                    raise ValueError(f"Missing inference evaluation snapshot: {relative(snapshot_path)}")
+                if args.command == "infer" or snapshot_path == path:
+                    writes.append((snapshot_path, yaml.safe_dump(snapshot_cfg, sort_keys=False)))
+                if args.execute and args.command == "metrics" and snapshot_path != path:
+                    manifest_path = snapshot_path.parent / "inference_manifest.json"
+                    if not manifest_path.is_file():
+                        raise ValueError(f"Missing inference provenance: {relative(manifest_path)}")
+                    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                    task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
+                    batch_size = args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
+                    validate_execution_metadata(manifest, task, batch_size)
+                    if path_in_repo(manifest.get("config_path", "")) != snapshot_path:
+                        raise ValueError(f"Inference config path differs: {relative(manifest_path)}")
+                    if task == "loc":
+                        validate_batched_localization_summary(snapshot_path, snapshot_cfg,
+                                                              manifest, args.split, args.seed)
         print("EXECUTE" if args.execute else "DRY RUN — no files written and no subprocesses launched")
         for path, _ in writes:
             print(f"Resolved configuration/artifact: {relative(path)}")

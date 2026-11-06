@@ -904,6 +904,8 @@ def build_generation_inference_command(
         str(_integer(_protocol(matrix).get("support_seed"), "support_seed", 0)),
         "--benchmark_v2_shots_per_map",
         str(shots),
+        "--test-gen-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *_maps_for_setting(spec, setting),
     ]
@@ -940,6 +942,8 @@ def build_localization_inference_command(
         str(_integer(_protocol(matrix).get("support_seed"), "support_seed", 0)),
         "--benchmark_v2_shots_per_map",
         str(shots),
+        "--test-loc-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *_maps_for_setting(spec, setting),
     ]

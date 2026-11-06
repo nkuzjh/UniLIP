@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import yaml
+from csgo_datasets.inference_batching import execution_contract
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -177,7 +178,8 @@ class Exp37RunnerTests(unittest.TestCase):
                 else:
                     self.assertEqual(option(command, "--max_steps"), "6000")
                     self.assertEqual(option(command, "--warmup_steps"), "200")
-                    self.assertEqual(option(command, "--save_steps"), "2000")
+                    # Existing Stage 2 runner saves every 1000 steps; evaluation batching does not change training.
+                    self.assertEqual(option(command, "--save_steps"), "1000")
                     self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": 0.1})
                     self.assertEqual(config["learning_rate"], 2e-5)
                     self.assertEqual(config["action_dit_connector_lr"], 1e-4)
@@ -301,7 +303,8 @@ class Exp37RunnerTests(unittest.TestCase):
 
     def test_stage1_8000_validation_plans_before_run_and_executes_before_final(self):
         command = ["infer", "--experiment", "exp37", "--checkpoint-step", "8000",
-                   "--split", "validation"]
+                   "--split", "validation", "--test-loc-batch-size", "1",
+                   "--test-gen-batch-size", "1"]
         with patch.object(RUNNER.subprocess, "run") as run, \
              patch("sys.stdout", io.StringIO()):
             self.assertEqual(RUNNER.main(command), 0)
@@ -697,6 +700,115 @@ class Exp37RunnerTests(unittest.TestCase):
         changed["loc_perception_use_attention_weight"] = False
         with self.assertRaisesRegex(ValueError, "fixed field loc_perception_use_attention_weight"):
             RUNNER.validate_config(changed)
+
+    def test_inference_batch_paths_snapshots_and_legacy_routing(self):
+        config = self.config("exp37_s2", for_training=False)
+        default = self.args("infer", "exp37_s2", "--checkpoint-step", "6000", "--split", "test")
+        commands, legacy_path, evaluated = RUNNER.evaluation_plan(default, config)
+        snapshots = RUNNER.evaluation_snapshots(default, legacy_path, evaluated)
+        self.assertEqual(len(snapshots), 3)
+        self.assertEqual({path.parent.name for path in snapshots}, {"infer_bs32", "discrete", "continuous"})
+        for command in commands:
+            path = RUNNER.path_in_repo(option(command, "--csgo_config"))
+            self.assertIn(path, snapshots)
+            self.assertEqual(RUNNER.path_in_repo(option(command, "--output_dir")), path.parent)
+            if command[1] == "eval_csgo_loc.py":
+                self.assertEqual(option(command, "--test-loc-batch-size"), "32")
+                self.assertEqual(snapshots[path]["test_loc_batch_size"], 32)
+                self.assertNotIn("test_gen_batch_size", snapshots[path])
+            else:
+                self.assertEqual(option(command, "--test-gen-batch-size"), "16")
+                self.assertEqual(snapshots[path]["test_gen_batch_size"], 16)
+                self.assertNotIn("test_loc_batch_size", snapshots[path])
+                if path.parent.name == "continuous":
+                    self.assertEqual(snapshots[path]["benchmark_v2_split"], "seen_continuous")
+        mixed = self.args("infer", "exp37_s2", "--checkpoint-step", "6000", "--split", "test",
+                          "--test-loc-batch-size", "7", "--test-gen-batch-size", "11")
+        mixed_commands, _, _ = RUNNER.evaluation_plan(mixed, config)
+        self.assertIn("infer_bs7", option(mixed_commands[0], "--output_dir"))
+        self.assertTrue(all("infer_bs11" in option(cmd, "--output_dir") for cmd in mixed_commands[1:]))
+        legacy = self.args("infer", "exp37_s2", "--checkpoint-step", "6000", "--split", "test",
+                           "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
+        old_commands, old_path, old_cfg = RUNNER.evaluation_plan(legacy, config)
+        self.assertEqual(RUNNER.evaluation_snapshots(legacy, old_path, old_cfg), {old_path: old_cfg})
+        self.assertTrue(all("infer_bs" not in option(cmd, "--output_dir") for cmd in old_commands))
+        for flag in ("--test-loc-batch-size", "--test-gen-batch-size"):
+            for value in ("0", "-2"):
+                with self.assertRaises(SystemExit):
+                    self.args("infer", "exp37_s2", flag, value)
+
+    def test_new_metrics_reject_missing_or_incompatible_inference_metadata(self):
+        self.completed_checkpoint("exp37", 8000)
+        base = ["--experiment", "exp37", "--checkpoint-step", "8000", "--split", "validation",
+                "--task", "generation", "--execute"]
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["infer", *base]), 0)
+            run.assert_called_once()
+        output = self.root / "outputs_eval/benchmark_v2/exp37/checkpoint-8000/validation/seed_42/infer_bs16/discrete"
+        self.assertEqual(RUNNER.read_yaml(output / "evaluation_config.yaml")["test_gen_batch_size"], 16)
+        manifest = {"config_path": RUNNER.relative(output / "evaluation_config.yaml")}
+        (output / "inference_manifest.json").write_text(json.dumps(manifest))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stderr", io.StringIO()) as error, \
+             patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base]), 1)
+            self.assertIn("Inference batch size", error.getvalue())
+            run.assert_not_called()
+
+    def test_batched_loc_metrics_require_completed_valid_summary(self):
+        self.completed_checkpoint("exp37", 8000)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO_ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        base = ["--experiment", "exp37", "--checkpoint-step", "8000", "--split", "validation",
+                "--task", "localization", "--execute"]
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["infer", *base]), 0)
+            run.assert_called_once()
+        output = self.root / "outputs_loc/benchmark_v2/exp37/checkpoint-8000/validation/seed_42/infer_bs32"
+        config_path = output / "evaluation_config.yaml"
+        config = RUNNER.read_yaml(config_path)
+        manifest = {"config_path": RUNNER.relative(config_path),
+                    "benchmark_v2_manifest": str(manifest_file),
+                    "benchmark_v2_split": "seen_validation", "maps": SEEN_MAPS,
+                    "sample_count": 5000, "checkpoint": config["ckpt_path"],
+                    "ckpt_path": config["ckpt_path"], "seed": 42,
+                    "benchmark_v2_support_seed": None,
+                    "benchmark_v2_shots_per_map": None,
+                    "inference_execution": execution_contract("loc", 32)}
+        manifest_path = output / "inference_manifest.json"
+        manifest_path.write_text(json.dumps(manifest))
+        summary_path = output / "benchmark_csgo_v2_loc.json"
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stderr", io.StringIO()) as error, \
+             patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base]), 1)
+            self.assertIn("Missing localization summary", error.getvalue())
+            run.assert_not_called()
+        metrics = {"XY_Dist": 1.0, "Z_Dist": 2.0, "Pitch_Dist": 3.0, "Yaw_Dist": 4.0}
+        summary = RUNNER.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_validation", maps=SEEN_MAPS,
+            per_map={name: metrics for name in SEEN_MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=config["ckpt_path"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=5000)
+        summary_path.write_text(json.dumps(summary))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base]), 0)
+            run.assert_not_called()
+        for key, bad in (("checkpoint", "outputs/other/model.safetensors"),
+                         ("split", "seen_discrete_test")):
+            corrupted = dict(summary, **{key: bad})
+            summary_path.write_text(json.dumps(corrupted))
+            with self.subTest(key=key), patch.object(RUNNER.subprocess, "run") as run, \
+                 patch("sys.stderr", io.StringIO()), patch("sys.stdout", io.StringIO()):
+                self.assertEqual(RUNNER.main(["metrics", *base]), 1)
+                run.assert_not_called()
+
+    def test_eval_batch_flags_do_not_change_training_plan(self):
+        config = self.config("exp37")
+        default = self.args("train", "exp37")
+        legacy = self.args("train", "exp37", "--test-loc-batch-size", "1",
+                           "--test-gen-batch-size", "1")
+        self.assertEqual(RUNNER.training_plan(default, config),
+                         RUNNER.training_plan(legacy, config))
 
 
 if __name__ == "__main__":

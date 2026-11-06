@@ -459,6 +459,8 @@ def build_eval_command(
         str(_require_int(protocol["support_seed"], "protocol.support_seed")),
         "--benchmark_v2_shots_per_map",
         str(shots),
+        "--test-loc-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *(str(map_name) for map_name in maps),
     ]

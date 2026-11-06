@@ -64,6 +64,27 @@ Stage 1 最终步数按 Trainer 实际完成状态解析；当前 `DefaultFlowCa
 
 validation 每张地图定位与离散生成各 500 条，总计各 5,000；continuous generation 仅在 test 运行。test 每张地图定位与离散生成各 2,000 条，总计各 20,000；连续生成每图 1,280 帧，总计 12,800。推理设置、seed、clip length、stride、FVD 尺寸应从同一已解析配置读取；指标按十张地图等权宏平均，同时留存逐图明细。`--task all` 按实验路线分发：joint 三任务，gen-only 仅离散与连续，loc-only 仅定位。定位指标由 infer 生成；生成指标由 metrics 计算。记录中仍按统一流程调用两命令；loc-only 的 metrics 不重复计算定位，正式定位摘要应核对 infer 产物。
 
+### 2026-11-06：批量推理
+
+`scripts/run_exp37_seen10.py infer/metrics` 新增以下参数；`metrics` 使用它们选择对应推理结果目录，并不改变指标计算器自身的 batch。旧的已报告结果保持原样。
+
+| 参数 | 默认值 | 范围 |
+|---|---:|---|
+| `--test-loc-batch-size` | 32 | flow 定位同时推理的样本数 |
+| `--test-gen-batch-size` | 16 | 离散与连续生成同时推理的样本数 |
+
+生成对每批同时执行多模态编码、CFG、20 步 DiT 和 VAE 解码；定位沿用 10 步 flow 求解。连续生成仍是逐帧独立条件生成，不增加历史帧输入，不改变 clip 划分。最后不足一个 batch 的样本照常处理。两任务的批量值可分别调整，训练有效 batch、学习率、checkpoint 和评测定义均不受影响。
+
+默认结果写入 `outputs_loc/benchmark_v2/{experiment}/checkpoint-{step}/{split}/seed_42/infer_bs32/` 与 `outputs_eval/benchmark_v2/{experiment}/checkpoint-{step}/{split}/seed_42/infer_bs16/{discrete,continuous}/`。每项保留独立 `evaluation_config.yaml`；执行清单记录实际 batch、样本顺序哈希、噪声策略、吞吐和 CUDA 峰值 allocated 显存。`infer` 与 `metrics` 必须传相同的批量值。显式设置两个参数为 `1` 时，使用原目录和单样本路径，可继续评测已有结果；省略参数则使用新的 32／16 默认值，**不会自动读取旧结果**。
+
+批量模式按原数据顺序逐样本抽取初始噪声后拼成 batch，保留原设备、dtype、seed 和采样器。另有一个已核实的既存行为：生成入口在加载模型后注入 LoRA，当前 PEFT 下新增的 Dropout 可仍处于 training 模式；本次保留加载后的模块模式，未自动调用 `model.eval()` 改变旧行为。B>1 清单记录实际启用的 Dropout 模块，日志也会提示。**初始噪声顺序相同不等于完整输出相同**：Dropout mask 的随机数分配会随 batch 改变，此外还有浮点差异；应固定批量比较新结果，不将批量结果直接覆盖到旧单样本结果表。真实权重的误差与提速幅度尚未实测。是否统一关闭生成 Dropout，应另行作为明确的推理协议修正评估。
+
+当前批量生成限定已核验的 Sana DPM++ flow scheduler；历史 token 定位头需显式使用 `--test-loc-batch-size 1`。显存不足时退出，不自动缩小 batch 或混合结果；手动减小批量值后会进入独立目录。中断后重跑同一 infer 会重算该任务，未实现逐样本跳过。
+
+可执行模板见 [record.md 批量推理说明](record.md#exp37-batched-inference-20261106)。本次仅执行 CPU 回归；本机 GPU 已被现有任务占用，真实权重的 batch=1 对照、默认 32／16 显存及吞吐仍待空闲 GPU 验证。没有启动完整推理或训练。
+
+验收：相关 55 项 CPU 回归通过，覆盖真实批处理方法的 CPU 替身执行、CFG／双图像／pose 对齐、padding 与尾批、初始噪声抽取、旧 B1 路径、配置及指标路由、缺失定位摘要拒绝、Dropout 状态记录无副作用；18 个改动 Python 文件语法检查、5 段新命令 `bash -n` 及 `git diff --check` 通过。扩展历史 runner 检查仍有 7 项因既有 checkpoint 缺失、资产配置冲突或结果文档格式不匹配未通过，不作为本次功能已验证的范围。
+
 | 实验 | validation | 固定正式 test checkpoint | 当前结果 |
 |---|---|---|---|
 | `exp37` | 8000、实际 final=19550，已评 | Stage 1 `checkpoint-19550`，仅参照 | 训练完成；定位、离散及连续 test 已评 |

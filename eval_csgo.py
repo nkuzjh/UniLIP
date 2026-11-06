@@ -8,6 +8,7 @@ import yaml
 import random
 import datetime
 import gc
+import time
 from pathlib import Path
 from PIL import Image
 from tqdm import tqdm
@@ -30,6 +31,12 @@ from csgo_datasets.benchmark_v2 import (
     benchmark_v2_image_path,
     is_benchmark_v2_config,
     load_benchmark_v2_selection,
+)
+from csgo_datasets.inference_batching import (
+    DEFAULT_TEST_GEN_BATCH_SIZE,
+    InferenceExecutionTracker,
+    guard_inference_output,
+    positive_batch_size,
 )
 
 
@@ -304,6 +311,7 @@ def _write_inference_manifest(
     ckpt_path,
     seed,
     selection=None,
+    inference_execution=None,
 ):
     payload = {
         "config_path": os.fspath(config_path),
@@ -319,6 +327,8 @@ def _write_inference_manifest(
     }
     if selection is not None:
         payload.update(_benchmark_v2_asset_provenance(config, selection))
+    if inference_execution is not None:
+        payload["inference_execution"] = inference_execution
     with open(os.path.join(output_dir, "inference_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
@@ -498,6 +508,64 @@ class CSGOInferenceDataset(Dataset):
 
 def collate_fn(batch):
     return batch # 简单的 list 返回，不由 DataLoader 自动 stack tensor
+
+
+def _generate_batch_images(pipe, batch, config, generator, requested_batch_size):
+    """Preserve dataset order while using one model call for a multi-sample batch."""
+    if not batch or len(batch) > requested_batch_size:
+        raise ValueError(f"Invalid generation batch length: {len(batch)}")
+    prompts = []
+    actions = []
+    for sample in batch:
+        radar_img = sample["radar_img"]
+        if not isinstance(radar_img, Image.Image):
+            raise TypeError("Each generation sample needs a PIL radar image")
+        prompt = add_template_for_inference(
+            sample["raw_prompt"],
+            use_short_instruction=bool(config.get("use_short_instruction", False)),
+        )
+        if len(prompt) != 2 or not all(isinstance(item, str) for item in prompt):
+            raise ValueError("Generation prompt must have positive and negative text")
+        prompts.append([*prompt, radar_img])
+        action = sample.get("actions")
+        if action is not None and (not isinstance(action, torch.Tensor) or action.shape != (1, 5)):
+            raise ValueError("Each generation action must have shape [1, 5]")
+        actions.append(action)
+
+    if requested_batch_size == 1:
+        # Keep the historical single-sample pipeline and its RNG consumption.
+        with torch.no_grad():
+            return [pipe(prompts[0], guidance_scale=config["guidance_scale"],
+                         generator=generator, actions=actions[0])]
+    if any(action is None for action in actions) and not all(action is None for action in actions):
+        raise ValueError("Generation batch has mixed action availability")
+    with torch.no_grad():
+        images = pipe.generate_batch(
+            prompts,
+            guidance_scale=config["guidance_scale"],
+            generator=generator,
+            actions=actions if actions[0] is not None else None,
+        )
+    if not isinstance(images, (list, tuple)) or len(images) != len(batch):
+        raise ValueError(f"Pipeline returned {len(images) if isinstance(images, (list, tuple)) else type(images)} images for {len(batch)} samples")
+    if not all(isinstance(image, Image.Image) for image in images):
+        raise TypeError("Pipeline batch output must contain PIL images")
+    return images
+
+
+def _generation_module_mode_metadata(model):
+    """Observe loaded stochastic module modes without changing inference behavior."""
+    active_dropout_modules = [
+        {"name": name, "p": float(module.p)}
+        for name, module in model.named_modules()
+        if isinstance(module, torch.nn.modules.dropout._DropoutNd)
+        and module.training and float(module.p) > 0
+    ]
+    return {
+        "model_mode_policy": "preserve_loaded_module_modes_v1",
+        "active_dropout_modules": active_dropout_modules,
+        "stochastic_layers_batch_dependent": bool(active_dropout_modules),
+    }
 
 map_path_dict = {
     'de_dust2': 'de_dust2_radar_psd.png',
@@ -707,6 +775,7 @@ def run_csgo_generation_from_config(
     benchmark_v2_support_seed: Optional[int] = None,
     benchmark_v2_shots_per_map: Optional[int] = None,
     benchmark_v2_asset_manifest: Optional[str] = None,
+    test_gen_batch_size: Optional[int] = None,
     release_model: bool = False,
 ) -> Dict[str, object]:
     with open(csgo_config_path, 'r') as f:
@@ -725,6 +794,12 @@ def run_csgo_generation_from_config(
         csgo_config['benchmark_v2_shots_per_map'] = benchmark_v2_shots_per_map
     if benchmark_v2_asset_manifest is not None:
         csgo_config['benchmark_v2_asset_manifest'] = benchmark_v2_asset_manifest
+    inference_batch_size = positive_batch_size(
+        csgo_config.get("test_gen_batch_size", csgo_config["batch_size"])
+        if test_gen_batch_size is None else test_gen_batch_size
+    )
+    if inference_batch_size > 1:
+        csgo_config["test_gen_batch_size"] = inference_batch_size
     print("csgo_config: ", csgo_config)
 
     # 设置随机种子
@@ -791,7 +866,14 @@ def run_csgo_generation_from_config(
         map_path_dict
     )
 
-    dataloader = DataLoader(test_dataset, batch_size=csgo_config["batch_size"], shuffle=False, collate_fn=collate_fn)
+    guard_inference_output(
+        output_dir, "gen", inference_batch_size,
+        checkpoint=csgo_config.get("ckpt_path"),
+        split=csgo_config.get("benchmark_v2_split"),
+        seed=seed, maps=test_dataset.map_names,
+    )
+
+    dataloader = DataLoader(test_dataset, batch_size=inference_batch_size, shuffle=False, collate_fn=collate_fn)
 
     # Reset after model/checkpoint setup so initialization RNG use cannot change sampling.
     set_seed(seed)
@@ -805,33 +887,22 @@ def run_csgo_generation_from_config(
     vis_data_num = 30
     inference_sample_count = 0
 
-    for batch_idx, batch in enumerate(tqdm(dataloader)):
-        # 批次内的每个样本逐个处理 (因为 Pipe 接口通常接受 List[Prompt] 但对应单张图片输入)
-        # 为了兼容 CustomEditPipeline 的逻辑 (multimodal_prompts list 结构)
-
-        for sample in batch:
+    tracker = InferenceExecutionTracker("gen", inference_batch_size) if inference_batch_size > 1 else None
+    module_mode_metadata = _generation_module_mode_metadata(model) if tracker is not None else None
+    if module_mode_metadata is not None and module_mode_metadata["stochastic_layers_batch_dependent"]:
+        print("Batch generation preserves ordered initial noise draws; active Dropout masks "
+              "can change with batch size. See inference_execution.active_dropout_modules.")
+    if torch.cuda.is_available() and str(model.device).startswith("cuda"):
+        torch.cuda.reset_peak_memory_stats(model.device)
+    inference_start = time.perf_counter()
+    progress = tqdm(dataloader, total=len(dataloader), unit="batch")
+    for batch_idx, batch in enumerate(progress):
+        generated_images = _generate_batch_images(pipe, batch, csgo_config, generator, inference_batch_size)
+        for sample, gen_img in zip(batch, generated_images):
             inference_sample_count += 1
             radar_img = sample['radar_img']
             raw_prompt = sample['raw_prompt']
             file_frame = sample['file_frame']
-            actions = sample.get("actions", None)
-
-            # 构造 UniLIP 格式的 multimodal prompts
-            # [Positive_Prompt, Negative_Prompt, Image]
-            multimodal_prompts = add_template_for_inference(
-                raw_prompt,
-                use_short_instruction=bool(csgo_config.get("use_short_instruction", False)),
-            )
-            multimodal_prompts.append(radar_img) # 必须 append PIL Image 对象
-
-            # 执行生成
-            with torch.no_grad():
-                gen_img = pipe(
-                    multimodal_prompts,
-                    guidance_scale=csgo_config["guidance_scale"],
-                    generator=generator,
-                    actions=actions,
-                )
 
             os.makedirs(output_dir+f"/gen_imgs/{sample['map_name']}", exist_ok=True)
             save_name = f"gen_imgs/{sample['map_name']}/{file_frame}.jpg"
@@ -918,6 +989,32 @@ def run_csgo_generation_from_config(
                     print(f"   -> Saved visualization batch: {vis_save_path}")
 
                 is_vis = False
+        progress.set_postfix(samples=inference_sample_count, total=len(test_dataset))
+        if tracker is not None:
+            tracker.update([
+                {**{"map_name": sample["map_name"], "file_frame": sample["file_frame"]},
+                 **({"clip_id": sample["clip_id"], "frame_index": sample["frame_index"]}
+                    if "clip_id" in sample else {})}
+                for sample in batch
+            ])
+
+    inference_seconds = time.perf_counter() - inference_start
+    if inference_sample_count != len(test_dataset):
+        raise ValueError(f"Generated {inference_sample_count} samples; expected {len(test_dataset)}")
+    peak_memory_bytes = (torch.cuda.max_memory_allocated(model.device)
+                         if torch.cuda.is_available() and str(model.device).startswith("cuda") else None)
+    throughput = inference_sample_count / inference_seconds if inference_seconds else float("inf")
+    print(f"Inference: {inference_sample_count} samples in {inference_seconds:.2f}s "
+          f"({throughput:.2f} samples/s)" +
+          (f"; peak CUDA allocated={peak_memory_bytes / (1024 ** 3):.2f} GiB"
+           if peak_memory_bytes is not None else ""))
+    inference_execution = tracker.finish(
+        inference_steps=20,
+        rng_device=str(model.device),
+        rng_dtype=str(next(model.parameters()).dtype),
+        peak_cuda_memory_bytes=peak_memory_bytes,
+        **module_mode_metadata,
+    ) if tracker is not None else None
 
     _write_inference_manifest(
         output_dir,
@@ -930,6 +1027,7 @@ def run_csgo_generation_from_config(
         selection=test_dataset.benchmark_v2_selection
         if test_dataset.is_benchmark_v2
         else None,
+        inference_execution=inference_execution,
     )
     print(f"✅ Inference finished. Results saved to {output_dir}")
 
@@ -963,6 +1061,7 @@ def main():
     parser.add_argument("--benchmark_v2_support_seed", type=int, default=None)
     parser.add_argument("--benchmark_v2_shots_per_map", type=int, default=None)
     parser.add_argument("--benchmark_v2_asset_manifest", type=str, default=None)
+    parser.add_argument("--test-gen-batch-size", type=int, default=DEFAULT_TEST_GEN_BATCH_SIZE)
     args = parser.parse_args()
     run_csgo_generation_from_config(
         args.csgo_config,
@@ -974,6 +1073,7 @@ def main():
         benchmark_v2_support_seed=args.benchmark_v2_support_seed,
         benchmark_v2_shots_per_map=args.benchmark_v2_shots_per_map,
         benchmark_v2_asset_manifest=args.benchmark_v2_asset_manifest,
+        test_gen_batch_size=args.test_gen_batch_size,
     )
 
 if __name__ == "__main__":

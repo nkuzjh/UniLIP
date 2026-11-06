@@ -8100,6 +8100,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 <a id="exp37-seen10-2026-10-30"></a>
 ## exp37 Seen-10 两阶段原五组（仅手动执行）
 
+2026-11-06 批量推理更新：下列 exp37 infer/metrics 命令现在默认定位 batch=32、生成 batch=16，并写入独立 `infer_bs{B}` 目录。只评测已有旧结果时显式加 `--test-loc-batch-size 1 --test-gen-batch-size 1`；训练参数不变。新参数、旧结果兼容与单点模板见[批量推理说明](#exp37-batched-inference-20261106)。
+
 2026-11-01 已增加第六组 [exp37_s2_both_b1（P3＋U2）](#exp37-s2-both-b1-2026-11-01)，当前总计1次Stage1＋5次Stage2；本段保留原五组的命令，新增组见后文独立章节。
 
 协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，结果见 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md)。2026-11-04本机同步核查：exp37@19550及exp37_s2_gen／loc／s2@6000已完成相应validation和test；两个both候选尚未同步产物，远端状态待确认。以下保留手动复现命令，已完成组无需重复执行。首次运行默认 minimal 资产，下面显式传 `--asset-mode minimal`，由 `data/csgo_benchmark_v2/minimal_dataset_report.json` 映射资产；manifest 为 `data/csgo_benchmark_v2/benchmark_manifest.json`，必须保留完整十张 Seen 地图。若需全量资产，仅在首次 train 将 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`，恢复时保持同一后端与路径。infer/metrics 从各组 `resolved_config.yaml` 继承相同后端。下列命令是五个分别启动的任务，不是自动队列；选定空闲 GPU 并避免同卡同时启动。端口 29680～29684 写入时未发现监听，实际启动前仍检查占用。
@@ -8240,6 +8242,10 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 
 ### exp37 Unseen-4：每图独立 few-shot（2026-11-03；仅手动执行）
 
+2026-11-06 批量推理更新：下列 exp37 infer/metrics 命令现在默认定位 batch=32、生成 batch=16，并写入独立 `infer_bs{B}` 目录。只评测已有旧结果时显式加 `--test-loc-batch-size 1 --test-gen-batch-size 1`；训练参数不变。新参数、旧结果兼容与单点模板见[批量推理说明](#exp37-batched-inference-20261106)。
+
+后续预算安排已暂停所有剩余 retention 推理／评测。下列当前模板只执行 query；已有 retention 产物保留，不补跑、不记作完成。
+
 协议见 [CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，配置矩阵见 [benchmark_v2_exp37_unseen4.yaml](csgo_configs/benchmark_v2_exp37_unseen4.yaml)。2026-11-04同步结果：exp37_fs_gen／loc／joint的Unseen-4 zero-shot已完成；尚未同步任何exp37每图400步适配、query或Seen-retention结果。指标与进度见上述专题及总结果表。本次只整理文档，未启动实验；保留原历史结果与暂停支线。
 
 | FAMILY | 直接Seen来源 | 任务 | 固定αloc／aux／perception | attention | 四图×四shot |
@@ -8297,7 +8303,7 @@ done
 ' >> fst_outs/exp37_unseen4_zero_shot_exp37_fs_joint.nohup.out 2>&1 < /dev/null &
 ```
 
-#### 第二步：单个family／地图／shot，顺序训练与两套评测
+#### 第二步：单个family／地图／shot，顺序训练与query评测（retention暂停）
 
 模板适用于上述任意family；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，shot为100/50/20/10。训练成功后先目标图query，再全Seen-10 retention；query定位/离散各2000、连续1280帧；retention定位/离散各20000、连续12800帧。端口只是建议，手动启动前检查占用。
 
@@ -8305,7 +8311,7 @@ done
 
 <!-- FAMILIES=(exp37_fs_gen exp37_fs_loc exp37_fs_joint exp37_fs_both exp37_fs_both_b1) -->
 <!-- MAPS=(cs_office de_golden de_palacio de_vertigo) -->
-<!-- for SPLIT in query retention; do -->
+<!-- for SPLIT in query; do -->
 
 <!-- python scripts/run_exp37_unseen4.py infer --experiment exp37_fs_gen --map cs_office --shots 100 --split query --task all --cuda-device 1 --execute
 python scripts/run_exp37_unseen4.py metrics --experiment exp37_fs_gen --map cs_office --shots 100 --split query --task all --cuda-device 1 --execute -->
@@ -8562,7 +8568,7 @@ python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$S
 
 #### 可选：顺序执行全部80个适配点
 
-先完成zero-shot；此段依次100→50→20→10，每个shot依次完成所有family，训练和评测均串行。不与单点模板重复执行同一训练；入口拒绝覆盖已有训练目录。失败后整个队列停止，需要手动定位未完成步骤；不自动跳过缺失父模型。Seen-retention生成开销较大，可按shot/family拆开命令；nohup不能延长Slurm资源配额。
+先完成zero-shot；此段依次100→50→20→10，每个shot依次完成所有family，训练和评测均串行。不与单点模板重复执行同一训练；入口拒绝覆盖已有训练目录。失败后整个队列停止，需要手动定位未完成步骤；不自动跳过缺失父模型。剩余Seen-retention已暂停，本模板只运行query；nohup不能延长Slurm资源配额。
 
 ```bash
 mkdir -p fst_outs
@@ -8576,7 +8582,7 @@ for SHOTS in 100 50 20 10; do
   for FAMILY in "${FAMILIES[@]}"; do
     for MAP in "${MAPS[@]}"; do
       python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-      for SPLIT in query retention; do
+      for SPLIT in query; do
         python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
         python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
       done
@@ -8600,3 +8606,68 @@ query/continuous只报告，不用于调参或早停。记录逐图checkpoint身
 
 
 
+
+<a id="exp37-batched-inference-20261106"></a>
+
+## 2026-11-06：exp37 Seen-10／Unseen-4 批量推理（仅手动执行）
+
+推理新增 `--test-loc-batch-size`（默认32）和 `--test-gen-batch-size`（默认16）。分别控制同时推理的样本数，适用于 `infer/metrics`，Unseen四图 `aggregate` 也接受同一参数来选择结果。训练有效batch、步数、seed、来源权重和指标计算器自身的batch不变。旧3maps及历史benchmark runner显式使用batch=1以保持原结果路径；本节针对exp37入口。
+
+B>1结果在原seed目录后增加 `infer_bs{B}`：定位直接写在其中，生成再分为 `discrete/continuous`。B=1保留原路径和单样本模式。批量不同的结果隔离保存；不能用batch16的metrics去评batch1或batch8的图片。当前GPU已被既有任务占用，此次仅完成CPU回归，真实权重的小批数值、32／16显存和加速比例仍待验证。出现OOM会退出，不自动缩小batch；显式降低相应参数会写入另一个目录。同一infer重跑会重算该任务，不会自动跳过已生成图片。
+
+生成推理的既存加载流程会在注入LoRA后保留部分Dropout为training模式（当前PEFT小模型CPU实测确认）。本次不自动改变该模式；B>1清单记录active Dropout模块。初始噪声仍按旧顺序抽取，但Dropout mask会随batch改变，输出差异不能只归因于浮点误差。因此新旧结果分目录保存，新对比固定相同batch；统一关闭Dropout应作为独立的推理协议修正评估。
+
+### Seen-10：最终checkpoint上的test
+
+下面联合模型的 `--task all` 依次运行定位、离散生成和连续生成；单任务模型使用相同模板会自动只运行其支持的任务。`final` 由runner核对实际完成step。只补指标时删除infer行；已有单样本结果的两个参数均改为1。需后台执行时可将两行置于原有 `nohup bash -c` 顺序命令中。
+
+```bash
+EXPERIMENT=exp37_s2
+GPU=0
+python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$GPU" --execute
+```
+
+### Unseen-4：定位＋单张地图，不补retention
+
+下例要求对应400步训练已完成。更换 `MAP` 和 `SHOTS` 即可选择其他单点；没有训练完成时仍按原训练模板训练，不能用infer代替train。`metrics`对定位仅校验已有定位摘要。
+
+```bash
+MAP=de_palacio
+SHOTS=100
+GPU=0
+python scripts/run_exp37_unseen4.py infer --experiment exp37_fs_loc --map "$MAP" --shots "$SHOTS" --split query --task loc --test-loc-batch-size 32 --cuda-device "$GPU" --execute
+python scripts/run_exp37_unseen4.py metrics --experiment exp37_fs_loc --map "$MAP" --shots "$SHOTS" --split query --task loc --test-loc-batch-size 32 --cuda-device "$GPU" --execute
+```
+
+### Unseen-4：生成＋单张地图，不补retention
+
+`exp37_fs_gen --task all`只执行离散和连续生成。若只缺其中一项，将task改为 `gen` 或 `gen_continuous`。例如显存不足将16改为8时，infer和metrics两行均须修改。
+
+```bash
+MAP=de_golden
+SHOTS=100
+GPU=0
+python scripts/run_exp37_unseen4.py infer --experiment exp37_fs_gen --map "$MAP" --shots "$SHOTS" --split query --task all --test-gen-batch-size 16 --cuda-device "$GPU" --execute
+python scripts/run_exp37_unseen4.py metrics --experiment exp37_fs_gen --map "$MAP" --shots "$SHOTS" --split query --task all --test-gen-batch-size 16 --cuda-device "$GPU" --execute
+```
+
+四张地图在同一shot、同一批量下全部完成对应query后，再分别聚合。下面两个命令独立执行；某family尚未完成四图时不要执行它的aggregate。
+
+```bash
+python scripts/run_exp37_unseen4.py aggregate --experiment exp37_fs_loc --shots 100 --task loc --test-loc-batch-size 32 --execute
+python scripts/run_exp37_unseen4.py aggregate --experiment exp37_fs_gen --shots 100 --task all --test-gen-batch-size 16 --execute
+```
+
+### 已完成的旧batch=1结果：只补指标或汇总
+
+旧结果不需要因为新增功能全部重跑。以下示例显式读取旧目录；删除 `--execute` 可先查看解析后的命令，不写文件、不启动评测。若某张地图尚未完成旧推理，应选择继续batch1补齐该组，或为整组四图使用新的相同batch重跑，不能混合汇总。
+
+```bash
+python scripts/run_exp37_unseen4.py metrics --experiment exp37_fs_gen --map cs_office --shots 100 --split query --task all --test-gen-batch-size 1 --cuda-device 0 --execute
+python scripts/run_exp37_unseen4.py aggregate --experiment exp37_fs_gen --shots 100 --task all --test-gen-batch-size 1 --execute
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-step final --split test --task all --test-loc-batch-size 1 --test-gen-batch-size 1 --cuda-devices 0 --execute
+```
+
+执行日志按batch显示进度，同时显示已完成样本数；结束时报告samples/s与CUDA peak allocated显存。`inference_manifest.json`在B>1记录实际batch、样本顺序哈希和噪声策略，配合独立的 `evaluation_config.yaml` 防止误用结果。连续生成仍逐帧独立条件生成，不增加历史帧输入，不改变64帧clip或FVD窗口。未执行训练、完整推理或指标计算。
+本次验收：55项相关CPU回归全部通过，18个改动Python文件语法检查通过，本节5段bash命令通过bash -n；record.md保留CRLF。真实权重的GPU数值、默认batch显存和吞吐未验证。

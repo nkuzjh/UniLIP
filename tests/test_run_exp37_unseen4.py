@@ -13,6 +13,7 @@ import yaml
 
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates
 from scripts import run_exp37_unseen4 as runner
+from csgo_datasets.inference_batching import execution_contract
 
 
 def args(*values: str):
@@ -96,13 +97,17 @@ class Exp37Unseen4Tests(unittest.TestCase):
         a = args("infer", "--experiment", "exp37_fs_joint", "--zero-shot")
         commands, writes, _ = runner.plan(a)
         self.assertEqual(len(commands), 3)
-        self.assertEqual(len(writes), 8)
+        self.assertEqual(sum(path.name == "evaluation_config.yaml" for path, _ in writes), 3)
+        self.assertEqual(sum(path.name == "evaluation_plan.json" for path, _ in writes), 3)
         for cmd in commands:
             self.assertEqual(cmd.count("--benchmark_v2_maps"), 1)
-            self.assertEqual(cmd[cmd.index("--benchmark_v2_maps") + 1:cmd.index("--benchmark_v2_asset_manifest")], list(runner.MAPS))
+            self.assertEqual(cmd[cmd.index("--benchmark_v2_maps") + 1:
+                                 cmd.index("--benchmark_v2_maps") + 1 + len(runner.MAPS)], list(runner.MAPS))
             self.assertNotIn("--benchmark_v2_shots_per_map", cmd)
             self.assertNotIn("--benchmark_v2_support_seed", cmd)
-        source_cfg = next(text for path, text in writes if path.name == "zero_shot_config.yaml")
+        source_cfg = next((text for path, text in writes if path.name == "zero_shot_config.yaml"), None)
+        if source_cfg is None:
+            source_cfg = (runner.ROOT / "outputs_eval/benchmark_v2/exp37_fs_joint/zero_shot/seed_42/zero_shot_config.yaml").read_text()
         cfg = yaml.safe_load(source_cfg)
         self.assertNotIn("benchmark_v2_shots_per_map", cfg)
         self.assertNotIn("benchmark_v2_support_seed", cfg)
@@ -146,6 +151,96 @@ class Exp37Unseen4Tests(unittest.TestCase):
         with patch.object(runner.seen37, "final_checkpoint_step", side_effect=ValueError("missing final")):
             with self.assertRaisesRegex(ValueError, "missing final"):
                 runner.parent_checkpoint("exp37_fs_gen", strict=True)
+
+    def test_inference_batch_paths_config_and_aggregate_routing(self):
+        a = args("infer", "--experiment", "exp37_fs_joint", "--map", "cs_office",
+                 "--shots", "50", "--task", "all")
+        commands, writes, _ = runner.plan(a)
+        self.assertEqual([option(c, "--output_dir").split("/")[-2:] for c in commands],
+                         [["seed_0", "infer_bs32"], ["infer_bs16", "discrete"],
+                          ["infer_bs16", "continuous"]])
+        configs = {path.parent: yaml.safe_load(content) for path, content in writes
+                   if path.name == "evaluation_config.yaml"}
+        plans = {path.parent: json.loads(content) for path, content in writes
+                 if path.name == "evaluation_plan.json"}
+        for command in commands:
+            output = runner.absolute(option(command, "--output_dir"))
+            task = "loc" if command[1] == "eval_csgo_loc.py" else "gen"
+            size = 32 if task == "loc" else 16
+            self.assertEqual(option(command, "--test-loc-batch-size" if task == "loc" else
+                                    "--test-gen-batch-size"), str(size))
+            self.assertEqual(configs[output]["test_loc_batch_size" if task == "loc" else
+                                             "test_gen_batch_size"], size)
+            self.assertNotIn("test_gen_batch_size" if task == "loc" else "test_loc_batch_size",
+                             configs[output])
+            self.assertEqual(plans[output]["inference_execution"], execution_contract(task, size))
+        loc_summary = runner.aggregate_command("exp37_fs_joint", 50, "loc", False,
+                                               batch_size=32)
+        gen_summary = runner.aggregate_command("exp37_fs_joint", 50, "gen", False,
+                                               batch_size=16)
+        self.assertIn("seed_0/infer_bs32/benchmark_csgo_v2_loc.json",
+                      option(loc_summary, "--input_pattern"))
+        self.assertIn("seed_0/infer_bs16/discrete/benchmark_csgo_v2_{map}.json",
+                      option(gen_summary, "--input_pattern"))
+        self.assertIn("infer_bs16/map_models", option(gen_summary, "--output"))
+        self.assertIn("infer_bs16/seen_retention/discrete", str(runner.selected_eval_dir(a, "exp37_fs_joint",
+                                 None, 50, "retention", "gen", True)))
+        for flag in ("--test-loc-batch-size", "--test-gen-batch-size"):
+            for value in ("0", "-1"):
+                with self.assertRaises(SystemExit):
+                    args("infer", flag, value)
+        legacy = args("infer", "--experiment", "exp37_fs_joint", "--map", "cs_office",
+                      "--shots", "50", "--task", "all", "--test-loc-batch-size", "1",
+                      "--test-gen-batch-size", "1")
+        legacy_commands, legacy_writes, _ = runner.plan(legacy)
+        self.assertTrue(all("infer_bs" not in option(c, "--output_dir") for c in legacy_commands))
+        self.assertTrue(all("inference_execution" not in json.loads(content) for path, content
+                            in legacy_writes if path.name == "evaluation_plan.json"))
+        self.assertTrue(all("test_loc_batch_size" not in yaml.safe_load(content) and
+                            "test_gen_batch_size" not in yaml.safe_load(content)
+                            for path, content in legacy_writes if path.name == "evaluation_config.yaml"))
+
+    def test_new_inference_manifest_requires_matching_batch_contract(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "outputs_eval/benchmark_v2/test/seed_0/infer_bs16/discrete"
+            output.mkdir(parents=True)
+            checkpoint = root / "model.safetensors"
+            checkpoint.write_bytes(b"fixture")
+            cfg = {"benchmark_v2_asset_manifest": None, "data_dir": "/data/full"}
+            split, maps, source = "crossmap_query_test", ("cs_office",), {"path": "source"}
+            with patch.object(runner, "ROOT", root), patch.object(runner.map_runner,
+                       "_validate_asset_provenance"):
+                ecfg = runner.eval_config(cfg, checkpoint, split, maps, "gen", 16)
+                config_path = output / "evaluation_config.yaml"
+                config_path.write_text(yaml.safe_dump(ecfg, sort_keys=False))
+                plan = {"checkpoint": runner.rel(checkpoint), "checkpoint_sha256": runner.sha256(checkpoint),
+                        "config_sha256": runner.sha256(config_path), "split": split,
+                        "maps": list(maps), "seed": 42, "support_seed": 0, "shots": 50,
+                        "asset_manifest": None, "source": source,
+                        "inference_execution": execution_contract("gen", 16)}
+                (output / "evaluation_plan.json").write_text(json.dumps(plan))
+                manifest = {"benchmark_v2_split": split, "maps": list(maps),
+                            "sample_count": 2000, "seed": 42, "benchmark_v2_support_seed": 0,
+                            "benchmark_v2_shots_per_map": 50, "config_path": str(config_path),
+                            "benchmark_v2_manifest": str(root / runner.MATRIX["manifest"]),
+                            "checkpoint": str(checkpoint), "ckpt_path": str(checkpoint),
+                            "inference_execution": execution_contract("gen", 16)}
+                manifest_path = output / "inference_manifest.json"
+                manifest_path.write_text(json.dumps(manifest))
+                runner.validate_inference(output, cfg, checkpoint, maps, split, "gen", 50, 0,
+                                          source, 16)
+                del manifest["inference_execution"]
+                manifest_path.write_text(json.dumps(manifest))
+                with self.assertRaisesRegex(ValueError, "Inference batch size"):
+                    runner.validate_inference(output, cfg, checkpoint, maps, split, "gen", 50,
+                                              0, source, 16)
+
+    def test_eval_batch_flags_do_not_change_adaptation_snapshot(self):
+        a = args("train", "--experiment", "exp37_fs_joint", "--map", "cs_office")
+        legacy = args("train", "--experiment", "exp37_fs_joint", "--map", "cs_office",
+                      "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
+        self.assertEqual(runner.plan(a), runner.plan(legacy))
 
     def test_full_backend_override_and_saved_recipe_rejects_corruption(self):
         a = args("train", "--experiment", "exp37_fs_both", "--map", "de_golden",
@@ -207,7 +302,8 @@ class Exp37Unseen4Tests(unittest.TestCase):
                 (out / "model.safetensors").write_bytes(b"adapted model A")
                 (out / "trainer_state.json").write_text(json.dumps({"global_step": 400, "max_steps": 400}))
                 infer_args = args("infer", "--experiment", "exp37_fs_joint", "--map", "cs_office",
-                                  "--shots", "50", "--task", "gen", "--execute")
+                                  "--shots", "50", "--task", "gen", "--execute",
+                                  "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
                 commands, writes, info = runner.plan(infer_args)
                 self.assertEqual(len(commands), 1)
                 self.assertNotIn("--benchmark_v2_asset_manifest", commands[0])
@@ -242,10 +338,12 @@ class Exp37Unseen4Tests(unittest.TestCase):
                     manifest_path=root / runner.MATRIX["manifest"], map_name="cs_office",
                     split="crossmap_query_test", kind="discrete", expected_maps=["cs_office"])
                 metrics_args = args("metrics", "--experiment", "exp37_fs_joint", "--map", "cs_office",
-                                    "--shots", "50", "--task", "gen", "--execute")
+                                    "--shots", "50", "--task", "gen", "--execute",
+                                    "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
                 self.assertEqual(len(runner.plan(metrics_args)[0]), 1)
                 loc_args = args("infer", "--experiment", "exp37_fs_joint", "--map", "cs_office",
-                                "--shots", "50", "--task", "loc", "--execute")
+                                "--shots", "50", "--task", "loc", "--execute",
+                                "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
                 _, loc_writes, _ = runner.plan(loc_args)
                 for path, content in loc_writes:
                     path.parent.mkdir(parents=True, exist_ok=True)
@@ -266,9 +364,12 @@ class Exp37Unseen4Tests(unittest.TestCase):
                 (loc_output / "benchmark_csgo_v2_loc.json").write_text(json.dumps(summary))
                 self.assertEqual(runner.plan(args("metrics", "--experiment", "exp37_fs_joint",
                                                   "--map", "cs_office", "--shots", "50",
-                                                  "--task", "loc", "--execute"))[0], [])
+                                                  "--task", "loc", "--execute",
+                                                  "--test-loc-batch-size", "1",
+                                                  "--test-gen-batch-size", "1"))[0], [])
                 bad_args = args("infer", "--experiment", "exp37_fs_joint", "--map", "cs_office",
-                                "--shots", "100", "--task", "gen", "--execute")
+                                "--shots", "100", "--task", "gen", "--execute",
+                                "--test-loc-batch-size", "1", "--test-gen-batch-size", "1")
                 with self.assertRaisesRegex(ValueError, "Missing adaptation snapshot"):
                     runner.plan(bad_args)
                 bad_manifest = dict(manifest_payload, checkpoint=str(parent / "checkpoint-6000/model.safetensors"))

@@ -711,6 +711,8 @@ def build_inference_command(
         str(protocol["inference_seed"]),
         "--benchmark_v2_split",
         split,
+        "--test-gen-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *[str(value) for value in maps],
     ]

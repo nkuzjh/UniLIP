@@ -20,6 +20,10 @@ sys.path.insert(0, str(ROOT))
 from scripts import run_exp37_seen10 as seen37  # noqa: E402
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
 from scripts import run_csgo_benchmark_v2_map_specific as map_runner  # noqa: E402
+from csgo_datasets.inference_batching import (  # noqa: E402
+    DEFAULT_TEST_GEN_BATCH_SIZE, DEFAULT_TEST_LOC_BATCH_SIZE,
+    execution_contract, positive_batch_size, validate_execution_metadata,
+)
 
 MATRIX_PATH = ROOT / "csgo_configs/benchmark_v2_exp37_unseen4.yaml"
 MATRIX = yaml.safe_load(MATRIX_PATH.read_text(encoding="utf-8"))
@@ -110,12 +114,14 @@ def model_dir(family: str, map_name: str, shots: int) -> Path:
 
 
 def eval_dir(family: str, map_name: str | None, shots: int, split: str,
-             task: str, zero_shot: bool) -> Path:
+             task: str, zero_shot: bool, batch_size: int = 1) -> Path:
     root = ROOT / ("outputs_loc/benchmark_v2" if task == "loc" else "outputs_eval/benchmark_v2")
     if zero_shot:
         base = root / family / "zero_shot" / "seed_42"
     else:
         base = root / f"{family}_{map_name}" / f"shot_{shots}" / "seed_0"
+    if batch_size > 1:
+        base /= f"infer_bs{batch_size}"
     if split == "retention":
         base /= "seen_retention"
     if task == "gen":
@@ -123,6 +129,16 @@ def eval_dir(family: str, map_name: str | None, shots: int, split: str,
     elif task == "gen_continuous":
         base /= "continuous"
     return base
+
+
+def task_batch_size(args: argparse.Namespace, task: str) -> int:
+    return args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
+
+
+def selected_eval_dir(args: argparse.Namespace, family: str, map_name: str | None,
+                      shots: int, split: str, task: str, zero_shot: bool) -> Path:
+    return eval_dir(family, map_name, shots, split, task, zero_shot,
+                    task_batch_size(args, task))
 
 
 def parent_checkpoint(family: str, *, strict: bool) -> tuple[Path, dict]:
@@ -431,7 +447,8 @@ def selected_tasks(family: str, task: str) -> tuple[str, ...]:
     return (task,)
 
 
-def eval_config(cfg: dict, checkpoint: Path, split: str, maps: tuple[str, ...]) -> dict:
+def eval_config(cfg: dict, checkpoint: Path, split: str, maps: tuple[str, ...],
+                task: str | None = None, batch_size: int = 1) -> dict:
     result = copy.deepcopy(cfg)
     result["ckpt_path"] = rel(checkpoint)
     result["benchmark_v2_split"] = split
@@ -440,6 +457,8 @@ def eval_config(cfg: dict, checkpoint: Path, split: str, maps: tuple[str, ...]) 
     result["seed"] = 42
     for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss"):
         result[key] = False
+    if batch_size > 1:
+        result["test_loc_batch_size" if task == "loc" else "test_gen_batch_size"] = batch_size
     return result
 
 
@@ -468,26 +487,35 @@ def metric_command(cfg: dict, output: Path, split: str, task: str, map_name: str
 
 
 def aggregate_command(family: str, shots: int, task: str, zero_shot: bool,
-                      split: str = "query") -> list[str]:
+                      split: str = "query", batch_size: int = 1) -> list[str]:
     if split != "query":
         raise ValueError("aggregate covers the four Unseen query maps")
     kind = {"loc": "localization", "gen": "discrete", "gen_continuous": "continuous"}[task]
     benchmark_split = SPLITS[split][task]
     root = ROOT / ("outputs_loc/benchmark_v2" if task == "loc" else "outputs_eval/benchmark_v2")
     if zero_shot:
-        input_root = eval_dir(family, None, shots, split, task, True)
+        input_root = eval_dir(family, None, shots, split, task, True, batch_size)
         output = input_root / "summary.json"
         return [sys.executable, "scripts/aggregate_csgo_benchmark_v2_metrics.py", "maps",
                 "--manifest", MATRIX["manifest"], "--split", benchmark_split,
                 "--maps", *MAPS, "--input_root", rel(input_root), "--kind", kind,
                 "--output", rel(output)]
-    base = root / family / f"shot_{shots}" / "seed_0" / "map_models"
+    base = root / family / f"shot_{shots}" / "seed_0"
+    if batch_size > 1:
+        base /= f"infer_bs{batch_size}"
+    base /= "map_models"
     if task == "loc":
-        pattern = root / (family+"_{map}") / f"shot_{shots}" / "seed_0" / "benchmark_csgo_v2_loc.json"
+        pattern = root / (family+"_{map}") / f"shot_{shots}" / "seed_0"
+        if batch_size > 1:
+            pattern /= f"infer_bs{batch_size}"
+        pattern /= "benchmark_csgo_v2_loc.json"
     else:
         subdir = "discrete" if task == "gen" else "continuous"
         stem = "benchmark_csgo_v2_{map}.json" if task == "gen" else "benchmark_csgo_v2_conti_{map}.json"
-        pattern = root / (family+"_{map}") / f"shot_{shots}" / "seed_0" / subdir / stem
+        pattern = root / (family+"_{map}") / f"shot_{shots}" / "seed_0"
+        if batch_size > 1:
+            pattern /= f"infer_bs{batch_size}"
+        pattern = pattern / subdir / stem
     output = base / f"benchmark_v2_{kind}_crossmap.json"
     return [sys.executable, "scripts/aggregate_csgo_benchmark_v2_metrics.py", "map-models",
             "--manifest", MATRIX["manifest"], "--split", benchmark_split,
@@ -518,9 +546,9 @@ def validate_loc_summary(path: Path, checkpoint: Path, maps: tuple[str, ...],
 def validate_inference(output: Path, cfg: dict, checkpoint: Path,
                        maps: tuple[str, ...], split: str, task: str,
                        shots: int | None, support_seed: int | None,
-                       source: dict) -> dict:
+                       source: dict, batch_size: int = 1) -> dict:
     config_path = output / "evaluation_config.yaml"
-    expected_cfg = eval_config(cfg, checkpoint, split, maps)
+    expected_cfg = eval_config(cfg, checkpoint, split, maps, task, batch_size)
     if not config_path.is_file() or seen37.read_yaml(config_path) != expected_cfg:
         raise ValueError(f"Evaluation config differs from saved experiment: {config_path}")
     evaluation_plan_path = output / "evaluation_plan.json"
@@ -531,6 +559,8 @@ def validate_inference(output: Path, cfg: dict, checkpoint: Path,
                      "config_sha256": sha256(config_path), "split": split, "maps": list(maps),
                      "seed": 42, "support_seed": support_seed, "shots": shots,
                      "asset_manifest": cfg.get("benchmark_v2_asset_manifest")}
+    if batch_size > 1:
+        expected_plan["inference_execution"] = execution_contract(task, batch_size)
     if any(evaluation_plan.get(k) != v for k, v in expected_plan.items()) or evaluation_plan.get("source") != source:
         raise ValueError(f"Evaluation weight/config provenance differs: {evaluation_plan_path}")
     manifest_path = output / "inference_manifest.json"
@@ -543,6 +573,7 @@ def validate_inference(output: Path, cfg: dict, checkpoint: Path,
                 "benchmark_v2_shots_per_map": shots}
     if any(payload.get(k) != v for k, v in expected.items()):
         raise ValueError(f"Inference split/maps/count/seed/shot differs: {manifest_path}")
+    validate_execution_metadata(payload, task, batch_size)
     for key, path in (("config_path", config_path), ("benchmark_v2_manifest", absolute(MATRIX["manifest"])),
                       ("checkpoint", checkpoint), ("ckpt_path", checkpoint)):
         if absolute(payload.get(key, "")) != path:
@@ -625,19 +656,19 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             if args.zero_shot:
                 cfg, zero_plan, checkpoint, _ = zero_shot_snapshot(family, args)
                 if "loc" in selected_tasks(family, args.task):
-                    validate_inference(eval_dir(family, None, shots, "query", "loc", True),
+                    validate_inference(selected_eval_dir(args, family, None, shots, "query", "loc", True),
                                        cfg, checkpoint, MAPS, SPLITS["query"]["loc"],
-                                       "loc", None, None, zero_plan["source"])
-                    validate_loc_summary(eval_dir(family, None, shots, "query", "loc", True) /
+                                       "loc", None, None, zero_plan["source"], args.test_loc_batch_size)
+                    validate_loc_summary(selected_eval_dir(args, family, None, shots, "query", "loc", True) /
                                          "benchmark_csgo_v2_loc.json", checkpoint, MAPS,
                                          SPLITS["query"]["loc"], None, None)
                 for task in selected_tasks(family, args.task):
                     if task == "loc":
                         continue
-                    output = eval_dir(family, None, shots, "query", task, True)
+                    output = selected_eval_dir(args, family, None, shots, "query", task, True)
                     split = SPLITS["query"][task]
                     inference = validate_inference(output, cfg, checkpoint, MAPS, split, task,
-                                                   None, None, zero_plan["source"])
+                                                   None, None, zero_plan["source"], task_batch_size(args, task))
                     for m in MAPS:
                         validate_generation_result(output, m, task, split, inference)
             else:
@@ -645,26 +676,27 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
                     cfg, source_plan, out = read_snapshot(family, m, shots, args)
                     checkpoint = final_model(out, strict=True)
                     if "loc" in selected_tasks(family, args.task):
-                        validate_inference(eval_dir(family, m, shots, "query", "loc", False),
+                        validate_inference(selected_eval_dir(args, family, m, shots, "query", "loc", False),
                                            cfg, checkpoint, (m,), SPLITS["query"]["loc"],
-                                           "loc", shots, 0, source_plan["source"])
-                        validate_loc_summary(eval_dir(family, m, shots, "query", "loc", False) /
+                                           "loc", shots, 0, source_plan["source"], args.test_loc_batch_size)
+                        validate_loc_summary(selected_eval_dir(args, family, m, shots, "query", "loc", False) /
                                              "benchmark_csgo_v2_loc.json", checkpoint, (m,),
                                              SPLITS["query"]["loc"], shots, 0)
                     for task in selected_tasks(family, args.task):
                         if task == "loc":
                             continue
-                        output = eval_dir(family, m, shots, "query", task, False)
+                        output = selected_eval_dir(args, family, m, shots, "query", task, False)
                         split = SPLITS["query"][task]
                         inference = validate_inference(output, cfg, checkpoint, (m,), split, task,
-                                                       shots, 0, source_plan["source"])
+                                                       shots, 0, source_plan["source"], task_batch_size(args, task))
                         validate_generation_result(output, m, task, split, inference)
         for task in selected_tasks(family, args.task):
             if args.zero_shot and task == "loc":
                 details.setdefault("localization_summaries", []).append(
-                    rel(eval_dir(family, None, shots, "query", "loc", True) / "benchmark_csgo_v2_loc.json"))
+                    rel(selected_eval_dir(args, family, None, shots, "query", "loc", True) / "benchmark_csgo_v2_loc.json"))
             else:
-                commands.append(aggregate_command(family, shots, task, args.zero_shot))
+                commands.append(aggregate_command(family, shots, task, args.zero_shot,
+                                                  batch_size=task_batch_size(args, task)))
         return commands, writes, details
     if args.zero_shot:
         cfg, zero_plan, checkpoint, new_writes = zero_shot_snapshot(family, args)
@@ -683,9 +715,10 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
         details["source"] = source_plan["source"]
     for task in selected_tasks(family, args.task):
         split = SPLITS[args.split][task]
-        output = eval_dir(family, map_name, shots, args.split, task, args.zero_shot)
+        batch_size = task_batch_size(args, task)
+        output = selected_eval_dir(args, family, map_name, shots, args.split, task, args.zero_shot)
         if args.command == "infer":
-            ecfg = eval_config(cfg, checkpoint, split, maps)
+            ecfg = eval_config(cfg, checkpoint, split, maps, task, batch_size)
             path = output / "evaluation_config.yaml"
             if args.execute and path.is_file() and seen37.read_yaml(path) != ecfg:
                 raise ValueError(f"Existing evaluation config differs: {path}")
@@ -698,6 +731,8 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
                                "shots": None if args.zero_shot else shots,
                                "asset_manifest": cfg.get("benchmark_v2_asset_manifest"),
                                "source": details["source"]}
+            if batch_size > 1:
+                evaluation_plan["inference_execution"] = execution_contract(task, batch_size)
             ep = output / "evaluation_plan.json"
             if args.execute and ep.is_file() and json.loads(ep.read_text(encoding="utf-8")) != evaluation_plan:
                 raise ValueError(f"Existing evaluation weight provenance differs: {ep}")
@@ -706,6 +741,8 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
                    "--csgo_config", rel(path), "--output_dir", rel(output),
                    "--ckpt_path", rel(checkpoint), "--seed", "42", "--benchmark_v2_split", split,
                    "--benchmark_v2_maps", *maps]
+            cmd.extend(("--test-loc-batch-size" if task == "loc" else "--test-gen-batch-size",
+                        str(batch_size)))
             if not args.zero_shot:
                 cmd.extend(("--benchmark_v2_support_seed", "0", "--benchmark_v2_shots_per_map", str(shots)))
             if cfg.get("benchmark_v2_asset_manifest"):
@@ -715,7 +752,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             if args.execute:
                 validate_inference(output, cfg, checkpoint, maps, split, task,
                                    None if args.zero_shot else shots,
-                                   None if args.zero_shot else 0, details["source"])
+                                   None if args.zero_shot else 0, details["source"], batch_size)
                 validate_loc_summary(output / "benchmark_csgo_v2_loc.json", checkpoint, maps,
                                      split, None if args.zero_shot else shots,
                                      None if args.zero_shot else 0)
@@ -725,11 +762,12 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
                 validate_inference(output, cfg, checkpoint, maps, split, task,
                                    None if args.zero_shot else shots,
                                    None if args.zero_shot else 0,
-                                   details["source"])
+                                   details["source"], batch_size)
             for m in maps:
                 commands.append(metric_command(cfg, output, split, task, m))
             if args.zero_shot and args.split == "query":
-                commands.append(aggregate_command(family, shots, task, True))
+                commands.append(aggregate_command(family, shots, task, True,
+                                                  batch_size=batch_size))
             elif args.split == "retention":
                 kind = "discrete" if task == "gen" else "continuous"
                 commands.append([sys.executable, "scripts/aggregate_csgo_benchmark_v2_metrics.py", "maps",
@@ -748,6 +786,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--zero-shot", action="store_true")
     p.add_argument("--split", choices=("query", "retention"), default="query")
     p.add_argument("--task", choices=("all", "loc", "gen", "gen_continuous"), default="all")
+    p.add_argument("--test-loc-batch-size", type=positive_batch_size, default=DEFAULT_TEST_LOC_BATCH_SIZE)
+    p.add_argument("--test-gen-batch-size", type=positive_batch_size, default=DEFAULT_TEST_GEN_BATCH_SIZE)
     p.add_argument("--asset-mode", choices=("minimal", "full"))
     p.add_argument("--data-dir")
     p.add_argument("--model-path")

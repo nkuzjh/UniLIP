@@ -6223,22 +6223,44 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         generator=None,
         guidance_scale: float = 4.5,
         actions: Optional[torch.Tensor] = None,
+        return_batch: bool = False,
     ):
         dit_path = self.model.config.dit_path
         scheduler = DPMSolverMultistepScheduler.from_pretrained(
             dit_path, subfolder="scheduler", local_files_only=True
         )
 
+        if return_batch:
+            if pixel_values is None or pixel_values.ndim != 4 or pixel_values.shape[0] < 1:
+                raise ValueError("Batch image generation requires pixel_values shaped [B, C, H, W]")
+            image_batch_size = pixel_values.shape[0]
+            if len(text) != 2 * image_batch_size:
+                raise ValueError("Text must contain all B positive prompts followed by all B negative prompts")
+            if image_batch_size > 1:
+                config = scheduler.config
+                if not isinstance(scheduler, DPMSolverMultistepScheduler) or (
+                    config.algorithm_type != "dpmsolver++"
+                    or not config.use_flow_sigmas
+                    or config.prediction_type != "flow_prediction"
+                ):
+                    raise ValueError("Batch image generation requires the validated Sana DPMSolver++ flow scheduler")
+
         N_QUERY = self.get_n_query()
         inputs = tokenizer(text, padding="longest", return_tensors="pt")
         device = self.get_model().device
         attention_mask = inputs.attention_mask.to(device)
         input_ids = inputs.input_ids.to(device)  # B x N
+        if return_batch and (input_ids.shape[0] != len(text) or attention_mask.shape != input_ids.shape):
+            raise ValueError("Tokenizer returned an invalid prompt batch or attention mask")
 
         text_embeds = self.get_model().language_model.embed_tokens(input_ids)
         if actions is not None:
             actions = actions.to(device=device, dtype=torch.float32).reshape(actions.shape[0], -1)
-            if actions.shape[0] == 1 and input_ids.shape[0] > 1:
+            if return_batch:
+                if actions.shape != (image_batch_size, int(self.model.config.action_dim)):
+                    raise ValueError(f"Actions must have shape [{image_batch_size}, {self.model.config.action_dim}]")
+                actions = torch.cat([actions, actions], dim=0)
+            elif actions.shape[0] == 1 and input_ids.shape[0] > 1:
                 actions = actions.expand(input_ids.shape[0], -1)
             text_embeds = self._replace_loc_st_placeholders(input_ids, text_embeds, actions)
         latent_queries = self.get_model().latent_queries.repeat(text_embeds.shape[0], 1, 1)
@@ -6254,8 +6276,17 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 vision_feature_select_strategy=vision_feature_select_strategy,
                 image_sizes=None,
             )
-
-            text_embeds[und_image_idx] = und_image_embeds.to(text_embeds.device).repeat(2,1,1).flatten(0,1)
+            if return_batch:
+                if und_image_embeds.ndim != 3 or und_image_embeds.shape[0] != image_batch_size:
+                    raise ValueError("Vision encoder must return one [patches, hidden] tensor per image")
+                patch_count = und_image_embeds.shape[1]
+                token_counts = und_image_idx.sum(dim=1)
+                if not torch.all(token_counts == patch_count):
+                    raise ValueError(f"Each prompt must contain exactly {patch_count} image tokens; got {token_counts.tolist()}")
+                if und_image_embeds.shape[2] != text_embeds.shape[2]:
+                    raise ValueError("Vision and text hidden dimensions do not match")
+            cfg_image_embeds = und_image_embeds.to(text_embeds.device).repeat(2, 1, 1)
+            text_embeds[und_image_idx] = cfg_image_embeds.flatten(0, 1)
 
         text_embeds = torch.cat([text_embeds, latent_queries], dim=1)
         attention_mask = torch.cat([attention_mask, torch.ones_like(latent_queries[:, :, 0])], dim=1).int()
@@ -6273,7 +6304,7 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         hidden_states = outputs.hidden_states[-1]
         if pixel_values is not None:
             und_image_idx = torch.cat([und_image_idx, torch.zeros_like(latent_queries[:, :, 0]).bool()], dim=1)
-            hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).repeat(2,1,1).flatten(0,1)
+            hidden_states[und_image_idx] = und_image_embeds.to(hidden_states.device).repeat(2, 1, 1).flatten(0, 1)
 
         attention_mask = attention_mask.bool()
         bidr_attention_mask = attention_mask.unsqueeze(2) & attention_mask.unsqueeze(1)
@@ -6297,10 +6328,23 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         img_hidden_states = torch.cat([img_hidden_states[bsz//2:], img_hidden_states[:bsz//2]])
         attention_mask = torch.cat([attention_mask[bsz//2:], attention_mask[:bsz//2]])
 
-        output_img = self.sample_image_latents(img_hidden_states, scheduler, encoder_attention_mask=attention_mask, generator=generator, num_inference_steps=steps, guidance_scale=guidance_scale)
+        output_img = self.sample_image_latents(
+            img_hidden_states, scheduler, encoder_attention_mask=attention_mask,
+            generator=generator, num_inference_steps=steps, guidance_scale=guidance_scale,
+            legacy_ordered_noise=return_batch and image_batch_size > 1,
+        )
 
         logging.info(self.model.config.unilip_factor)
         output_img = self.model.vae_decoder.vae_decode(output_img.float()/ self.model.config.unilip_factor)
+
+        if return_batch:
+            if output_img.ndim != 4 or output_img.shape[0] != image_batch_size:
+                raise RuntimeError(f"VAE returned an invalid image batch: {tuple(output_img.shape)}")
+            output_img = ((output_img.permute(0, 2, 3, 1).clamp(-1, 1).float().cpu().numpy() + 1) / 2)
+            return np.stack([
+                cv2.resize(image, (int(image.shape[1] * 28 / 32), int(image.shape[0] * 28 / 32)), interpolation=cv2.INTER_LINEAR)
+                for image in output_img
+            ])
 
         output_img = ((output_img[0].permute(1,2,0).clamp(-1,1).float().cpu().numpy() + 1)/2)
 
@@ -6316,6 +6360,18 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
 
         return resized_img
 
+    @torch.no_grad()
+    def generate_image_batch(self, text: List[str], tokenizer: AutoTokenizer,
+                             pixel_values: torch.Tensor, generator=None,
+                             guidance_scale: float = 4.5,
+                             actions: Optional[torch.Tensor] = None):
+        """Return B images for text ordered [positive_0..B, negative_0..B]."""
+        return self.generate_image(
+            text=text, tokenizer=tokenizer, pixel_values=pixel_values,
+            generator=generator, guidance_scale=guidance_scale,
+            actions=actions, return_batch=True,
+        )
+
     def sample_image_latents(
         self,
         img_hidden_states,
@@ -6326,6 +6382,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         num_inference_steps: int = 30,
         num_images_per_prompt: int = 1,
         return_tensor=False,
+        initial_noise: Optional[torch.Tensor] = None,
+        legacy_ordered_noise: bool = False,
         **kwargs,
     ):
         device = img_hidden_states.device
@@ -6337,12 +6395,20 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         latent_size = 16
         latent_channels = 32
 
-        latents = randn_tensor(
-            shape=(batch_size * num_images_per_prompt, latent_channels, latent_size, latent_size),
-            generator=generator,
-            device=device,
-            dtype=dtype,
-        )
+        latent_shape = (batch_size * num_images_per_prompt, latent_channels, latent_size, latent_size)
+        if initial_noise is not None:
+            if tuple(initial_noise.shape) != latent_shape:
+                raise ValueError(f"Initial noise shape must be {latent_shape}, got {tuple(initial_noise.shape)}")
+            latents = initial_noise.to(device=device, dtype=dtype)
+        elif legacy_ordered_noise and batch_size > 1:
+            if num_images_per_prompt != 1:
+                raise ValueError("Legacy ordered noise supports one image per prompt")
+            latents = torch.cat([
+                randn_tensor(shape=(1, latent_channels, latent_size, latent_size), generator=generator, device=device, dtype=dtype)
+                for _ in range(batch_size)
+            ], dim=0)
+        else:
+            latents = randn_tensor(shape=latent_shape, generator=generator, device=device, dtype=dtype)
 
         # set step values
         if isinstance(scheduler, FlowMatchEulerDiscreteScheduler):
@@ -6714,7 +6780,8 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
         und_image: Optional[torch.Tensor] = None,
         aux_image: Optional[torch.Tensor] = None,
         num_steps: int = 10,
-        generator: Optional[torch.Generator] = None
+        generator: Optional[torch.Generator] = None,
+        legacy_ordered_noise: bool = False,
     ):
         """
         Run inference for Localization task using Flow Matching Euler Solver.
@@ -6724,6 +6791,15 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             return  self._forward_codex_vit_regression_head(und_image, aux_image,)
         elif getattr(self.config, "use_vit_cls_regression_head", False):
             return self._forward_vit_regression_head(und_image, aux_image)
+
+        strict_batch = legacy_ordered_noise and input_ids is not None and input_ids.shape[0] > 1
+        if strict_batch:
+            batch_size = input_ids.shape[0]
+            if input_ids.ndim != 2 or attention_mask is None or attention_mask.shape != input_ids.shape:
+                raise ValueError("Localization batch input_ids and attention_mask must have matching [B, T] shapes")
+            for name, image in (("und", und_image), ("aux", aux_image)):
+                if image is not None and (image.ndim != 4 or image.shape[0] != batch_size):
+                    raise ValueError(f"{name} images must have shape [B, C, H, W] with B={batch_size}")
 
         # 1. Get Vision Features
         vision_feature_layer = self.config.vision_feature_layer
@@ -6764,6 +6840,27 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
             # 2. Embed Text & Replace Image Tokens
             text_embeds = self.get_model().language_model.embed_tokens(input_ids)
             und_image_idx, aux_image_idx = split_image_tokens(input_ids, IMAGE_TOKEN_IDX)
+
+            if strict_batch:
+                for name, image, embeds, token_mask in (
+                    ("und", und_image, und_image_embeds, und_image_idx),
+                    ("aux", aux_image, aux_image_embeds, aux_image_idx),
+                ):
+                    token_counts = token_mask.sum(dim=1)
+                    if image is None:
+                        if token_counts.any():
+                            raise ValueError(f"{name} image tokens are present without {name} image input")
+                        continue
+                    if embeds.ndim != 3 or embeds.shape[0] != batch_size:
+                        raise ValueError(f"{name} image features must have batch dimension {batch_size}")
+                    if embeds.shape[2] != text_embeds.shape[2]:
+                        raise ValueError(f"{name} image feature and text hidden dimensions do not match")
+                    if not torch.all(token_counts == embeds.shape[1]):
+                        raise ValueError(
+                            f"Each row needs {embeds.shape[1]} {name} image tokens; got {token_counts.tolist()}"
+                        )
+                    if torch.any(token_mask & ~attention_mask.bool()):
+                        raise ValueError(f"{name} image tokens cannot be padding positions")
 
             # 3. Replace Image Features
             if und_image is not None and und_image_idx.any():
@@ -6818,7 +6915,13 @@ class Unified_UniLIP_InternVLForCausalLM(InternVLForConditionalGeneration, Unifi
                 action_dim = self.model.config.action_dim
 
             # Sample initial noise x_1
-            noise = self.sample_noise((bsize, 1, action_dim), device=hidden_states.device)
+            if legacy_ordered_noise and bsize > 1:
+                noise = torch.cat([
+                    self.sample_noise((1, 1, action_dim), device=hidden_states.device)
+                    for _ in range(bsize)
+                ], dim=0)
+            else:
+                noise = self.sample_noise((bsize, 1, action_dim), device=hidden_states.device)
 
             # dt tensor for calculation
             dt = -1.0 / num_steps

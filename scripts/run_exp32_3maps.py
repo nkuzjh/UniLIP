@@ -635,7 +635,7 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     if args.command == "infer" and loc:
         commands.append([sys.executable, "eval_csgo_loc.py", *common,
                          "--output_dir", f"outputs_loc/benchmark_v2/{target}",
-                         "--benchmark_v2_split", split])
+                         "--benchmark_v2_split", split, "--test-loc-batch-size", "1"])
     if gen:
         tasks = [("discrete", split)]
         if args.split == "test":
@@ -644,7 +644,8 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
             output = f"outputs_eval/benchmark_v2/{target}/{kind}"
             if args.command == "infer":
                 commands.append([sys.executable, "eval_csgo.py", *common,
-                                 "--output_dir", output, "--benchmark_v2_split", selected_split])
+                                 "--output_dir", output, "--benchmark_v2_split", selected_split,
+                                 "--test-gen-batch-size", "1"])
                 continue
             for map_name in MAPS:
                 cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",

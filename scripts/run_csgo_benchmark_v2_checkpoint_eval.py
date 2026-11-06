@@ -517,6 +517,8 @@ def build_localization_command(config: Mapping[str, Any], experiment: str) -> li
         str(_protocol(config)["inference_seed"]),
         "--benchmark_v2_split",
         _split(config, LOCALIZATION_TASK),
+        "--test-loc-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *_seen_maps(config),
     ]
@@ -543,6 +545,8 @@ def build_generation_inference_command(
         str(_protocol(config)["inference_seed"]),
         "--benchmark_v2_split",
         _split(config, task),
+        "--test-gen-batch-size",
+        "1",
         "--benchmark_v2_maps",
         *_seen_maps(config),
     ]
