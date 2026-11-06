@@ -1217,50 +1217,59 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 50 | 13.272 | 0.4495 | 0.6603 | 27.879 | 35.415 | 1282.012 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 |
 
-# exp37 Seen-10 两阶段实验（2026-10-30 新计划）
+# exp37 Seen-10 两阶段实验（2026-11-04 同步结果）
 
-本节是独立的新实验结果占位，协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [`record.md`](record.md)。不改动上述历史主表、消融表和补充表的已有顺序及数值。现登记 1 次 Stage 1 + 5 次 Stage 2，共六组训练；尚无本组训练或评测结果，下表的“待执行”不能解读为指标为零。所有数值须由完整 Seen-10 十图 manifest、相同资产后端及等地图宏平均的实际产物填入。
+协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。本次读取已同步的训练状态、推理清单和指标JSON，不启动实验。已核实四组训练完成及相应validation／test指标；两个both候选本地尚无产物，不能据此判断远端是否在运行。结果来自完整十图、minimal资产、seed42、等地图宏平均；定位与离散test各20000条，连续test为200×64=12800帧。三列参数量本次不做新审计，保留待审计。
 
 | 实验版本 | 来源与训练身份 | 训练 | validation | test / metrics | 表格 checkpoint |
 |---|---|---|---|---|---|
-| `exp37` | 原始 UniLIP + π0.5；joint J8、αloc=8、无辅助，50 epochs | 待执行 | @8000、实际 final 待执行 | 定位/离散/连续待执行 | 实际 final；Stage 1 参照 |
-| `exp37_s2_gen` | 旧 Seen-10 `exp32_gen@19500` 仅模型；生成单任务 | 待执行；local 0→6000 | @4000、6000 待执行 | 离散/连续待执行 | local 6000 |
-| `exp37_s2_loc` | 旧 Seen-10 `exp32_loc@19500` 仅模型；定位单任务 | 待执行；local 0→6000 | @4000、6000 待执行 | 定位待执行 | local 6000 |
-| `exp37_s2` | 新 `exp37` 完整 Stage 1 实际 final 仅模型；joint 无辅助 | 等待 `exp37` 完成；local 0→6000 | @4000、6000 待执行 | 定位/离散/连续待执行 | local 6000 |
-| `exp37_s2_both` | 同一新 `exp37` 实际 final 仅模型；joint P4+U2 | 等待 `exp37` 完成；local 0→6000 | @4000、6000 待执行 | 定位/离散/连续待执行 | local 6000 |
-| `exp37_s2_both_b1` | 同一新 `exp37` 实际 final 仅模型；joint P3+U2，attention=true；独立 B1 候选 | 等待 `exp37` 完成；local 0→6000 | @4000、6000 待执行 | 定位/离散/连续待执行 | local 6000 |
+| `exp37` | 原始UniLIP＋π0.5；joint J8，αloc=8，无辅助 | ✅ 19550/19550，50 epochs | ✅ @8000、19550；定位／离散 | ✅ 定位／离散／连续 | Stage 1 final 19550，仅参照 |
+| `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | ✅ 离散／连续 | local6000 |
+| `exp37_s2_loc` | `exp32_loc@19500`仅模型；定位单任务 | ✅ local6000/6000 | ✅ @4000、6000；定位 | ✅ 定位 | local6000 |
+| `exp37_s2` | `exp37@19550`仅模型；joint无辅助 | ✅ local6000/6000 | ✅ @4000、6000；定位／离散 | ✅ 定位／离散／连续 | local6000 |
+| `exp37_s2_both` | `exp37@19550`；joint P4＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
+| `exp37_s2_both_b1` | `exp37@19550`；joint P3＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
 
-Stage 2 首次运行只加载模型权重，optimizer、scheduler、Trainer local step 和 RNG 均重建；`--resume` 只恢复本组自身完整 checkpoint。Stage 1 实际 final 不预写固定步数。五个 Stage 2 的预算一致为 local 6000、有效 batch 128；两阶段联合结果应报告累计训练预算，不能据此声称与旧单阶段 baseline FLOPs 相等。`exp37_s2_both_b1` 与 `exp37_s2_both` 的唯一训练配方差异是 perception attention=true／false；两者实验身份及新训练状态独立，均从同一 Stage 1 实际 final 仅模型初始化。旧三图 B1 的历史表现不能充作任一新组已证实收益。
+Stage2首次只加载来源模型，重建optimizer／scheduler／local step／RNG；其预算均为local6000、有效base batch128。两组both的配方只在perception attention=false／true上不同。validation只评定位和离散生成，连续生成按协议只在test评测，不应标成缺失的validation任务。各validation节点的关键指标与来源见 [专题结果表](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#数据评测和结果记录)。
 
-## exp37 定位（Seen-10；test macro，指标待填）
+## exp37 定位（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_loc` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both_b1` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_loc` | local 6000 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
-## exp37 离散生成（Seen-10；test macro，指标待填）
+## exp37 离散生成（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_gen` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both_b1` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 |
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
+| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
-## exp37 连续生成（Seen-10；test macro，指标待填）
+## exp37 连续生成（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `exp37` | Stage 1 final | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_gen` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| `exp37_s2_both_b1` | local 6000 | 待测 | 待测 | 待测 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
+| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+
+## 2026-11-04：exp37 阶段性结果与 Seen-10 其他模型对照
+
+以下对照使用固定最终 checkpoint 的 test 等地图宏平均；外部模型沿用 [Table 1](csgo_benchmark_v2_table1_seen10.md) 已登记数值，本次未重新评测外部项目。validation 单独记录，不与 test 的 FID 混比（每图分别500和2000张）。
+
+- **续训有效，但联合尚未整体超过单任务。** `exp37_s2` 相比 `exp37`，XY从49.9381降至47.1936（−5.50%），离散PSNR从13.6163升至13.7481，连续FVD从943.6128降至922.5427；不过对齐Stage2预算后，定位单任务XY=46.3528，生成单任务PSNR=14.1668、FID=34.0804、FVD=843.4360。联合的Z稍好（2.8386 vs 2.8725），XY／Pitch／Yaw及所列生成指标均落后。当前不支持“联合全面优于单任务”的结论，也不能将改善归因于尚无结果的辅助损失。
+- **定位已恢复到接近单任务的水平，外部强基线仍有优势。** 联合XY=47.1936明显好于旧 `exp32` 的123.194和 `exp32_1` 的63.0377；但低于旧模型的误差并不单独证明两阶段设计，因为主损失权重、学习率与训练预算也变化。与外部基线相比，XY优于X-VLA的65.969和π0.5的53.542，仍落后RDT的43.251与OpenVLA-OFT的36.956。各角度误差须分别报告，不能用XY代替整个5D定位能力。
+- **生成单任务的FVD有竞争力，图像质量尚有差距。** `exp37_s2_gen` FVD=843.4360，在当前Table 1已登记模型与本次新结果中数值最低，接近Puffin的844.2427；这不代表所有生成指标领先。其离散PSNR=14.1668、LPIPS=0.6029弱于Show-o2（14.539／0.591）和Puffin（14.3186／0.5924）；FID=34.0804也高于ControlAR的30.2869。联合组生成指标整体比对应单任务差，仍是当前主要短板。
+- **下一步先补齐证据。** 同步两组both（P4＋U2、P3＋U2）的validation@4000／6000和test@6000，按同一基座、同一预算比较辅助收益；最终辅助方案依据Seen validation确定。Unseen已完成的只是gen／loc／joint的zero-shot基线，后续独立400步适配及Seen-retention仍待同步，不能以zero-shot结果宣称few-shot收益，也不能用Unseen query挑选配方。本文两阶段结果不声称与旧单阶段外部模型等FLOPs。
 
 <a id="exp32-3maps-b2-s3-j8-20261030"></a>
 
@@ -1330,19 +1339,19 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 
 <a id="exp37-unseen4-results-20261103"></a>
 
-# exp37 Unseen-4 每图独立 few-shot（2026-11-03 计划）
+# exp37 Unseen-4 每图独立 few-shot（2026-11-04 同步结果）
 
-本节登记新实验计划，不改变历史表格顺序和已有数值。协议见 [exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见 [record.md](record.md#exp37-unseen4-fewshot-20261103)。五个Seen Stage2@6000来源、四图、100/50/20/10-shot，共80次独立400步适配；若预先只选一个both则实际64次。以下均为待执行，不表示指标为零；本次未运行任何训练、推理或评测。
+本节同步新实验进度与结果，不改变历史表格顺序和已有数值。协议见 [exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见 [record.md](record.md#exp37-unseen4-fewshot-20261103)。五个Seen Stage2@6000来源、四图、100/50/20/10-shot，共80次独立400步适配；若预先只选一个both则实际64次。已同步gen／loc／joint三组zero-shot；尚未找到本系列80个独立400步适配点的训练、query或retention产物。下表“未同步”仅描述本机证据，不表示指标为零，也不推断远端尚未启动。本次未运行任何训练、推理或评测。
 
 ## zero-shot 实验进度
 
 | Family | 未适配Seen来源 | 推理 | Metric | 正式checkpoint |
 |---|---|---|---|---|
-| exp37_fs_gen | exp37_s2_gen | 待执行（gen） | 待执行 | Seen local6000 |
-| exp37_fs_loc | exp37_s2_loc | 待执行（loc） | 待执行 | Seen local6000 |
-| exp37_fs_joint | exp37_s2 | 待执行（joint） | 待执行 | Seen local6000 |
-| exp37_fs_both | exp37_s2_both | 待执行（joint） | 待执行 | Seen local6000 |
-| exp37_fs_both_b1 | exp37_s2_both_b1 | 待执行（joint） | 待执行 | Seen local6000 |
+| exp37_fs_gen | exp37_s2_gen | ✅ 离散／连续 | ✅ 四图完整宏平均 | Seen local6000 |
+| exp37_fs_loc | exp37_s2_loc | ✅ 定位 | ✅ 四图完整宏平均 | Seen local6000 |
+| exp37_fs_joint | exp37_s2 | ✅ 定位／离散／连续 | ✅ 四图完整宏平均 | Seen local6000 |
+| exp37_fs_both | exp37_s2_both | 未同步（joint） | 未同步 | Seen local6000 |
+| exp37_fs_both_b1 | exp37_s2_both_b1 | 未同步（joint） | 未同步 | Seen local6000 |
 
 ## few-shot 实验进度
 
@@ -1350,104 +1359,108 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 
 | 实验版本 | 100-shot：训练／Q／R | 50-shot：训练／Q／R | 20-shot：训练／Q／R | 10-shot：训练／Q／R | checkpoint／validation |
 |---|---|---|---|---|---|
-| exp37_fs_gen_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_gen_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_gen_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_gen_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_loc_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_loc_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_loc_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_loc_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_joint_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_joint_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_joint_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_joint_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_b1_cs_office | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_b1_de_golden | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_b1_de_palacio | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
-| exp37_fs_both_b1_de_vertigo | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | 待执行／待执行／待执行 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_gen_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_loc_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_joint_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
+| exp37_fs_both_b1_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 
-zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个目标图专用checkpoint，以 `map-models` 聚合，保留map→checkpoint对应关系。每个适配模型的Seen-retention单独记录，不将四个模型拼为单模型retention。下面只登记四图宏平均占位；逐图及retention结果由本节进度表对应到该运行输出。
+zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个目标图专用checkpoint，以 `map-models` 聚合，保留map→checkpoint对应关系。每个适配模型的Seen-retention单独记录，不将四个模型拼为单模型retention。下面填入已完成zero-shot的四图宏平均；few-shot保留未同步标记。逐图zero-shot指标与完整来源见 [Unseen专题文档](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)。
 
 生成输出位于 `outputs_eval/benchmark_v2/<family>_<map>/shot_<N>/seed_0/`，定位位于同结构的 `outputs_loc/benchmark_v2/`；retention为本次运行的独立子目录。zero-shot单独使用 `<family>/zero_shot/seed_42/`。只在严格核对来源、step、seed、shot、manifest、后端及覆盖后填数值。
 
-## exp37 Unseen-4 定位（四图宏平均，待实测）
+## exp37 Unseen-4 定位（四图宏平均）
 
 | Family | Shot／设置 | Checkpoint | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ |
 |---|---|---|---:|---:|---:|---:|
-| exp37_fs_loc | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_loc | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_loc | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_loc | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_loc | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_loc | 0-shot | Seen local6000 | 339.9282 | 19.8735 | 7.6095 | 91.5718 |
+| exp37_fs_loc | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_loc | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_loc | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_loc | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 344.4904 | 18.7200 | 7.8164 | 92.0992 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 
-## exp37 Unseen-4 离散生成（四图宏平均，待实测）
+## exp37 Unseen-4 离散生成（四图宏平均）
 
 | Family | Shot／设置 | Checkpoint | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
 |---|---|---|---:|---:|---:|---:|
-| exp37_fs_gen | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 0-shot | Seen local6000 | 11.3790 | 0.7169 | 0.4578 | 77.4963 |
+| exp37_fs_gen | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 11.0413 | 0.7288 | 0.4605 | 103.5831 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 
-## exp37 Unseen-4 连续生成（四图宏平均，待实测）
+## exp37 Unseen-4 连续生成（四图宏平均）
 
 | Family | Shot／设置 | Checkpoint | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ |
 |---|---|---|---:|---:|---:|---:|---:|
-| exp37_fs_gen | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_gen | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_joint | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 0-shot | Seen local6000 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
-| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 待执行 | 待执行 | 待执行 | 待执行 | 待执行 |
+| exp37_fs_gen | 0-shot | Seen local6000 | 11.3554 | 0.7167 | 44.5674 | 50.1917 | 1283.9551 |
+| exp37_fs_gen | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_gen | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 0-shot | Seen local6000 | 11.1061 | 0.7282 | 42.7217 | 48.6215 | 1368.5584 |
+| exp37_fs_joint | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 100-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 50-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
 
 历史待补项与本节新增实验分开：exp35 joint四shot共16次、exp35_gen/loc的20/10-shot各8次，共32次原主线训练缺口；exp35_gen_de_vertigo 50-shot本地缺metric摘要。exp36_1四图四shot已登记完成，其原配方结果不改名为exp37。暂停的exp33/34/36不由本计划自动恢复。
+
+## 2026-11-04：Unseen-4 当前结果分析
+
+已完成三组未适配父模型的zero-shot，所有定位／离散结果覆盖8000条，连续覆盖5120帧。定位单任务XY=339.9282、joint=344.4904；生成单任务离散PSNR=11.3790、FID=77.4963，joint为11.0413／103.5831，表明这些Seen模型直接跨图仍有明显困难。joint的连续T-Warp／T-Diff较低（42.7217／48.6215 vs 44.5674／50.1917），但PSNR、LPIPS、FVD更差，不能只根据时序误差宣称生成整体更好。当前没有exp37的few-shot适配结果，下一步需补齐逐图400步后的query及Seen-retention，才能评估适配收益与遗忘；历史exp35／36结果不可充作exp37结果。

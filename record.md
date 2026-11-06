@@ -8102,7 +8102,7 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 
 2026-11-01 已增加第六组 [exp37_s2_both_b1（P3＋U2）](#exp37-s2-both-b1-2026-11-01)，当前总计1次Stage1＋5次Stage2；本段保留原五组的命令，新增组见后文独立章节。
 
-协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，结果占位见 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md)。五组目前均未启动。首次运行默认 minimal 资产，下面显式传 `--asset-mode minimal`，由 `data/csgo_benchmark_v2/minimal_dataset_report.json` 映射资产；manifest 为 `data/csgo_benchmark_v2/benchmark_manifest.json`，必须保留完整十张 Seen 地图。若需全量资产，仅在首次 train 将 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`，恢复时保持同一后端与路径。infer/metrics 从各组 `resolved_config.yaml` 继承相同后端。下列命令是五个分别启动的任务，不是自动队列；选定空闲 GPU 并避免同卡同时启动。端口 29680～29684 写入时未发现监听，实际启动前仍检查占用。
+协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，结果见 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md)。2026-11-04本机同步核查：exp37@19550及exp37_s2_gen／loc／s2@6000已完成相应validation和test；两个both候选尚未同步产物，远端状态待确认。以下保留手动复现命令，已完成组无需重复执行。首次运行默认 minimal 资产，下面显式传 `--asset-mode minimal`，由 `data/csgo_benchmark_v2/minimal_dataset_report.json` 映射资产；manifest 为 `data/csgo_benchmark_v2/benchmark_manifest.json`，必须保留完整十张 Seen 地图。若需全量资产，仅在首次 train 将 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`，恢复时保持同一后端与路径。infer/metrics 从各组 `resolved_config.yaml` 继承相同后端。下列命令是五个分别启动的任务，不是自动队列；选定空闲 GPU 并避免同卡同时启动。端口 29680～29684 写入时未发现监听，实际启动前仍检查占用。
 
 `exp37` 是原始 UniLIP+π0.5 的 fresh J8（αloc=8，无辅助）50 epochs；不在 2400 提前停止。Stage 1 保存 @4000 倍数和真正 final，validation @8000/final，test @final。四组 Stage 2 均 local 0→6000，保存 @2000/4000/6000，validation @4000/6000，test @6000；有效 batch=128，默认单卡 microbatch=4、GAS=32。S2 gen/loc 分别仅从旧 Seen-10 `exp32_gen@19500`/`exp32_loc@19500` 加载模型；S2 joint 两组仅从本次 `exp37` 完整 Stage 1 实际 final 加载模型。来源 optimizer、scheduler、local step、RNG 均不继承。runner 在 joint 来源未完成时应报错停止，不能自动选取早期 checkpoint。Stage 2 正式表格统一用 local 6000；Stage 1 final 为参照。
 
@@ -8221,11 +8221,11 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1,3
+EVAL_GPU=1
 MASTER_PORT=29686
 EXPERIMENT=exp37_s2_both_b1
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
 for STEP in 4000 6000; do
   python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --cuda-devices "$EVAL_GPU" --execute
@@ -8240,7 +8240,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 
 ### exp37 Unseen-4：每图独立 few-shot（2026-11-03；仅手动执行）
 
-协议见 [CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，配置矩阵见 [benchmark_v2_exp37_unseen4.yaml](csgo_configs/benchmark_v2_exp37_unseen4.yaml)。本节只新增配置和命令，未启动实验。保留原历史结果与暂停支线。
+协议见 [CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，配置矩阵见 [benchmark_v2_exp37_unseen4.yaml](csgo_configs/benchmark_v2_exp37_unseen4.yaml)。2026-11-04同步结果：exp37_fs_gen／loc／joint的Unseen-4 zero-shot已完成；尚未同步任何exp37每图400步适配、query或Seen-retention结果。指标与进度见上述专题及总结果表。本次只整理文档，未启动实验；保留原历史结果与暂停支线。
 
 | FAMILY | 直接Seen来源 | 任务 | 固定αloc／aux／perception | attention | 四图×四shot |
 |---|---|---|---|---|---:|
@@ -8254,7 +8254,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 
 普通／LoRA LR=2e-5，Action connector/norm/projector LR=1e-4，AdamW β=(.9,.999)、eps1e-8、WD0、clip1，cosine min_lr_rate=.1、warmup_ratio=.003（约2步）；固定成熟loss，无400步ramp。只使用单GPU；joint micro4/GAS32，单任务micro=SHOTS/GAS1。joint实际每update为100/48/20/8个base样本，不能写成128。新适配开启 `csgo_forward_sampler_epoch=true`，使50/10-shot每epoch丢弃的尾样本轮换；历史默认不变。
 
-来源需同步根目录 `resolved_config.yaml`、`experiment_plan.json`，以及 `checkpoint-6000/model.safetensors`、`trainer_state.json`。执行前校验实际完成性、recipe和指纹，缺失则拒绝；不会退回Stage1或4000步。本地本次核查缺少五组来源，不据此推断远端状态。默认minimal；首次train或zero-shot infer改用全量时传 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续infer/metrics读取已保存后端。远端基础模型路径不同可首次传 `--model-path /path/to/UniLIP-1B --pi05-path /path/to/pi05_base`。
+来源需同步根目录 `resolved_config.yaml`、`experiment_plan.json`，以及 `checkpoint-6000/model.safetensors`、`trainer_state.json`。执行前校验实际完成性、recipe和指纹，缺失则拒绝；不会退回Stage1或4000步。2026-11-04本机已核实gen／loc／joint的Seen来源及其zero-shot评测；两个both来源仍未同步，不据此推断远端状态。默认minimal；首次train或zero-shot infer改用全量时传 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续infer/metrics读取已保存后端。远端基础模型路径不同可首次传 `--model-path /path/to/UniLIP-1B --pi05-path /path/to/pi05_base`。
 
 #### 只检查规划
 
@@ -8284,26 +8284,46 @@ done
 ' >> fst_outs/exp37_unseen4_zero_shot.nohup.out 2>&1 < /dev/null &
 ```
 
-#### 第二步：单个family／地图／shot，顺序训练与两套评测
-
-模板适用于上述任意family；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，shot为100/50/20/10。训练成功后先目标图query，再全Seen-10 retention；query定位/离散各2000、连续1280帧；retention定位/离散各20000、连续12800帧。端口只是建议，手动启动前检查占用。
-
-<!-- FAMILIES=(exp37_fs_gen exp37_fs_loc exp37_fs_joint exp37_fs_both exp37_fs_both_b1) -->
-<!-- MAPS=(cs_office de_golden de_palacio de_vertigo) -->
 ```bash
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
+EVAL_GPU=0
+FAMILIES=(exp37_fs_joint)
+for FAMILY in "${FAMILIES[@]}"; do
+  python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --zero-shot --split query --task all --cuda-device "$EVAL_GPU" --execute
+  python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --zero-shot --split query --task all --cuda-device "$EVAL_GPU" --execute
+done
+' >> fst_outs/exp37_unseen4_zero_shot_exp37_fs_joint.nohup.out 2>&1 < /dev/null &
+```
+
+#### 第二步：单个family／地图／shot，顺序训练与两套评测
+
+模板适用于上述任意family；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，shot为100/50/20/10。训练成功后先目标图query，再全Seen-10 retention；query定位/离散各2000、连续1280帧；retention定位/离散各20000、连续12800帧。端口只是建议，手动启动前检查占用。
+
+##### exp37_fs_gen exp37_fs_loc
+
+<!-- FAMILIES=(exp37_fs_gen exp37_fs_loc exp37_fs_joint exp37_fs_both exp37_fs_both_b1) -->
+<!-- MAPS=(cs_office de_golden de_palacio de_vertigo) -->
+<!-- for SPLIT in query retention; do -->
+
+<!-- python scripts/run_exp37_unseen4.py infer --experiment exp37_fs_gen --map cs_office --shots 100 --split query --task all --cuda-device 1 --execute
+python scripts/run_exp37_unseen4.py metrics --experiment exp37_fs_gen --map cs_office --shots 100 --split query --task all --cuda-device 1 --execute -->
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+
 FAMILY=exp37_fs_gen
-MAPS=(cs_office de_golden de_palacio de_vertigo)
+MAPS=(de_golden de_palacio de_vertigo)
 SHOTS=100
 GPU=1
 MASTER_PORT=29700
 for MAP in "${MAPS[@]}"; do
     python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-    for SPLIT in query retention; do
-    python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
-    python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
     done
 done
 python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
@@ -8315,19 +8335,139 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 FAMILY=exp37_fs_loc
-MAPS=(cs_office de_golden de_palacio de_vertigo)
+MAPS=(de_vertigo)
 SHOTS=100
 GPU=3
-MASTER_PORT=29700
+MASTER_PORT=29701
 for MAP in "${MAPS[@]}"; do
     python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-    for SPLIT in query retention; do
-    python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
-    python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
     done
 done
 python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
 ' >> fst_outs/exp37_unseen4_exp37_fs_loc.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_gen
+MAPS=(de_golden de_palacio de_vertigo)
+SHOTS=50
+GPU=1
+MASTER_PORT=29702
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_gen_fs50.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_loc
+MAPS=(de_vertigo)
+SHOTS=50
+GPU=3
+MASTER_PORT=29703
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_loc_fs50.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_gen
+MAPS=(de_golden de_palacio de_vertigo)
+SHOTS=20
+GPU=1
+MASTER_PORT=29704
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_gen_fs20.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_loc
+MAPS=(de_vertigo)
+SHOTS=20
+GPU=3
+MASTER_PORT=29705
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_loc_fs20.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_gen
+MAPS=(de_golden de_palacio de_vertigo)
+SHOTS=10
+GPU=1
+MASTER_PORT=29706
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_gen_fs10.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_loc
+MAPS=(de_vertigo)
+SHOTS=10
+GPU=3
+MASTER_PORT=29707
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_loc_fs10.nohup.out 2>&1 < /dev/null &
 ```
 
 同family同shot四图全部完成后，再执行下面的 `map-models` 宏平均。retention在每个模型内覆盖全Seen10，不跨四个模型伪装单模型结果。
@@ -8335,6 +8475,90 @@ python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$S
 ```bash
 python scripts/run_exp37_unseen4.py aggregate --experiment exp37_fs_both --shots 100 --task all --execute
 ```
+
+##### exp37_fs_joint
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_joint
+MAPS=(cs_office de_golden de_palacio de_vertigo)
+SHOTS=100
+GPU=1
+MASTER_PORT=29708
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_joint.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_joint
+MAPS=(cs_office de_golden de_palacio de_vertigo)
+SHOTS=50
+GPU=1
+MASTER_PORT=29709
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_joint_fs50.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_joint
+MAPS=(cs_office de_golden de_palacio de_vertigo)
+SHOTS=20
+GPU=3
+MASTER_PORT=29710
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_joint_fs20.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+FAMILY=exp37_fs_joint
+MAPS=(cs_office de_golden de_palacio de_vertigo)
+SHOTS=10
+GPU=3
+MASTER_PORT=29711
+for MAP in "${MAPS[@]}"; do
+    python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+    for SPLIT in query; do
+        python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+        python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --split "$SPLIT" --task all --cuda-device "$GPU" --execute
+    done
+done
+python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$SHOTS" --task all --execute
+' >> fst_outs/exp37_unseen4_exp37_fs_joint_fs10.nohup.out 2>&1 < /dev/null &
+```
+
+
 
 #### 可选：顺序执行全部80个适配点
 
@@ -8345,7 +8569,7 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 GPU=0
-MASTER_PORT=29700
+MASTER_PORT=29712
 FAMILIES=(exp37_fs_gen exp37_fs_loc exp37_fs_joint exp37_fs_both exp37_fs_both_b1)
 MAPS=(cs_office de_golden de_palacio de_vertigo)
 for SHOTS in 100 50 20 10; do

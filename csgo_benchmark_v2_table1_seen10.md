@@ -125,17 +125,47 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 - **Puffin§**：同配方审计 Total 4,560,857,827；文本 pose、`reasoning=False` 的生成路径使用 VAE 处理雷达，RADIO 视觉编码器 651,642,880 和视觉 projector 10,226,688 闲置，故 Active 为 3,898,988,259；LoRA 保持未合并。当前本机可找到的完整 legacy 评测与表中指标不符，未以 legacy 权重冒充 aligned 正式产物；此处列的是 aligned 配置参数，待对应 checkpoint／清单同步后复核。
 - **UniLIP**：定位 Active = 视觉塔 304,012,288 + 多模态投影 4,482,816 + LLM（含 LoRA）511,398,016 + 定位私有模块 466,025,248 = 1,285,918,368。生成入口只构建生成实例，没有调用 `initialize_localization_modules`，所以相同联合 checkpoint 在生成任务的 **Total 小于定位任务**；这不是把完整训练模型声称为更小模型。生成 Total 1,822,415,843，Active 再扣从未调用的 `lm_head` 135,903,488 和 VAE `down_blocks/down_mlp` 4,859,200，仅保留实际 decoder。完整训练 checkpoint 参数量分别为：`exp32_loc` 2,269,423,363，`exp32_gen` 2,274,580,227，`exp32/exp32_1` 2,288,441,091。主表 Total 始终使用任务推理实例口径；辅助 loss 未引入额外推理模块，联合两组的训练参数并集相同。
 
-## exp37 新实验身份与 Table 1 待填项（2026-10-30）
+## exp37 新实验身份与 Table 1 实测候选（2026-11-04）
 
-本节原于 2026-10-30 登记五次新训练，2026-11-01 追加独立 `exp37_s2_both_b1` 候选；现为 1 次 Stage 1 + 5 次 Stage 2，共六次新训练。协议见 [`CSGO_BENCHMARK_V2_EXP37_SEEN10.md`](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。**尚未训练、评测或审计参数**，故不把新组替换进上方历史 Table 1 有效数值行，也不借用 `exp32` 的参数量。未来只有在模型结构、任务推理路径、优化器覆盖、完整十图指标和正式 checkpoint 均核对后，才可将相应新行加入正式表格；新增 B1 候选也不预先指定为最终 Ours。
+当前为1次Stage1＋5次Stage2，共六组。已核实 `exp37`、`exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2` 的最终test结果；两个both候选本地尚无同步结果。协议和validation见 [Seen-10专题](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，简短外部模型比较见 [总结果文档](csgo_benchmark_v2_experiments_results.md#2026-11-04exp37-阶段性结果与-seen-10-其他模型对照)。本次新增实测区，不覆盖上方历史Table 1行，不预先指定最终Ours。新组参数量仍待审计，不借用旧exp32数值。
 
-| 候选 Experiment | Table 1 任务行 | 固定报告 checkpoint | 当前指标 | 参数量 |
+| 候选实验 | 任务 | 正式checkpoint | 当前状态 | 参数量 |
 |---|---|---|---|---|
-| `exp37` | 定位、离散生成、连续生成 | Stage 1 实际 final，仅参照 | 待执行 | 待审计 |
-| `exp37_s2_gen` | 离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
-| `exp37_s2_loc` | 定位 | Stage 2 local 6000 | 待执行 | 待审计 |
-| `exp37_s2` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
-| `exp37_s2_both` | 定位、离散生成、连续生成 | Stage 2 local 6000 | 待执行 | 待审计 |
-| `exp37_s2_both_b1` | 定位、离散生成、连续生成；独立 B1 候选 | Stage 2 local 6000 | 待执行 | 待审计 |
+| `exp37` | 定位／离散／连续 | Stage1 final19550，仅参照 | ✅ 训练、validation、test完成 | 待审计 |
+| `exp37_s2_gen` | 离散／连续 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
+| `exp37_s2_loc` | 定位 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
+| `exp37_s2` | 定位／离散／连续 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
+| `exp37_s2_both` | 定位／离散／连续，P4＋U2 | local6000（计划） | 未同步产物，远端状态待确认 | 待审计 |
+| `exp37_s2_both_b1` | 定位／离散／连续，P3＋U2 | local6000（计划） | 未同步产物，远端状态待确认 | 待审计 |
 
-`exp37_s2_gen`/`loc` 分别来自旧 Seen-10 `exp32_gen@19500`/`exp32_loc@19500` 的模型权重；三个 joint Stage 2 来自同一个新 `exp37` 完整 Stage 1 最终模型。Stage 2 首次初始化重置 optimizer、scheduler、Trainer local step 与 RNG，`--resume` 仅恢复本组完整 checkpoint，不能将来源 checkpoint 的旧指标冒充新组结果。所有新结果按十图等权宏平均，定位和离散生成 test 各 20,000 条，连续生成 12,800 帧。两阶段联合组须同时披露训练预算；现有资料不足以主张与旧 baseline FLOPs 相等。旧三图 B1=P3+U2、attention=true；Seen-10 `exp37_s2_both`=P4+U2、attention=false，新增 `exp37_s2_both_b1`=P3+U2、attention=true，两组 Seen-10 配方仅 attention 开关不同，效果尚待实测。
+所有下列数值为完整十图、seed42、minimal资产的等地图宏平均；定位和离散test各20000条，连续12800帧。单任务Stage2分别接旧 `exp32_gen@19500`／`exp32_loc@19500`，joint Stage2接 `exp37@19550`；均续训6000步。两阶段总预算需单独披露，不能主张与旧单阶段外部模型等FLOPs。两组辅助方案只在perception attention开关不同，尚无本机结果可判优劣。
+
+### exp37 定位（最终test）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_loc` | local 6000 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+
+### exp37 离散生成（最终test）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
+| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+
+### exp37 连续生成（最终test）
+
+| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
+| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |

@@ -1,6 +1,6 @@
 # CSGO Benchmark v2：exp37 Unseen-4 每图独立 few-shot
 
-状态：**代码、配置与手动命令已实现并通过CPU检查；训练和评测待执行**。本协议承接完整 Seen-10 Stage2 模型，采用用户于 2026-11-03 确认的每图独立适配设置。它不替换历史结果，不恢复暂停的 `exp33/exp34` 四图共同适配支线，也不启动任何实验。命令入口为 [`scripts/run_exp37_unseen4.py`](scripts/run_exp37_unseen4.py)，机器可读矩阵为 [`csgo_configs/benchmark_v2_exp37_unseen4.yaml`](csgo_configs/benchmark_v2_exp37_unseen4.yaml)，手动执行顺序见 [`record.md`](record.md#exp37-unseen4-fewshot-20261103)。
+状态（2026-11-04 本机同步快照）：**三个来源的 Unseen-4 zero-shot 已完成对应任务评测；80 个每图独立 few-shot 适配点尚无已同步的训练或评测证据**。已完成的是 `exp37_fs_gen` 的两类生成、`exp37_fs_loc` 的定位，以及 `exp37_fs_joint` 的三类任务；`exp37_fs_both` 和 `exp37_fs_both_b1` 的 Stage2@6000 来源仍未同步。本协议承接完整 Seen-10 Stage2 模型，采用用户于 2026-11-03 确认的每图独立适配设置。它不替换历史结果，不恢复暂停的 `exp33/exp34` 四图共同适配支线。命令入口为 [`scripts/run_exp37_unseen4.py`](scripts/run_exp37_unseen4.py)，机器可读矩阵为 [`csgo_configs/benchmark_v2_exp37_unseen4.yaml`](csgo_configs/benchmark_v2_exp37_unseen4.yaml)，手动执行顺序见 [`record.md`](record.md#exp37-unseen4-fewshot-20261103)。
 
 ## 实验设计定位
 
@@ -76,38 +76,52 @@ query 不能用于学习率、训练长度、checkpoint或最终辅助候选的�
 
 默认使用 minimal 资产报告 `data/csgo_benchmark_v2/minimal_dataset_report.json`。首次训练使用全量资产时传 `--asset-mode full --data-dir /path/to/preprocessed_data`；只替换物理资产后端，不重新采样。后续推理/评测读取本次保存的resolved配置，不能把minimal/full的输出混用。zero-shot首次infer也须明确选择需要的后端。
 
-首次适配执行前核对来源 `checkpoint-6000/model.safetensors`、`trainer_state.json`、来源根目录 `resolved_config.yaml` 和 `experiment_plan.json`；保存来源身份及权重指纹。缺少来源或实际step不是6000时拒绝执行，不寻找替代checkpoint。配置规划和CPU测试不需要读取真实大模型权重。本机在本次核查时尚缺五个Stage2来源；同步完整来源后再手动执行。
+首次适配执行前核对来源 `checkpoint-6000/model.safetensors`、`trainer_state.json`、来源根目录 `resolved_config.yaml` 和 `experiment_plan.json`；保存来源身份及权重指纹。缺少来源或实际step不是6000时拒绝执行，不寻找替代checkpoint。配置规划和CPU测试不需要读取真实大模型权重。2026-11-04 本机已同步 `exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2` 的上述四项来源文件，Trainer `global_step=6000`；`exp37_s2_both`、`exp37_s2_both_b1` 仍缺这些来源文件。
 
 本协议没有中途完整optimizer checkpoint，**不支持将中断的400步训练用 `--resume` 接续**。若训练中断，需要人工保留/归档本次不完整目录后，从同一个Seen来源重新运行该适配点。已完成400步而推理/评测中断时，只补对应infer/metrics，不重复train；训练入口拒绝覆盖已有运行。不要假定图像推理具有逐样本断点续跑功能。
 
 ## 实验记录表
 
-每个单元格代表一个独立训练及其query、retention评测流程。此表仅登记计划，未执行任何GPU实验。
+每个单元格代表一个独立训练及其query、retention评测流程。此表登记每图适配的本机同步状态，未同步不代表远端尚未执行；本机无 `outputs/csgo_1b/exp37_fs*` 适配目录或 local400 checkpoint，不能将已完成的 zero-shot 当成 few-shot。
 
 | Family | 目标地图 | 100-shot | 50-shot | 20-shot | 10-shot | 正式checkpoint |
 |---|---|---|---|---|---|---|
-| exp37_fs_gen | cs_office | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_gen | de_golden | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_gen | de_palacio | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_gen | de_vertigo | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_loc | cs_office | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_loc | de_golden | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_loc | de_palacio | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_loc | de_vertigo | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_joint | cs_office | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_joint | de_golden | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_joint | de_palacio | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_joint | de_vertigo | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both | cs_office | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both | de_golden | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both | de_palacio | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both | de_vertigo | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both_b1 | cs_office | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both_b1 | de_golden | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both_b1 | de_palacio | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
-| exp37_fs_both_b1 | de_vertigo | 待执行 | 待执行 | 待执行 | 待执行 | local400 |
+| exp37_fs_gen | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_gen | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_gen | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_gen | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_loc | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_loc | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_loc | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_loc | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_joint | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_joint | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_joint | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_joint | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both_b1 | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both_b1 | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both_b1 | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
+| exp37_fs_both_b1 | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 
-zero-shot五组以及四图宏平均结果占位统一维护在 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。只有实际完成并核对checkpoint、shot、seed、资产后端和覆盖后才能填写数值。
+zero-shot五组以及四图宏平均结果同步维护在 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。只有实际完成并核对checkpoint、shot、seed、资产后端和覆盖后才能填写数值。
+
+## 已同步 zero-shot 结果（2026-11-04）
+
+下表直接采用原始 JSON 的 `metrics_macro_map`，即四张 Unseen 地图等权平均。定位的 XY／Z／Pitch／Yaw 均为距离误差（越低越好）；生成的 PSNR／SSIM／CLIP 越高越好，其余列越低越好。N/A 表示该来源不执行此任务。三个来源均使用未适配的 Seen Stage2@6000 权重、推理 seed=42、minimal 资产后端；zero-shot 没有 support seed 或 shot。query 为 `crossmap_query_test`，每图2,000条；continuous 为 `crossmap_continuous`，每图20条×64帧。每项已有四图独立指标、推理清单、评测权重计划与聚合 JSON；生成每图 `Common_Count` 分别为2,000／1,280，continuous 每图 `Track_Count=20`。
+
+| 来源／zero-shot | 定位 XY↓ | Z↓ | Pitch↓ | Yaw↓ | 离散 PSNR↑ | SSIM↑ | LPIPS↓ | FID↓ | CLIP↑ | 连续 PSNR↑ | SSIM↑ | LPIPS↓ | FVD↓ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `exp37_fs_gen` | N/A | N/A | N/A | N/A | 11.379 | 0.380 | 0.717 | 77.496 | 0.746 | 11.355 | 0.374 | 0.717 | 1283.955 |
+| `exp37_fs_loc` | 339.928 | 19.874 | 7.610 | 91.572 | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| `exp37_fs_joint` | 344.490 | 18.720 | 7.816 | 92.099 | 11.041 | 0.374 | 0.729 | 103.583 | 0.733 | 11.106 | 0.369 | 0.728 | 1368.558 |
+| `exp37_fs_both` | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| `exp37_fs_both_b1` | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+
+原始聚合指标：[gen 离散](outputs_eval/benchmark_v2/exp37_fs_gen/zero_shot/seed_42/discrete/summary.json)、[gen 连续](outputs_eval/benchmark_v2/exp37_fs_gen/zero_shot/seed_42/continuous/summary.json)、[loc 定位](outputs_loc/benchmark_v2/exp37_fs_loc/zero_shot/seed_42/benchmark_csgo_v2_loc.json)、[joint 定位](outputs_loc/benchmark_v2/exp37_fs_joint/zero_shot/seed_42/benchmark_csgo_v2_loc.json)、[joint 离散](outputs_eval/benchmark_v2/exp37_fs_joint/zero_shot/seed_42/discrete/summary.json)、[joint 连续](outputs_eval/benchmark_v2/exp37_fs_joint/zero_shot/seed_42/continuous/summary.json)。这六项的 split／map／数量／seed／checkpoint 与各自 `inference_manifest.json`、`evaluation_plan.json` 一致；生成四图原始指标与清单一致。上述 zero-shot 数值可用于描述未适配模型的跨图表现，不能用于挑选适配配方或推断 few-shot 收益。
 
 ## 历史工作与执行优先级
 
@@ -115,9 +129,9 @@ zero-shot五组以及四图宏平均结果占位统一维护在 [`csgo_benchmark
 
 原主线若需补齐：`exp35` joint缺四图×四shot=16次，`exp35_gen/loc`各缺四图×20/10-shot=8次，共32次历史适配；`exp35_gen_de_vertigo` 50-shot本地已有四类推理manifest但缺metric摘要；`exp31_loc/exp32_loc`原表尚缺Unseen zero-shot。`exp36_1`四图四shot已登记完成；这些结果保持原来源和配方，不改名充作exp37结果。历史配置和手动命令已存在，本次不重新创建或启动它们。
 
-## 验收边界
+## 原实现阶段验收边界（2026-11-03）
 
-本次只执行配置校验、命令计划、CPU单元测试和shell语法检查，不运行train/eval/benchmark子进程，不加载真实模型。真实400步训练、GPU backward、远程依赖兼容、指标结果均待用户手动执行后验证。配置存在不等于来源已同步或实验已完成。
+当时只执行配置校验、命令计划、CPU单元测试和shell语法检查，未运行train/eval/benchmark子进程，未加载真实模型。后续已同步的 zero-shot 结果见上节；真实400步适配训练及其query、retention评测仍无本机完成证据。配置存在不等于来源已同步或实验已完成。
 
 
 ## 实现验收（2026-11-03）
@@ -127,4 +141,4 @@ zero-shot五组以及四图宏平均结果占位统一维护在 [`csgo_benchmark
 - `record.md` 新增六段shell代码均通过 `bash -n`，保留CRLF；新记录表20个family-map行、60个任务macro占位齐全，无伪造指标。新增文档链接、固定矩阵字段和脚本参数一致性已核查。
 - `git diff --check`通过；原exp35/36/37 YAML以及旧3maps/map-specific runner未改。训练入口的epoch转发新增开关默认关闭，仅新few-shot开启。
 - 原Seen37回归发现工作区另有Stage2 save_steps=1000与旧测试期望2000的差异；本次未修改该并行变更，不将其记为本次few-shot配方变更。
-- 三个输出根目录下未创建任何 `exp37_fs*` 实验目录。本机缺少五个Seen Stage2完整来源，真实模型加载、训练、推理和指标计算尚未验收；实际执行仍由用户手动发起。
+- 2026-11-03 当时三个输出根目录下未创建任何 `exp37_fs*` 实验目录，本机缺少五个Seen Stage2完整来源。这是实现阶段的历史快照；2026-11-04 的来源与zero-shot同步状态以上节为准。
