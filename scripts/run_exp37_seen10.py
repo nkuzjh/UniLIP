@@ -492,11 +492,31 @@ def ground_truth_dir(config: dict, map_name: str) -> str:
     return relative(report_path.parent / target.parent)
 
 
+def selected_evaluation_tasks(args: argparse.Namespace) -> tuple[bool, tuple[str, ...]]:
+    """Return the active localization route and selected generation kinds."""
+    loc_available = args.experiment != "exp37_s2_gen"
+    gen_available = args.experiment != "exp37_s2_loc"
+    if args.task == "gen_continuous" and args.split != "test":
+        raise ValueError("Continuous generation requires --split test")
+    if ((args.task in ("localization", "loc") and not loc_available) or
+            (args.task in ("generation", "gen", "gen_continuous") and not gen_available)):
+        raise ValueError("Requested task is inactive in this checkpoint")
+    loc = loc_available and args.task in ("all", "localization", "loc")
+    if not gen_available or args.task in ("localization", "loc"):
+        kinds = ()
+    elif args.task == "gen_continuous":
+        kinds = ("continuous",)
+    elif args.task == "gen":
+        kinds = ("discrete",)
+    else:
+        kinds = ("discrete",) if args.split == "validation" else ("discrete", "continuous")
+    return loc, kinds
+
+
 def evaluation_snapshots(args: argparse.Namespace, legacy_path: Path, config: dict) -> dict[Path, dict]:
     """Resolve task-specific inference configs without changing the batch-one layout."""
     target = legacy_path.parent.relative_to(ROOT / "outputs_eval/benchmark_v2")
-    loc = args.experiment != "exp37_s2_gen" and args.task in ("all", "localization")
-    gen = args.experiment != "exp37_s2_loc" and args.task in ("all", "generation")
+    loc, kinds = selected_evaluation_tasks(args)
     snapshots: dict[Path, dict] = {}
     if loc:
         path = legacy_path if args.test_loc_batch_size == 1 else ROOT / "outputs_loc/benchmark_v2" / target / f"infer_bs{args.test_loc_batch_size}" / "evaluation_config.yaml"
@@ -504,15 +524,14 @@ def evaluation_snapshots(args: argparse.Namespace, legacy_path: Path, config: di
         if args.test_loc_batch_size > 1:
             value["test_loc_batch_size"] = args.test_loc_batch_size
         snapshots[path] = value
-    if gen:
-        for kind in (("discrete",) if args.split == "validation" else ("discrete", "continuous")):
-            path = legacy_path if args.test_gen_batch_size == 1 else ROOT / "outputs_eval/benchmark_v2" / target / f"infer_bs{args.test_gen_batch_size}" / kind / "evaluation_config.yaml"
-            value = copy.deepcopy(config)
-            if kind == "continuous" and args.test_gen_batch_size > 1:
-                value["benchmark_v2_split"] = "seen_continuous"
-            if args.test_gen_batch_size > 1:
-                value["test_gen_batch_size"] = args.test_gen_batch_size
-            snapshots[path] = value
+    for kind in kinds:
+        path = legacy_path if args.test_gen_batch_size == 1 else ROOT / "outputs_eval/benchmark_v2" / target / f"infer_bs{args.test_gen_batch_size}" / kind / "evaluation_config.yaml"
+        value = copy.deepcopy(config)
+        if kind == "continuous" and args.test_gen_batch_size > 1:
+            value["benchmark_v2_split"] = "seen_continuous"
+        if args.test_gen_batch_size > 1:
+            value["test_gen_batch_size"] = args.test_gen_batch_size
+        snapshots[path] = value
     return snapshots
 
 
@@ -581,12 +600,7 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     config.pop("training_stop_after_step", None)
     for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss"):
         config[key] = False
-    loc = args.experiment != "exp37_s2_gen"
-    gen = args.experiment != "exp37_s2_loc"
-    if args.task == "localization" and not loc or args.task == "generation" and not gen:
-        raise ValueError("Requested task is inactive in this checkpoint")
-    loc = loc and args.task in ("all", "localization")
-    gen = gen and args.task in ("all", "generation")
+    loc, kinds = selected_evaluation_tasks(args)
     common = ["--ckpt_path", str(checkpoint),
               "--seed", str(args.seed), "--benchmark_v2_maps", *MAPS]
     commands = []
@@ -596,31 +610,30 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
         commands.append([sys.executable, "eval_csgo_loc.py", "--csgo_config", relative(path), *common,
                          "--output_dir", output, "--benchmark_v2_split", split,
                          "--test-loc-batch-size", str(args.test_loc_batch_size)])
-    if gen:
-        tasks = [("discrete", split)] + ([("continuous", "seen_continuous")] if args.split == "test" else [])
-        for kind, selected_split in tasks:
-            output = f"outputs_eval/benchmark_v2/{target}" + ("" if args.test_gen_batch_size == 1 else f"/infer_bs{args.test_gen_batch_size}") + f"/{kind}"
-            if args.command == "infer":
-                path = eval_config if args.test_gen_batch_size == 1 else ROOT / output / "evaluation_config.yaml"
-                commands.append([sys.executable, "eval_csgo.py", "--csgo_config", relative(path), *common, "--output_dir", output,
-                                 "--benchmark_v2_split", selected_split,
-                                 "--test-gen-batch-size", str(args.test_gen_batch_size)])
-                continue
-            for map_name in MAPS:
-                cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",
-                       "--gt", ground_truth_dir(config, map_name), "--pred", f"{output}/gen_imgs/{map_name}",
-                       "--batch_size", "1", "--device", "cuda", "--paired_size", "448", "--data_dir", config["data_dir"],
-                       "--map_name", map_name, "--metric_profile", "benchmark_v2_core", "--benchmark_v2_manifest",
-                       config["benchmark_v2_manifest"], "--benchmark_v2_split", selected_split]
-                if config.get("benchmark_v2_asset_manifest"):
-                    cmd.extend(["--benchmark_v2_asset_manifest", config["benchmark_v2_asset_manifest"]])
-                if kind == "continuous":
-                    cmd.extend(["--frame_diff_threshold", "2", "--min_track_len", "4", "--clip_length", "16",
-                                "--clip_stride", "16", "--fvd_size", "224"])
-                commands.append(cmd)
-            commands.append([sys.executable, "scripts/aggregate_csgo_benchmark_v2_metrics.py", "maps",
-                             "--manifest", config["benchmark_v2_manifest"], "--split", selected_split,
-                             "--maps", *MAPS, "--input_root", output, "--kind", kind, "--output", f"{output}/summary.json"])
+    for kind in kinds:
+        selected_split = split if kind == "discrete" else "seen_continuous"
+        output = f"outputs_eval/benchmark_v2/{target}" + ("" if args.test_gen_batch_size == 1 else f"/infer_bs{args.test_gen_batch_size}") + f"/{kind}"
+        if args.command == "infer":
+            path = eval_config if args.test_gen_batch_size == 1 else ROOT / output / "evaluation_config.yaml"
+            commands.append([sys.executable, "eval_csgo.py", "--csgo_config", relative(path), *common, "--output_dir", output,
+                             "--benchmark_v2_split", selected_split,
+                             "--test-gen-batch-size", str(args.test_gen_batch_size)])
+            continue
+        for map_name in MAPS:
+            cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",
+                   "--gt", ground_truth_dir(config, map_name), "--pred", f"{output}/gen_imgs/{map_name}",
+                   "--batch_size", "1", "--device", "cuda", "--paired_size", "448", "--data_dir", config["data_dir"],
+                   "--map_name", map_name, "--metric_profile", "benchmark_v2_core", "--benchmark_v2_manifest",
+                   config["benchmark_v2_manifest"], "--benchmark_v2_split", selected_split]
+            if config.get("benchmark_v2_asset_manifest"):
+                cmd.extend(["--benchmark_v2_asset_manifest", config["benchmark_v2_asset_manifest"]])
+            if kind == "continuous":
+                cmd.extend(["--frame_diff_threshold", "2", "--min_track_len", "4", "--clip_length", "16",
+                            "--clip_stride", "16", "--fvd_size", "224"])
+            commands.append(cmd)
+        commands.append([sys.executable, "scripts/aggregate_csgo_benchmark_v2_metrics.py", "maps",
+                         "--manifest", config["benchmark_v2_manifest"], "--split", selected_split,
+                         "--maps", *MAPS, "--input_root", output, "--kind", kind, "--output", f"{output}/summary.json"])
     return commands, eval_config, config
 
 
@@ -647,7 +660,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--report-to", default="none")
     p.add_argument("--checkpoint-step", type=parse_checkpoint_step)
     p.add_argument("--split", choices=("validation", "test"), default="validation")
-    p.add_argument("--task", choices=("all", "localization", "generation"), default="all")
+    p.add_argument("--task", choices=("all", "localization", "loc", "generation", "gen", "gen_continuous"), default="all")
     p.add_argument("--test-loc-batch-size", type=positive_batch_size, default=DEFAULT_TEST_LOC_BATCH_SIZE)
     p.add_argument("--test-gen-batch-size", type=positive_batch_size, default=DEFAULT_TEST_GEN_BATCH_SIZE)
     p.add_argument("--asset-mode", choices=("minimal", "full"))

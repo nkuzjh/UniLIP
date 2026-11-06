@@ -8619,14 +8619,47 @@ B>1结果在原seed目录后增加 `infer_bs{B}`：定位直接写在其中，�
 
 ### Seen-10：最终checkpoint上的test
 
-下面联合模型的 `--task all` 依次运行定位、离散生成和连续生成；单任务模型使用相同模板会自动只运行其支持的任务。`final` 由runner核对实际完成step。只补指标时删除infer行；已有单样本结果的两个参数均改为1。需后台执行时可将两行置于原有 `nohup bash -c` 顺序命令中。
+以下六条命令均针对 **`exp37`**，`--checkpoint-step final` 由runner核对实际完成step（当前为19550）。定位batch=32，离散／连续生成batch=16；默认使用GPU 0，需要时逐条修改 `--cuda-devices`。每个评测命令读取与对应推理相同batch的结果目录。若只补旧单样本结果的评测，将该条metrics命令的batch参数改为1。
+
+`--task localization`只定位；`--task gen`只离散生成；`--task gen_continuous`只连续生成，后者仅支持test。原 `--task generation`仍同时执行离散和连续生成，`--task all`仍按模型支持的任务全部执行。
+
+1. 定位推理（同时计算定位指标）：
 
 ```bash
-EXPERIMENT=exp37_s2
-GPU=0
-python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$GPU" --execute
-python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$GPU" --execute
+python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task localization --test-loc-batch-size 32 --cuda-devices 0 --execute
 ```
+
+2. 定位评测（校验推理已产出的定位摘要，不重复推理或计算）：
+
+```bash
+python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step final --split test --task localization --test-loc-batch-size 32 --cuda-devices 0 --execute
+```
+
+3. 离散生成推理：
+
+```bash
+python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen --test-gen-batch-size 16 --cuda-devices 0 --execute
+```
+
+4. 离散生成评测（含十图汇总）：
+
+```bash
+python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step final --split test --task gen --test-gen-batch-size 16 --cuda-devices 0 --execute
+```
+
+5. 连续生成推理：
+
+```bash
+python scripts/run_exp37_seen10.py infer --experiment exp37 --checkpoint-step final --split test --task gen_continuous --test-gen-batch-size 16 --cuda-devices 0 --execute
+```
+
+6. 连续生成评测（含十图汇总）：
+
+```bash
+python scripts/run_exp37_seen10.py metrics --experiment exp37 --checkpoint-step final --split test --task gen_continuous --test-gen-batch-size 16 --cuda-devices 0 --execute
+```
+
+三个任务可分别补跑，各自先infer、后metrics；已完成对应推理时只执行该项metrics即可。未在本次文档更新中执行上述命令。
 
 ### Unseen-4：定位＋单张地图，不补retention
 
@@ -8670,4 +8703,4 @@ python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-st
 ```
 
 执行日志按batch显示进度，同时显示已完成样本数；结束时报告samples/s与CUDA peak allocated显存。`inference_manifest.json`在B>1记录实际batch、样本顺序哈希和噪声策略，配合独立的 `evaluation_config.yaml` 防止误用结果。连续生成仍逐帧独立条件生成，不增加历史帧输入，不改变64帧clip或FVD窗口。未执行训练、完整推理或指标计算。
-本次验收：55项相关CPU回归全部通过，18个改动Python文件语法检查通过，本节5段bash命令通过bash -n；record.md保留CRLF。真实权重的GPU数值、默认batch显存和吞吐未验证。
+批量推理功能初次验收：55项相关CPU回归全部通过，18个改动Python文件语法检查通过，当时新增的5段bash命令通过bash -n；record.md保留CRLF。真实权重的GPU数值、默认batch显存和吞吐未验证。

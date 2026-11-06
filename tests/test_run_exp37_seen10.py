@@ -430,6 +430,88 @@ class Exp37RunnerTests(unittest.TestCase):
             self.assertEqual(maps, SEEN_MAPS)
             self.assertNotIn("--allow-map-subset", command)
 
+    def test_independent_test_generation_routes_and_snapshots(self):
+        config = self.config("exp37_s2", for_training=False)
+        for task, kind, split, benchmark in (
+            ("gen", "discrete", "seen_discrete_test", "benchmark_csgo_v1.py"),
+            ("gen_continuous", "continuous", "seen_continuous", "benchmark_csgo_v1_conti.py"),
+        ):
+            with self.subTest(task=task):
+                base = ("--checkpoint-step", "6000", "--split", "test", "--task", task)
+                infer_args = self.args("infer", "exp37_s2", *base)
+                infer, legacy_path, evaluated = RUNNER.evaluation_plan(infer_args, config)
+                self.assertEqual(len(infer), 1)
+                self.assertEqual(infer[0][1], "eval_csgo.py")
+                self.assertEqual(option(infer[0], "--benchmark_v2_split"), split)
+                self.assertEqual(option(infer[0], "--test-gen-batch-size"), "16")
+                self.assertEqual(Path(option(infer[0], "--output_dir")).name, kind)
+                path = RUNNER.path_in_repo(option(infer[0], "--csgo_config"))
+                self.assertEqual(path.parent.name, kind)
+                snapshots = RUNNER.evaluation_snapshots(infer_args, legacy_path, evaluated)
+                self.assertEqual(set(snapshots), {path})
+                self.assertEqual(snapshots[path]["benchmark_v2_split"], split)
+                self.assertEqual(snapshots[path]["test_gen_batch_size"], 16)
+                self.assertNotIn("test_loc_batch_size", snapshots[path])
+
+                metrics_args = self.args("metrics", "exp37_s2", *base)
+                metrics, metrics_path, metrics_config = RUNNER.evaluation_plan(metrics_args, config)
+                self.assertEqual(len(metrics), 11)
+                self.assertTrue(all(command[1] == benchmark for command in metrics[:10]))
+                self.assertTrue(all(option(command, "--benchmark_v2_split") == split
+                                    for command in metrics[:10]))
+                summary = metrics[-1]
+                self.assertEqual(option(summary, "--split"), split)
+                self.assertEqual(option(summary, "--kind"), kind)
+                self.assertEqual(option(summary, "--input_root"), option(infer[0], "--output_dir"))
+                self.assertEqual(set(RUNNER.evaluation_snapshots(metrics_args, metrics_path,
+                                                                 metrics_config)), {path})
+
+        old_args = self.args("infer", "exp37_s2", "--checkpoint-step", "6000",
+                             "--split", "test", "--task", "generation")
+        old_commands, old_path, old_config = RUNNER.evaluation_plan(old_args, config)
+        self.assertEqual([Path(option(command, "--output_dir")).name for command in old_commands],
+                         ["discrete", "continuous"])
+        self.assertEqual(len(RUNNER.evaluation_snapshots(old_args, old_path, old_config)), 2)
+
+        for task in ("gen", "gen_continuous"):
+            legacy = self.args("infer", "exp37_s2", "--checkpoint-step", "6000",
+                               "--split", "test", "--task", task,
+                               "--test-gen-batch-size", "1")
+            commands, path, evaluated = RUNNER.evaluation_plan(legacy, config)
+            self.assertEqual(option(commands[0], "--csgo_config"), RUNNER.relative(path))
+            self.assertEqual(RUNNER.evaluation_snapshots(legacy, path, evaluated), {path: evaluated})
+
+        invalid = self.args("infer", "exp37_s2", "--checkpoint-step", "4000",
+                            "--split", "validation", "--task", "gen_continuous")
+        with self.assertRaisesRegex(ValueError, "requires --split test"):
+            RUNNER.evaluation_plan(invalid, config)
+        for task in ("gen", "gen_continuous"):
+            wrong = self.args("infer", "exp37_s2_loc", "--checkpoint-step", "6000",
+                              "--split", "test", "--task", task)
+            with self.assertRaisesRegex(ValueError, "inactive"):
+                RUNNER.evaluation_plan(wrong, self.config("exp37_s2_loc", for_training=False))
+
+    def test_independent_metrics_execute_checks_only_selected_batch_snapshot(self):
+        self.completed_checkpoint("exp37", 19500)
+        for task, kind, split in (("gen", "discrete", "seen_discrete_test"),
+                                  ("gen_continuous", "continuous", "seen_continuous")):
+            with self.subTest(task=task):
+                base = ["--experiment", "exp37", "--checkpoint-step", "final",
+                        "--split", "test", "--task", task, "--execute"]
+                with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main(["infer", *base]), 0)
+                    run.assert_called_once()
+                output = self.root / f"outputs_eval/benchmark_v2/exp37/checkpoint-19500/test/seed_42/infer_bs16/{kind}"
+                config_path = output / "evaluation_config.yaml"
+                self.assertEqual(RUNNER.read_yaml(config_path)["benchmark_v2_split"], split)
+                (output / "inference_manifest.json").write_text(json.dumps({
+                    "config_path": RUNNER.relative(config_path),
+                    "inference_execution": execution_contract("gen", 16),
+                }))
+                with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main(["metrics", *base]), 0)
+                    self.assertEqual(run.call_count, 11)
+
     def test_resume_requires_own_complete_checkpoint_and_saved_recipe(self):
         experiment = "exp37_s2_gen"
         config = self.config(experiment)

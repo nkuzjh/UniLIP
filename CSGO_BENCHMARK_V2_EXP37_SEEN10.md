@@ -68,6 +68,8 @@ validation 每张地图定位与离散生成各 500 条，总计各 5,000；cont
 
 `scripts/run_exp37_seen10.py infer/metrics` 新增以下参数；`metrics` 使用它们选择对应推理结果目录，并不改变指标计算器自身的 batch。旧的已报告结果保持原样。
 
+如需分别补跑三项 test：`--task localization` 仅定位，`--task gen` 仅离散生成，`--task gen_continuous` 仅连续生成（只允许 test）。原 `--task generation` 在 test 仍执行两类生成，`--task all` 保持原任务分发。独立任务只读取／校验对应快照和结果，不要求其他任务已完成。`exp37` 最终 checkpoint 的六条独立命令见 [record.md](record.md#exp37-batched-inference-20261106)；定位 metrics 校验 infer 已生成的定位摘要，不重复计算。
+
 | 参数 | 默认值 | 范围 |
 |---|---:|---|
 | `--test-loc-batch-size` | 32 | flow 定位同时推理的样本数 |
