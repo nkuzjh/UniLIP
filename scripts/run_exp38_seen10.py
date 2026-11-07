@@ -29,7 +29,7 @@ SOURCE = "outputs/csgo_1b/exp37/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
 SOURCE_HORIZON = 19550
 MAX_STEPS = 7550
-CHECKPOINT_STEPS = (3000, MAX_STEPS)
+CHECKPOINT_STEPS = (4000, MAX_STEPS)
 MANIFEST = json.loads((ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json").read_text())
 MAPS = MANIFEST["protocol"]["seen_maps"]
 EXPECTED_COUNTS = {"train": 50000, "validation": 5000, "discrete_test": 20000, "continuous_frames": 12800}
@@ -137,7 +137,7 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
             config["training_stop_after_step"] = CHECKPOINT_STEPS[0]
         if args.stop_after_step is not None:
             if args.stop_after_step not in (0, *CHECKPOINT_STEPS):
-                raise ValueError("--stop-after-step must be 0, 3000, or 7550")
+                raise ValueError("--stop-after-step must be 0, 4000, or 7550")
             if args.stop_after_step == 0:
                 config.pop("training_stop_after_step", None)
             else:
@@ -171,7 +171,7 @@ def validate_config(config: dict) -> None:
     if any(config.get(k) for k in ("resume_ckpt_path", "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path")):
         raise ValueError("exp38 may not initialize from another checkpoint")
     if config.get("training_checkpoint_steps") != list(CHECKPOINT_STEPS):
-        raise ValueError("Only checkpoints 3000 and 7550 may be saved")
+        raise ValueError("Only checkpoints 4000 and 7550 may be saved")
     if config.get("save_final_model_at_output_root") is not False:
         raise ValueError("Root model export must be disabled")
     stop = config.get("training_stop_after_step")
@@ -457,7 +457,7 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
 def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], Path, dict]:
     step = MAX_STEPS if args.checkpoint_step == "final" else args.checkpoint_step
     if args.split != "test" or step not in CHECKPOINT_STEPS:
-        raise ValueError("exp38 evaluation requires test checkpoint 3000 or final=7550")
+        raise ValueError("exp38 evaluation requires test checkpoint 4000 or final=7550")
     if "," in args.cuda_devices:
         raise ValueError("Evaluation uses one device")
     checkpoint = Path("outputs/csgo_1b") / args.experiment / f"checkpoint-{step}" / "model.safetensors"
@@ -538,7 +538,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--experiment", choices=EXPERIMENTS)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--resume", action="store_true")
-    p.add_argument("--stop-after-step", type=int, help="Local optimizer step 3000 or 7550; 0 removes the stop (default first run stops at 3000)")
+    p.add_argument("--stop-after-step", type=int, help="Local optimizer step 4000 or 7550; 0 removes the stop (default first run stops at 4000)")
     p.add_argument("--cuda-devices", default="0")
     p.add_argument("--micro-batch", type=int)
     p.add_argument("--master-port", type=int, default=29638)
