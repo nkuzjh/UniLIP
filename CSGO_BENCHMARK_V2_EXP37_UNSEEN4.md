@@ -93,7 +93,7 @@ Seen／Unseen 的可执行示例统一见 [record.md](record.md#exp37-batched-in
 
 默认使用 minimal 资产报告 `data/csgo_benchmark_v2/minimal_dataset_report.json`。首次训练使用全量资产时传 `--asset-mode full --data-dir /path/to/preprocessed_data`；只替换物理资产后端，不重新采样。后续推理/评测读取本次保存的resolved配置，不能把minimal/full的输出混用。zero-shot首次infer也须明确选择需要的后端。
 
-首次适配执行前核对来源 `checkpoint-6000/model.safetensors`、`trainer_state.json`、来源根目录 `resolved_config.yaml` 和 `experiment_plan.json`；保存来源身份及权重指纹。缺少来源或实际step不是6000时拒绝执行，不寻找替代checkpoint。配置规划和CPU测试不需要读取真实大模型权重。2026-11-04 本机已同步 `exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2` 的上述四项来源文件，Trainer `global_step=6000`；`exp37_s2_both`、`exp37_s2_both_b1` 仍缺这些来源文件。
+首次适配执行前核对来源 `checkpoint-6000/model.safetensors`、`trainer_state.json`、来源根目录 `resolved_config.yaml` 和 `experiment_plan.json`；保存来源身份及权重指纹。缺少来源或实际step不是6000时拒绝执行，不寻找替代checkpoint。配置规划和CPU测试不需要读取真实大模型权重。2026-11-07 本机已同步 `exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2`、`exp37_s2_both` 的上述四项来源文件，Trainer `global_step=max_steps=6000`；新到的 `exp37_s2_both` 具备 `exp37_fs_both` 所需来源文件，Seen评测同步进度见[阶段性结果](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-s2-both-update-20261107)。`exp37_s2_both_b1` 仍缺这些来源文件。来源齐全不等于zero-shot或few-shot已运行，本次不改变既有few-shot完成记录，也不启动适配。
 
 本协议没有中途完整optimizer checkpoint，**不支持将中断的400步训练用 `--resume` 接续**。若训练中断，需要人工保留/归档本次不完整目录后，从同一个Seen来源重新运行该适配点。已完成400步而推理/评测中断时，只补对应infer/metrics，不重复train；训练入口拒绝覆盖已有运行。不要假定图像推理具有逐样本断点续跑功能。
 
