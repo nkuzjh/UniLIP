@@ -8569,11 +8569,15 @@ python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$S
 ##### exp37_fs_both
 
 ```bash
+
+python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 FAMILY=exp37_fs_both
-MAPS=(cs_office de_golden de_palacio de_vertigo)
+MAPS=(de_golden de_palacio de_vertigo)
 SHOTS=100
 GPU=1
 MASTER_PORT=29712
@@ -8593,10 +8597,14 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 FAMILY=exp37_fs_both
-MAPS=(cs_office de_golden de_palacio de_vertigo)
+MAPS=(de_golden de_palacio de_vertigo)
 SHOTS=50
 GPU=3
 MASTER_PORT=29713
+
+python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+
 for MAP in "${MAPS[@]}"; do
     python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
     for SPLIT in query; do
@@ -8615,7 +8623,7 @@ set -euo pipefail
 FAMILY=exp37_fs_both
 MAPS=(cs_office de_golden de_palacio de_vertigo)
 SHOTS=20
-GPU=3
+GPU=0
 MASTER_PORT=29714
 for MAP in "${MAPS[@]}"; do
     python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
