@@ -3728,6 +3728,71 @@ run_continuous "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/conti
 aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous" crossmap_continuous continuous
 ```
 
+
+<a id="exp32-gen-test-16000"></a>
+#### Seen-10 TEST: exp32_gen checkpoint-16000
+
+对照 exp38 Stage 2 checkpoint-3000（从 exp37 checkpoint-12000 继续，总计 15000 次更新）；这里按指定使用 exp32_gen checkpoint-16000，**多 1000 次更新，并非等训练预算比较**。目前 `outputs_eval` 中没有该 checkpoint 的 Seen-10 结果，以下命令用于生成结果。默认使用已验证的 minimal 资源包；复制下面的完整 Bash 片段，即可依次执行初始化、离散推理与评测、连续推理与评测；任一步失败时停止。推理 batch 为 16，指标计算 batch 为 1。
+
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT=outputs/csgo_1b/exp32_gen/checkpoint-16000/model.safetensors
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+ASSET_ARGS=(--benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json)
+GT_ROOT=data/csgo_benchmark_v2/images
+GT_SUFFIX=
+GEN_ROOT=outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16
+
+# 离散生成：推理
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
+  --csgo_config csgo_configs/test/exp32_gen_gen.yaml \
+  --output_dir "${GEN_ROOT}/discrete" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-gen-batch-size 16 "${ASSET_ARGS[@]}"
+
+# 离散生成：逐图评测与汇总
+for map_name in "${SEEN_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py \
+    --gt "${GT_ROOT}/${map_name}${GT_SUFFIX}" \
+    --pred "${GEN_ROOT}/discrete/gen_imgs/${map_name}" \
+    --batch_size 1 --device cuda --paired_size 448 \
+    --data_dir data/preprocessed_data --map_name "$map_name" \
+    --metric_profile benchmark_v2_core --benchmark_v2_manifest "$V2_MANIFEST" \
+    --benchmark_v2_split seen_discrete_test "${ASSET_ARGS[@]}"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
+  --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN_MAPS[@]}" \
+  --input_root "${GEN_ROOT}/discrete" --kind discrete \
+  --output "${GEN_ROOT}/discrete/summary.json"
+
+# 连续生成：推理
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
+  --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml \
+  --output_dir "${GEN_ROOT}/continuous" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-gen-batch-size 16 "${ASSET_ARGS[@]}"
+
+# 连续生成：逐图评测与汇总
+for map_name in "${SEEN_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py \
+    --gt "${GT_ROOT}/${map_name}${GT_SUFFIX}" \
+    --pred "${GEN_ROOT}/continuous/gen_imgs/${map_name}" \
+    --batch_size 1 --device cuda --paired_size 448 \
+    --data_dir data/preprocessed_data --map_name "$map_name" \
+    --frame_diff_threshold 2 --min_track_len 4 \
+    --clip_length 16 --clip_stride 16 --fvd_size 224 \
+    --metric_profile benchmark_v2_core --benchmark_v2_manifest "$V2_MANIFEST" \
+    --benchmark_v2_split seen_continuous "${ASSET_ARGS[@]}"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
+  --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN_MAPS[@]}" \
+  --input_root "${GEN_ROOT}/continuous" --kind continuous \
+  --output "${GEN_ROOT}/continuous/summary.json"
+```
+
+如使用完整数据，将 setup 中的 `ASSET_ARGS=()`、`GT_ROOT=data/preprocessed_data`、`GT_SUFFIX=/imgs` 一并设置；推理与指标命令都使用同一个开关。若完整数据位于其他目录，还须同步修改两个原始测试 YAML 的 `data_dir` 与指标命令的 `--data_dir`。
+
 ### exp32_loc
 - parent: `exp14_2_loc`; Seen-10 localization-only, LoRA route.
 - v2 change: same manifest and Z calibration, with generation head held inactive.
@@ -3750,6 +3815,31 @@ CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/e
 CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py --csgo_config csgo_configs/test/exp32_loc_loc.yaml --output_dir outputs_loc/benchmark_v2/exp32_loc/zero_shot/crossmap --ckpt_path "$CKPT" --seed 42 --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "${CROSS_MAPS[@]}"
 ```
 
+
+
+<a id="exp32-loc-test-16000"></a>
+#### Seen-10 TEST: exp32_loc checkpoint-16000
+
+对照 exp38 Stage 2 checkpoint-3000（从 exp37 checkpoint-12000 继续，总计 15000 次更新）；这里按指定使用 exp32_loc checkpoint-16000，**多 1000 次更新，并非等训练预算比较**。目前 `outputs_loc` 中没有该 checkpoint 的 Seen-10 结果。定位评测在 `eval_csgo_loc.py` 推理时直接计算指标，无需额外指标命令。默认使用已验证的 minimal 资源包，推理 batch 为 32；两段命令须在同一个 Bash 会话内按顺序执行。
+
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT=outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors
+ASSET_ARGS=(--benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json)
+LOC_ROOT=outputs_loc/benchmark_v2/exp32_loc/checkpoint-16000/test/seed_42/infer_bs32
+```
+
+**Inference and metric (same command)**
+```bash
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py \
+  --csgo_config csgo_configs/test/exp32_loc_loc.yaml \
+  --output_dir "$LOC_ROOT" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-loc-batch-size 32 "${ASSET_ARGS[@]}"
+```
+
+如使用完整数据，将 setup 中的 `ASSET_ARGS=()`；若完整数据位于其他目录，还须修改原始测试 YAML 的 `data_dir`。
 
 ## exp33
 - initialization: final Seen-10 `exp31` model; CrossMap-4 joint adaptation, full-head route.

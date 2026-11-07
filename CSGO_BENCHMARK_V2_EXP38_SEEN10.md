@@ -88,3 +88,51 @@ local3000是预先指定的中间test报告点，local7550是固定正式终点�
 | `exp38_s2_both` | 未启动；计划local7550 | 待执行：定位／离散／连续 | 待执行：定位／离散／连续 |
 
 上表为尚未运行的实验计划，不填写实测指标。执行命令见 [record.md](record.md#exp38-seen10-20261107)。
+
+## 中间节点对照：exp32 单任务 @16000（2026-11-07 核查）
+
+按指定对照节点，补充 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成。**本机未发现这两份 checkpoint-16000 的推理／评测结果**；两份权重已存在，`trainer_state.json` 均为 `global_step=16000,max_steps=19500`，无需重新训练。
+
+已有结果的实际身份如下，不能把这些数值填入下面的16000对照表：
+
+| 已有结果 | manifest／summary 绑定的权重 | 已有 test 范围 | 本次处理 |
+|---|---|---|---|
+| `outputs_loc/benchmark_v2/exp32_loc/seen/benchmark_csgo_v2_loc.json` | `outputs/csgo_1b/exp32_loc/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果，待补16000定位 |
+| `outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json` | `outputs/csgo_1b/exp32_gen/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果，待补16000离散生成 |
+| `outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json` | 同上 | `seen_continuous`，10图／12800帧 | 保留原最终结果，待补16000连续生成 |
+
+**比较口径**：exp38 的 Stage 2 local3000 对应累计 `12000+3000=15000` 次更新；指定的 exp32 单任务16000多1000次更新（相对15000多6.67%）。这是相近更新预算对照，不是严格等更新次数、等数据曝光或等FLOPs对照。辅助收益仍首先由同节点的 `exp38_s2_both` 与 `exp38_s2_joint` 判断。本次不改变任何训练终点，也不根据中间test结果选择checkpoint。
+
+新增命令使用 seed42、定位batch32、生成batch16，与exp38计划一致；默认minimal资产，generation metrics使用 `benchmark_v2_core`、paired_size448、逐图评测后十图等权宏平均。连续生成沿用clip_length16／clip_stride16／fvd_size224。定位推理脚本同时输出定位评测，无需再执行一轮定位推理来计算指标。完整可执行命令及full资产切换说明见 [exp32_gen@16000](record.md#exp32-gen-test-16000) 和 [exp32_loc@16000](record.md#exp32-loc-test-16000)。
+
+结果写入独立目录，避免覆盖已有最终结果：
+
+- 定位：`outputs_loc/benchmark_v2/exp32_loc/checkpoint-16000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json`。
+- 离散生成：`outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json`。
+- 连续生成：`outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/continuous/summary.json`。
+
+以下三表预留本轮对照位置；“—”表示尚无实测结果，不代表零值。当前仅完成核查和命令登记，未启动推理／评测。
+
+### test 定位对照
+
+| 实验 | checkpoint | 累计训练step | 状态 | XY↓ | Z↓ | Pitch↓ | Yaw↓ |
+|---|---|---|---|---|---|---|---|
+| `exp32_loc` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — |
+| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — |
+
+### test 离散生成对照
+
+| 实验 | checkpoint | 累计训练step | 状态 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
+|---|---|---|---|---|---|---|---|---|
+| `exp32_gen` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — | — |
+| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
+
+### test 连续生成对照
+
+| 实验 | checkpoint | 累计训练step | 状态 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `exp32_gen` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — | — | — | — | — |
+| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
