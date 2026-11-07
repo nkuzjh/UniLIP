@@ -8875,3 +8875,53 @@ python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-st
 
 执行日志按batch显示进度，同时显示已完成样本数；结束时报告samples/s与CUDA peak allocated显存。`inference_manifest.json`在B>1记录实际batch、样本顺序哈希和噪声策略，配合独立的 `evaluation_config.yaml` 防止误用结果。连续生成仍逐帧独立条件生成，不增加历史帧输入，不改变64帧clip或FVD窗口。未执行训练、完整推理或指标计算。
 批量推理功能初次验收：55项相关CPU回归全部通过，18个改动Python文件语法检查通过，当时新增的5段bash命令通过bash -n；record.md保留CRLF。真实权重的GPU数值、默认batch显存和吞吐未验证。
+
+<a id="exp38-seen10-20261107"></a>
+
+## exp38 Seen-10：S2 joint／both（手动执行）
+
+设计与来源约束见 [CSGO_BENCHMARK_V2_EXP48_SEEN10.md](CSGO_BENCHMARK_V2_EXP48_SEEN10.md)。两组均从 `exp37@12000` 仅加载模型权重，分别新建优化器、scheduler、Trainer状态与RNG；Stage 2各训练local7550步，warmup252、P4/U2 ramp503。累计更新数为12000+local step：local3000对应15000，local7550对应19550。`exp38_s2_joint` 不启用辅助损失；`exp38_s2_both` 启用P4+U2，attention=false。两组仅保存完整checkpoint `checkpoint-3000` 与 `checkpoint-7550`，不保存其他中间点或根目录完整模型。
+
+下列每段是独立nohup任务，顺序完成训练至3000、该节点test三任务推理与指标、从本组3000 checkpoint恢复至7550、final test三任务推理与指标。没有validation。定位batch=32，离散与连续生成batch=16；`--task all`覆盖定位、离散生成和连续生成。默认资产为minimal。执行前由用户选择空闲GPU和端口；以下训练和评测各使用同一GPU，两个实验使用不同GPU和端口，需保持两臂相同训练batch布局。`29690`、`29691`只是示例端口，不代表已检查空闲。移除 `--execute` 可查看计划而不执行。
+
+### exp38_s2_joint
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp38_s2_joint
+TRAIN_GPUS=0
+EVAL_GPU=0
+MASTER_PORT=29690
+python scripts/run_exp38_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 3000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 3000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 7550 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 7550 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp38_s2_joint.nohup.out 2>&1 < /dev/null &
+```
+
+### exp38_s2_both
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp38_s2_both
+TRAIN_GPUS=1
+EVAL_GPU=1
+MASTER_PORT=29691
+python scripts/run_exp38_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 3000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 3000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 7550 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 7550 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp38_s2_both.nohup.out 2>&1 < /dev/null &
+```
+
+首次训练改用full资产时，只将该组首次train行的 `--asset-mode minimal` 改为 `--asset-mode full --data-dir /path/to/preprocessed_data`；恢复、infer和metrics从该实验保存的配置继承资产后端与路径。两组使用相同资产模式和训练布局。
+
+中断后按最后完整checkpoint处理：若尚未到3000且没有本实验checkpoint，从该组首次train命令重新启动，不加 `--resume`；若已有3000 checkpoint，先补做3000节点尚缺的infer／metrics，再单独执行该组的 `train --resume --stop-after-step 0`，随后补做7550节点尚缺的test推理／指标；若已到7550，只补对应节点缺失的推理或指标，不从exp37源头重训。infer重跑会重算所选任务，不保证跳过已有样本。不要从另一实验恢复优化器状态。上述命令仅为手动模板，本记录不表示训练或评测已经启动。

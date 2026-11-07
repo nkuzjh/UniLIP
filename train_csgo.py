@@ -16,7 +16,10 @@ import random
 from unilip.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, IMAGE_TOKEN_IDX
 from torch.utils.data import Dataset
 from unilip.train.nonmix_trainer import NonMixTrainer
-from unilip.train.csgo_staged_training import StopAndSaveAtStepCallback, enable_microbatch_mean_loss
+from unilip.train.csgo_staged_training import (
+    StopAndSaveAtStepCallback, enable_microbatch_mean_loss,
+    save_final_model_if_enabled, validate_checkpoint_saving,
+)
 from unilip import conversation as conversation_lib
 from unilip.model import *
 from unilip.model.external_loc_model_loader import build_frozen_external_loc_model
@@ -2506,6 +2509,12 @@ def train(attn_implementation=None, *, probe_request=None):
             raise ValueError(
                 "training_stop_after_step requires save_only_model=False for resumable checkpoints"
             )
+    training_checkpoint_steps = csgo_config.get("training_checkpoint_steps")
+    save_final_model_at_output_root = csgo_config.get("save_final_model_at_output_root", True)
+    exact_checkpoint_callback = validate_checkpoint_saving(
+        training_args, training_checkpoint_steps, training_stop_after_step,
+        save_final_model_at_output_root,
+    )
     csgo_loss_per_microbatch_mean = csgo_config.get("csgo_loss_per_microbatch_mean", False)
     if not isinstance(csgo_loss_per_microbatch_mean, bool):
         raise ValueError("csgo_loss_per_microbatch_mean must be a boolean")
@@ -3612,6 +3621,8 @@ def train(attn_implementation=None, *, probe_request=None):
 
     unilip_log_callback = UniLIPLogCallback()
     callbacks = [unilip_log_callback]
+    if exact_checkpoint_callback is not None:
+        callbacks.append(exact_checkpoint_callback)
     if training_stop_after_step is not None:
         callbacks.append(StopAndSaveAtStepCallback(training_stop_after_step))
 
@@ -3767,7 +3778,9 @@ def train(attn_implementation=None, *, probe_request=None):
 
 
     model.config.use_cache = True
-    safe_save_model_for_hf_trainer(
+    save_final_model_if_enabled(
+        save_final_model_at_output_root,
+        safe_save_model_for_hf_trainer,
         trainer=trainer,
         output_dir=training_args.output_dir,
         vision_tower=model_args.vision_tower,
