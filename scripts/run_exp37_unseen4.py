@@ -56,6 +56,10 @@ def absolute(value: str | Path) -> Path:
     return p if p.is_absolute() else ROOT / p
 
 
+def same_path(left: str | Path, right: str | Path) -> bool:
+    return absolute(left).resolve() == absolute(right).resolve()
+
+
 @lru_cache(maxsize=64)
 def _sha256_cached(path: Path, size: int, mtime_ns: int, ctime_ns: int) -> str:
     h = hashlib.sha256()
@@ -532,8 +536,8 @@ def validate_loc_summary(path: Path, checkpoint: Path, maps: tuple[str, ...],
         payload.get("split") != split or payload.get("kind") != "localization" or
         payload.get("support_seed") != support_seed or
         payload.get("shots_per_map") != shots or
-        absolute(payload.get("checkpoint", "")) != checkpoint or
-        absolute(payload.get("manifest", "")) != absolute(MATRIX["manifest"])):
+        not same_path(payload.get("checkpoint", ""), checkpoint) or
+        not same_path(payload.get("manifest", ""), MATRIX["manifest"])):
         raise ValueError(f"Localization summary protocol/provenance differs: {path}")
     if len(maps) == 1:
         aggregates._validate_localization_summary_for_map(
@@ -576,7 +580,7 @@ def validate_inference(output: Path, cfg: dict, checkpoint: Path,
     validate_execution_metadata(payload, task, batch_size)
     for key, path in (("config_path", config_path), ("benchmark_v2_manifest", absolute(MATRIX["manifest"])),
                       ("checkpoint", checkpoint), ("ckpt_path", checkpoint)):
-        if absolute(payload.get(key, "")) != path:
+        if not same_path(payload.get(key, ""), path):
             raise ValueError(f"Inference {key} differs: {manifest_path}")
     map_runner._validate_asset_provenance(
         {"benchmark_v2_asset_manifest": cfg.get("benchmark_v2_asset_manifest")},
@@ -594,8 +598,8 @@ def validate_generation_result(output: Path, map_name: str, task: str,
     payload = json.loads(path.read_text(encoding="utf-8"))
     provenance = payload.get("inference_provenance", {})
     if (payload.get("map_name") != map_name or payload.get("benchmark_v2_split") != split or
-        absolute(payload.get("benchmark_v2_manifest", "")) != absolute(MATRIX["manifest"]) or
-        absolute(provenance.get("path", "")) != output / "inference_manifest.json" or
+        not same_path(payload.get("benchmark_v2_manifest", ""), MATRIX["manifest"]) or
+        not same_path(provenance.get("path", ""), output / "inference_manifest.json") or
         provenance.get("payload") != inference or
         map_runner._common_count(payload) != (1280 if task == "gen_continuous" else 2000)):
         raise ValueError(f"Generation metric does not match inference: {path}")

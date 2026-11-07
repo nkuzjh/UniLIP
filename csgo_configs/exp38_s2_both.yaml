@@ -1,7 +1,7 @@
 # exp38_s2_both: joint + P4 perception (attention=false) + U2 aux-loc, model-only init from exp37@12000.
 # Runner verifies source state global_step=12000/max_steps=19550 and pins its SHA-256.
-# Fresh AdamW, RNG, scheduler and local step; 7550 steps, warmup 252, save only 3000/7550, keep 2.
-# Source batch 128 (default one GPU: micro 4, GAS 32); test 3000/7550.
+# Fresh AdamW, RNG, scheduler and local step; 7550 steps, warmup 252, save only 4000/7550, keep 2.
+# Source batch 128 (default one GPU: micro 4, GAS 32); test 4000/7550.
 # Default backend is minimal assets. For full assets use runner --asset-mode full --data-dir PATH.
 # Train/infer/metrics and resume use the saved resolved_config.yaml backend/recipe.
 # Invoke through scripts/run_exp38_seen10.py.
@@ -124,6 +124,6 @@ alpha_loc_aux_schedule_values:
 - 1.0
 
 training_checkpoint_steps:
-- 3000
+- 4000
 - 7550
 save_final_model_at_output_root: false

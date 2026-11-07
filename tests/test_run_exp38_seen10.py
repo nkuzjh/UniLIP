@@ -58,7 +58,7 @@ class Exp38RunnerTests(unittest.TestCase):
                                                                   "fingerprint": RUN.fingerprint(recipe, runtime)}))
         return source
 
-    def managed(self, experiment="exp38_s2_joint", step=3000, *, full=False):
+    def managed(self, experiment="exp38_s2_joint", step=4000, *, full=False):
         extra = ("--asset-mode", "full", "--data-dir", "alternate/full_assets") if full else ()
         args = self.args("train", experiment, *extra)
         config = RUN.resolve_config(args, for_training=True)
@@ -80,9 +80,9 @@ class Exp38RunnerTests(unittest.TestCase):
                 config = self.config(name)
                 RUN.validate_config(config)
                 self.assertEqual(config["exp38_experiment"], name)
-                self.assertEqual(config["training_checkpoint_steps"], [3000, 7550])
+                self.assertEqual(config["training_checkpoint_steps"], [4000, 7550])
                 self.assertIs(config["save_final_model_at_output_root"], False)
-                self.assertEqual(config["training_stop_after_step"], 3000)
+                self.assertEqual(config["training_stop_after_step"], 4000)
                 self.assertEqual(config["finetune_init_ckpt_path"], RUN.SOURCE)
                 command, plan, _ = RUN.training_plan(self.args("train", name), config)
                 command = command[0]
@@ -91,8 +91,8 @@ class Exp38RunnerTests(unittest.TestCase):
                                     ("--save_only_model", "False"), ("--gradient_accumulation_steps", "32")):
                     self.assertEqual(option(command, flag), value)
                 self.assertNotIn("--save_steps", command)
-                self.assertEqual(plan["cumulative_steps"], {"3000": 15000, "7550": 19550})
-                self.assertEqual(plan["runtime"]["checkpoint_steps"], [3000, 7550])
+                self.assertEqual(plan["cumulative_steps"], {"4000": 16000, "7550": 19550})
+                self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 7550])
                 self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": .1})
                 self.assertEqual(config["learning_rate"], 2e-5)
                 self.assertEqual(config["action_dit_connector_lr"], 1e-4)
@@ -116,15 +116,32 @@ class Exp38RunnerTests(unittest.TestCase):
 
     def test_stop_and_fingerprint_preserve_full_horizon(self):
         first = self.config()
+        explicit = self.config("exp38_s2_joint", "--stop-after-step", "4000")
+        final_stop = self.config("exp38_s2_joint", "--stop-after-step", "7550")
         nonstop = self.config("exp38_s2_joint", "--stop-after-step", "0")
+        self.assertEqual(explicit["training_stop_after_step"], 4000)
+        self.assertEqual(final_stop["training_stop_after_step"], 7550)
+        self.assertEqual(first, explicit)
         self.assertNotIn("training_stop_after_step", nonstop)
         a, pa, _ = RUN.training_plan(self.args(), first)
+        _, pe, _ = RUN.training_plan(self.args("train", "exp38_s2_joint", "--stop-after-step", "4000"), explicit)
+        _, pf, _ = RUN.training_plan(self.args("train", "exp38_s2_joint", "--stop-after-step", "7550"), final_stop)
         b, pb, _ = RUN.training_plan(self.args("train", "exp38_s2_joint", "--stop-after-step", "0"), nonstop)
         self.assertEqual(a, b)
+        self.assertEqual(pa["fingerprint"], pe["fingerprint"])
+        self.assertEqual(pa["fingerprint"], pf["fingerprint"])
         self.assertEqual(pa["fingerprint"], pb["fingerprint"])
-        for stop in (1, 6000, 7551, -1):
+        self.assertEqual(pb["runtime"]["max_steps"], 7550)
+        self.assertEqual(pb["runtime"]["warmup_steps"], 252)
+        for stop in (1, 3000, 6000, 7551, -1):
             with self.subTest(stop=stop), self.assertRaises(ValueError):
                 self.config("exp38_s2_joint", "--stop-after-step", str(stop))
+
+    def test_legacy_checkpoint_plan_is_rejected(self):
+        config = self.config()
+        config["training_checkpoint_steps"] = [3000, 7550]
+        with self.assertRaisesRegex(ValueError, "recipe differs in fixed field training_checkpoint_steps"):
+            RUN.validate_config(config)
 
     def test_source_preflight_accepts_intermediate_and_cross_backend(self):
         self.source()
@@ -175,6 +192,13 @@ class Exp38RunnerTests(unittest.TestCase):
         self.assertEqual(resumed["resume_checkpoint"], RUN.relative(ckpt))
         self.assertEqual(resumed["source_checkpoint"], plan["source_checkpoint"])
         self.assertEqual(resumed["runtime"]["max_steps"], 7550)
+        self.assertEqual(resumed["fingerprint"], plan["fingerprint"])
+        self.assertEqual(resumed["runtime"]["checkpoint_steps"], [4000, 7550])
+        self.assertEqual(resumed["cumulative_steps"], {"4000": 16000, "7550": 19550})
+        (ckpt / "rng_state.pth").unlink()
+        with self.assertRaisesRegex(ValueError, "RNG state"):
+            RUN.training_plan(args, config)
+        (ckpt / "rng_state.pth").touch()
         (ckpt / "scheduler.pt").unlink()
         (ckpt / "optimizer.pt").unlink()
         with self.assertRaisesRegex(ValueError, "optimizer/scheduler"):
@@ -187,7 +211,7 @@ class Exp38RunnerTests(unittest.TestCase):
             RUN.training_plan(args, config)
 
     def test_evaluation_two_test_nodes_and_three_routes(self):
-        for step in (3000, 7550):
+        for step in (4000, 7550):
             args = self.args("infer", "exp38_s2_both", "--checkpoint-step", str(step), "--task", "all")
             config = RUN.resolve_config(args, for_training=False)
             commands, path, evaluated = RUN.evaluation_plan(args, config)
@@ -202,17 +226,17 @@ class Exp38RunnerTests(unittest.TestCase):
             self.assertEqual(len(snapshots), 3)
         final = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "final")
         self.assertIn("checkpoint-7550", str(RUN.evaluation_plan(final, RUN.resolve_config(final, for_training=False))[1]))
-        for step in (2000, 6000, 7551):
+        for step in (2000, 3000, 6000, 7551):
             args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", str(step))
             with self.assertRaises(ValueError):
                 RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
-        args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "3000", "--split", "validation")
+        args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "4000", "--split", "validation")
         with self.assertRaises(ValueError):
             RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
 
-    def test_execute_evaluation_allows_3000_but_checks_final(self):
+    def test_execute_evaluation_allows_4000_but_checks_final(self):
         self.managed()
-        args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "3000", "--execute")
+        args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "4000", "--execute")
         RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
         args = self.args("infer", "exp38_s2_joint", "--checkpoint-step", "final", "--execute")
         with self.assertRaises(ValueError):
@@ -228,7 +252,7 @@ class Exp38RunnerTests(unittest.TestCase):
         with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
             self.assertEqual(RUN.main(["train", "--experiment", "exp38_s2_joint"]), 0)
             self.assertEqual(RUN.main(["infer", "--experiment", "exp38_s2_joint", "--checkpoint-step", "final"]), 0)
-            self.assertEqual(RUN.main(["metrics", "--experiment", "exp38_s2_joint", "--checkpoint-step", "3000"]), 0)
+            self.assertEqual(RUN.main(["metrics", "--experiment", "exp38_s2_joint", "--checkpoint-step", "4000"]), 0)
             launch.assert_not_called()
         after = sorted(str(p.relative_to(self.root)) for p in self.root.rglob("*"))
         self.assertEqual(before, after)
@@ -247,9 +271,9 @@ class Exp38RunnerTests(unittest.TestCase):
         self.assertIsNone(config["benchmark_v2_asset_manifest"])
         self.assertEqual(config["data_dir"], "alternate/full_assets")
         self.assertEqual(plan["source_checkpoint"]["sha256"], RUN.digest_file(source))
-        ckpt = out / "checkpoint-3000"
+        ckpt = out / "checkpoint-4000"
         ckpt.mkdir()
-        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 3000, "max_steps": 7550}))
+        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 4000, "max_steps": 7550}))
         for filename in ("model.safetensors", "training_args.bin", "scheduler.pt", "rng_state.pth", "optimizer.pt"):
             (ckpt / filename).touch()
         source.unlink()
