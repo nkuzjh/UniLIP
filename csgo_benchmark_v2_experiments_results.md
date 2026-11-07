@@ -1217,9 +1217,11 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 50 | 13.272 | 0.4495 | 0.6603 | 27.879 | 35.415 | 1282.012 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 |
 
-# exp37 Seen-10 两阶段实验（2026-11-04 同步结果）
+# exp37 Seen-10 两阶段实验（2026-11-07 同步结果）
 
-协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。本次读取已同步的训练状态、推理清单和指标JSON，不启动实验。已核实四组训练完成及相应validation／test指标；两个both候选本地尚无产物，不能据此判断远端是否在运行。结果来自完整十图、minimal资产、seed42、等地图宏平均；定位与离散test各20000条，连续test为200×64=12800帧。三列参数量本次不做新审计，保留待审计。
+协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。本次读取已同步的训练状态、推理清单和指标JSON，不启动实验。已核实五组训练完成，其中前四组已有相应validation／test指标；exp37_s2_both新增local6000 test定位／离散／连续完整结果（推理batch8）；其validation仍仅有local4000定位（batch1），local6000 validation未同步。exp37_s2_both_b1本地仍无产物，远端状态待确认。已填结果来自完整十图、minimal资产、seed42、等地图宏平均；定位与离散validation各5000条，test各20000条，连续test为200×64=12800帧。三列参数量本次不做新审计，保留待审计。
+
+下方“2026-11-04”对照分析保留当日历史范围；both现有validation、最终test与缺失项见[2026-11-07更新](#exp37-s2-both-update-20261107)。
 
 | 实验版本 | 来源与训练身份 | 训练 | validation | test / metrics | 表格 checkpoint |
 |---|---|---|---|---|---|
@@ -1227,49 +1229,69 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | ✅ 离散／连续 | local6000 |
 | `exp37_s2_loc` | `exp32_loc@19500`仅模型；定位单任务 | ✅ local6000/6000 | ✅ @4000、6000；定位 | ✅ 定位 | local6000 |
 | `exp37_s2` | `exp37@19550`仅模型；joint无辅助 | ✅ local6000/6000 | ✅ @4000、6000；定位／离散 | ✅ 定位／离散／连续 | local6000 |
-| `exp37_s2_both` | `exp37@19550`；joint P4＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
+| `exp37_s2_both` | `exp37@19550`；joint P4＋U2 | ✅ local6000/6000；checkpoint已核验 | local4000定位✅（batch1）、离散中断；local6000未同步 | ✅ 定位／离散／连续，三项batch8 | local6000 |
 | `exp37_s2_both_b1` | `exp37@19550`；joint P3＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
 
-Stage2首次只加载来源模型，重建optimizer／scheduler／local step／RNG；其预算均为local6000、有效base batch128。两组both的配方只在perception attention=false／true上不同。validation只评定位和离散生成，连续生成按协议只在test评测，不应标成缺失的validation任务。各validation节点的关键指标与来源见 [专题结果表](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#数据评测和结果记录)。
+Stage2首次只加载来源模型，重建optimizer／scheduler／local step／RNG；其预算均为local6000、有效base batch128。两组both的配方只在perception attention=false／true上不同。validation只评定位和离散生成，连续生成按协议只在test评测，不应标成缺失的validation任务。各validation节点的关键指标与来源见 [专题结果表](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#数据评测和结果记录)。下方test表新增推理batch列：both为8，其余实测行为1；新结果可并列报告，但尚非同推理条件的辅助消融，不据跨batch微小差异排名。
 
 ## exp37 定位（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_loc` | local 6000 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_loc` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
 ## exp37 离散生成（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
-| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
+| `exp37_s2_gen` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7378 | 0.6238 | 0.5092 | 35.8402 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
+| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
 ## exp37 连续生成（Seen-10；最终test macro）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
-| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
+| `exp37_s2_gen` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0884 | 0.6082 | 37.1505 | 43.2095 | 922.6230 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
+| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
 ## 2026-11-04：exp37 阶段性结果与 Seen-10 其他模型对照
 
-以下对照使用固定最终 checkpoint 的 test 等地图宏平均；外部模型沿用 [Table 1](csgo_benchmark_v2_table1_seen10.md) 已登记数值，本次未重新评测外部项目。validation 单独记录，不与 test 的 FID 混比（每图分别500和2000张）。
+以下是截至2026-11-04的历史对照，使用固定最终 checkpoint 的 test 等地图宏平均；外部模型沿用 [Table 1](csgo_benchmark_v2_table1_seen10.md) 已登记数值，当时未重新评测外部项目。validation 单独记录，不与 test 的 FID 混比（每图分别500和2000张）。
 
 - **续训有效，但联合尚未整体超过单任务。** `exp37_s2` 相比 `exp37`，XY从49.9381降至47.1936（−5.50%），离散PSNR从13.6163升至13.7481，连续FVD从943.6128降至922.5427；不过对齐Stage2预算后，定位单任务XY=46.3528，生成单任务PSNR=14.1668、FID=34.0804、FVD=843.4360。联合的Z稍好（2.8386 vs 2.8725），XY／Pitch／Yaw及所列生成指标均落后。当前不支持“联合全面优于单任务”的结论，也不能将改善归因于尚无结果的辅助损失。
 - **定位已恢复到接近单任务的水平，外部强基线仍有优势。** 联合XY=47.1936明显好于旧 `exp32` 的123.194和 `exp32_1` 的63.0377；但低于旧模型的误差并不单独证明两阶段设计，因为主损失权重、学习率与训练预算也变化。与外部基线相比，XY优于X-VLA的65.969和π0.5的53.542，仍落后RDT的43.251与OpenVLA-OFT的36.956。各角度误差须分别报告，不能用XY代替整个5D定位能力。
 - **生成单任务的FVD有竞争力，图像质量尚有差距。** `exp37_s2_gen` FVD=843.4360，在当前Table 1已登记模型与本次新结果中数值最低，接近Puffin的844.2427；这不代表所有生成指标领先。其离散PSNR=14.1668、LPIPS=0.6029弱于Show-o2（14.539／0.591）和Puffin（14.3186／0.5924）；FID=34.0804也高于ControlAR的30.2869。联合组生成指标整体比对应单任务差，仍是当前主要短板。
 - **下一步先补齐证据。** 同步两组both（P4＋U2、P3＋U2）的validation@4000／6000和test@6000，按同一基座、同一预算比较辅助收益；最终辅助方案依据Seen validation确定。Unseen已完成的只是gen／loc／joint的zero-shot基线，后续独立400步适配及Seen-retention仍待同步，不能以zero-shot结果宣称few-shot收益，也不能用Unseen query挑选配方。本文两阶段结果不声称与旧单阶段外部模型等FLOPs。
+
+<a id="exp37-s2-both-update-20261107"></a>
+
+## 2026-11-07：exp37_s2_both 状态、validation与最终test
+
+`exp37_s2_both`（P4＋U2）已完成 local6000/6000；根目录与 checkpoint-6000 的 trainer state 均为 6000/6000，checkpoint-6000 `model.safetensors` 头声明大小与实际大小一致。配置和计划齐全，来源为 `exp37@19550`；双卡 micro4、GAS16、base batch128，perception attention=false、αloc固定8、两项辅助权重ramp400步至perception=0.05／aux-loc=1。完整 Seen-10 定位validation目前只确认到 local4000（minimal、seed42、batch1、每图500条）；同一local4000节点的离散生成在1290/5000时收到SIGKILL，已同步1290张图片，缺完整指标／manifest。本次已补齐local6000 test三项（batch8），local6000 validation与B1仍未同步。下表保留4000步validation定位结果，与后面的最终test分开。
+
+| 实验 | checkpoint／split | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
+|---|---|---:|---:|---:|---:|---|
+| `exp37_s2_loc` | local4000 validation | 39.5600 | 2.6484 | 2.3485 | 20.5830 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-4000/validation/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2` | local4000 validation | 39.5235 | 2.5778 | 2.5489 | 21.8859 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-4000/validation/seed_42/benchmark_csgo_v2_loc.json) |
+| `exp37_s2_both` | local4000 validation | 41.3281 | 2.7120 | 2.7387 | 21.3078 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-4000/validation/seed_42/benchmark_csgo_v2_loc.json) |
+
+相对同节点 `exp37_s2`，both 的 XY、Z、Pitch误差分别高4.57%、5.21%、7.45%，Yaw误差低2.64%；这组validation结果呈现指标间取舍，不能称为全面提升。local6000 test已同步，但推理batch不同，不能将validation→test的数值变化当作4000→6000的训练收益。
+
+**最终test补充（local6000、batch8）。** 十图定位／离散各20000条，连续12800帧，seed42、minimal资产；生成coverage=1且缺失／多余预测=0，宏平均与各地图原始指标一致。三项完整数值和链接已填入上方test表，更多指标见[Seen专题](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-s2-both-update-20261107)。
+
+与旧batch1无辅助联合结果相比，both的XY／Z／Yaw误差数值下降0.85%／1.88%／1.21%，Pitch上升4.78%；离散PSNR差−0.0103 dB、FID差+0.0365，连续FVD为922.6230 vs 922.5427，观测值非常接近。当前没有显示清晰的辅助增益，也不支持两个任务全面超过单任务。
+
+该比较尚未对齐推理batch：既有s2／gen／loc对照均为batch1，没有匹配的batch8结果；新增生成manifest记录438个活跃Dropout模块和 `stochastic_layers_batch_dependent=true`。不能将差异直接归因于辅助loss，也不能把“数值约持平”写成严格等效。优先同步缺失validation，必要时补同checkpoint／batch／模型模式的validation对照；test用于报告，不据此选最终辅助方案。本次不启动实验。
 
 <a id="exp32-3maps-b2-s3-j8-20261030"></a>
 

@@ -127,7 +127,7 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 
 ## exp37 新实验身份与 Table 1 实测候选（2026-11-04）
 
-当前为1次Stage1＋5次Stage2，共六组。已核实 `exp37`、`exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2` 的最终test结果；两个both候选本地尚无同步结果。协议和validation见 [Seen-10专题](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，简短外部模型比较见 [总结果文档](csgo_benchmark_v2_experiments_results.md#2026-11-04exp37-阶段性结果与-seen-10-其他模型对照)。本次新增实测区，不覆盖上方历史Table 1行，不预先指定最终Ours。新组参数量仍待审计，不借用旧exp32数值。
+当前为1次Stage1＋5次Stage2，共六组。2026-11-07同步核查：`exp37`、`exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2` 已有最终test结果；`exp37_s2_both`训练及最终test三项已完成（推理batch8），validation仍仅有local4000定位（batch1）；B1仍无本机产物。新结果见[2026-11-07结果与比较边界](csgo_benchmark_v2_experiments_results.md#exp37-s2-both-update-20261107)，协议见[Seen-10专题](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)。本实测区不覆盖上方历史Table 1行，不预先指定最终Ours；新组参数量仍待审计，不借用旧exp32数值。
 
 | 候选实验 | 任务 | 正式checkpoint | 当前状态 | 参数量 |
 |---|---|---|---|---|
@@ -135,37 +135,78 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | `exp37_s2_gen` | 离散／连续 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
 | `exp37_s2_loc` | 定位 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
 | `exp37_s2` | 定位／离散／连续 | local6000 | ✅ 训练、validation、test完成 | 待审计 |
-| `exp37_s2_both` | 定位／离散／连续，P4＋U2 | local6000（计划） | 未同步产物，远端状态待确认 | 待审计 |
+| `exp37_s2_both` | 定位／离散／连续，P4＋U2 | local6000 | 训练及test三项✅（batch8）；local4000定位validation已评（batch1），其余validation未同步 | 待审计 |
 | `exp37_s2_both_b1` | 定位／离散／连续，P3＋U2 | local6000（计划） | 未同步产物，远端状态待确认 | 待审计 |
 
-所有下列数值为完整十图、seed42、minimal资产的等地图宏平均；定位和离散test各20000条，连续12800帧。单任务Stage2分别接旧 `exp32_gen@19500`／`exp32_loc@19500`，joint Stage2接 `exp37@19550`；均续训6000步。两阶段总预算需单独披露，不能主张与旧单阶段外部模型等FLOPs。两组辅助方案只在perception attention开关不同，尚无本机结果可判优劣。
+2026-11-07补充：下方三表合并外部定位／生成基线、完整 Seen-10 的 `exp31*`／`exp32*` 与 `exp37*` 最终test结果。`exp31*` 为 full-head，`exp32*` 为 LoRA；表中 joint＋aux 均表示同时开启 perception 与 aux-loc。只纳入各实验适用的任务，不纳入三地图消融、CrossMap／Unseen、validation 或中途checkpoint；保持外部模型原有顺序，再列各 UniLIP 系列，不按指标排序。
+
+已链接原始JSON的指标采用完整十图等地图宏平均：定位与离散test各20000条，连续test为200×64=12800帧，统一保留四位小数。Lumina-Accessory／Puffin 的正式产物尚未与原表绑定，暂沿用[上方历史表](#实验结果表)的报告值及原精度，checkpoint／batch不作推断。Show-o2 的 `csgo_seen10_exp32gen_aligned_v2_final` 候选JSON与原表指标吻合，但原表实验标识仍为 `--`，保留‡；参数量沿用[既有审计](#参数量核对依据2026-10-19)及§／‡标记，`exp31*`、`exp37*` 仍待审计。
+
+本次核对后的元数据与比较边界：
+
+- `exp32`／`exp32_1` 的最终步数按根目录 [exp32训练状态](outputs/csgo_1b/exp32/trainer_state.json)／[exp32_1训练状态](outputs/csgo_1b/exp32_1/trainer_state.json)记为 **19550**；各任务推理清单均指向对应根目录最终模型。旧主表中的19500不沿用。`exp32_1` 离散LPIPS原始值为0.6145836，新表按四位舍入记 **0.6146**（旧表0.6145）。
+- `exp31*`／`exp32*` 推理清单所指测试配置均为batch1，旧清单未独立保存实际batch，故列为“1（配置）”。OmniGen2列16为初始batch，支持OOM回退；π0.5和Show-o2未找到推理batch记录，训练batch不作为替代。`exp31*`／`exp32*`／`exp37*` 为推理seed42；外部结果沿用各自清单，其中π0.5为seed0，X-VLA训练seed0、推理seed42。
+- `exp37*` 使用minimal资产。单任务Stage2分别接旧 `exp32_gen@19500`／`exp32_loc@19500`，joint Stage2接 `exp37@19550`，均续训6000步；两阶段总预算需单独披露，不能主张与旧单阶段基线等FLOPs。full-head与LoRA也不是仅改变辅助loss的消融。
+- `exp37_s2_both` 最终test推理batch为8，其余已完成的 `exp37*` 行为1；生成存在随batch改变的活跃Dropout随机性，当前不是严格同推理条件的比较，不根据跨batch数值挑选最终Ours或宣称辅助增益。both的validation与最终test分析仍见本节开头链接。
 
 ### exp37 定位（最终test）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_loc` | local 6000 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Method／训练方式 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| X-VLA | `X-VLA-fair-frozen-vl` | final 19500 | 16 | 879.482 M | 879.482 M | 25.603 M | 65.9693 | 4.1617 | 2.9083 | 27.7481 | [JSON](../X-VLA/outputs/csgo_benchmark_v2_seen10/X-VLA-fair-frozen-vl/seed_0/metrics/localization/summary_equal_map.json) |
+| RDT | `csgo_aligned_aug_v1` | final 19500 | 1 | 1681.640 M | 1681.640 M | 73.165 M | 43.2506 | 2.7827 | 2.3061 | 20.7786 | [JSON](../RoboticsDiffusionTransformer/outputs/csgo_aligned_aug_v1/RDT/seed_42/evaluation/localization/summary_equal_map.json) |
+| OpenVLA-OFT | `csgo_seen10_aligned_v2` | final 19500 | 1 | 7739.887 M | 7724.644 M | 197.493 M | 36.9560 | 2.2642 | 1.1460 | 17.1370 | [JSON](../openvla-oft/outputs/csgo_benchmark_v2_seen10_aligned_v2/OpenVLA-OFT/seed_42/evaluation/localization/summary_equal_map.json) |
+| $\pi_{0.5}^{\dagger}$ | `pi0.5_exp32_loc_main_frozen_vl` | final 19500 | 未记录 | 3431.291 M | 3431.291 M | 80.023 M | 53.5425 | 3.4532 | 1.2515 | 25.4504 | [JSON](../openpi/outputs/csgo_benchmark_v2_seen10/pi0.5_exp32_loc_main_frozen_vl/seed_0/evaluation/localization_late/summary_equal_map.json) |
+| UniLIP full-head · loc-only | `exp31_loc` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 79.2937 | 4.1339 | 2.7075 | 36.1728 | [JSON](outputs_loc/benchmark_v2/exp31_loc/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 82.7500 | 4.3542 | 2.9693 | 37.1299 | [JSON](outputs_loc/benchmark_v2/exp31_1/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 待审计 | 待审计 | 待审计 | 99.0970 | 4.9604 | 3.2192 | 45.1100 | [JSON](outputs_loc/benchmark_v2/exp31/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP LoRA · loc-only | `exp32_loc` | final 19500 | 1（配置） | 2269.423 M | 1285.918 M | 55.689 M | 48.9611 | 3.0059 | 2.9704 | 26.0468 | [JSON](outputs_loc/benchmark_v2/exp32_loc/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 2288.441 M | 1285.918 M | 77.003 M | 123.1938 | 6.3845 | 3.3523 | 55.4486 | [JSON](outputs_loc/benchmark_v2/exp32/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 2288.441 M | 1285.918 M | 77.003 M | 63.0377 | 3.5604 | 3.0882 | 31.6713 | [JSON](outputs_loc/benchmark_v2/exp32_1/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 loc-only | `exp37_s2_loc` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
 ### exp37 离散生成（最终test）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
-| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Method／训练方式 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| OmniGen2（原表OmniGen） | `exp32gen_aligned` | final 19500 | 16（初始） | 7805.604 M | 7136.920 M | 5.107 M | 11.9736 | 0.6915 | 0.5057 | 83.4449 | [JSON](../OmniGen2/outputs/csgo_seen10_exp32gen_aligned/OmniGen2/seed_42/evaluation/late/discrete/summary_equal_map.json) |
+| ControlAR | `exp32gen_aligned_peft` | final 19500 | 16 | 910.198 M | 859.926 M | 69.317 M | 13.3055 | 0.6230 | 0.5103 | 30.2869 | [JSON](../ControlAR/outputs/csgo_seen10_exp32gen_aligned_peft/ControlAR/seed_42/evaluation/late/inference_seed_42/discrete/summary_equal_map.json) |
+| Lumina-Accessory | `--` | 原表未注明 | 未记录 | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 12.823 | 0.643 | 0.511 | 31.098 | [原表](#离散生成)（产物待绑定§） |
+| Show-o2 | `--`‡ | 19500（候选‡） | 未记录 | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 14.5386 | 0.5910 | 0.5289 | 37.4297 | [候选JSON‡](../Show-o/outputs/csgo_benchmark_v2_aligned/csgo_seen10_exp32gen_aligned_v2_final/seed_42/evaluations/late/discrete/summary_equal_map.json) |
+| Puffin | `exp32gen_aligned` | 原表未注明 | 未记录 | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 14.3186 | 0.5924 | 0.5357 | 33.2448 | [原表](#离散生成)（产物待绑定§） |
+| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 14.5605 | 0.5888 | 0.5258 | 28.6290 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/discrete/summary.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 14.9542 | 0.5725 | 0.5375 | 27.9493 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/discrete/summary.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 待审计 | 待审计 | 待审计 | 14.6271 | 0.5847 | 0.5294 | 28.3035 | [JSON](outputs_eval/benchmark_v2/exp31/seen/discrete/summary.json) |
+| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 13.9649 | 0.6106 | 0.5163 | 35.5836 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json) |
+| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.1528 | 0.6035 | 0.5229 | 36.6005 | [JSON](outputs_eval/benchmark_v2/exp32/seen/discrete/summary.json) |
+| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 13.9070 | 0.6146 | 0.5151 | 36.2159 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/discrete/summary.json) |
+| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
+| UniLIP · Stage 2 gen-only | `exp37_s2_gen` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.1668 | 0.6029 | 0.5217 | 34.0804 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 13.7481 | 0.6229 | 0.5099 | 35.8037 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/discrete/summary.json) |
+| UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7378 | 0.6238 | 0.5092 | 35.8402 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
+| UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
 ### exp37 连续生成（最终test）
 
-| Experiment | Checkpoint | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `exp37` | Stage 1 final 19550 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
-| `exp37_s2_gen` | local 6000 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
-| `exp37_s2` | local 6000 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
-| `exp37_s2_both` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
-| `exp37_s2_both_b1` | local 6000 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| Method／训练方式 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| OmniGen2（原表OmniGen） | `exp32gen_aligned` | final 19500 | 16（初始） | 7805.604 M | 7136.920 M | 5.107 M | 12.7187 | 0.6993 | 24.9154 | 33.0017 | 1631.3874 | [JSON](../OmniGen2/outputs/csgo_seen10_exp32gen_aligned/OmniGen2/seed_42/evaluation/late/continuous/summary_equal_map.json) |
+| ControlAR | `exp32gen_aligned_peft` | final 19500 | 16 | 910.198 M | 859.926 M | 69.317 M | 13.9832 | 0.6157 | 39.2998 | 45.1919 | 951.4971 | [JSON](../ControlAR/outputs/csgo_seen10_exp32gen_aligned_peft/ControlAR/seed_42/evaluation/late/inference_seed_42/continuous/summary_equal_map.json) |
+| Lumina-Accessory | `--` | 原表未注明 | 未记录 | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 13.722 | 0.634 | 38.103 | 44.423 | 932.545 | [原表](#连续生成)（产物待绑定§） |
+| Show-o2 | `--`‡ | 19500（候选‡） | 未记录 | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 15.4463 | 0.5765 | 32.7094 | 39.0428 | 887.3028 | [候选JSON‡](../Show-o/outputs/csgo_benchmark_v2_aligned/csgo_seen10_exp32gen_aligned_v2_final/seed_42/evaluations/late/continuous/summary_equal_map.json) |
+| Puffin | `exp32gen_aligned` | 原表未注明 | 未记录 | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 15.4657 | 0.5679 | 28.1975 | 35.2320 | 844.2427 | [原表](#连续生成)（产物待绑定§） |
+| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 15.1641 | 0.5622 | 31.4090 | 38.0330 | 737.1975 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/continuous/summary.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 待审计 | 待审计 | 待审计 | 15.5707 | 0.5446 | 28.8793 | 35.6882 | 674.1797 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/continuous/summary.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 待审计 | 待审计 | 待审计 | 15.1897 | 0.5592 | 31.0365 | 37.6569 | 727.5069 | [JSON](outputs_eval/benchmark_v2/exp31/seen/continuous/summary.json) |
+| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 14.3418 | 0.5929 | 35.6983 | 41.8670 | 848.0710 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json) |
+| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.5725 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | [JSON](outputs_eval/benchmark_v2/exp32/seen/continuous/summary.json) |
+| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.2285 | 0.5981 | 36.1777 | 42.2848 | 891.6025 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/continuous/summary.json) |
+| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
+| UniLIP · Stage 2 gen-only | `exp37_s2_gen` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
+| UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0884 | 0.6082 | 37.1505 | 43.2095 | 922.6230 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
+| UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
