@@ -5,7 +5,7 @@
 适配使用独立runner和400步新optimizer，不改变本文Seen训练配方或恢复方式。
 两个both候选都保留配置；Unseen query不得用于选择最终候选或调参。
 
-状态（2026-11-08）：本文登记六个新的训练运行：`exp37`、`exp37_s2_gen`、`exp37_s2_loc`、`exp37_s2`、`exp37_s2_both`、`exp37_s2_both_b1`（1 次 Stage 1 + 5 次 Stage 2）。前四组已有完整 checkpoint 和原batch1的validation/test评测；`exp37_s2_both` 已完成 local6000/6000，最终权重与状态及batch8三项test均已同步。最新batch8队列完成了`exp37_s2`定位／离散／连续推理，但在指标前置校验时报错退出：定位结果有效，离散／连续图片与推理清单齐全、未执行指标计算；`exp37_s2_loc`和`exp37_s2_gen`未由该队列执行，本机没有这两组的batch8结果。错误原因为定位摘要中的清单路径与校验期望路径字符串不同，尽管二者解析到同一文件；细节见[本页2026-11-08根因记录](#exp37-bs8-queue-root-cause-20261108)。validation状态不变：both仅有local4000定位（batch=1）；该节点离散生成中断，local6000的validation尚未同步。`exp37_s2_both_b1` 本地仍无产物，远端状态待确认。运行入口为 [`scripts/run_exp37_seen10.py`](scripts/run_exp37_seen10.py)，手动命令见 [`record.md`](record.md)。本协议只覆盖 Benchmark v2 manifest 中完整十张 Seen 地图，不是三图消融。
+状态（2026-11-09）：本文登记六个训练运行（1 次 Stage 1 + 5 次 Stage 2）。`exp37_s2` 与 `exp37_s2_both` 的 local6000 最终 test 定位／离散／连续三项 batch8 均已完成；`exp37_s2_loc` 的 batch8 定位也已完成。`exp37_s2_gen` 的离散 batch8 推理已完成20000张，连续任务在模型加载时因 CUDA 不可用而失败退出，两类生成评测尚未完成，不用历史 batch1 指标填补。`exp37_s2_both_b1` 本机仍无产物。此前定位摘要路径校验问题已修复，恢复后的实际状态见[2026-11-09更新](#exp37-bs8-update-20261109)，旧报错保留在[历史根因记录](#exp37-bs8-queue-root-cause-20261108)。validation 状态不变：both 仅有 local4000 定位（batch1），该节点离散生成中断，local6000 validation 未同步。运行入口为 [`scripts/run_exp37_seen10.py`](scripts/run_exp37_seen10.py)，手动命令见 [`record.md`](record.md)。本协议覆盖 Benchmark v2 manifest 中完整十张 Seen 地图，原 batch1 test 结果在主表后独立保留。
 
 ## 研究问题与比较边界
 
@@ -92,22 +92,22 @@ validation 每张地图定位与离散生成各 500 条，总计各 5,000；cont
 | 实验 | validation | 固定正式 test checkpoint | 当前结果 |
 |---|---|---|---|
 | `exp37` | 8000、实际 final=19550，已评 | Stage 1 `checkpoint-19550`，仅参照 | 训练完成；定位、离散及连续 test 已评 |
-| `exp37_s2_gen` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；原batch1 test已归档；本次batch8队列未执行，本机无结果 |
-| `exp37_s2_loc` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；原batch1 test已归档；本次batch8队列未执行，本机无结果 |
-| `exp37_s2` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；原batch1 test已归档；batch8定位已评，生成推理完成但指标未评测（前置校验失败） |
+| `exp37_s2_gen` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；batch8离散推理✅；连续加载失败，待恢复CUDA后重试；两类生成待评测 |
+| `exp37_s2_loc` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；batch8定位推理／评测✅；原batch1 test已归档 |
+| `exp37_s2` | local 4000、6000，已评 | local `checkpoint-6000` | 训练完成；test定位／离散／连续✅，三项均batch8；原batch1已归档 |
 | `exp37_s2_both` | local4000定位已评（batch1）、离散中断；local6000未同步 | local `checkpoint-6000` | 训练完成；test定位／离散／连续✅，三项均batch8 |
 | `exp37_s2_both_b1` | local 4000、6000 | local 6000 | 本地无训练或评测产物，状态待核实 |
 
 ### 已完成组的 Seen-10 实测结果（seed 42）
 
-下表为固定正式 **test**，十图等权宏平均。XY 为定位 `XY_Dist`（越低越好）；PSNR、LPIPS、FID 来自离散生成，FVD 来自连续生成。`—` 表示该单任务路线不评对应任务；“未评测”表示推理产物存在但指标计算未执行；“本队列未执行”表示本次队列未生成对应batch8产物。每个已填数值取自所链 JSON 的 `metrics_macro_map`，不以 validation 替代 test。Stage 1 的batch1只作训练阶段参照；Stage 2 主表统一登记batch8结果，原batch1结果归档于紧随其后的历史表。
+下表为固定正式 **test**，十图等权宏平均。XY 为定位 `XY_Dist`（越低越好）；PSNR、LPIPS、FID 来自离散生成，FVD 来自连续生成。`—` 表示该单任务路线不评对应任务；“未完成”表示对应任务仍在推理或尚未进入评测，不能据部分图片填写汇总指标。每个已填数值取自所链 JSON 的 `metrics_macro_map`，不以 validation 替代 test。Stage 1 的batch1只作训练阶段参照；Stage 2 主表统一登记batch8结果，原batch1结果归档于紧随其后的历史表。
 
 | 实验与 checkpoint | 推理 batch | XY ↓ | PSNR ↑ | LPIPS ↓ | FID ↓ | FVD ↓ | 原始摘要 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37@19550` | 1 | 49.938 | 13.616 | 0.627 | 36.394 | 943.613 | [loc](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) · [discrete](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) · [continuous](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
-| `exp37_s2_gen@6000` | 8 | — | 未评测 | 未评测 | 未评测 | 未评测 | 本队列未执行；无本机产物 |
-| `exp37_s2_loc@6000` | 8 | 未评测 | — | — | — | — | 本队列未执行；无本机产物 |
-| `exp37_s2@6000` | 8 | 47.173 | 未评测 | 未评测 | 未评测 | 未评测 | [loc JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json)；生成推理清单已核验，指标未执行 |
+| `exp37_s2_gen@6000` | 8 | — | 未完成 | 未完成 | 未完成 | 未完成 | [离散清单](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/inference_manifest.json)；离散推理完成、连续加载失败，两类待评测 |
+| `exp37_s2_loc@6000` | 8 | 46.341 | — | — | — | — | [loc](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| `exp37_s2@6000` | 8 | 47.173 | 13.748 | 0.623 | 35.862 | 928.648 | [loc](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) · [discrete](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) · [continuous](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | `exp37_s2_both@6000` | 8 | 46.792 | 13.738 | 0.624 | 35.840 | 922.623 | [loc](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) · [discrete](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) · [continuous](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 
 历史记录：以下三组是2026-11-07已核对的原始batch1 test结果。保留原数值与来源，供追溯推理batch的影响；与上表batch8结果分开解释。
@@ -137,15 +137,35 @@ validation 来源分别位于 `outputs_loc/benchmark_v2/<实验>/checkpoint-<步
 
 <a id="exp37-bs8-queue-root-cause-20261108"></a>
 
-## 2026-11-08：batch8队列停止原因与实际评测状态
+## 2026-11-08 历史记录：batch8队列停止原因与当时评测状态
+
+以下保留首次中断时的记录；后续已补齐的结果与在跑任务以[2026-11-09更新](#exp37-bs8-update-20261109)为准。
 
 日志 [`fst_outs/exp37_s2_controls.test_bs8.nohup.out`](fst_outs/exp37_s2_controls.test_bs8.nohup.out) 显示，`exp37_s2` 的定位、离散和连续推理均完成；随后队列在定位指标前置校验处报错：`Localization summary inference provenance differs`，并以 `set -e` 停止。定位 JSON 的指标有效：XY／Z／Pitch／Yaw为 **47.1732145309／2.8362459898／2.651352644／26.31470890045**，表中按四位小数展示。清单覆盖完整十图、样本数／checkpoint／seed／batch及payload均通过核对。摘要 provenance 保存的清单路径为 `/data/home/jiahao/UniLIP_outputs/outputs_loc/.../inference_manifest.json`；[`aggregate_csgo_benchmark_v2_metrics.py`](scripts/aggregate_csgo_benchmark_v2_metrics.py#L907) 写入前将路径 `expanduser().resolve()`，runner 在 [`run_exp37_seen10.py`](scripts/run_exp37_seen10.py) 比较时只对摘要值调用 `path_in_repo`、未对期望清单路径做同样的 `resolve()`。两者经文件系统核验指向同一文件（`samefile=True`），但规范化不对称导致校验误报；不是 `abspath` 自身解析符号链接，也不是定位指标无效或生成推理未完成。
 
 `exp37_s2` 离散与连续生成均完成20,000／12,800条推理，清单中的实际文件名与十图manifest完全一致（缺失=0、多余=0）；但没有逐图指标文件或summary，指标子进程未执行，因此记“未评测”，不填造指标。队列在首个实验的指标前置校验退出，故本队列没有执行 `exp37_s2_loc`、`exp37_s2_gen` 的batch8推理或评测；仅据本日志与本机产物登记，不推断其他可能存在的远端进程。该段记录最初中断状态。后续已按用户要求修复exp37／exp38的路径身份比较：统一解析两侧符号链接，保留payload与协议校验，并补齐exp38缺失的摘要校验模块导入。既有结果JSON无需改写；修复不代表剩余评测已执行。恢复命令见[record.md](record.md#exp37-s2-controls-test-bs8-recovery-20261108)。
 
-## 2026-11-08：batch8 对照已核验部分
+<a id="exp37-bs8-update-20261109"></a>
 
-同为local6000、推理batch8、minimal资产、seed42的Seen-10 test定位摘要已核验：无辅助联合`exp37_s2`的XY／Z／Pitch／Yaw依次为47.1732／2.8362／2.6514／26.3147；辅助联合`exp37_s2_both`依次为46.7915／2.7853／2.7759／26.0181。相对无辅助联合，both的XY、Z、Yaw误差分别下降0.81%、1.80%、1.13%，Pitch误差上升4.70%；定位呈指标间取舍，不构成全面提升。无辅助联合的生成指标尚待计算，两个单任务的batch8推理／评测尚待按恢复命令执行，暂不据此判断生成收益或与单任务的同batch排名。
+## 2026-11-09：batch8 最新进度与同批量结果分析
+
+本次只读取现有日志和产物，不启动实验。核验范围为 local6000、test、seed42、minimal 资产、推理 batch8。已完成的 7 份摘要覆盖完整十图：joint 三项、loc-only 定位、both 三项；定位／离散各20000条，连续12800帧。生成逐图 JSON 与汇总逐图值相同，coverage=1、缺失／多余预测均为0；十图等权宏平均已复算。表中 batch8 指模型推理批量，指标计算器自己的 batch 设置未变。
+
+| 实验 | 定位 | 离散生成 | 连续生成 |
+|---|---|---|---|
+| `exp37_s2` | 推理／评测✅ | 推理／评测✅ | 推理／评测✅ |
+| `exp37_s2_loc` | 推理／评测✅ | — | — |
+| `exp37_s2_gen` | — | 推理✅（20000/20000），待评测 | CUDA初始化失败，0/12800；待重试及评测 |
+| `exp37_s2_both` | 推理／评测✅ | 推理／评测✅ | 推理／评测✅ |
+| `exp37_s2_both_b1` | 未同步 | 未同步 | 未同步 |
+
+进度证据：[`exp37_s2_controls.test_bs8.nohup.out`](fst_outs/exp37_s2_controls.test_bs8.nohup.out) 已记录 joint 两类生成 summary 写出。新日志 [`exp37_s2_gen_loc_controls.test_bs8.nohup.out`](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out) 中 loc-only 早期一次收到 SIGKILL，重跑后定位完成且 metrics 校验通过；该历史故障不作为当前状态。**截至2026-11-09 01:10:33（UTC+8），gen-only 离散推理已完成20000/20000、2500/2500批，耗时10342.58秒（约2小时52分23秒）；完整清单记录batch8、seed42、local6000，十图实际文件名与test split逐项一致，缺失／多余均为0。** 随后的连续任务在模型加载时先出现 `CUDA initialization: CUDA unknown error`，再报 `Flash Attention 2 is not available on CPU`，未生成连续帧或完整清单；进度为0/12800帧。日志最后更新于00:58:57，当前无对应runner或推理进程，只有日志跟踪进程。连续子进程失败使 `infer --task all` 返回非零并触发 `set -e`，因此后续两类metrics均未执行；两类仍无逐图指标或summary。本机随后只读检查 `nvidia-smi` 返回 `No devices were found`，说明当前CUDA设备不可见，具体是资源可见性还是驱动等原因尚未确定，不能把该错误认定为batch8显存不足。此前已验证的joint、loc-only指标及修复后的路径校验不受这次连续任务加载失败影响。
+
+**同 batch 定位比较。** loc-only 的 XY／Z／Pitch／Yaw 为 **46.3411／2.8749／2.5172／25.1531**；joint 为 **47.1732／2.8362／2.6514／26.3147**；both 为 **46.7915／2.7853／2.7759／26.0181**。both 相对 joint 的 XY、Z、Yaw 误差下降0.81%、1.80%、1.13%，Pitch 上升4.70%。相对 loc-only，both 的 Z 低3.12%，但 XY、Pitch、Yaw 分别高0.97%、10.28%、3.44%；因此两种联合模型均未在四项定位指标上全面超过单任务。
+
+**同 batch 生成比较。** 离散 joint→both 的 PSNR 为13.7476→13.7378、LPIPS 为0.6230→0.6238、FID 为35.8618→35.8402；FID略低，而重建指标略差。连续 PSNR 为14.0769→14.0884、LPIPS为0.6085→0.6082、FVD为928.6481→922.6230（下降0.65%），但 T-Warp 为37.0982→37.1505、T-Diff 为43.1798→43.2095，时间一致性指标并非同时改善。总体差距较小，现有结果支持辅助损失带来指标间取舍，尚不支持广泛且明显的生成收益。
+
+**后续登记。** 先恢复GPU可见性，再对已有20000张离散图执行metrics、仅重试连续infer并计算连续metrics；[record.md的剩余任务命令](record.md#exp37-s2-gen-bs8-cuda-recovery-20261109)已拆分这三步。完成后再补入本页及两份汇总文档的 batch8 主表；无需重跑已完成的离散infer、joint、loc-only、both。原 batch1 历史表继续保留，不与 batch8 逐项混选，也不据当前缺失的 gen-only 指标判断同批量生成单任务排名。
 
 <a id="exp37-s2-both-update-20261107"></a>
 

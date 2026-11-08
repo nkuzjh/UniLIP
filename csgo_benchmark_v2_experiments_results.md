@@ -1217,18 +1217,18 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 50 | 13.272 | 0.4495 | 0.6603 | 27.879 | 35.415 | 1282.012 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 |
 
-# exp37 Seen-10 两阶段实验（2026-11-08 batch8 同步核查）
+# exp37 Seen-10 两阶段实验（2026-11-09 batch8 同步核查）
 
-协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。2026-11-08检查实际batch8队列后确认：`exp37_s2`定位／离散／连续推理已完成，定位指标有效；离散／连续仅有完整推理清单、没有指标摘要，指标计算未执行。队列在定位指标的provenance前置校验时报路径形式不一致并退出；`exp37_s2_loc`、`exp37_s2_gen`未由本队列执行，本机无其batch8结果。根因与证据见[Seen-10专题根因记录](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-queue-root-cause-20261108)。原batch1结果完整移至各任务主表紧随其后的独立历史表。已有 `exp37_s2_both` 的batch8三项结果保持不变，Stage1 `exp37` 的batch1结果仅作参照。本次仅更新文档，不启动实验。已完成推理覆盖定位／离散各20000条、连续12800帧，完整十图、minimal资产、seed42；validation与参数量记录不变。
+协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。截至2026-11-09核查，`exp37_s2`的batch8定位／离散／连续三项指标均已完成，`exp37_s2_loc`的batch8定位指标已完成；`exp37_s2_both`原有三项batch8结果保持不变。`exp37_s2_gen`的batch8离散推理已完成20000张、连续在模型加载时因CUDA不可用失败退出，两项均无指标摘要；`exp37_s2_both_b1`本机仍无产物。已完成的定位／离散各覆盖十图20000条，连续覆盖12800帧，均为local6000、minimal资产、seed42。原batch1历史表全部保留，Stage1 `exp37` 的batch1仅作参照；validation与参数量记录不变。
 
-下方“2026-11-04”和“2026-11-07”分析保留当日历史范围；最新batch8核验状态见[2026-11-08更新](#exp37-controls-bs8-update-20261108)。
+下方“2026-11-04”和“2026-11-07”分析保留当日历史范围；最新batch8核验状态见[2026-11-09更新](#exp37-controls-bs8-update-20261109)。
 
 | 实验版本 | 来源与训练身份 | 训练 | validation | test / metrics | 表格 checkpoint |
 |---|---|---|---|---|---|
 | `exp37` | 原始UniLIP＋π0.5；joint J8，αloc=8，无辅助 | ✅ 19550/19550，50 epochs | ✅ @8000、19550；定位／离散 | ✅ 定位／离散／连续 | Stage 1 final 19550，仅参照 |
-| `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | 本次batch8队列未执行；本机无结果 | local6000 |
-| `exp37_s2_loc` | `exp32_loc@19500`仅模型；定位单任务 | ✅ local6000/6000 | ✅ @4000、6000；定位 | 本次batch8队列未执行；本机无结果 | local6000 |
-| `exp37_s2` | `exp37@19550`仅模型；joint无辅助 | ✅ local6000/6000 | ✅ @4000、6000；定位／离散 | batch8定位指标✅；生成推理完成，指标未评测（队列前置校验失败） | local6000 |
+| `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | batch8离散推理✅；连续CUDA初始化失败、待重试；两类待评测 | local6000 |
+| `exp37_s2_loc` | `exp32_loc@19500`仅模型；定位单任务 | ✅ local6000/6000 | ✅ @4000、6000；定位 | ✅ batch8定位 | local6000 |
+| `exp37_s2` | `exp37@19550`仅模型；joint无辅助 | ✅ local6000/6000 | ✅ @4000、6000；定位／离散 | ✅ batch8定位／离散／连续 | local6000 |
 | `exp37_s2_both` | `exp37@19550`；joint P4＋U2 | ✅ local6000/6000；checkpoint已核验 | local4000定位✅（batch1）、离散中断；local6000未同步 | ✅ 定位／离散／连续，三项batch8 | local6000 |
 | `exp37_s2_both_b1` | `exp37@19550`；joint P3＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
 
@@ -1239,7 +1239,7 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 来源 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_loc` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 本队列未执行；无本机batch8产物 |
+| `exp37_s2_loc` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.3411 | 2.8749 | 2.5172 | 25.1531 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
 | `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 47.1732 | 2.8362 | 2.6514 | 26.3147 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
@@ -1259,8 +1259,8 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
-| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 本队列未执行；无本机batch8产物 |
-| `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | [推理清单](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/discrete/inference_manifest.json)；指标未执行 |
+| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | [推理清单](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/inference_manifest.json)；20000张已完成，待评测 |
+| `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7476 | 0.6230 | 0.5099 | 35.8618 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7378 | 0.6238 | 0.5092 | 35.8402 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
@@ -1279,8 +1279,8 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
-| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 未评测 | 本队列未执行；无本机batch8产物 |
-| `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 未评测 | [推理清单](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/continuous/inference_manifest.json)；指标未执行 |
+| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 未评测 | [推理日志](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out)；连续加载失败（0/12800），待重试及评测 |
+| `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0769 | 0.6085 | 37.0982 | 43.1798 | 928.6481 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0884 | 0.6082 | 37.1505 | 43.2095 | 922.6230 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
 
@@ -1295,12 +1295,15 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
 
 <a id="exp37-controls-bs8-update-20261108"></a>
+<a id="exp37-controls-bs8-update-20261109"></a>
 
-## 2026-11-08：Stage2 对照的 batch8 结果与队列状态
+## 2026-11-09：Stage2 对照的 batch8 结果与队列状态
 
-本次队列目标共六项：`exp37_s2` 的定位／离散／连续，`exp37_s2_loc` 的定位，`exp37_s2_gen` 的离散／连续。实际日志显示，联合三项推理完成；定位指标XY／Z／Pitch／Yaw为 **47.1732／2.8362／2.6514／26.3147**，checkpoint为local6000，实际batch8、2500批、20000条；十图宏平均已复算。其离散／连续清单记录20000／12800个样本与实际batch8，但没有指标摘要，指标未执行。随后定位指标前置校验报`inference provenance differs`并令`set -e`队列退出，故两个单任务的batch8推理／评测未由本队列执行，本机无结果。根因是[`aggregate_csgo_benchmark_v2_metrics.py`](scripts/aggregate_csgo_benchmark_v2_metrics.py#L907)写入resolved provenance、而[`run_exp37_seen10.py`](scripts/run_exp37_seen10.py)校验未对称resolve期望路径；二者实际为同一文件，详见[专题根因记录](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-queue-root-cause-20261108)。该路径比较问题现已在exp37／exp38入口修复，既有指标和未完成任务状态不因代码修复而改变；恢复命令见[record.md](record.md#exp37-s2-controls-test-bs8-recovery-20261108)。
+`exp37_s2`的定位、离散、连续三份batch8摘要齐全，`exp37_s2_loc`的定位摘要齐全；`exp37_s2_both`的原三份摘要不变。已完成任务的manifest记录local6000、seed42、实际batch8，定位／离散各20000条、连续12800帧。定位十图宏平均和生成逐图原始JSON、覆盖率与摘要一致；生成预测缺失和多余数均为0。来源见上方各任务主表及[联合对照日志](fst_outs/exp37_s2_controls.test_bs8.nohup.out)。先前的provenance路径比较故障已修复，记录见[专题根因记录](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-queue-root-cause-20261108)。定位单任务曾遇SIGKILL，重跑现已成功，不再视为当前失败。
 
-原batch1数值及来源完整保存在各任务主表后，不替代缺失的batch8指标，也不在batch1／batch8之间逐项取最优。现阶段只能比较已核验的joint与both定位batch8；生成指标尚未计算，两个单任务的batch8推理／评测本队列未执行。后续按上方record恢复命令补跑，不用batch1结果填充batch8空项。
+截至2026-11-09 01:10:33（UTC+8）的复查，`exp37_s2_gen`的batch8离散推理已完成20000/20000（2500批），清单和十图完整图片已核验；连续任务在加载模型时出现 `CUDA unknown error`，继而报 `Flash Attention 2 is not available on CPU`，未开始生成（0/12800）。队列失败退出，当前无对应执行进程；两类逐图指标和summary均未产生，见[运行日志](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out)。本机 `nvidia-smi` 随后返回 `No devices were found`，具体GPU不可见原因未定，不直接判为显存不足。GPU恢复后按[剩余三步命令](record.md#exp37-s2-gen-bs8-cuda-recovery-20261109)执行离散metrics、连续infer与连续metrics，避免重算离散推理。`exp37_s2_both_b1`本机无产物；已完成的7份batch8摘要数值未变，本次无新增可填的评测数值。原batch1数值及来源完整保存在各任务主表后，不填补batch8空项，也不跨batch逐项取最优。
+
+同为local6000、batch8的test比较中，`both`相对无辅助`joint`的定位XY／Z／Yaw误差分别下降0.81%／1.80%／1.13%，Pitch误差上升4.70%。离散生成PSNR为13.7476／13.7378（joint／both），FID为35.8618／35.8402，差距小且方向不同；连续FVD由928.6481降至922.6230（0.65%），T-Warp由37.0982升至37.1505。`both`相对定位单任务的XY／Pitch／Yaw误差高0.97%／10.28%／3.44%，Z误差低3.12%。这些test指标呈现取舍，不支持联合全面优于单任务；生成单任务batch8尚未完成，不能拿其batch1结果混比。
 
 ## 2026-11-04：exp37 阶段性结果与 Seen-10 其他模型对照
 
@@ -1315,7 +1318,7 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 
 ## 2026-11-07：exp37_s2_both 状态、validation与最终test
 
-本节的跨batch分析保留2026-11-07当日状态；三组新batch8对照的同步情况以[2026-11-08核验](#exp37-controls-bs8-update-20261108)及上方主表为准。
+本节的跨batch分析保留2026-11-07当日状态；三组新batch8对照的同步情况以[2026-11-09核验](#exp37-controls-bs8-update-20261109)及上方主表为准。
 
 `exp37_s2_both`（P4＋U2）已完成 local6000/6000；根目录与 checkpoint-6000 的 trainer state 均为 6000/6000，checkpoint-6000 `model.safetensors` 头声明大小与实际大小一致。配置和计划齐全，来源为 `exp37@19550`；双卡 micro4、GAS16、base batch128，perception attention=false、αloc固定8、两项辅助权重ramp400步至perception=0.05／aux-loc=1。完整 Seen-10 定位validation目前只确认到 local4000（minimal、seed42、batch1、每图500条）；同一local4000节点的离散生成在1290/5000时收到SIGKILL，已同步1290张图片，缺完整指标／manifest。本次已补齐local6000 test三项（batch8），local6000 validation与B1仍未同步。下表保留4000步validation定位结果，与后面的最终test分开。
 

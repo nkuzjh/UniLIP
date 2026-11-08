@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan or explicitly execute the two fixed exp38 Seen10 arms.
+"""Plan or explicitly execute the fixed exp38 Seen10 arms.
 
 The default is read-only planning. --execute is required to write snapshots or
 launch a training, inference, or metrics process. No queue is launched.
@@ -25,7 +25,8 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_both")
+JOINT_EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_joint_constloc4")
+EXPERIMENTS = (*JOINT_EXPERIMENTS, "exp38_s2_both")
 SOURCE = "outputs/csgo_1b/exp37/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
 SOURCE_HORIZON = 19550
@@ -190,7 +191,10 @@ def validate_config(config: dict) -> None:
         steps, values = config.get(stem + "_schedule_steps"), config.get(stem + "_schedule_values")
         if (steps is None) != (values is None) or steps is not None and (len(steps) != len(values) or steps != sorted(set(steps))):
             raise ValueError(f"Invalid {stem} schedule")
-    if experiment == "exp38_s2_joint":
+    expected_alpha = 4.0 if experiment == "exp38_s2_joint_constloc4" else 8.0
+    if config.get("alpha_loc_loss") != expected_alpha:
+        raise ValueError(f"{experiment} requires alpha_loc_loss={expected_alpha}")
+    if experiment in JOINT_EXPERIMENTS:
         if any(config.get(k) for k in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss")):
             raise ValueError("Joint control must have no auxiliary losses")
     elif (config.get("is_loc_aux_loss") is not True or config.get("is_aux_loc_combined_em_unc_loss") is not True
@@ -360,8 +364,13 @@ def preflight_stage2_source(config: dict) -> dict:
     if (source_runtime.get("epochs") != 50 or source_runtime.get("source_batch") != 128
         or source_runtime.get("save_steps") != 4000 or source_runtime.get("warmup_ratio") != 0.003):
         raise ValueError("Source exp37 training runtime differs")
+    if source_recipe.get("alpha_loc_loss") != 8.0:
+        raise ValueError("Source exp37 requires alpha_loc_loss=8.0")
+    expected_alpha = 4.0 if config.get("exp38_experiment") == "exp38_s2_joint_constloc4" else 8.0
+    if config.get("alpha_loc_loss") != expected_alpha:
+        raise ValueError(f"Target exp38 requires alpha_loc_loss={expected_alpha}")
     for key in ("benchmark_v2_manifest", "benchmark_v2_split", "train_maps", "val_maps", "test_maps",
-                "is_multi_task", "is_multi_task_balanced", "task_mix_ratio", "alpha_loc_loss",
+                "is_multi_task", "is_multi_task_balanced", "task_mix_ratio",
                 "is_lora", "llm_train_mode", "lora_r", "lora_alpha", "lora_dropout",
                 "enable_language_model_lora", "enable_gen_head_lora", "enable_loc_head_lora",
                 "fix_vit", "fix_llm", "fix_connect", "fix_dit", "is_action_dit_projector", "use_pi05_action_dit"):

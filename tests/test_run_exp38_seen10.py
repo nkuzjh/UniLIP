@@ -115,6 +115,97 @@ class Exp38RunnerTests(unittest.TestCase):
             "training_stop_after_step", "model_name_or_path",
         })
 
+    def test_constloc4_recipe_changes_only_alpha_and_identity(self):
+        joint = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint.yaml")
+        constloc4 = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc4.yaml")
+        differences = {key for key in joint.keys() | constloc4.keys()
+                       if joint.get(key) != constloc4.get(key)}
+        self.assertEqual(differences, {"alpha_loc_loss", "exp38_experiment"})
+        self.assertEqual((joint["alpha_loc_loss"], constloc4["alpha_loc_loss"]), (8.0, 4.0))
+        for name, alpha in (("exp38_s2_joint", 8.0), ("exp38_s2_joint_constloc4", 4.0),
+                            ("exp38_s2_both", 8.0)):
+            with self.subTest(name=name):
+                config = self.config(name)
+                RUN.validate_config(config)
+                self.assertEqual(config["alpha_loc_loss"], alpha)
+        config = self.config("exp38_s2_joint_constloc4")
+        config["is_loc_aux_loss"] = True
+        with self.assertRaisesRegex(ValueError, "recipe differs in fixed field is_loc_aux_loss"):
+            RUN.validate_config(config)
+        config = self.config("exp38_s2_joint_constloc4")
+        config["alpha_loc_loss"] = 8.0
+        with self.assertRaisesRegex(ValueError, "recipe differs in fixed field alpha_loc_loss"):
+            RUN.validate_config(config)
+
+    def test_constloc4_source_stays_alpha8_and_training_runtime(self):
+        self.source()
+        for mode, extra in (("minimal", ()),
+                            ("full", ("--asset-mode", "full", "--data-dir", "alternate/full_assets"))):
+            with self.subTest(mode=mode):
+                args = self.args("train", "exp38_s2_joint_constloc4", *extra)
+                config = RUN.resolve_config(args, for_training=True)
+                RUN.validate_config(config)
+                command, plan, out = RUN.training_plan(args, config)
+                self.assertEqual(out.name, "exp38_s2_joint_constloc4")
+                self.assertEqual(plan["runtime"]["source_batch"], 128)
+                self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 7550])
+                self.assertEqual(plan["runtime"]["warmup_steps"], 252)
+                self.assertEqual(option(command[0], "--gradient_accumulation_steps"), "32")
+                self.assertEqual(option(command[0], "--save_total_limit"), "2")
+                with patch.object(RUN, "tensor_header", return_value={"tensor_count": 2830}):
+                    self.assertEqual(RUN.preflight_stage2_source(config)["step"], 12000)
+        source_recipe = self.root / "outputs/csgo_1b/exp37/resolved_config.yaml"
+        source = RUN.read_yaml(source_recipe)
+        source["alpha_loc_loss"] = 4.0
+        source_recipe.write_text(yaml.safe_dump(source))
+        config = self.config("exp38_s2_joint_constloc4")
+        with self.assertRaisesRegex(ValueError, "Source exp37 fixed recipe differs in alpha_loc_loss"):
+            RUN.preflight_stage2_source(config)
+
+    def test_constloc4_checkpoint_task_and_batch_routes(self):
+        for step in (4000, 7550):
+            for task, expected in (("all", (1, 2)), ("localization", (1, 0)),
+                                   ("gen", (0, 1)), ("gen_continuous", (0, 1))):
+                with self.subTest(step=step, task=task):
+                    args = self.args("infer", "exp38_s2_joint_constloc4", "--checkpoint-step", str(step),
+                                     "--task", task, "--test-loc-batch-size", "8",
+                                     "--test-gen-batch-size", "4")
+                    commands, path, config = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+                    loc = [command for command in commands if Path(command[1]).name == "eval_csgo_loc.py"]
+                    gen = [command for command in commands if Path(command[1]).name == "eval_csgo.py"]
+                    self.assertEqual((len(loc), len(gen)), expected)
+                    self.assertEqual([option(command, "--test-loc-batch-size") for command in loc], ["8"] * expected[0])
+                    self.assertEqual([option(command, "--test-gen-batch-size") for command in gen], ["4"] * expected[1])
+                    self.assertIn(f"exp38_s2_joint_constloc4/checkpoint-{step}/test", str(path))
+                    self.assertIn(f"exp38_s2_joint_constloc4/checkpoint-{step}/model.safetensors", config["ckpt_path"])
+                    self.assertEqual(config["alpha_loc_loss"], 4.0)
+                    self.assertFalse(config["is_loc_aux_loss"])
+                    self.assertEqual(len(RUN.evaluation_snapshots(args, path, config)), sum(expected))
+        args = self.args("metrics", "exp38_s2_joint_constloc4", "--checkpoint-step", "final",
+                         "--task", "localization")
+        commands, path, config = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+        self.assertEqual(commands, [])
+        self.assertIn("checkpoint-7550", str(path))
+        self.assertEqual(len(RUN.evaluation_snapshots(args, path, config)), 1)
+
+    def test_constloc4_resume_rejects_mixed_arm_artifacts(self):
+        ckpt, config, plan = self.managed("exp38_s2_joint_constloc4")
+        args = self.args("train", "exp38_s2_joint_constloc4", "--resume", "--stop-after-step", "0")
+        resumed_config = RUN.resolve_config(args, for_training=True)
+        _, resumed, _ = RUN.training_plan(args, resumed_config)
+        self.assertEqual(resumed["resume_checkpoint"], RUN.relative(ckpt))
+        self.assertEqual(resumed["fingerprint"], plan["fingerprint"])
+        joint = self.config("exp38_s2_joint")
+        saved = ckpt.parent / "resolved_config.yaml"
+        saved.write_text(yaml.safe_dump(joint))
+        with self.assertRaisesRegex(ValueError, "belongs to another exp38 arm"):
+            RUN.resolve_config(args, for_training=True)
+        saved.write_text(yaml.safe_dump(config))
+        mixed_plan = dict(plan, experiment="exp38_s2_joint", fingerprint=RUN.fingerprint(joint, plan["runtime"]))
+        (ckpt.parent / "experiment_plan.json").write_text(json.dumps(mixed_plan))
+        with self.assertRaisesRegex(ValueError, "Resume recipe or runtime changed"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+
     def test_stop_and_fingerprint_preserve_full_horizon(self):
         first = self.config()
         explicit = self.config("exp38_s2_joint", "--stop-after-step", "4000")

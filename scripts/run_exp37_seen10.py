@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan or explicitly execute the six fixed exp37 Seen10 arms.
+"""Plan or explicitly execute the fixed exp37/exp39 Seen10 arms.
 
 The default is read-only planning. --execute is required to write snapshots or
 launch a training, inference, or metrics process. No queue is launched.
@@ -27,7 +27,10 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-EXPERIMENTS = ("exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
+STAGE1 = ("exp37", "exp39")
+EXP39_MAX_STEPS = 19550
+EXP39_CHECKPOINT_STEPS = (12000, 16000, EXP39_MAX_STEPS)
+EXPERIMENTS = ("exp37", "exp39", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 SINGLES = ("exp37_s2_gen", "exp37_s2_loc")
 JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 MANIFEST = json.loads((ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json").read_text())
@@ -104,6 +107,23 @@ def final_checkpoint_step(experiment: str) -> int:
     out = output_dir(experiment)
     if not (out / "resolved_config.yaml").is_file() or not (out / "experiment_plan.json").is_file():
         raise ValueError(f"Final evaluation requires a managed training recipe: {out}")
+    if experiment == "exp39":
+        config = read_yaml(out / "resolved_config.yaml")
+        validate_config(config)
+        plan = json.loads((out / "experiment_plan.json").read_text(encoding="utf-8"))
+        runtime = plan.get("runtime", {})
+        if (plan.get("experiment") != experiment or plan.get("fingerprint") != fingerprint(config, runtime)
+                or runtime.get("max_steps") != EXP39_MAX_STEPS
+                or runtime.get("checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS)
+                or runtime.get("epochs") != 50 or runtime.get("source_batch") != 128
+                or runtime.get("save_total_limit") != 3 or runtime.get("warmup_ratio") != 0.003):
+            raise ValueError("exp39 final plan identity or horizon changed")
+        ckpt = out / f"checkpoint-{EXP39_MAX_STEPS}"
+        state = trainer_state(ckpt / "trainer_state.json")
+        if (state["global_step"] != EXP39_MAX_STEPS or state["max_steps"] != EXP39_MAX_STEPS
+                or not (ckpt / "model.safetensors").is_file()):
+            raise ValueError(f"exp39 final checkpoint is incomplete: {ckpt}")
+        return EXP39_MAX_STEPS
     root_state = out / "trainer_state.json"
     if root_state.is_file():
         state = trainer_state(root_state)
@@ -169,6 +189,8 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
         if args.resume and args.seed != config.get("seed"):
             raise ValueError("Resume seed differs from saved training recipe")
         config["seed"] = args.seed
+        if args.experiment == "exp39" and args.resume and args.stop_after_step is None:
+            config.pop("training_stop_after_step", None)
         if args.stop_after_step is not None:
             if args.stop_after_step < 0:
                 raise ValueError("--stop-after-step must be nonnegative")
@@ -207,12 +229,25 @@ def validate_config(config: dict) -> None:
         raise ValueError("All arms require microbatch-mean GAS normalization")
     if config.get("is_lora") is not True or config.get("llm_train_mode") != "lora":
         raise ValueError("LoRA architecture changed")
-    if experiment == "exp37":
+    if experiment in STAGE1:
         if any(config.get(k) for k in ("finetune_init_ckpt_path", "resume_ckpt_path", "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path")):
             raise ValueError("Stage 1 must start from original model and pi05")
         stop = config.get("training_stop_after_step")
-        if stop is not None and (type(stop) is not int or stop <= 0):
+        if stop is not None and (type(stop) is not int or
+                                 (stop not in EXP39_CHECKPOINT_STEPS if experiment == "exp39" else stop <= 0)):
             raise ValueError("Invalid Stage 1 stop")
+        if experiment == "exp39":
+            if config.get("training_checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS):
+                raise ValueError("exp39 must save only checkpoints 12000, 16000, and 19550")
+            if config.get("save_final_model_at_output_root") is not False:
+                raise ValueError("exp39 root model export must be disabled")
+            base = read_yaml(recipe_path("exp37"))
+            differences = {key for key in config.keys() | base.keys()
+                           if config.get(key) != base.get(key)}
+            allowed = {"exp37_experiment", "alpha_loc_loss", "training_checkpoint_steps",
+                       "save_final_model_at_output_root", *RECIPE_OVERRIDES}
+            if differences - allowed or config.get("alpha_loc_loss") != 4.0:
+                raise ValueError("exp39 must match exp37 except localization loss and checkpoint controls")
     else:
         if config.get("finetune_init_strict") is not True or any(config.get(k) for k in ("resume_ckpt_path", "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path")):
             raise ValueError("Stage 2 requires strict model-only initialization")
@@ -276,7 +311,7 @@ def check_resume(out: Path, identity: str, resume: bool) -> tuple[Path | None, d
         raise ValueError("Resume checkpoint lacks optimizer/scheduler state")
     if plan.get("experiment") != out.name:
         raise ValueError("Resume plan experiment identity changed")
-    if out.name != "exp37":
+    if out.name not in STAGE1:
         source = plan.get("source_checkpoint")
         if not isinstance(source, dict) or not isinstance(source.get("sha256"), str) or len(source["sha256"]) != 64 or any(c not in "0123456789abcdef" for c in source["sha256"]) or source.get("path") != read_yaml(out / "resolved_config.yaml").get("finetune_init_ckpt_path"):
             raise ValueError("Resume plan lacks pinned source provenance")
@@ -291,23 +326,63 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     if micro <= 0 or 128 % (len(devices) * micro):
         raise ValueError("GPU count × micro batch must divide source batch 128")
     gas = 128 // (len(devices) * micro)
-    stage2 = args.experiment != "exp37"
-    runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
-                   gradient_accumulation_steps=gas, seed=args.seed, save_steps=1000 if stage2 else 4000,
-                   save_total_limit=6, report_to=args.report_to, max_steps=6000 if stage2 else None,
-                   warmup_steps=200 if stage2 else None, warmup_ratio=config["warmup_ratio"],
-                   optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
-                   adam_epsilon=1e-8, weight_decay=0.0, max_grad_norm=1.0)
+    stage2 = args.experiment not in STAGE1
+    exp39 = args.experiment == "exp39"
+    if exp39:
+        runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
+                       gradient_accumulation_steps=gas, seed=args.seed,
+                       checkpoint_steps=list(EXP39_CHECKPOINT_STEPS), save_total_limit=3,
+                       report_to=args.report_to, max_steps=EXP39_MAX_STEPS,
+                       warmup_steps=None, warmup_ratio=config["warmup_ratio"],
+                       optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
+                       adam_epsilon=1e-8, weight_decay=0.0, max_grad_norm=1.0)
+    else:
+        runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
+                       gradient_accumulation_steps=gas, seed=args.seed, save_steps=1000 if stage2 else 4000,
+                       save_total_limit=6, report_to=args.report_to, max_steps=6000 if stage2 else None,
+                       warmup_steps=200 if stage2 else None, warmup_ratio=config["warmup_ratio"],
+                       optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
+                       adam_epsilon=1e-8, weight_decay=0.0, max_grad_norm=1.0)
     out = output_dir(args.experiment)
+    if exp39:
+        present = {int(p.name[11:]) for p in out.glob("checkpoint-*")
+                   if p.is_dir() and p.name[11:].isdigit()}
+        if not present.issubset(EXP39_CHECKPOINT_STEPS):
+            raise ValueError(f"Unexpected exp39 checkpoint steps: {sorted(present)}")
+        if (out / "model.safetensors").exists():
+            raise ValueError("Unexpected exp39 root model export")
     identity = fingerprint(config, runtime)
     checkpoint, previous = check_resume(out, identity, args.resume)
+    if exp39:
+        if previous and previous.get("source_checkpoint") is not None:
+            raise ValueError("exp39 resume plan has unexpected source checkpoint")
+        if args.resume:
+            rng_names = (["rng_state.pth"] if len(devices) == 1 else
+                         [f"rng_state_{rank}.pth" for rank in range(len(devices))])
+            for step in present:
+                saved = out / f"checkpoint-{step}"
+                required = ("trainer_state.json", "training_args.bin", "model.safetensors", *rng_names)
+                if any(not (saved / name).is_file() for name in required):
+                    raise ValueError(f"Incomplete exp39 checkpoint: {saved}")
+                state = trainer_state(saved / "trainer_state.json")
+                if state["global_step"] != step or state["max_steps"] != EXP39_MAX_STEPS:
+                    raise ValueError(f"exp39 checkpoint step or horizon changed: {saved}")
+                if not ((saved / "optimizer.pt").is_file() and (saved / "scheduler.pt").is_file()) and not list(saved.glob("global_step*/*optim_states.pt")):
+                    raise ValueError(f"exp39 checkpoint lacks optimizer/scheduler state: {saved}")
     if checkpoint:
         state = trainer_state(checkpoint / "trainer_state.json")
         if stage2 and state["max_steps"] != 6000:
             raise ValueError("Resume checkpoint has wrong Stage 2 horizon")
+        if exp39 and state["max_steps"] != EXP39_MAX_STEPS:
+            raise ValueError("Resume checkpoint has wrong exp39 horizon")
         stop = config.get("training_stop_after_step")
         if stop is not None and state["global_step"] >= stop:
             raise ValueError("Checkpoint has reached requested stop")
+        if exp39 and state["global_step"] == EXP39_MAX_STEPS:
+            raise ValueError("exp39 already reached final checkpoint")
+    save_args = (["--save_strategy", "no", "--save_total_limit", "3"] if exp39 else
+                 ["--save_strategy", "steps", "--save_steps", str(runtime["save_steps"]),
+                  "--save_total_limit", "6"])
     cmd = [sys.executable, "-m", "torch.distributed.run", f"--nproc_per_node={len(devices)}",
            f"--master_port={args.master_port}", "train_csgo.py", "--csgo_config", relative(out / "resolved_config.yaml"),
            "--deepspeed", "deepspeed_scripts/zero0.json", "--model_name_or_path", config["model_name_or_path"],
@@ -315,8 +390,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
            "--data_type", "mix", "--csgo_image_folder", config["data_dir"], "--output_dir", relative(out),
            "--num_train_epochs", "50", "--per_device_train_batch_size", str(micro),
            "--per_device_eval_batch_size", "1", "--gradient_accumulation_steps", str(gas),
-           "--eval_strategy", "no", "--save_strategy", "steps", "--save_steps", str(runtime["save_steps"]),
-           "--save_total_limit", "6", "--save_only_model", "False", "--seed", str(args.seed),
+           "--eval_strategy", "no", *save_args, "--save_only_model", "False", "--seed", str(args.seed),
            "--learning_rate", str(config["learning_rate"]), "--weight_decay", "0", "--warmup_ratio", str(config["warmup_ratio"]),
            "--lr_scheduler_type", config["lr_scheduler_type"], "--model_max_length", "1024", "--logging_steps", "10",
            "--dataloader_num_workers", "4", "--n_query", "256", "--n_und_query", "0", "--report_to", args.report_to,
@@ -328,11 +402,15 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
         cmd.extend(["--" + key, str(value)])
     if stage2:
         cmd.extend(["--max_steps", "6000", "--warmup_steps", "200"])
+    if exp39:
+        cmd.extend(["--max_steps", str(EXP39_MAX_STEPS)])
     metadata = dict(experiment=args.experiment, fingerprint=identity, runtime=runtime, command=cmd,
                     resume_checkpoint=relative(checkpoint) if checkpoint else None,
                     source_checkpoint=previous.get("source_checkpoint") if previous else None,
-                    evaluation_steps={"validation": [4000, 6000] if stage2 else [8000, "final"],
-                                      "test": [6000] if stage2 else ["final"]},
+                    evaluation_steps=({"validation": [12000, 16000, "final"],
+                                       "test": [12000, 16000, "final"]} if exp39 else
+                                      {"validation": [4000, 6000] if stage2 else [8000, 16000, "final"],
+                                       "test": [6000] if stage2 else [16000, "final"]}),
                     dataset_counts=dict(EXPECTED_COUNTS))
     return [cmd], metadata, out
 
@@ -567,11 +645,13 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     step = final_checkpoint_step(args.experiment) if args.checkpoint_step == "final" else args.checkpoint_step
     if type(step) is not int or step <= 0:
         raise ValueError("infer/metrics require positive --checkpoint-step or final")
-    stage2 = args.experiment != "exp37"
+    stage2 = args.experiment not in STAGE1
     if stage2:
         allowed = (4000, 6000) if args.split == "validation" else (6000,)
-    elif args.split == "validation" and step == 8000:
-        allowed = (8000,)
+    elif args.experiment == "exp39":
+        allowed = EXP39_CHECKPOINT_STEPS
+    elif step == 16000 or args.split == "validation" and step == 8000:
+        allowed = (8000, 16000) if args.split == "validation" else (16000,)
     else:
         allowed = (final_checkpoint_step("exp37"),)
     if step not in allowed:
@@ -590,9 +670,12 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
         if not path_in_repo(checkpoint).is_file():
             raise ValueError(f"Checkpoint is absent: {checkpoint}")
         state = trainer_state(path_in_repo(checkpoint).parent / "trainer_state.json")
-        if state["global_step"] != step or (stage2 and state["max_steps"] != 6000):
+        if (state["global_step"] != step or stage2 and state["max_steps"] != 6000
+                or args.experiment == "exp39" and state["max_steps"] != EXP39_MAX_STEPS):
             raise ValueError("Selected evaluation checkpoint has wrong Trainer step/horizon")
-        if args.split == "test" or stage2 and step == 6000:
+        if (stage2 and (args.split == "test" or step == 6000)
+                or args.experiment == "exp37" and step not in (8000, 16000)
+                or args.experiment == "exp39" and step == EXP39_MAX_STEPS):
             if final_checkpoint_step(args.experiment) != step:
                 raise ValueError("Test/final evaluation requires completed checkpoint")
     target = f"{args.experiment}/checkpoint-{step}/{args.split}/seed_{args.seed}"
@@ -627,7 +710,7 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
         for map_name in MAPS:
             cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",
                    "--gt", ground_truth_dir(config, map_name), "--pred", f"{output}/gen_imgs/{map_name}",
-                   "--batch_size", "1", "--device", "cuda", "--paired_size", "448", "--data_dir", config["data_dir"],
+                   "--batch_size", "1", "--device", args.metrics_device, "--paired_size", "448", "--data_dir", config["data_dir"],
                    "--map_name", map_name, "--metric_profile", "benchmark_v2_core", "--benchmark_v2_manifest",
                    config["benchmark_v2_manifest"], "--benchmark_v2_split", selected_split]
             if config.get("benchmark_v2_asset_manifest"):
@@ -659,6 +742,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--resume", action="store_true")
     p.add_argument("--stop-after-step", type=int, help="Absolute optimizer step; 0 removes the stop")
     p.add_argument("--cuda-devices", default="0")
+    p.add_argument("--metrics-device", choices=("cuda", "cpu"), default="cuda",
+                   help="Device for generation metrics only (default: cuda)")
     p.add_argument("--micro-batch", type=int)
     p.add_argument("--master-port", type=int, default=29637)
     p.add_argument("--seed", type=int, default=42)
@@ -678,6 +763,8 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.metrics_device == "cpu" and args.command != "metrics":
+            raise ValueError("--metrics-device cpu applies only to metrics")
         if args.command != "train" and (args.resume or args.stop_after_step is not None):
             raise ValueError("--resume and --stop-after-step apply only to train")
         if args.command in ("train", "validate") and args.checkpoint_step is not None:
@@ -690,7 +777,7 @@ def main(argv: list[str] | None = None) -> int:
                 local.experiment = name
                 config = resolve_config(local, for_training=True)
                 validate_config(config)
-            print("Validated fixed exp37 Seen10 recipes; no files written or jobs launched.")
+            print("Validated fixed exp37/exp39 Seen10 recipes; no files written or jobs launched.")
             return 0
         if args.experiment is None:
             raise ValueError("--experiment is required")
@@ -698,7 +785,7 @@ def main(argv: list[str] | None = None) -> int:
         validate_config(config)
         if args.command == "train":
             commands, metadata, out = training_plan(args, config)
-            if args.execute and args.experiment != "exp37" and not args.resume:
+            if args.execute and args.experiment not in STAGE1 and not args.resume:
                 if args.experiment in JOINT_STAGE2:
                     step = final_checkpoint_step("exp37")
                     config["finetune_init_ckpt_path"] = f"outputs/csgo_1b/exp37/checkpoint-{step}/model.safetensors"
@@ -740,15 +827,16 @@ def main(argv: list[str] | None = None) -> int:
         print("EXECUTE" if args.execute else "DRY RUN — no files written and no subprocesses launched")
         for path, _ in writes:
             print(f"Resolved configuration/artifact: {relative(path)}")
+        visible_devices = "" if args.command == "metrics" and args.metrics_device == "cpu" else args.cuda_devices
         for command in commands:
-            print(f"CUDA_VISIBLE_DEVICES={shlex.quote(args.cuda_devices)} {shlex.join(command)}")
+            print(f"CUDA_VISIBLE_DEVICES={shlex.quote(visible_devices)} {shlex.join(command)}")
         if not commands:
             print("Localization metrics are produced during localization inference.")
         if args.execute:
             for path, content in writes:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(content, encoding="utf-8")
-            env = {**os.environ, "CUDA_VISIBLE_DEVICES": args.cuda_devices}
+            env = {**os.environ, "CUDA_VISIBLE_DEVICES": visible_devices}
             for command in commands:
                 subprocess.run(command, cwd=ROOT, env=env, check=True)
         return 0

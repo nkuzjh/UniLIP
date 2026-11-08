@@ -25,7 +25,7 @@ RUNNER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(RUNNER)
 
 EXPERIMENTS = (
-    "exp37", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both",
+    "exp37", "exp39", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both",
     "exp37_s2_both_b1",
 )
 SEEN_MAPS = json.loads(
@@ -78,7 +78,7 @@ class Exp37RunnerTests(unittest.TestCase):
         (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
         (out / "experiment_plan.json").write_text(json.dumps(metadata))
         state = {"global_step": step, "max_steps": step}
-        if experiment == "exp37":
+        if experiment in RUNNER.STAGE1:
             state.update(num_train_epochs=50, epoch=50.0)
         (out / "trainer_state.json").write_text(
             json.dumps(state)
@@ -159,6 +159,7 @@ class Exp37RunnerTests(unittest.TestCase):
                 self.assertEqual(config["benchmark_v2_split"], "seen_train")
                 self.assertTrue(config["csgo_loss_per_microbatch_mean"])
                 self.assertEqual(config["alpha_loc_loss"],
+                                 4.0 if experiment == "exp39" else
                                  8.0 if experiment in ("exp37", *RUNNER.JOINT_STAGE2) else 1.0)
                 commands, metadata, out = RUNNER.training_plan(
                     self.args("train", experiment), config
@@ -167,11 +168,23 @@ class Exp37RunnerTests(unittest.TestCase):
                 self.assertFalse(out.exists())
                 self.assertEqual(option(command, "--num_train_epochs"), "50")
                 self.assertEqual(option(command, "--save_only_model"), "False")
-                self.assertEqual(option(command, "--save_total_limit"), "6")
+                self.assertEqual(option(command, "--save_total_limit"),
+                                 "3" if experiment == "exp39" else "6")
                 self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 32)
                 if experiment == "exp37":
                     self.assertNotIn("--max_steps", command)
                     self.assertEqual(option(command, "--save_steps"), "4000")
+                    self.assertEqual(config["warmup_ratio"], 0.003)
+                    self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr": 1e-5})
+                    self.assertNotIn("training_stop_after_step", config)
+                elif experiment == "exp39":
+                    self.assertEqual(option(command, "--max_steps"), "19550")
+                    self.assertEqual(option(command, "--save_strategy"), "no")
+                    self.assertNotIn("--save_steps", command)
+                    self.assertNotIn("--warmup_steps", command)
+                    self.assertEqual(metadata["runtime"]["checkpoint_steps"], [12000, 16000, 19550])
+                    self.assertEqual(config["training_checkpoint_steps"], [12000, 16000, 19550])
+                    self.assertIs(config["save_final_model_at_output_root"], False)
                     self.assertEqual(config["warmup_ratio"], 0.003)
                     self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr": 1e-5})
                     self.assertNotIn("training_stop_after_step", config)
@@ -183,6 +196,188 @@ class Exp37RunnerTests(unittest.TestCase):
                     self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": 0.1})
                     self.assertEqual(config["learning_rate"], 2e-5)
                     self.assertEqual(config["action_dit_connector_lr"], 1e-4)
+
+    def exp39_resume_fixture(self, step: int = 12000) -> Path:
+        args = self.args("train", "exp39", "--stop-after-step", str(step))
+        config = RUNNER.resolve_config(args, for_training=True)
+        _, plan, out = RUNNER.training_plan(args, config)
+        out.mkdir(parents=True)
+        (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        (out / "experiment_plan.json").write_text(json.dumps(plan))
+        checkpoint = out / f"checkpoint-{step}"
+        checkpoint.mkdir()
+        (checkpoint / "trainer_state.json").write_text(json.dumps({
+            "global_step": step, "max_steps": 19550, "num_train_epochs": 50,
+            "epoch": 50.0 * step / 19550,
+        }))
+        for name in ("training_args.bin", "model.safetensors", "optimizer.pt",
+                     "scheduler.pt", "rng_state.pth"):
+            (checkpoint / name).touch()
+        return checkpoint
+
+    def test_exp39_only_changes_loc_alpha_and_checkpoint_controls(self):
+        base = yaml.safe_load((self.root / "csgo_configs/exp37.yaml").read_text())
+        new = yaml.safe_load((self.root / "csgo_configs/exp39.yaml").read_text())
+        differences = {key for key in base.keys() | new.keys() if base.get(key) != new.get(key)}
+        self.assertEqual(differences, {
+            "exp37_experiment", "alpha_loc_loss", "training_checkpoint_steps",
+            "save_final_model_at_output_root",
+        })
+        self.assertEqual(new["alpha_loc_loss"], 4.0)
+        self.assertEqual(base["alpha_loc_loss"], 8.0)
+        for key in ("finetune_init_ckpt_path", "resume_ckpt_path", "base_init_ckpt_path"):
+            self.assertNotIn(key, new)
+        for corrupt in (
+            {"training_checkpoint_steps": [12000, 19550]},
+            {"save_final_model_at_output_root": True},
+            {"alpha_loc_loss": 8.0},
+            {"warmup_ratio": 0.004},
+            {"finetune_init_ckpt_path": "outputs/csgo_1b/exp37/checkpoint-19550/model.safetensors"},
+        ):
+            with self.subTest(corrupt=corrupt), self.assertRaises(ValueError):
+                RUNNER.validate_config({**self.config("exp39"), **corrupt})
+
+    def test_exp39_micro_batches_and_full_assets_keep_base_batch(self):
+        for micro, devices, gas in ((64, "0", 2), (32, "0", 4), (16, "0", 8), (8, "0", 16),
+                                    (8, "0,1,2,3", 4)):
+            with self.subTest(micro=micro, devices=devices):
+                args = self.args("train", "exp39", "--micro-batch", str(micro),
+                                 "--cuda-devices", devices, "--asset-mode", "full",
+                                 "--data-dir", "/data/seen10")
+                config = RUNNER.resolve_config(args, for_training=True)
+                commands, plan, _ = RUNNER.training_plan(args, config)
+                self.assertIsNone(config["benchmark_v2_asset_manifest"])
+                self.assertEqual(config["data_dir"], "/data/seen10")
+                self.assertEqual(plan["runtime"]["source_batch"], 128)
+                self.assertEqual(plan["runtime"]["gradient_accumulation_steps"], gas)
+                self.assertEqual(option(commands[0], "--gradient_accumulation_steps"), str(gas))
+
+    def test_exp39_execute_uses_stage1_path_without_source_preflight(self):
+        with patch.object(RUNNER, "preflight_stage2_source") as preflight, \
+             patch.object(RUNNER.subprocess, "run") as run, \
+             patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main([
+                "train", "--experiment", "exp39", "--execute", "--stop-after-step", "0",
+            ]), 0)
+            preflight.assert_not_called()
+            run.assert_called_once()
+        out = RUNNER.output_dir("exp39")
+        plan = json.loads((out / "experiment_plan.json").read_text())
+        self.assertIsNone(plan["source_checkpoint"])
+        self.assertEqual(plan["runtime"]["max_steps"], 19550)
+        self.assertFalse((out / "model.safetensors").exists())
+
+    def test_exp39_stops_and_resumes_full_fixed_horizon(self):
+        for step in (12000, 16000):
+            with self.subTest(step=step):
+                checkpoint = self.exp39_resume_fixture(step)
+                for suffix in ((), ("--stop-after-step", "0")):
+                    args = self.args("train", "exp39", "--resume", *suffix)
+                    config = RUNNER.resolve_config(args, for_training=True)
+                    self.assertNotIn("training_stop_after_step", config)
+                    command, plan, _ = RUNNER.training_plan(args, config)
+                    self.assertEqual(option(command[0], "--max_steps"), "19550")
+                    self.assertEqual(plan["resume_checkpoint"], RUNNER.relative(checkpoint))
+                next_step = 16000 if step == 12000 else 19550
+                args = self.args("train", "exp39", "--resume", "--stop-after-step", str(next_step))
+                config = RUNNER.resolve_config(args, for_training=True)
+                self.assertEqual(config["training_stop_after_step"], next_step)
+                RUNNER.training_plan(args, config)
+                for invalid in (1, 11999, 12001, 20000):
+                    with self.assertRaises(ValueError):
+                        RUNNER.validate_config(self.config("exp39", "--stop-after-step", str(invalid)))
+                shutil.rmtree(checkpoint.parent)
+
+    def test_exp39_resume_rejects_wrong_horizon_extra_checkpoint_and_incomplete_state(self):
+        checkpoint = self.exp39_resume_fixture()
+        args = self.args("train", "exp39", "--resume")
+        config = RUNNER.resolve_config(args, for_training=True)
+        state_path = checkpoint / "trainer_state.json"
+        original = json.loads(state_path.read_text())
+        state_path.write_text(json.dumps({**original, "max_steps": 12000}))
+        with self.assertRaisesRegex(ValueError, "horizon"):
+            RUNNER.training_plan(args, config)
+        state_path.write_text(json.dumps(original))
+        (checkpoint / "rng_state.pth").unlink()
+        with self.assertRaisesRegex(ValueError, "RNG"):
+            RUNNER.training_plan(args, config)
+        (checkpoint / "rng_state.pth").touch()
+        extra = checkpoint.parent / "checkpoint-14000"
+        extra.mkdir()
+        with self.assertRaisesRegex(ValueError, "Unexpected exp39 checkpoint"):
+            RUNNER.training_plan(args, config)
+        extra.rmdir()
+        plan_path = checkpoint.parent / "experiment_plan.json"
+        plan = json.loads(plan_path.read_text())
+        plan_path.write_text(json.dumps({**plan, "experiment": "exp37"}))
+        with self.assertRaisesRegex(ValueError, "identity"):
+            RUNNER.training_plan(args, config)
+        plan_path.write_text(json.dumps(plan))
+        checkpoint.rename(checkpoint.parent / "checkpoint-19550")
+        with self.assertRaises(ValueError):
+            RUNNER.training_plan(args, config)
+
+    def test_exp39_final_requires_exact_19550_completed_state(self):
+        checkpoint = self.exp39_resume_fixture(19550)
+        state_path = checkpoint / "trainer_state.json"
+        state = json.loads(state_path.read_text())
+        (checkpoint / "model.safetensors").unlink()
+        with self.assertRaises(ValueError):
+            RUNNER.final_checkpoint_step("exp39")
+        (checkpoint / "model.safetensors").touch()
+        self.assertEqual(RUNNER.final_checkpoint_step("exp39"), 19550)
+        state["epoch"] = 49.9
+        state_path.write_text(json.dumps(state))
+        self.assertEqual(RUNNER.final_checkpoint_step("exp39"), 19550)
+        state["max_steps"] = 20000
+        state_path.write_text(json.dumps(state))
+        with self.assertRaises(ValueError):
+            RUNNER.final_checkpoint_step("exp39")
+
+    def test_exp39_12000_and_final_evaluation_nodes(self):
+        checkpoint = self.exp39_resume_fixture(12000)
+        for split, count in (("test", 3), ("validation", 2)):
+            args = self.args("infer", "exp39", "--checkpoint-step", "12000",
+                             "--split", split, "--execute")
+            commands, _, _ = RUNNER.evaluation_plan(
+                args, RUNNER.resolve_config(args, for_training=False))
+            self.assertEqual(len(commands), count)
+        shutil.rmtree(checkpoint.parent)
+        self.exp39_resume_fixture(19550)
+        for split, count in (("test", 3), ("validation", 2)):
+            args = self.args("infer", "exp39", "--checkpoint-step", "final",
+                             "--split", split, "--execute")
+            commands, path, _ = RUNNER.evaluation_plan(
+                args, RUNNER.resolve_config(args, for_training=False))
+            self.assertEqual(len(commands), count)
+            self.assertIn("checkpoint-19550", str(path))
+
+    def test_stage1_16000_evaluation_covers_all_test_tasks_before_final(self):
+        for experiment in RUNNER.STAGE1:
+            with self.subTest(experiment=experiment):
+                if experiment == "exp39":
+                    checkpoint = self.exp39_resume_fixture(16000)
+                else:
+                    config = self.config("exp37")
+                    args = self.args("train", "exp37")
+                    _, plan, out = RUNNER.training_plan(args, config)
+                    out.mkdir(parents=True)
+                    (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+                    (out / "experiment_plan.json").write_text(json.dumps(plan))
+                    checkpoint = out / "checkpoint-16000"
+                    checkpoint.mkdir()
+                    (checkpoint / "trainer_state.json").write_text(json.dumps({
+                        "global_step": 16000, "max_steps": 19550,
+                    }))
+                    (checkpoint / "model.safetensors").touch()
+                for split, count in (("test", 3), ("validation", 2)):
+                    args = self.args("infer", experiment, "--checkpoint-step", "16000",
+                                     "--split", split, "--execute")
+                    config = RUNNER.resolve_config(args, for_training=False)
+                    commands, path, _ = RUNNER.evaluation_plan(args, config)
+                    self.assertEqual(len(commands), count)
+                    self.assertIn("checkpoint-16000", str(path))
+                shutil.rmtree(checkpoint.parent)
 
     def test_single_task_and_combined_objectives_remain_scoped(self):
         gen = self.config("exp37_s2_gen")
@@ -288,7 +483,7 @@ class Exp37RunnerTests(unittest.TestCase):
         before = {path: path.read_bytes() for path in (self.root / "outputs").rglob("resolved_config.yaml")}
         for experiment in EXPERIMENTS:
             for command in ("infer", "metrics"):
-                step = "8000" if experiment == "exp37" else "4000"
+                step = "8000" if experiment == "exp37" else "12000" if experiment == "exp39" else "4000"
                 with self.subTest(experiment=experiment, command=command), \
                      patch.object(RUNNER.subprocess, "run") as run, \
                      patch("sys.stdout", io.StringIO()):
@@ -511,6 +706,85 @@ class Exp37RunnerTests(unittest.TestCase):
                 with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
                     self.assertEqual(RUNNER.main(["metrics", *base]), 0)
                     self.assertEqual(run.call_count, 11)
+
+    def test_metrics_cpu_changes_only_generation_metric_device(self):
+        base = ("--checkpoint-step", "6000", "--split", "test", "--task", "gen",
+                "--seed", "42", "--test-gen-batch-size", "8")
+        config = self.config("exp37_s2_gen", for_training=False)
+        default = self.args("metrics", "exp37_s2_gen", *base)
+        explicit_cuda = self.args("metrics", "exp37_s2_gen", *base,
+                                  "--metrics-device", "cuda")
+        cpu = self.args("metrics", "exp37_s2_gen", *base,
+                        "--metrics-device", "cpu")
+        default_commands, default_path, default_config = RUNNER.evaluation_plan(default, config)
+        cuda_commands, cuda_path, cuda_config = RUNNER.evaluation_plan(explicit_cuda, config)
+        cpu_commands, cpu_path, cpu_config = RUNNER.evaluation_plan(cpu, config)
+        self.assertEqual(default_commands, cuda_commands)
+        self.assertEqual(default_path, cuda_path)
+        self.assertEqual(default_config, cuda_config)
+        self.assertEqual(default_path, cpu_path)
+        self.assertEqual(default_config, cpu_config)
+        self.assertEqual(len(cpu_commands), 11)
+        self.assertEqual([command[1] for command in cpu_commands[:10]],
+                         ["benchmark_csgo_v1.py"] * 10)
+        self.assertEqual([option(command, "--map_name") for command in cpu_commands[:10]],
+                         SEEN_MAPS)
+        self.assertEqual(cpu_commands[-1], default_commands[-1])
+        self.assertEqual(option(cpu_commands[-1], "--kind"), "discrete")
+        self.assertEqual(option(cpu_commands[-1], "--input_root"),
+                         "outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete")
+        for default_command, cpu_command in zip(default_commands[:10], cpu_commands[:10]):
+            self.assertEqual(option(default_command, "--device"), "cuda")
+            self.assertEqual(option(cpu_command, "--device"), "cpu")
+            self.assertEqual(cpu_command,
+                             ["cpu" if arg == "cuda" and index == default_command.index("--device") + 1
+                              else arg for index, arg in enumerate(default_command)])
+
+    def test_metrics_cpu_dry_run_and_execute_hide_cuda_devices(self):
+        base = ["metrics", "--experiment", "exp37_s2_gen", "--checkpoint-step", "6000",
+                "--split", "test", "--task", "gen", "--seed", "42",
+                "--test-gen-batch-size", "8", "--metrics-device", "cpu"]
+        self.completed_checkpoint("exp37_s2_gen", 6000)
+        with patch.object(RUNNER.subprocess, "run") as run, \
+             patch("sys.stdout", io.StringIO()) as stdout:
+            self.assertEqual(RUNNER.main(base), 0)
+            run.assert_not_called()
+            self.assertIn("CUDA_VISIBLE_DEVICES=''", stdout.getvalue())
+            self.assertIn("--device cpu", stdout.getvalue())
+            self.assertNotIn("benchmark_csgo_v1_conti.py", stdout.getvalue())
+        self.assertFalse((self.root / "outputs_eval").exists())
+
+        args = RUNNER.parser().parse_args(base)
+        config = RUNNER.resolve_config(args, for_training=False)
+        _, legacy_path, evaluated = RUNNER.evaluation_plan(args, config)
+        snapshots = RUNNER.evaluation_snapshots(args, legacy_path, evaluated)
+        self.assertEqual(len(snapshots), 1)
+        snapshot_path, snapshot = next(iter(snapshots.items()))
+        snapshot_path.parent.mkdir(parents=True)
+        snapshot_path.write_text(yaml.safe_dump(snapshot))
+        (snapshot_path.parent / "inference_manifest.json").write_text(json.dumps({
+            "config_path": RUNNER.relative(snapshot_path),
+            "inference_execution": execution_contract("gen", 8),
+        }))
+        with patch.object(RUNNER.subprocess, "run") as run, \
+             patch("sys.stdout", io.StringIO()) as stdout:
+            self.assertEqual(RUNNER.main([*base, "--execute"]), 0)
+            self.assertEqual(run.call_count, 11)
+            for call in run.call_args_list:
+                self.assertEqual(call.kwargs["env"]["CUDA_VISIBLE_DEVICES"], "")
+                self.assertEqual(call.kwargs["cwd"], self.root)
+                self.assertTrue(call.kwargs["check"])
+            self.assertIn("CUDA_VISIBLE_DEVICES=''", stdout.getvalue())
+
+    def test_metrics_cpu_rejected_for_non_metrics_commands(self):
+        for command in ("validate", "train", "infer"):
+            with self.subTest(command=command), \
+                 patch.object(RUNNER.subprocess, "run") as run, \
+                 patch("sys.stderr", io.StringIO()) as stderr:
+                self.assertEqual(RUNNER.main([command, "--experiment", "exp37_s2_gen",
+                                              "--metrics-device", "cpu"]), 1)
+                self.assertIn("applies only to metrics", stderr.getvalue())
+                run.assert_not_called()
 
     def test_resume_requires_own_complete_checkpoint_and_saved_recipe(self):
         experiment = "exp37_s2_gen"
@@ -929,6 +1203,13 @@ class Exp37RunnerTests(unittest.TestCase):
         with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
             self.assertEqual(RUNNER.main(["metrics", *base]), 0)
             self.assertEqual(run.call_count, 22)
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base, "--metrics-device", "cpu"]), 0)
+            self.assertEqual(run.call_count, 22)
+            self.assertTrue(all(call.kwargs["env"]["CUDA_VISIBLE_DEVICES"] == ""
+                                for call in run.call_args_list))
+            self.assertTrue(all(option(call.args[0], "--device") == "cpu"
+                                for call in run.call_args_list if "--device" in call.args[0]))
         alternate = physical / "other" / "inference_manifest.json"
         alternate.parent.mkdir()
         alternate.write_text(json.dumps(manifest))
