@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from csgo_datasets.inference_batching import execution_contract
 import yaml
 
 REPO = Path(__file__).resolve().parents[1]
@@ -246,6 +247,82 @@ class Exp38RunnerTests(unittest.TestCase):
         (final / "trainer_state.json").write_text(json.dumps({"global_step": 7550, "max_steps": 7550}))
         (final / "model.safetensors").touch()
         RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+
+    def test_symlinked_loc_summary_metrics_preflight(self):
+        self.managed("exp38_s2_joint", 4000)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        physical = self.root / "physical_loc"
+        physical.mkdir()
+        (self.root / "outputs_loc").symlink_to(physical, target_is_directory=True)
+        base = ["--experiment", "exp38_s2_joint", "--checkpoint-step", "4000",
+                "--split", "test", "--task", "localization", "--execute"]
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["infer", *base]), 0)
+            launch.assert_called_once()
+        output = self.root / "outputs_loc/benchmark_v2/exp38_s2_joint/checkpoint-4000/test/seed_42/infer_bs32"
+        config_path = output / "evaluation_config.yaml"
+        config = RUN.read_yaml(config_path)
+        manifest = {"config_path": str(config_path.resolve()),
+                    "benchmark_v2_manifest": str(manifest_file),
+                    "benchmark_v2_split": "seen_discrete_test", "maps": RUN.MAPS,
+                    "sample_count": 20000, "checkpoint": str(RUN.path_in_repo(config["ckpt_path"])),
+                    "ckpt_path": str(RUN.path_in_repo(config["ckpt_path"])), "seed": 42,
+                    "benchmark_v2_support_seed": None,
+                    "benchmark_v2_shots_per_map": None,
+                    "inference_execution": execution_contract("loc", 32)}
+        manifest_path = output / "inference_manifest.json"
+        manifest_path.write_text(json.dumps(manifest))
+        metrics = {"XY_Dist": 1.0, "Z_Dist": 2.0, "Pitch_Dist": 3.0, "Yaw_Dist": 4.0}
+        summary = RUN.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_discrete_test", maps=RUN.MAPS,
+            per_map={name: metrics for name in RUN.MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=20000)
+        self.assertEqual(summary["inference_provenance"]["path"], str(manifest_path.resolve()))
+        summary_path = output / "benchmark_csgo_v2_loc.json"
+        summary_path.write_text(json.dumps(summary))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 0)
+            launch.assert_not_called()
+        alternate = physical / "other" / "inference_manifest.json"
+        alternate.parent.mkdir()
+        alternate.write_text(json.dumps(manifest))
+        summary["inference_provenance"]["path"] = str(alternate)
+        summary_path.write_text(json.dumps(summary))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()), \
+             patch("sys.stderr", io.StringIO()) as error:
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            self.assertIn("inference provenance differs", error.getvalue())
+            launch.assert_not_called()
+        pristine = RUN.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_discrete_test", maps=RUN.MAPS,
+            per_map={name: metrics for name in RUN.MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=20000)
+        for key, bad in (("checkpoint", "outputs/other/model.safetensors"),
+                         ("split", "seen_validation"), ("seed", 43),
+                         ("sample_count", 5000)):
+            with self.subTest(key=key):
+                corrupted = dict(pristine, **{key: bad})
+                summary_path.write_text(json.dumps(corrupted))
+                with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUN.main(["metrics", *base]), 1)
+                    launch.assert_not_called()
+        corrupted = json.loads(json.dumps(pristine))
+        corrupted["inference_provenance"]["payload"]["seed"] = 43
+        summary_path.write_text(json.dumps(corrupted))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            launch.assert_not_called()
+        summary_path.write_text(json.dumps(pristine))
+        manifest["inference_execution"] = execution_contract("loc", 1)
+        manifest_path.write_text(json.dumps(manifest))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            launch.assert_not_called()
 
     def test_dry_run_has_no_writes_or_subprocess(self):
         before = sorted(str(p.relative_to(self.root)) for p in self.root.rglob("*"))

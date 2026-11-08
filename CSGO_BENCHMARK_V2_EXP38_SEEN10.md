@@ -16,7 +16,7 @@
 | aux-loc | 关闭 | `[0,503] → [0,1]`，之后恒定1；combined、2候选、candidate_tau=1 |
 | Stage 2更新次数 | local7550 | local7550 |
 | 总更新次数 | 12000＋7550＝19550 | 12000＋7550＝19550 |
-| checkpoint／test节点 | local3000、7550（final） | 相同 |
+| checkpoint／test节点 | local4000、7550（final） | 相同 |
 | 对应累计节点 | 15000、19550 | 相同 |
 
 两组从同一来源**仅加载模型权重**，分别新建AdamW、scheduler、Trainer local step与RNG。首次启动不是恢复 `exp37` 训练；`--resume` 仅恢复新实验自己的完整checkpoint。两组各用独立输出目录，源checkpoint保持原样。
@@ -33,7 +33,7 @@
 - P4：当前定位头teacher、无EMA、teacher detach，vision-tower token SmoothL1，attention=false、teacher_gt、`linear_1m_sigma`。
 - U2：combined EM＋uncertainty、2候选、`candidate_tau=1`、`unc_tau=1`、`unc_min_weight=0.05`、共享定位噪声、`exp_sigma` λ=5、不额外renormalize。
 
-新runner固定 `max_steps=7550`。在local3000暂停不会把scheduler改成3000步；恢复后继续原7550步调度，不重新warmup、不重新应用来源模型初始化。命令中的epoch上限不表示Stage 2额外训练50轮。
+新runner固定 `max_steps=7550`。在local4000暂停不会把scheduler改成4000步；恢复后继续原7550步调度，不重新warmup、不重新应用来源模型初始化。命令中的epoch上限不表示Stage 2额外训练50轮。
 
 ### 数据与评测
 
@@ -41,20 +41,20 @@
 
 两组、两个节点均做test定位、离散生成和连续生成。默认固定 `--test-loc-batch-size 32`、`--test-gen-batch-size 16`；metrics传入相同值以选中同一推理目录。支持分别执行 `localization`、`gen`、`gen_continuous`，`all`包含三项。定位指标由infer生成，metrics校验其摘要；生成metrics逐图计算并汇总。连续生成沿用逐帧条件生成，不增加历史帧输入。
 
-local3000是预先指定的中间test报告点，local7550是固定正式终点；不根据3000的test结果调参、早停、选择checkpoint或拼接不同节点的最佳指标。本轮不新增validation节点。生成Dropout与批量行为沿用现有推理实现；新两臂可在相同batch下比较，与历史batch1／8结果对照时保留推理设置差异。
+local4000是预先指定的中间test报告点，local7550是固定正式终点；不根据4000的test结果调参、早停、选择checkpoint或拼接不同节点的最佳指标。本轮不新增validation节点。生成Dropout与批量行为沿用现有推理实现；新两臂可在相同batch下比较，与历史batch1／8结果对照时保留推理设置差异。
 
 ### 保存、暂停与恢复
 
-完整模型及恢复状态**只保存 `checkpoint-3000/` 和 `checkpoint-7550/`**，每份包含模型、optimizer／scheduler、各rank RNG和Trainer状态。不能采用周期3000保存，否则会额外产生6000且可能挤掉3000。新配置显式设 `training_checkpoint_steps: [3000,7550]`、`save_final_model_at_output_root: false`；精确节点callback负责保存，`save_total_limit=2`。保留根目录配置、训练计划、轻量Trainer状态及日志，但不额外导出一份根目录完整模型／adapter。
+完整模型及恢复状态**只保存 `checkpoint-4000/` 和 `checkpoint-7550/`**，每份包含模型、optimizer／scheduler、各rank RNG和Trainer状态。不能采用周期4000保存，否则会额外产生6000且可能挤掉4000。新配置显式设 `training_checkpoint_steps: [4000,7550]`、`save_final_model_at_output_root: false`；精确节点callback负责保存，`save_total_limit=2`。保留根目录配置、训练计划、轻量Trainer状态及日志，但不额外导出一份根目录完整模型／adapter。
 
 推荐手动串行流程：
 
-1. 首次训练到local3000后保存并停止（全程horizon仍为7550）。
-2. 对3000执行test推理及评测。
-3. 本实验 `--resume --stop-after-step 0`，从3000的完整状态继续到7550。
+1. 首次训练到local4000后保存并停止（全程horizon仍为7550）。
+2. 对4000执行test推理及评测。
+3. 本实验 `--resume --stop-after-step 0`，从4000的完整状态继续到7550。
 4. 对final=7550执行test推理及评测。
 
-直接一次训练到7550时也必须仅保存3000、7550，之后可分别补两节点评测。没有更早的恢复checkpoint；3000后的中断可从3000续训。首次不能加 `--resume`，也不能从另一个exp38实验的checkpoint恢复。runner仅接受这两个评测节点，拒绝其他step及validation，不删除其他实验产物。各节点的三任务结果、manifest及评测配置保留在对应实验／checkpoint／test／seed／batch目录。
+直接一次训练到7550时也必须仅保存4000、7550，之后可分别补两节点评测。没有更早的恢复checkpoint；4000后的中断可从4000续训。首次不能加 `--resume`，也不能从另一个exp38实验的checkpoint恢复。runner仅接受这两个评测节点，拒绝其他step及validation，不删除其他实验产物。各节点的三任务结果、manifest及评测配置保留在对应实验／checkpoint／test／seed／batch目录。
 
 ### 实验定位与对照
 
@@ -68,71 +68,71 @@ local3000是预先指定的中间test报告点，local7550是固定正式终点�
 1. 新增独立入口 `scripts/run_exp38_seen10.py` 和两份同名训练YAML，复用现有安全工具／评测接口；保留exp37及Unseen-4的既有来源、终点和任务约束。
 2. 来源预检仅接受exp37@12000且原horizon=19550，核对已保存recipe／plan、十图协议、模型结构、LoRA header和SHA-256；两臂固定相同来源。源资产布局不限制新运行选择minimal或full，但数据协议必须相同。
 3. 在 `unilip/train/csgo_staged_training.py` 与 `train_csgo.py` 增加可选的精确保存列表及关闭根模型重复导出逻辑；未设置新字段时沿用旧行为。
-4. 新runner提供validate／train／infer／metrics、默认只打印计划；只有用户手动传 `--execute` 才写实验快照并执行。3000检查保存状态的 `global_step=3000,max_steps=7550`，final要求7550/7550。
-5. `record.md` 分别提供两组首次到3000、test、恢复到final、final test的直接执行命令，以及minimal／full切换、Slurm中断恢复说明；不会自动启动后台任务。
-6. CPU检查覆盖来源错误拒绝、7550 horizon、252／503调度、两节点保存与保留、根模型跳过、3000暂停恢复、三任务批量路由、minimal／full及只读dry run。既有exp37／Unseen入口与默认保存行为执行必要回归。
+4. 新runner提供validate／train／infer／metrics、默认只打印计划；只有用户手动传 `--execute` 才写实验快照并执行。4000检查保存状态的 `global_step=4000,max_steps=7550`，final要求7550/7550。
+5. `record.md` 分别提供两组首次到4000、test、恢复到final、final test的直接执行命令，以及minimal／full切换、Slurm中断恢复说明；不会自动启动后台任务。
+6. CPU检查覆盖来源错误拒绝、7550 horizon、252／503调度、两节点保存与保留、根模型跳过、4000暂停恢复、三任务批量路由、minimal／full及只读dry run。既有exp37／Unseen入口与默认保存行为执行必要回归。
 
 ## 实施与实验进度
 
 设计先于实现保存；代码、配置和手动命令已完成，并按用户最新指令统一采用 **P4＋U2、perception attention=false**。未启动实验。
 
-- 新入口：[run_exp38_seen10.py](scripts/run_exp38_seen10.py)；配置：[joint](csgo_configs/exp38_s2_joint.yaml)、[both](csgo_configs/exp38_s2_both.yaml)。`validate` 和不带 `--execute` 的命令只读；首次train默认在3000停下，`--stop-after-step 0` 可一次跑完7550。
+- 新入口：[run_exp38_seen10.py](scripts/run_exp38_seen10.py)；配置：[joint](csgo_configs/exp38_s2_joint.yaml)、[both](csgo_configs/exp38_s2_both.yaml)。`validate` 和不带 `--execute` 的命令只读；首次train默认在4000停下，`--stop-after-step 0` 可一次跑完7550。
 - 新runner的9项CPU测试通过；精确保存／暂停恢复的8项CPU测试通过，使用临时目录中的合成小模型确认同一horizon、两节点完整恢复材料、跨epoch无额外checkpoint及不重复导出根模型。既有exp37入口23项、Unseen-4入口13项回归通过，共53项。
 - 16组训练计划＋64组infer／metrics计划核验通过，覆盖minimal／full、单卡／双卡、两个test节点、三项任务和默认batch32／16；验证未创建任何exp38的训练／推理／评测输出目录。两份nohup脚本通过 `bash -n`，保留record.md原有CRLF。
 - 对真实来源进行了只读预检：12000/19550状态、2830个张量／1128个LoRA张量、模型文件4,577,302,678字节；SHA-256为 `0388328dc2e260bca15bb071fc4e9ff189fe631686fba553f187aea9917de8ae`。未将大模型载入GPU或执行项目训练／推理／评测；首次手动执行时runner仍会重新预检并将来源绑定到本实验计划。
 - 新保存字段未配置时保留原训练保存行为；exp37／Unseen runner未修改。真实大模型训练吞吐、显存与最终指标等待用户手动运行后记录。
 
-| 实验 | 训练 | test@3000（累计15000） | test@7550（累计19550） |
+| 实验 | 训练 | test@4000（累计15000） | test@7550（累计19550） |
 |---|---|---|---|
 | `exp38_s2_joint` | 未启动；计划local7550 | 待执行：定位／离散／连续 | 待执行：定位／离散／连续 |
 | `exp38_s2_both` | 未启动；计划local7550 | 待执行：定位／离散／连续 | 待执行：定位／离散／连续 |
 
 上表为尚未运行的实验计划，不填写实测指标。执行命令见 [record.md](record.md#exp38-seen10-20261107)。
 
-## 中间节点对照：exp32 单任务 @16000（2026-11-07 核查）
+## 中间节点对照：exp32 单任务 @16000（2026-11-08 更新）
 
-按指定对照节点，补充 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成。**本机未发现这两份 checkpoint-16000 的推理／评测结果**；两份权重已存在，`trainer_state.json` 均为 `global_step=16000,max_steps=19500`，无需重新训练。
+按指定对照节点，已同步并核对 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成结果，**三个任务均已完成**。推理manifest与结果摘要均绑定各自的 `checkpoint-16000/model.safetensors`；两份checkpoint的 `trainer_state.json` 均为 `global_step=16000,max_steps=19500`。定位／离散各20000条，连续12800帧，均覆盖完整十图。
 
-已有结果的实际身份如下，不能把这些数值填入下面的16000对照表：
+历史19500步最终结果继续保留；下表区分其身份，本节16000对照表使用新同步的独立结果目录：
 
 | 已有结果 | manifest／summary 绑定的权重 | 已有 test 范围 | 本次处理 |
 |---|---|---|---|
-| `outputs_loc/benchmark_v2/exp32_loc/seen/benchmark_csgo_v2_loc.json` | `outputs/csgo_1b/exp32_loc/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果，待补16000定位 |
-| `outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json` | `outputs/csgo_1b/exp32_gen/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果，待补16000离散生成 |
-| `outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json` | 同上 | `seen_continuous`，10图／12800帧 | 保留原最终结果，待补16000连续生成 |
+| `outputs_loc/benchmark_v2/exp32_loc/seen/benchmark_csgo_v2_loc.json` | `outputs/csgo_1b/exp32_loc/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果；16000定位已另行补齐 |
+| `outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json` | `outputs/csgo_1b/exp32_gen/model.safetensors`，根目录状态为19500 | `seen_discrete_test`，10图／20000条 | 保留原最终结果；16000离散生成已另行补齐 |
+| `outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json` | 同上 | `seen_continuous`，10图／12800帧 | 保留原最终结果；16000连续生成已另行补齐 |
 
-**比较口径**：exp38 的 Stage 2 local3000 对应累计 `12000+3000=15000` 次更新；指定的 exp32 单任务16000多1000次更新（相对15000多6.67%）。这是相近更新预算对照，不是严格等更新次数、等数据曝光或等FLOPs对照。辅助收益仍首先由同节点的 `exp38_s2_both` 与 `exp38_s2_joint` 判断。本次不改变任何训练终点，也不根据中间test结果选择checkpoint。
+**比较口径**：exp38 的 Stage 2 local4000 对应累计 `12000+4000=15000` 次更新；指定的 exp32 单任务16000多1000次更新（相对15000多6.67%）。这是相近更新预算对照，不是严格等更新次数、等数据曝光或等FLOPs对照。辅助收益仍首先由同节点的 `exp38_s2_both` 与 `exp38_s2_joint` 判断。本次不改变任何训练终点，也不根据中间test结果选择checkpoint。
 
-新增命令使用 seed42、定位batch32、生成batch16，与exp38计划一致；默认minimal资产，generation metrics使用 `benchmark_v2_core`、paired_size448、逐图评测后十图等权宏平均。连续生成沿用clip_length16／clip_stride16／fvd_size224。定位推理脚本同时输出定位评测，无需再执行一轮定位推理来计算指标。完整可执行命令及full资产切换说明见 [exp32_gen@16000](record.md#exp32-gen-test-16000) 和 [exp32_loc@16000](record.md#exp32-loc-test-16000)。
+本次同步结果使用 seed42、定位batch32、生成batch16，与exp38计划一致；资产后端为minimal，generation metrics使用 `benchmark_v2_core`、指标batch1、paired_size448、逐图评测后十图等权宏平均。连续生成沿用clip_length16／clip_stride16／fvd_size224。定位推理脚本同时输出定位评测，无需再执行一轮定位推理来计算指标。完整可执行命令及full资产切换说明见 [exp32_gen@16000](record.md#exp32-gen-test-16000) 和 [exp32_loc@16000](record.md#exp32-loc-test-16000)。
 
-结果写入独立目录，避免覆盖已有最终结果：
+已核对十图逐图结果与摘要的宏平均值一致；生成逐图预测覆盖率均为100%，无缺失或额外预测。实测来源如下：
 
-- 定位：`outputs_loc/benchmark_v2/exp32_loc/checkpoint-16000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json`。
-- 离散生成：`outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json`。
-- 连续生成：`outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/continuous/summary.json`。
+- 定位：[benchmark_csgo_v2_loc.json](outputs_loc/benchmark_v2/exp32_loc/checkpoint-16000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json)。
+- 离散生成：[discrete/summary.json](outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json)。
+- 连续生成：[continuous/summary.json](outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/continuous/summary.json)。
 
-以下三表预留本轮对照位置；“—”表示尚无实测结果，不代表零值。当前仅完成核查和命令登记，未启动推理／评测。
+以下三表的exp32单任务行已填入16000步实测宏平均结果，统一保留三位小数；exp38尚未同步结果，继续预留其local4000对照行。“—”表示尚无实测结果。本次仅整理已有产物，未启动训练、推理或评测。
 
 ### test 定位对照
 
 | 实验 | checkpoint | 累计训练step | 状态 | XY↓ | Z↓ | Pitch↓ | Yaw↓ |
 |---|---|---|---|---|---|---|---|
-| `exp32_loc` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — |
-| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — |
-| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — |
+| `exp32_loc` | 16000（单阶段） | 16000 | test推理／评测已完成 | 50.708 | 3.050 | 3.039 | 26.880 |
+| `exp38_s2_joint` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — |
 
 ### test 离散生成对照
 
 | 实验 | checkpoint | 累计训练step | 状态 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
 |---|---|---|---|---|---|---|---|---|
-| `exp32_gen` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — | — |
-| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
-| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
+| `exp32_gen` | 16000（单阶段） | 16000 | test推理／评测已完成 | 13.815 | 0.410 | 0.616 | 0.514 | 36.167 |
+| `exp38_s2_joint` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — | — |
 
 ### test 连续生成对照
 
 | 实验 | checkpoint | 累计训练step | 状态 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `exp32_gen` | 16000（单阶段） | 16000 | 权重已存在，待推理／评测 | — | — | — | — | — | — | — | — |
-| `exp38_s2_joint` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
-| `exp38_s2_both` | Stage 2 local3000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
+| `exp32_gen` | 16000（单阶段） | 16000 | test推理／评测已完成 | 14.098 | 0.412 | 0.605 | 0.523 | 36.496 | 42.628 | 17.365 | 867.691 |
+| `exp38_s2_joint` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
+| `exp38_s2_both` | Stage 2 local4000 | 15000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |

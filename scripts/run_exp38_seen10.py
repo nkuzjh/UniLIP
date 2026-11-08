@@ -24,6 +24,7 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     DEFAULT_TEST_GEN_BATCH_SIZE, DEFAULT_TEST_LOC_BATCH_SIZE,
     positive_batch_size, validate_execution_metadata,
 )
+from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
 EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_both")
 SOURCE = "outputs/csgo_1b/exp37/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
@@ -42,6 +43,11 @@ RECIPE_OVERRIDES = {"model_name_or_path", "pi05_pytorch_weight_path", "data_dir"
 def path_in_repo(path: str | Path) -> Path:
     path = Path(path).expanduser()
     return path if path.is_absolute() else ROOT / path
+
+
+def same_path(left: str | Path, right: str | Path) -> bool:
+    """Compare evaluation artifact paths across symlinked output roots."""
+    return path_in_repo(left).resolve() == path_in_repo(right).resolve()
 
 
 def relative(path: Path) -> str:
@@ -445,11 +451,11 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
                 "sample_count": expected_count, "seed": seed, "kind": "localization"}
     if any(summary.get(key) != value for key, value in expected.items()):
         raise ValueError(f"Localization summary split/maps/count/seed differs: {relative(summary_path)}")
-    if (path_in_repo(summary.get("checkpoint", "")) != path_in_repo(config["ckpt_path"]) or
-        path_in_repo(summary.get("manifest", "")) != path_in_repo(config["benchmark_v2_manifest"])):
+    if (not same_path(summary.get("checkpoint", ""), config["ckpt_path"]) or
+        not same_path(summary.get("manifest", ""), config["benchmark_v2_manifest"])):
         raise ValueError(f"Localization summary checkpoint/manifest differs: {relative(summary_path)}")
     provenance = summary.get("inference_provenance", {})
-    if (path_in_repo(provenance.get("path", "")) != output / "inference_manifest.json" or
+    if (not same_path(provenance.get("path", ""), output / "inference_manifest.json") or
         provenance.get("payload") != manifest):
         raise ValueError(f"Localization summary inference provenance differs: {relative(summary_path)}")
 
@@ -608,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
                     task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
                     batch_size = args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
                     validate_execution_metadata(manifest, task, batch_size)
-                    if path_in_repo(manifest.get("config_path", "")) != snapshot_path:
+                    if not same_path(manifest.get("config_path", ""), snapshot_path):
                         raise ValueError(f"Inference config path differs: {relative(manifest_path)}")
                     if task == "loc":
                         validate_batched_localization_summary(snapshot_path, snapshot_cfg,

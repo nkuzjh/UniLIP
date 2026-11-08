@@ -884,6 +884,69 @@ class Exp37RunnerTests(unittest.TestCase):
                 self.assertEqual(RUNNER.main(["metrics", *base]), 1)
                 run.assert_not_called()
 
+    def test_symlinked_loc_summary_all_metrics_preflight(self):
+        self.completed_checkpoint("exp37", 19500)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO_ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        physical = self.root / "physical_loc"
+        physical.mkdir()
+        (self.root / "outputs_loc").symlink_to(physical, target_is_directory=True)
+        base = ["--experiment", "exp37", "--checkpoint-step", "final", "--split", "test",
+                "--task", "all", "--execute"]
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["infer", *base]), 0)
+            self.assertEqual(run.call_count, 3)
+        target = "benchmark_v2/exp37/checkpoint-19500/test/seed_42"
+        output = self.root / "outputs_loc" / target / "infer_bs32"
+        config_path = output / "evaluation_config.yaml"
+        config = RUNNER.read_yaml(config_path)
+        manifest = {"config_path": str(config_path.resolve()),
+                    "benchmark_v2_manifest": str(manifest_file),
+                    "benchmark_v2_split": "seen_discrete_test", "maps": SEEN_MAPS,
+                    "sample_count": 20000, "checkpoint": str(RUNNER.path_in_repo(config["ckpt_path"])),
+                    "ckpt_path": str(RUNNER.path_in_repo(config["ckpt_path"])), "seed": 42,
+                    "benchmark_v2_support_seed": None,
+                    "benchmark_v2_shots_per_map": None,
+                    "inference_execution": execution_contract("loc", 32)}
+        manifest_path = output / "inference_manifest.json"
+        manifest_path.write_text(json.dumps(manifest))
+        metrics = {"XY_Dist": 1.0, "Z_Dist": 2.0, "Pitch_Dist": 3.0, "Yaw_Dist": 4.0}
+        summary = RUNNER.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_discrete_test", maps=SEEN_MAPS,
+            per_map={name: metrics for name in SEEN_MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=20000)
+        self.assertEqual(summary["inference_provenance"]["path"], str(manifest_path.resolve()))
+        summary_path = output / "benchmark_csgo_v2_loc.json"
+        summary_path.write_text(json.dumps(summary))
+        for kind in ("discrete", "continuous"):
+            gen_output = self.root / "outputs_eval" / target / "infer_bs16" / kind
+            gen_config = gen_output / "evaluation_config.yaml"
+            (gen_output / "inference_manifest.json").write_text(json.dumps({
+                "config_path": str(gen_config.resolve()),
+                "inference_execution": execution_contract("gen", 16)}))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base]), 0)
+            self.assertEqual(run.call_count, 22)
+        alternate = physical / "other" / "inference_manifest.json"
+        alternate.parent.mkdir()
+        alternate.write_text(json.dumps(manifest))
+        corrupted = copy.deepcopy(summary)
+        corrupted["inference_provenance"]["path"] = str(alternate)
+        summary_path.write_text(json.dumps(corrupted))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()), \
+             patch("sys.stderr", io.StringIO()) as error:
+            self.assertEqual(RUNNER.main(["metrics", *base]), 1)
+            self.assertIn("inference provenance differs", error.getvalue())
+            run.assert_not_called()
+        summary_path.write_text(json.dumps(summary))
+        manifest["inference_execution"] = execution_contract("loc", 1)
+        manifest_path.write_text(json.dumps(manifest))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main(["metrics", *base]), 1)
+            run.assert_not_called()
+
     def test_eval_batch_flags_do_not_change_training_plan(self):
         config = self.config("exp37")
         default = self.args("train", "exp37")

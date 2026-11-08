@@ -8200,6 +8200,8 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 
 以下每块先训练，成功后依次执行对应 validation infer/metrics 与 test infer/metrics；`set -euo pipefail` 保证失败后不继续评测。`--task all` 根据配置路由：gen 仅离散/连续，loc 仅定位。定位摘要由 infer 生成；loc-only 的 metrics 不重复计算定位，须核对 infer 产物。日志每组独立写入 `fst_outs/<实验名>.nohup.out`。
 
+2026-11-07 batch8 对照补跑：按本次安排，`exp37_s2`／`exp37_s2_loc`／`exp37_s2_gen` 需要补齐相同batch8的最终test；已有batch1完成记录继续保留。三个章节末尾新增了**仅推理／评测**命令，[三组顺序队列](#exp37-s2-controls-test-bs8-20261107)先joint、再loc-only、最后gen-only。只补本次对照时使用新增命令，不重复下面的历史训练流程。
+
 ### exp37：Stage 1 joint 基线
 
 ```bash
@@ -8240,6 +8242,17 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 ' >> fst_outs/exp37_s2_gen.nohup.out 2>&1 < /dev/null &
 ```
 
+<a id="exp37-s2-gen-test-bs8-20261107"></a>
+
+#### final test batch8 补跑（2026-11-07；仅手动执行）
+
+为对齐 `exp37_s2_both@6000` 已完成的 batch8 test，本组仅重新推理／评测 **离散生成＋连续生成**，不重新训练；固定 local6000、seed42，GPU 0 可改为空闲卡。此处单组命令与下方[三组顺序队列](#exp37-s2-controls-test-bs8-20261107)二选一，不重复执行。
+
+```bash
+python scripts/run_exp37_seen10.py infer --experiment exp37_s2_gen --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute &&
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2_gen --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute
+```
+
 ### exp37_s2_loc：Stage 2 定位单任务
 
 ```bash
@@ -8258,6 +8271,17 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp37_s2_loc.nohup.out 2>&1 < /dev/null &
+```
+
+<a id="exp37-s2-loc-test-bs8-20261107"></a>
+
+#### final test batch8 补跑（2026-11-07；仅手动执行）
+
+为对齐 `exp37_s2_both@6000` 已完成的 batch8 test，本组仅重新推理／评测 **定位**，不重新训练；固定 local6000、seed42，GPU 0 可改为空闲卡。此处单组命令与下方[三组顺序队列](#exp37-s2-controls-test-bs8-20261107)二选一，不重复执行。
+
+```bash
+python scripts/run_exp37_seen10.py infer --experiment exp37_s2_loc --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute &&
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2_loc --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute
 ```
 
 ### exp37_s2：Stage 2 joint 无辅助对照
@@ -8279,6 +8303,72 @@ python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint
 python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp37_s2.nohup.out 2>&1 < /dev/null &
 ```
+
+<a id="exp37-s2-test-bs8-20261107"></a>
+
+#### final test batch8 补跑（2026-11-07；仅手动执行）
+
+为对齐 `exp37_s2_both@6000` 已完成的 batch8 test，本组仅重新推理／评测 **定位＋离散生成＋连续生成**，不重新训练；固定 local6000、seed42，GPU 0 可改为空闲卡。此处单组命令与下方[三组顺序队列](#exp37-s2-controls-test-bs8-20261107)二选一，不重复执行。
+
+```bash
+python scripts/run_exp37_seen10.py infer --experiment exp37_s2 --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute &&
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices 0 --execute
+```
+
+<a id="exp37-s2-controls-test-bs8-20261107"></a>
+
+#### 三个 Stage2 对照的 batch8 final test 顺序队列（2026-11-07 配置；2026-11-08 中断核查）
+
+执行顺序固定为 `exp37_s2 → exp37_s2_loc → exp37_s2_gen`；三组均使用已完成的 `checkpoint-6000`，只运行 test infer／metrics。`--task all` 自动分发：joint为定位＋离散＋连续，loc-only仅定位，gen-only为离散＋连续，共6项任务。每个实验的infer成功后才进入metrics，全部成功后再进入下一个实验；`set -euo pipefail` 使失败时队列退出。此队列和上述三个单组命令二选一。
+
+定位与生成推理batch均为8、seed42；模型加载模式、采样器和推理步数沿用现有runner，与已完成both相同，不在此次命令中修改。每组资产后端和数据路径从自身 `resolved_config.yaml` 继承。定位infer已计算指标，定位metrics只校验已有摘要；metrics中的两个批量参数选择 `infer_bs8` 结果，不改变指标计算器自身batch。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EVAL_GPU=0
+for EXPERIMENT in exp37_s2 exp37_s2_loc exp37_s2_gen; do
+  python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+  python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+done
+' >> fst_outs/exp37_s2_controls.test_bs8.nohup.out 2>&1 < /dev/null &
+```
+
+统一日志为 `fst_outs/exp37_s2_controls.test_bs8.nohup.out`。定位写入 `outputs_loc/benchmark_v2/<experiment>/checkpoint-6000/test/seed_42/infer_bs8/`；生成写入 `outputs_eval/benchmark_v2/<experiment>/checkpoint-6000/test/seed_42/infer_bs8/{discrete,continuous}/`。旧batch1结果保留，新的推理／评测都读取batch8目录。已完成的 `exp37_s2_both` 不在队列中，Stage1 `exp37` 和B1也不包含在本次范围内。
+
+若队列中断，只补失败／未完成的实验或任务，不从头重复已完成组；同一infer不会自动跳过已生成图像。三个单组入口都列在各自章节末尾，分别可独立执行。上述为最初队列命令；2026-11-08已核查用户执行日志，实际停在首组metrics预检，恢复顺序见下方。
+
+<a id="exp37-s2-controls-test-bs8-recovery-20261108"></a>
+
+#### 2026-11-08：batch8 中断原因及剩余任务命令
+
+[日志第391行](fst_outs/exp37_s2_controls.test_bs8.nohup.out)报 `Localization summary inference provenance differs`。`exp37_s2` 的定位／离散／连续推理均已完成；定位指标有效，离散20000张和连续12800帧的文件名与十图manifest逐项匹配，缺失／多余均为0。随后 `metrics --task all` 在定位摘要预检处退出，尚未执行生成指标计算；`set -e` 随即终止循环，因此本队列没有进入 `exp37_s2_loc` 和 `exp37_s2_gen`。
+
+原因是 `outputs_loc` 为符号链接，且 [摘要构建函数](scripts/aggregate_csgo_benchmark_v2_metrics.py)显式用 `.resolve()` 保存provenance路径：摘要记录 `/data/home/jiahao/UniLIP_outputs/outputs_loc/.../inference_manifest.json`，而 [Seen10校验器](scripts/run_exp37_seen10.py)按项目内 `/home/jiahao/task/UniLIP/outputs_loc/.../inference_manifest.json` 直接比较路径对象；两者 `.resolve()` 相同、`.samefile()` 为真，内嵌payload也与manifest完全相同。本次已修复exp37与exp38入口：评测身份比较统一使用两侧解析符号链接后的路径，同时保留payload、checkpoint、split、seed、样本数与推理batch校验；exp38同时补齐定位摘要校验所需的模块导入。不修改既有JSON或模型权重。远端执行前须先同步本次脚本更新。已通过exp37／exp38共35项CPU测试；使用本机现有batch8产物对 `metrics --task all` 做只读预检也通过（拦截评测子进程并禁止写入，7份原有元数据哈希不变），未实际执行GPU评测。
+
+同步修复后的代码后，执行下面的剩余任务片段：先用 `metrics --task all` 校验joint已有定位摘要并计算两类生成指标，再执行两个单任务的infer／metrics。定位infer本身计算指标，定位metrics只复核已有摘要；三组都保留正常校验流程。脚本不重复joint推理，继续追加原日志；本次未执行此片段。原整段队列也能通过本次修复的路径校验，但从头执行会重新推理joint，因此恢复时使用本片段。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EVAL_GPU=0
+
+# Joint: validate existing localization and evaluate completed generation outputs.
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+
+# Loc-only: infer computes metrics; metrics validates the saved summary.
+python scripts/run_exp37_seen10.py infer --experiment exp37_s2_loc --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2_loc --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+
+# Gen-only: run both kinds of inference, then both kinds of metrics.
+python scripts/run_exp37_seen10.py infer --experiment exp37_s2_gen --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment exp37_s2_gen --checkpoint-step 6000 --split test --task all --test-loc-batch-size 8 --test-gen-batch-size 8 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >> fst_outs/exp37_s2_controls.test_bs8.nohup.out 2>&1 < /dev/null &
+```
+
+结果仍写入各实验既有 `checkpoint-6000/test/seed_42/infer_bs8/` 目录。完成后再以这些新JSON更新主表，原batch1历史表保留。本片段已经包含修复后的定位 `metrics` 摘要复核。
 
 ### exp37_s2_both：Stage 2 joint P4+U2
 
@@ -8392,7 +8482,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 
 后续预算安排已暂停所有剩余 retention 推理／评测。下列当前模板只执行 query；已有 retention 产物保留，不补跑、不记作完成。
 
-协议见 [CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，配置矩阵见 [benchmark_v2_exp37_unseen4.yaml](csgo_configs/benchmark_v2_exp37_unseen4.yaml)。2026-11-06同步结果：exp37_fs_gen与exp37_fs_loc各16组、共32组每图独立适配已完成400/400，目标图query定位16项、离散16项、连续16项全部齐全；三组zero-shot保留。定位retention已有office／golden共8组完整结果，其余暂停；生成retention暂无完整指标。新同步结果均使用batch=1；四图macro由单图JSON等权复算，详见[专题结果与分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-fewshot-results-20261106)及[总结果表](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。以下命令保留供手动复现，已完成的gen／loc训练和query无需重跑；只补已有结果的metrics／aggregate须显式指定相应推理batch=1。本次只整理文档，不启动实验。
+协议见 [CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，配置矩阵见 [benchmark_v2_exp37_unseen4.yaml](csgo_configs/benchmark_v2_exp37_unseen4.yaml)。2026-11-07同步结果：exp37_fs_gen与exp37_fs_loc各16组、共32组每图独立适配已完成400/400，原目标图query共48项齐全；exp37_fs_both另有四图10／20-shot共8组完成400/400及定位／离散／连续24份query指标，zero-shot三项齐全。both四图100／50-shot训练和query目录仍未同步，远端状态未据此判断。定位retention已有office／golden共8组完整结果，其余暂停；生成retention暂无完整指标。gen／loc／joint既有结果使用batch=1；both定位使用infer_bs16、生成使用infer_bs32。both四图macro由单图JSON等权复算，正式map-models汇总未同步；生成元数据有438个activeDropout及stochastic_layers_batch_dependent=true，跨batch不能严格归因辅助loss。详见[最新both同步结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)、[旧单任务结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-fewshot-results-20261106)及[总结果表](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。以下命令保留供手动复现，已同步的gen／loc及both 10／20-shot训练和query无需重跑；只补已有结果的metrics／aggregate时，旧gen／loc／joint须指定batch=1；both须指定 `--test-loc-batch-size 16 --test-gen-batch-size 32`，与其infer路径一致。本次只整理文档，不启动实验。
 
 | FAMILY | 直接Seen来源 | 任务 | 固定αloc／aux／perception | attention | 四图×四shot |
 |---|---|---|---|---|---:|
@@ -8406,7 +8496,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 
 普通／LoRA LR=2e-5，Action connector/norm/projector LR=1e-4，AdamW β=(.9,.999)、eps1e-8、WD0、clip1，cosine min_lr_rate=.1、warmup_ratio=.003（约2步）；固定成熟loss，无400步ramp。只使用单GPU；joint micro4/GAS32，单任务micro=SHOTS/GAS1。joint实际每update为100/48/20/8个base样本，不能写成128。新适配开启 `csgo_forward_sampler_epoch=true`，使50/10-shot每epoch丢弃的尾样本轮换；历史默认不变。
 
-来源需同步根目录 `resolved_config.yaml`、`experiment_plan.json`，以及 `checkpoint-6000/model.safetensors`、`trainer_state.json`。执行前校验实际完成性、recipe和指纹，缺失则拒绝；不会退回Stage1或4000步。2026-11-07本机已核实gen／loc／joint的Seen来源及其zero-shot评测；exp37_s2_both的checkpoint-6000模型／Trainer状态和根目录配置／计划现已同步，具备exp37_fs_both所需来源文件，但不代表该family的zero-shot或few-shot已完成。exp37_s2_both_b1来源仍未同步，不据此推断远端状态。默认minimal；首次train或zero-shot infer改用全量时传 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续infer/metrics读取已保存后端。远端基础模型路径不同可首次传 `--model-path /path/to/UniLIP-1B --pi05-path /path/to/pi05_base`。
+来源需同步根目录 `resolved_config.yaml`、`experiment_plan.json`，以及 `checkpoint-6000/model.safetensors`、`trainer_state.json`。执行前校验实际完成性、recipe和指纹，缺失则拒绝；不会退回Stage1或4000步。2026-11-07本机已核实gen／loc／joint的Seen来源及其zero-shot评测；exp37_s2_both的checkpoint-6000模型／Trainer状态和根目录配置／计划现已同步，具备exp37_fs_both所需来源文件；该family当前zero-shot与10／20-shot完成状态见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)。exp37_s2_both_b1来源仍未同步，不据此推断远端状态。默认minimal；首次train或zero-shot infer改用全量时传 `--asset-mode full --data-dir /path/to/preprocessed_data`，后续infer/metrics读取已保存后端。远端基础模型路径不同可首次传 `--model-path /path/to/UniLIP-1B --pi05-path /path/to/pi05_base`。
 
 #### 只检查规划
 
@@ -8740,8 +8830,9 @@ python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$S
 
 ##### exp37_fs_both
 
-```bash
+2026-11-07 本机已同步四图10／20-shot训练和三项query指标；100／50-shot的四图训练及query目录缺失。下列命令为保留的手动复现记录，状态与源JSON见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)。
 
+```bash
 python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
 python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
 
@@ -8765,6 +8856,9 @@ python scripts/run_exp37_unseen4.py aggregate --experiment "$FAMILY" --shots "$S
 ```
 
 ```bash
+python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
+
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
@@ -8773,10 +8867,6 @@ MAPS=(de_golden de_palacio de_vertigo)
 SHOTS=50
 GPU=3
 MASTER_PORT=29713
-
-python scripts/run_exp37_unseen4.py infer --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
-python scripts/run_exp37_unseen4.py metrics --experiment "$FAMILY" --map cs_office --shots "$SHOTS" --split query --test-loc-batch-size 16 --test-gen-batch-size 32 --task all --cuda-device "$GPU" --execute
-
 for MAP in "${MAPS[@]}"; do
     python scripts/run_exp37_unseen4.py train --experiment "$FAMILY" --map "$MAP" --shots "$SHOTS" --cuda-device "$GPU" --master-port "$MASTER_PORT" --asset-mode minimal --execute
     for SPLIT in query; do

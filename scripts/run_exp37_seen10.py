@@ -54,6 +54,11 @@ def path_in_repo(path: str | Path) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
+def same_path(left: str | Path, right: str | Path) -> bool:
+    """Compare evaluation artifact paths across symlinked output roots."""
+    return path_in_repo(left).resolve() == path_in_repo(right).resolve()
+
+
 def relative(path: Path) -> str:
     try:
         return path.relative_to(ROOT).as_posix()
@@ -549,11 +554,11 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
                 "sample_count": expected_count, "seed": seed, "kind": "localization"}
     if any(summary.get(key) != value for key, value in expected.items()):
         raise ValueError(f"Localization summary split/maps/count/seed differs: {relative(summary_path)}")
-    if (path_in_repo(summary.get("checkpoint", "")) != path_in_repo(config["ckpt_path"]) or
-        path_in_repo(summary.get("manifest", "")) != path_in_repo(config["benchmark_v2_manifest"])):
+    if (not same_path(summary.get("checkpoint", ""), config["ckpt_path"]) or
+        not same_path(summary.get("manifest", ""), config["benchmark_v2_manifest"])):
         raise ValueError(f"Localization summary checkpoint/manifest differs: {relative(summary_path)}")
     provenance = summary.get("inference_provenance", {})
-    if (path_in_repo(provenance.get("path", "")) != output / "inference_manifest.json" or
+    if (not same_path(provenance.get("path", ""), output / "inference_manifest.json") or
         provenance.get("payload") != manifest):
         raise ValueError(f"Localization summary inference provenance differs: {relative(summary_path)}")
 
@@ -727,7 +732,7 @@ def main(argv: list[str] | None = None) -> int:
                     task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
                     batch_size = args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
                     validate_execution_metadata(manifest, task, batch_size)
-                    if path_in_repo(manifest.get("config_path", "")) != snapshot_path:
+                    if not same_path(manifest.get("config_path", ""), snapshot_path):
                         raise ValueError(f"Inference config path differs: {relative(manifest_path)}")
                     if task == "loc":
                         validate_batched_localization_summary(snapshot_path, snapshot_cfg,
