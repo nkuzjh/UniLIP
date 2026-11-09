@@ -1217,22 +1217,22 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 retention | Continuous generation | exp36_1_de_vertigo | 50 | 13.272 | 0.4495 | 0.6603 | 27.879 | 35.415 | 1282.012 |
 | CrossMap-4 few-shot | Continuous generation | exp36_1 | 50 | 13.459 | 0.4405 | 0.6567 | 20.004 | 27.902 | 831.237 |
 
-# exp37 Seen-10 两阶段实验（2026-11-09 batch8 同步核查）
+# exp37 Seen-10 两阶段实验（2026-11-09 B1 同步核查）
 
-协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。截至2026-11-09核查，`exp37_s2`的batch8定位／离散／连续三项指标均已完成，`exp37_s2_loc`的batch8定位指标已完成；`exp37_s2_both`原有三项batch8结果保持不变。`exp37_s2_gen`的batch8离散推理已完成20000张、连续在模型加载时因CUDA不可用失败退出，两项均无指标摘要；`exp37_s2_both_b1`本机仍无产物。已完成的定位／离散各覆盖十图20000条，连续覆盖12800帧，均为local6000、minimal资产、seed42。原batch1历史表全部保留，Stage1 `exp37` 的batch1仅作参照；validation与参数量记录不变。
+协议见 [Seen-10两阶段实验](CSGO_BENCHMARK_V2_EXP37_SEEN10.md)，命令见 [record.md](record.md#exp37-seen10-2026-10-30)。截至2026-11-09核查，原四组 Stage 2 的 9 份 batch8 最终 test 摘要保留；新增 `exp37_s2_both_b1` 的三份最终 test 摘要，合计 12 份。B1 定位推理 batch32，离散／连续生成推理 batch16，不能将全部 12 份称为统一 batch8。B1 的 local4000／6000 定位和离散 validation 四份摘要也已同步，合计 B1 七份；定位／离散 test 各覆盖十图 20000 条，连续 test 覆盖 12800 帧，均为 local6000、minimal 资产、seed42。原 batch1 历史表全部保留，Stage1 `exp37` 的 batch1 仅作参照；其他组的历史 validation 记录和参数量审计独立保留。
 
-下方“2026-11-04”和“2026-11-07”分析保留当日历史范围；最新batch8核验状态见[2026-11-09更新](#exp37-controls-bs8-update-20261109)。
+下方“2026-11-04”“2026-11-07”及 batch8 队列分析保留当日历史范围；最新 B1 结果见[本轮补充](#exp37-b1-seen10-update-20261109)。
 
 | 实验版本 | 来源与训练身份 | 训练 | validation | test / metrics | 表格 checkpoint |
 |---|---|---|---|---|---|
 | `exp37` | 原始UniLIP＋π0.5；joint J8，αloc=8，无辅助 | ✅ 19550/19550，50 epochs | ✅ @8000、19550；定位／离散 | ✅ 定位／离散／连续 | Stage 1 final 19550，仅参照 |
-| `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | batch8离散推理✅；连续CUDA初始化失败、待重试；两类待评测 | local6000 |
+| `exp37_s2_gen` | `exp32_gen@19500`仅模型；生成单任务 | ✅ local6000/6000 | ✅ @4000、6000；离散 | ✅ batch8离散／连续最终test；离散CPU评测、连续CUDA评测 | local6000 |
 | `exp37_s2_loc` | `exp32_loc@19500`仅模型；定位单任务 | ✅ local6000/6000 | ✅ @4000、6000；定位 | ✅ batch8定位 | local6000 |
 | `exp37_s2` | `exp37@19550`仅模型；joint无辅助 | ✅ local6000/6000 | ✅ @4000、6000；定位／离散 | ✅ batch8定位／离散／连续 | local6000 |
 | `exp37_s2_both` | `exp37@19550`；joint P4＋U2 | ✅ local6000/6000；checkpoint已核验 | local4000定位✅（batch1）、离散中断；local6000未同步 | ✅ 定位／离散／连续，三项batch8 | local6000 |
-| `exp37_s2_both_b1` | `exp37@19550`；joint P3＋U2 | 未同步，远端状态待确认 | 未同步 | 未同步 | local6000（计划） |
+| `exp37_s2_both_b1` | `exp37@19550`；joint P3＋U2 | ✅ local6000/6000；[Trainer 状态](outputs/csgo_1b/exp37_s2_both_b1/trainer_state.json) | ✅ local4000／6000 定位（batch32）＋离散（batch16） | ✅ local6000 定位（batch32）＋离散／连续（batch16） | local6000 |
 
-Stage2首次只加载来源模型，重建optimizer／scheduler／local step／RNG；其预算均为local6000、有效base batch128。两组both的配方只在perception attention=false／true上不同。validation只评定位和离散生成，连续生成按协议只在test评测，不应标成缺失的validation任务。各validation节点的关键指标与来源见 [专题结果表](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#数据评测和结果记录)。下方test主表将三个Stage2对照统一登记为batch8，原batch1各任务结果单独留存；未同步项不以batch1填补。Stage1参照仍为batch1，不能将其与batch8差异全部解释为续训收益。
+Stage2首次只加载来源模型，重建optimizer／scheduler／local step／RNG；其预算均为local6000、有效base batch128。两组both的配方在perception attention=false／true上不同，但本轮 test 的推理 batch 也不同，生成清单还记录启用中的 LoRA dropout，因此表中差值不能归因于 attention 开关。validation只评定位和离散生成，连续生成按协议只在test评测。B1 的 validation 指标及来源见下方[本轮补充](#exp37-b1-seen10-update-20261109)，其余节点见[专题结果表](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#数据评测和结果记录)。下方 test 主表逐行登记实际推理 batch；原 batch1 各任务结果单独留存。Stage1 参照仍为 batch1，不能将其与 Stage2 差异全部解释为续训收益。
 
 ## exp37 定位（Seen-10；最终test macro）
 
@@ -1242,7 +1242,7 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | `exp37_s2_loc` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.3411 | 2.8749 | 2.5172 | 25.1531 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
 | `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 47.1732 | 2.8362 | 2.6514 | 26.3147 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
-| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 32 | 2288.441 M | 1285.918 M | 77.003 M | 47.5643 | 2.8302 | 2.6703 | 26.0658 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs32/loc_metrics.json) |
 
 
 ### 原 batch1 结果（历史留存）
@@ -1259,10 +1259,10 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
-| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | [推理清单](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/inference_manifest.json)；20000张已完成，待评测 |
+| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.1692 | 0.6025 | 0.5217 | 34.3244 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json)；CPU评测；推理batch8 |
 | `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7476 | 0.6230 | 0.5099 | 35.8618 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 13.7378 | 0.6238 | 0.5092 | 35.8402 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
-| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 16 | 1822.416 M | 1681.653 M | 77.003 M | 13.7606 | 0.6230 | 0.5101 | 35.6276 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs16/discrete/summary.json) |
 
 
 ### 原 batch1 结果（历史留存）
@@ -1279,10 +1279,10 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | `exp37` | Stage 1 final 19550 | 1 | 待审计 | 待审计 | 待审计 | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
-| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 未评测 | 未评测 | 未评测 | 未评测 | 未评测 | [推理日志](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out)；连续加载失败（0/12800），待重试及评测 |
+| `exp37_s2_gen` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.6329 | 0.5814 | 34.4580 | 40.6634 | 822.6760 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json)；CUDA评测；推理batch8 |
 | `exp37_s2` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0769 | 0.6085 | 37.0982 | 43.1798 | 928.6481 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | `exp37_s2_both` | local 6000 | 8 | 待审计 | 待审计 | 待审计 | 14.0884 | 0.6082 | 37.1505 | 43.2095 | 922.6230 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
-| `exp37_s2_both_b1` | local 6000 | 未同步 | 待审计 | 待审计 | 待审计 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | — |
+| `exp37_s2_both_b1` | local 6000 | 16 | 1822.416 M | 1681.653 M | 77.003 M | 14.1008 | 0.6078 | 37.1682 | 43.2016 | 906.5443 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs16/continuous/summary.json) |
 
 
 ### 原 batch1 结果（历史留存）
@@ -1294,16 +1294,31 @@ Stage2首次只加载来源模型，重建optimizer／scheduler／local step／R
 | `exp37_s2_gen` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.6232 | 0.5814 | 34.5009 | 40.6948 | 843.4360 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/continuous/summary.json) |
 | `exp37_s2` | local 6000 | 1 | 待审计 | 待审计 | 待审计 | 14.0911 | 0.6077 | 37.1104 | 43.1822 | 922.5427 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/continuous/summary.json) |
 
+<a id="exp37-b1-seen10-update-20261109"></a>
+
+## 2026-11-09：B1 Seen-10 validation 与最终 test
+
+`exp37_s2_both_b1` 已完成 local6000/6000；[训练状态](outputs/csgo_1b/exp37_s2_both_b1/trainer_state.json)与 local6000 checkpoint 均记录最终步数。最终权重的张量头部与训练参数表已核对，三项主表参数量见[审计依据](csgo_benchmark_v2_table1_seen10.md#exp31-exp37-parameter-audit-20261109)。下表两节点均为 `seen_validation`、seed42、minimal 资产、十图各500条；定位实际推理 batch32，离散生成实际推理 batch16。定位数值取 `loc_metrics.json` 的 `metrics_macro_map`，生成数值取 `summary.json` 的同名字段。连续生成依协议只在最终 test 评测。JSON 内部分绝对 `source_files` 路径保留来源服务器前缀，本机对应摘要和逐图文件已同步；它们不是指标缺失。
+
+| Checkpoint | 任务 | 推理 batch | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| local4000 | 定位 | 32 | 39.3126 | 2.5917 | 2.7351 | 21.3439 | — | — | — | — | [loc_metrics.json](outputs_loc/benchmark_v2/exp37_s2_both_b1/checkpoint-4000/validation/seed_42/infer_bs32/loc_metrics.json) |
+| local4000 | 离散生成 | 16 | — | — | — | — | 13.9816 | 0.6124 | 0.5153 | 63.2220 | [summary.json](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-4000/validation/seed_42/infer_bs16/discrete/summary.json) |
+| local6000 | 定位 | 32 | 39.1491 | 2.5465 | 2.5404 | 20.9836 | — | — | — | — | [loc_metrics.json](outputs_loc/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/validation/seed_42/infer_bs32/loc_metrics.json) |
+| local6000 | 离散生成 | 16 | — | — | — | — | 14.0450 | 0.6101 | 0.5158 | 62.8589 | [summary.json](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/validation/seed_42/infer_bs16/discrete/summary.json) |
+
+最终 test 使用同一个 local6000 checkpoint，定位与离散各覆盖十图 20000 条，连续生成覆盖十图 12800 帧；三项等图宏平均已填入上方主表。B1（P3＋U2）相对 B2（P4＋U2）的定位 XY／Z／Yaw 误差分别高 0.7728／0.0449／0.0477，Pitch 误差低 0.1056；离散 PSNR／Boundary_F1 高 0.0228／0.0009，LPIPS／FID 低 0.0008／0.2126；连续 PSNR 高 0.0124、LPIPS 低 0.0004、FVD 低 16.0787，而 T-Warp 高 0.0177、T-Diff 低 0.0079。B2 三项 test 用 batch8，B1 定位用 batch32、生成用 batch16；生成[执行清单](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs16/discrete/inference_manifest.json)记有启用中的 LoRA dropout 和 `stochastic_layers_batch_dependent=true`。因此这些差值只能作为已观测结果，不能单独归因于 perception attention 开关。
+
 <a id="exp37-controls-bs8-update-20261108"></a>
 <a id="exp37-controls-bs8-update-20261109"></a>
 
 ## 2026-11-09：Stage2 对照的 batch8 结果与队列状态
 
-`exp37_s2`的定位、离散、连续三份batch8摘要齐全，`exp37_s2_loc`的定位摘要齐全；`exp37_s2_both`的原三份摘要不变。已完成任务的manifest记录local6000、seed42、实际batch8，定位／离散各20000条、连续12800帧。定位十图宏平均和生成逐图原始JSON、覆盖率与摘要一致；生成预测缺失和多余数均为0。来源见上方各任务主表及[联合对照日志](fst_outs/exp37_s2_controls.test_bs8.nohup.out)。先前的provenance路径比较故障已修复，记录见[专题根因记录](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-queue-root-cause-20261108)。定位单任务曾遇SIGKILL，重跑现已成功，不再视为当前失败。
+此节保留原四组 Stage2 的 batch8 队列快照：`exp37_s2`的定位、离散、连续三份摘要齐全，`exp37_s2_loc`的定位摘要齐全；`exp37_s2_both`的原三份摘要不变，`exp37_s2_gen`离散与连续两份摘要均已齐全，共9份。已完成任务的manifest记录local6000、seed42、实际batch8，定位／离散各20000条、连续12800帧。定位十图宏平均和生成逐图原始JSON、覆盖率与摘要一致；生成预测缺失和多余数均为0。来源见上方各任务主表及[联合对照日志](fst_outs/exp37_s2_controls.test_bs8.nohup.out)。先前的provenance路径比较故障已修复，记录见[专题根因记录](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-queue-root-cause-20261108)。定位单任务曾遇SIGKILL，重跑现已成功，不再视为当前失败。
 
-截至2026-11-09 01:10:33（UTC+8）的复查，`exp37_s2_gen`的batch8离散推理已完成20000/20000（2500批），清单和十图完整图片已核验；连续任务在加载模型时出现 `CUDA unknown error`，继而报 `Flash Attention 2 is not available on CPU`，未开始生成（0/12800）。队列失败退出，当前无对应执行进程；两类逐图指标和summary均未产生，见[运行日志](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out)。本机 `nvidia-smi` 随后返回 `No devices were found`，具体GPU不可见原因未定，不直接判为显存不足。GPU恢复后按[剩余三步命令](record.md#exp37-s2-gen-bs8-cuda-recovery-20261109)执行离散metrics、连续infer与连续metrics，避免重算离散推理。`exp37_s2_both_b1`本机无产物；已完成的7份batch8摘要数值未变，本次无新增可填的评测数值。原batch1数值及来源完整保存在各任务主表后，不填补batch8空项，也不跨batch逐项取最优。
+截至2026-11-09 01:10:33（UTC+8）的先前复查，`exp37_s2_gen`的batch8离散推理已完成20000/20000（2500批），清单和十图完整图片已核验；其后离散metrics在CPU上计算完成，形成[离散summary](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json)。CPU用于离散评测，不表示CPU推理。当时连续任务在加载模型时出现 `CUDA unknown error`，继而报 `Flash Attention 2 is not available on CPU`，未开始生成（0/12800）；原队列失败退出，见[运行日志](fst_outs/exp37_s2_gen_loc_controls.test_bs8.nohup.out)。本机 `nvidia-smi` 随后返回 `No devices were found`，具体GPU不可见原因未定。此为历史故障；后来同步[连续summary](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json)，逐图指标使用CUDA，推理batch8，覆盖十图12800帧。`exp37_s2_gen`适用test两项均完成，原四组 batch8 摘要总计9份。B1 后续新同步的结果见[本轮补充](#exp37-b1-seen10-update-20261109)。原batch1数值及来源完整保存在各任务主表后，不跨batch逐项取最优。
 
-同为local6000、batch8的test比较中，`both`相对无辅助`joint`的定位XY／Z／Yaw误差分别下降0.81%／1.80%／1.13%，Pitch误差上升4.70%。离散生成PSNR为13.7476／13.7378（joint／both），FID为35.8618／35.8402，差距小且方向不同；连续FVD由928.6481降至922.6230（0.65%），T-Warp由37.0982升至37.1505。`both`相对定位单任务的XY／Pitch／Yaw误差高0.97%／10.28%／3.44%，Z误差低3.12%。这些test指标呈现取舍，不支持联合全面优于单任务；生成单任务batch8尚未完成，不能拿其batch1结果混比。
+同为local6000、推理batch8的test比较中，`both`相对无辅助`joint`的定位XY／Z／Yaw误差分别下降0.81%／1.80%／1.13%，Pitch误差上升4.70%。离散生成PSNR为13.7476／13.7378（joint／both），FID为35.8618／35.8402，差距小且方向不同；连续FVD由928.6481降至922.6230（0.65%），T-Warp由37.0982升至37.1505。离散gen-only的PSNR／LPIPS／Boundary_F1／FID为14.1692／0.6025／0.5217／34.3244；加上SSIM=0.4158、Pixel_MAE_255=38.9383、CLIP=0.8455，当前报告的七项离散核心指标均优于joint与both。离散三组采用相同metric_profile、评测batch1与预处理；gen-only离散指标在CPU计算，joint／both离散指标在GPU计算，不能声称不同设备的离散数值严格等价。连续三组均在CUDA评测、推理batch8；gen-only的PSNR／SSIM／Boundary_F1／LPIPS／Pixel_MAE_255／T-Warp／T-Diff／Optical_Flow_EPE／FVD九项核心指标均优于joint与both，FVD分别为822.6760／928.6481／922.6230（gen-only／joint／both）。`both`相对定位单任务的XY／Pitch／Yaw误差高0.97%／10.28%／3.44%，Z误差低3.12%。这些test指标呈现取舍，不支持联合或辅助全面优于单任务；连续结果使用三组同batch8比较。
 
 ## 2026-11-04：exp37 阶段性结果与 Seen-10 其他模型对照
 
@@ -1404,9 +1419,9 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 
 <a id="exp37-unseen4-results-20261103"></a>
 
-# exp37 Unseen-4 每图独立 few-shot（2026-11-07 同步结果）
+# exp37 Unseen-4 每图独立 few-shot（2026-11-09 同步结果）
 
-本节更新 exp37 Unseen-4 每图独立适配进度与结果，不改历史表格数值。协议见 [exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见 [record.md](record.md#exp37-unseen4-fewshot-20261103)。gen／loc 各16个适配及 both 四图10／20-shot的8个适配（共40个）已完成 final400/400；相应目标图 query 指标齐全：定位24份、离散24份、连续24份单图结果。both 的100／50-shot共8点训练与各任务 query 目录均未同步；joint／both_b1 的32点也无本机完成证据，不能据此断言远端未运行。旧 gen／loc／joint zero-shot与gen／loc few-shot 使用 batch=1；新 both 定位 `infer_bs16`、生成 `infer_bs32`，zero-shot及few-shot均按此路径。推理seed=42、support seed=0（zero-shot无support seed）、minimal。四图macro为等图算术平均；both few-shot 正式 `map-models` 汇总JSON未同步，数值由单图JSON复算，未重新GPU评测。生成元数据有438个activeDropout、`stochastic_layers_batch_dependent=true`，跨batch family不能作严格辅助loss归因。retention已暂停，不计本次缺失。本次只整理已有结果，未运行训练、推理或评测。详见[2026-11-07 both 同步节](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)。
+本节更新exp37 Unseen-4每图独立适配进度与结果，不改历史表格数值。协议见[exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见[record.md](record.md#exp37-unseen4-fewshot-20261103)。gen／loc各16点的原48份单图query与both四图四档的48份均齐全，合计**96份单图指标、每类任务32份**；both为16/16点、48/48份，zero-shot三项齐。query结果无缺失；gen／loc／both共48个final400训练终点均有本机正式模型和Trainer状态核验证据，详见[专题进度表](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-progress-20261109)。joint／both_b1的few-shot无本机完成证据。旧gen／loc／joint使用batch=1；both定位`infer_bs16`、生成`infer_bs32`，生成元数据有438个activeDropout及`stochastic_layers_batch_dependent=true`，跨family差异不能严格归因辅助loss。100／50-shot三项正式`map-models`汇总均齐且与四图单图等权复算一致；10／20-shot正式汇总未同步，宏平均由单图JSON复算。retention暂停；本次未运行训练、推理或评测。数值、来源和解释见[2026-11-09 both结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261109)及[分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-analysis-20261109)。
 
 ## zero-shot 实验进度
 
@@ -1420,7 +1435,7 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 
 ## few-shot 实验进度
 
-各shot单元格依次记录训练／目标地图query／全Seen10 retention；每个单元格是一次独立适配。当前 gen／loc 的32点和 both 的10／20-shot共8点有本机证据；both 100／50-shot、joint／both_b1未同步。剩余 retention 均暂停。
+各shot单元格依次记录训练／目标地图query／全Seen10 retention；每个单元格是一次独立适配。当前gen／loc的32点与both的16点共48个final400终点均已本机核验；对应96份query单图指标齐全。joint／both_b1未同步；剩余retention暂停。
 
 | 实验版本 | 100-shot：训练／Q／R | 50-shot：训练／Q／R | 20-shot：训练／Q／R | 10-shot：训练／Q／R | checkpoint／validation |
 |---|---|---|---|---|---|
@@ -1436,18 +1451,18 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_joint_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 | exp37_fs_joint_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 | exp37_fs_joint_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
-| exp37_fs_both_cs_office | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_golden | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_palacio | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400；不做Unseen中途选点 |
-| exp37_fs_both_de_vertigo | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400；不做Unseen中途选点 |
+| exp37_fs_both_cs_office | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
+| exp37_fs_both_de_golden | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
+| exp37_fs_both_de_palacio | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
+| exp37_fs_both_de_vertigo | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
 | exp37_fs_both_b1_cs_office | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 | exp37_fs_both_b1_de_golden | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 | exp37_fs_both_b1_de_palacio | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 | exp37_fs_both_b1_de_vertigo | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | 未同步／未同步／未同步 | final400；不做Unseen中途选点 |
 
-zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个目标图专用checkpoint，按 `map-models` 口径等权计算，保留map→checkpoint对应关系；both 的正式聚合文件尚未同步。每个适配模型的Seen-retention单独记录，不将四个模型拼为单模型retention。四图 macro 按每图独立模型等权计算；gen／loc 从48个单图 JSON 复算 few-shot 宏平均，both 的10／20-shot从24个单图 JSON 复算；没有生成四图 aggregate JSON。旧gen／loc逐图来源与指标见[单任务结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-fewshot-results-20261106)，both见[2026-11-07同步结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)。
+zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro按四个目标图独立模型等权计算。both 100／50-shot各有三项正式 `map-models` 汇总；100-shot：[定位](outputs_loc/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json)、[离散](outputs_eval/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json)、[连续](outputs_eval/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json)；50-shot：[定位](outputs_loc/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json)、[离散](outputs_eval/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json)、[连续](outputs_eval/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json)。两档均与各自四图单图JSON复算一致；10／20-shot正式汇总未同步，由单图JSON等权复算。逐图数值及来源见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261109)。
 
-生成输出位于 `outputs_eval/benchmark_v2/<family>_<map>/shot_<N>/seed_0/`，定位位于同结构的 `outputs_loc/benchmark_v2/`；retention为本次运行的独立子目录。zero-shot单独使用 `<family>/zero_shot/seed_42/`；both 结果进入其下 `infer_bs16`／`infer_bs32`。只在严格核对来源、step、seed、shot、manifest、后端及覆盖后填数值。
+生成输出位于 `outputs_eval/benchmark_v2/<family>_<map>/shot_<N>/seed_0/`，定位位于同结构的 `outputs_loc/benchmark_v2/`；retention为本次运行的独立子目录。zero-shot单独使用 `<family>/zero_shot/seed_42/`；both 结果进入其下 `infer_bs16`／`infer_bs32`。100／50-shot已核对评测计划指向的final模型、seed、shot、manifest、后端与覆盖；正式权重、Trainer状态400/400及配置计划均已同步核验。
 
 ## exp37 Unseen-4 定位（四图宏平均）
 
@@ -1464,8 +1479,8 @@ zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个
 | exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_both | 0-shot | Seen local6000 | 341.5329 | 18.9907 | 9.0030 | 93.0790 |
-| exp37_fs_both | 100-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 |
-| exp37_fs_both | 50-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific final模型（final400已核验） | 171.8577 | 11.9646 | 4.8400 | 74.9741 |
+| exp37_fs_both | 50-shot | 四个map-specific final模型（final400已核验） | 188.9630 | 13.2528 | 5.0187 | 80.8331 |
 | exp37_fs_both | 20-shot | 四个map-specific local400 | 206.1598 | 14.3399 | 5.7314 | 85.0548 |
 | exp37_fs_both | 10-shot | 四个map-specific local400 | 222.5440 | 15.1374 | 6.2334 | 88.4703 |
 | exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
@@ -1489,8 +1504,8 @@ zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个
 | exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_both | 0-shot | Seen local6000 | 11.0518 | 0.7285 | 0.4604 | 100.0587 |
-| exp37_fs_both | 100-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 |
-| exp37_fs_both | 50-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific final模型（final400已核验） | 13.0418 | 0.6673 | 0.4807 | 39.5391 |
+| exp37_fs_both | 50-shot | 四个map-specific final模型（final400已核验） | 12.8144 | 0.6747 | 0.4761 | 40.3697 |
 | exp37_fs_both | 20-shot | 四个map-specific local400 | 12.5950 | 0.6826 | 0.4687 | 45.3569 |
 | exp37_fs_both | 10-shot | 四个map-specific local400 | 12.4688 | 0.6883 | 0.4641 | 51.5688 |
 | exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 |
@@ -1513,8 +1528,8 @@ zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个
 | exp37_fs_joint | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_joint | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_both | 0-shot | Seen local6000 | 11.1011 | 0.7289 | 43.0778 | 48.9258 | 1334.9445 |
-| exp37_fs_both | 100-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
-| exp37_fs_both | 50-shot | 预定四个map-specific local400（未同步） | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| exp37_fs_both | 100-shot | 四个map-specific final模型（final400已核验） | 12.8341 | 0.6730 | 40.3321 | 46.2007 | 984.8784 |
+| exp37_fs_both | 50-shot | 四个map-specific final模型（final400已核验） | 12.4543 | 0.6850 | 40.4484 | 46.3713 | 1030.1365 |
 | exp37_fs_both | 20-shot | 四个map-specific local400 | 12.3794 | 0.6889 | 38.7084 | 44.8006 | 950.1136 |
 | exp37_fs_both | 10-shot | 四个map-specific local400 | 12.2896 | 0.6932 | 37.4045 | 43.6475 | 933.5771 |
 | exp37_fs_both_b1 | 0-shot | Seen local6000 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
@@ -1523,7 +1538,7 @@ zero-shot使用同一个Seen checkpoint覆盖四图；few-shot macro使用四个
 | exp37_fs_both_b1 | 20-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
 | exp37_fs_both_b1 | 10-shot | 四个map-specific local400 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
 
-2026-11-07 both 同步范围：0-shot 三项完整；10／20-shot 四图各三项完整，100／50-shot 8点的训练和24份 query 指标在本机缺失。10／20-shot 正式 `map-models` 汇总JSON未同步；逐图数值、推理batch及失败归档排除规则见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261107)。retention暂停不列缺失。
+2026-11-09 both：0-shot三项齐；四档shot的16点、48份query单图指标齐全，100／50-shot正式汇总各三项齐，10／20-shot宏平均由单图复算。gen／loc／both共48个训练终点已独立核验，query单图指标合计96份齐全；详见[专题进度表](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-progress-20261109)。100-shot相对zero-shot的XY、FID、FVD分别改善49.68%、60.48%、26.22%；连续FVD随shot并不单调。与旧单任务的对比受batch、activeDropout和来源历史差异限制，无法归因辅助loss；仍需同协议joint对照。见[完整分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-analysis-20261109)。retention暂停。
 
 历史待补项与本节新增实验分开：exp35 joint四shot共16次、exp35_gen/loc的20/10-shot各8次，共32次原主线训练缺口；exp35_gen_de_vertigo 50-shot本地缺metric摘要。exp36_1四图四shot已登记完成，其原配方结果不改名为exp37。暂停的exp33/34/36不由本计划自动恢复。
 

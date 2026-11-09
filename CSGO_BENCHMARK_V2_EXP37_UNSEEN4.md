@@ -1,6 +1,6 @@
 # CSGO Benchmark v2：exp37 Unseen-4 每图独立 few-shot
 
-状态（2026-11-07 本机同步核查）：**`exp37_fs_gen`／`exp37_fs_loc` 各16组，以及 `exp37_fs_both` 的四图10／20-shot共8组，均完成 local400 与各自目标图 query 指标**。gen／loc 32组及旧三个来源 zero-shot 使用 batch=1；新同步 both 定位使用 infer_bs16、离散／连续生成使用 infer_bs32，zero-shot三项同样齐全。both 四图100／50-shot的8个训练与对应 query 目录均未同步，不能推断远端状态；joint／both_b1 的 few-shot 仍无本机完成证据。retention 已按安排暂停，不计本次缺失。协议、运行入口和手动命令见本页后文。
+状态（2026-11-09 本机同步核查）：**`exp37_fs_gen`／`exp37_fs_loc` 各16组与 `exp37_fs_both` 四图四档16组，共48个final400训练终点已独立核验**。both 四图四档共16/16点的定位、离散、连续query指标全部齐全（48/48份）；正式训练权重与Trainer状态均已同步并核验400/400。both 定位 infer_bs16、生成 infer_bs32；zero-shot三项齐全。旧 gen／loc／joint 为 batch=1；跨batch结果不可严格归因辅助loss。joint／both_b1 few-shot 仍无本机完成证据；retention暂停。协议、运行入口和手动命令见后文。
 
 ## 实验设计定位
 
@@ -97,9 +97,11 @@ Seen／Unseen 的可执行示例统一见 [record.md](record.md#exp37-batched-in
 
 本协议没有中途完整optimizer checkpoint，**不支持将中断的400步训练用 `--resume` 接续**。若训练中断，需要人工保留/归档本次不完整目录后，从同一个Seen来源重新运行该适配点。已完成400步而推理/评测中断时，只补对应infer/metrics，不重复train；训练入口拒绝覆盖已有运行。不要假定图像推理具有逐样本断点续跑功能。
 
+<a id="exp37-both-progress-20261109"></a>
+
 ## 实验记录表
 
-2026-11-07核对：下表每个shot单元格依次记录**训练／目标地图query／Seen-retention**。`✅`表示已同步完整证据；gen的query完成同时要求离散和连续两项齐全。32个单任务适配点与 both 的8个10／20-shot适配点均有 `trainer_state.json` 的400/400状态及正式根目录 `model.safetensors`；未同步状态不代表远端尚未执行。both 的 `de_vertigo` 20-shot `seed_0.save_failed_20261107_171318` 是失败归档，已排除。retention部分产物与完整指标分开记录，剩余不补跑。
+2026-11-09核对：下表每个shot单元格依次记录**训练终点本机核验／目标地图query／Seen-retention**。`✅`表示已同步完整证据；gen的query完成同时要求离散和连续两项齐全。32个单任务与16个both适配点的正式模型、Trainer状态均已在本机核验final400/400；对应三项任务的query单图指标共96份齐全（各任务32份）。both 的 `de_vertigo` 20-shot `seed_0.save_failed_20261107_171318` 是失败归档，已排除。retention部分产物与完整指标分开记录，剩余不补跑。
 
 | Family | 目标地图 | 100-shot | 50-shot | 20-shot | 10-shot | 正式checkpoint |
 |---|---|---|---|---|---|---|
@@ -115,16 +117,16 @@ Seen／Unseen 的可执行示例统一见 [record.md](record.md#exp37-batched-in
 | exp37_fs_joint | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 | exp37_fs_joint | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 | exp37_fs_joint | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
-| exp37_fs_both | cs_office | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅／✅定位+离散+连续／暂停 | ✅／✅定位+离散+连续／暂停 | local400 |
-| exp37_fs_both | de_golden | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅／✅定位+离散+连续／暂停 | ✅／✅定位+离散+连续／暂停 | local400 |
-| exp37_fs_both | de_palacio | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅／✅定位+离散+连续／暂停 | ✅／✅定位+离散+连续／暂停 | local400 |
-| exp37_fs_both | de_vertigo | 未同步／未同步／暂停 | 未同步／未同步／暂停 | ✅／✅定位+离散+连续／暂停 | ✅／✅定位+离散+连续／暂停 | local400 |
+| exp37_fs_both | cs_office | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
+| exp37_fs_both | de_golden | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
+| exp37_fs_both | de_palacio | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
+| exp37_fs_both | de_vertigo | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
 | exp37_fs_both_b1 | cs_office | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 | exp37_fs_both_b1 | de_golden | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 | exp37_fs_both_b1 | de_palacio | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 | exp37_fs_both_b1 | de_vertigo | 未同步 | 未同步 | 未同步 | 未同步 | local400 |
 
-zero-shot五组以及四图宏平均结果同步维护在 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。只有实际完成并核对checkpoint、shot、seed、资产后端和覆盖后才能填写数值。
+zero-shot五组以及四图宏平均结果同步维护在 [`csgo_benchmark_v2_experiments_results.md`](csgo_benchmark_v2_experiments_results.md#exp37-unseen4-results-20261103)。both四档共16个训练点均已核验final400/400，48份单图query指标已齐。
 
 ## 已同步 zero-shot 结果（2026-11-07 补充）
 
@@ -266,10 +268,13 @@ T-Warp、T-Diff、OFE分别对应 `Temporal_Warping_Error`、`Temporal_Differenc
 已完成8组在相同Seen-test、batch=1、seed42口径下的四项定位误差均高于未适配来源。Seen XY由46.3528升至65.4182～236.5602（约1.41～5.10倍），说明这些已测模型存在适配后原Seen能力下降；不能写成“few-shot提升且没有遗忘”。该结论仅覆盖已测定位模型，不外推另外两图和生成retention，也不要求恢复已暂停的评测。
 
 <a id="exp37-both-results-20261107"></a>
+<a id="exp37-both-results-20261109"></a>
 
-## 2026-11-07：exp37_fs_both（P4＋U2）已同步结果与缺失
+## 2026-11-09：exp37_fs_both（P4＋U2）完整结果与同步状态
 
-四图10／20-shot各有独立正式 `seed_0/model.safetensors` 与400/400 Trainer状态；目标图 query 定位、离散、连续共24份指标齐全：每点定位与离散各2000条／张，连续1280帧、20个64帧clip，coverage=1且缺失／多余预测为0。定位 `infer_bs16`，生成 `infer_bs32`，推理 seed=42、support seed=0、minimal资产。0-shot来自 `exp37_s2_both@6000` 的原有四图聚合指标；10／20-shot 四图等权macro直接由单图JSON复算，**正式 `map-models` 汇总JSON尚未同步，也未在GPU重新评测**。FID／FVD也按四图等权。`de_vertigo` 20-shot的 `seed_0.save_failed_20261107_171318` 是失败归档，仅正式 `seed_0/` 入表。
+四图100／50／20／10-shot共16个独立适配点的定位、离散、连续query指标现已全部同步，合计**16/16点、48/48份**。每点定位与离散各2000条／张、连续1280帧及20个64帧clip，coverage=1、缺失／多余预测为0。query结果无缺失；正式训练权重、Trainer状态及配置计划文件均已在本机核验，进度见[进度表](#exp37-both-progress-20261109)。
+
+定位 `infer_bs16`、生成 `infer_bs32`，推理seed=42、support seed=0、minimal资产。0-shot来自 `exp37_s2_both@6000` 的原有四图聚合指标。100／50-shot的三项正式 `map-models` 汇总均已同步；50-shot来源：[定位](outputs_loc/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json)、[离散](outputs_eval/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json)、[连续](outputs_eval/benchmark_v2/exp37_fs_both/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json)，100／50-shot汇总均与各自四个单图JSON等权复算一致。100-shot正式汇总：[定位](outputs_loc/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json)、[离散](outputs_eval/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json)、[连续](outputs_eval/benchmark_v2/exp37_fs_both/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json)。10／20-shot四图macro由单图JSON等权复算，正式 `map-models` 汇总尚未同步。FID／FVD也按四图等权。`de_vertigo` 20-shot的 `seed_0.save_failed_20261107_171318` 是失败归档，仅正式 `seed_0/` 入表。
 
 生成元数据包含438个 activeDropout 且 `stochastic_layers_batch_dependent=true`；both 的 loc16／gen32 与旧 gen／loc／joint 的 batch=1 不具备严格一致的推理口径，不能由跨family差异作辅助loss归因。原始few-shot指标保留远端绝对路径；本机按相同相对输出身份核对路径、manifest、资产摘要、batch和覆盖，未改JSON或重新运行metric。原样在本机运行严格校验命令需映射旧服务器绝对路径。
 
@@ -278,21 +283,29 @@ T-Warp、T-Diff、OFE分别对应 `Temporal_Warping_Error`、`Temporal_Differenc
 | Shot | XY↓ | Z↓ | Pitch↓ | Yaw↓ |
 |---:|---:|---:|---:|---:|
 | 0-shot | 341.5329 | 18.9907 | 9.0030 | 93.0790 |
-| 100-shot | 未同步 | 未同步 | 未同步 | 未同步 |
-| 50-shot | 未同步 | 未同步 | 未同步 | 未同步 |
+| 100-shot | 171.8577 | 11.9646 | 4.8400 | 74.9741 |
+| 50-shot | 188.9630 | 13.2528 | 5.0187 | 80.8331 |
 | 20-shot | 206.1598 | 14.3399 | 5.7314 | 85.0548 |
 | 10-shot | 222.5440 | 15.1374 | 6.2334 | 88.4703 |
 
-### 定位：10／20-shot 逐图结果
+### 定位：逐图结果
 
 | 目标地图 | Shot | XY↓ | Z↓ | Pitch↓ | Yaw↓ | 原始指标 |
 |---|---:|---:|---:|---:|---:|---|
+| cs_office | 100 | 100.8698 | 2.3594 | 5.4618 | 72.6795 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_cs_office/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| cs_office | 50 | 130.2954 | 2.8049 | 6.0422 | 85.5553 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_cs_office/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | cs_office | 20 | 142.4106 | 3.5887 | 7.1826 | 86.9190 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_cs_office/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | cs_office | 10 | 151.4895 | 3.8976 | 6.1603 | 88.9383 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_cs_office/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_golden | 100 | 185.2977 | 13.3480 | 4.0590 | 80.1399 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_golden/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_golden | 50 | 191.6503 | 14.3819 | 4.3581 | 83.9499 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_golden/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_golden | 20 | 214.7585 | 16.2936 | 5.1563 | 87.2698 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_golden/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_golden | 10 | 234.4089 | 16.9440 | 5.5182 | 87.0724 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_golden/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_palacio | 100 | 228.5884 | 14.5007 | 3.6786 | 67.7949 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_palacio/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_palacio | 50 | 251.7280 | 16.1849 | 3.7664 | 71.5218 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_palacio/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_palacio | 20 | 269.3269 | 15.4318 | 4.2127 | 77.9488 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_palacio/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_palacio | 10 | 292.0618 | 16.4159 | 4.3698 | 85.4077 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_palacio/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_vertigo | 100 | 172.6749 | 17.6503 | 6.1607 | 79.2822 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_vertigo/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| de_vertigo | 50 | 182.1782 | 19.6395 | 5.9083 | 82.3053 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_vertigo/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_vertigo | 20 | 198.1434 | 22.0457 | 6.3740 | 88.0816 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_vertigo/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 | de_vertigo | 10 | 212.2157 | 23.2922 | 8.8853 | 92.4629 | [JSON](outputs_loc/benchmark_v2/exp37_fs_both_de_vertigo/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
 
@@ -301,21 +314,29 @@ T-Warp、T-Diff、OFE分别对应 `Temporal_Warping_Error`、`Temporal_Differenc
 | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | FID↓ | CLIP↑ |
 |---:|---:|---:|---:|---:|---:|---:|
 | 0-shot | 11.0518 | 0.3706 | 0.7285 | 0.4604 | 100.0587 | 0.7324 |
-| 100-shot | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
-| 50-shot | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| 100-shot | 13.0418 | 0.4293 | 0.6673 | 0.4807 | 39.5391 | 0.8154 |
+| 50-shot | 12.8144 | 0.4265 | 0.6747 | 0.4761 | 40.3697 | 0.8124 |
 | 20-shot | 12.5950 | 0.4255 | 0.6826 | 0.4687 | 45.3569 | 0.8053 |
 | 10-shot | 12.4688 | 0.4152 | 0.6883 | 0.4641 | 51.5688 | 0.8022 |
 
-### 离散生成：10／20-shot 逐图结果
+### 离散生成：逐图结果
 
 | 目标地图 | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | FID↓ | CLIP↑ | 原始指标 |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
+| cs_office | 100 | 13.1996 | 0.5636 | 0.6524 | 0.4441 | 40.9455 | 0.8490 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| cs_office | 50 | 13.0743 | 0.5745 | 0.6605 | 0.4382 | 42.0617 | 0.8398 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
 | cs_office | 20 | 12.6453 | 0.5768 | 0.6715 | 0.4277 | 48.9047 | 0.8358 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
 | cs_office | 10 | 12.7838 | 0.5498 | 0.6792 | 0.4189 | 53.6271 | 0.8246 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| de_golden | 100 | 14.4418 | 0.3662 | 0.6325 | 0.5176 | 39.8082 | 0.8028 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| de_golden | 50 | 14.3736 | 0.3651 | 0.6369 | 0.5163 | 38.6305 | 0.8039 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
 | de_golden | 20 | 14.2202 | 0.3483 | 0.6436 | 0.5093 | 41.8457 | 0.7957 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
 | de_golden | 10 | 13.8478 | 0.3371 | 0.6475 | 0.5046 | 48.8016 | 0.8082 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| de_palacio | 100 | 12.5013 | 0.3472 | 0.7084 | 0.5101 | 39.0612 | 0.8005 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| de_palacio | 50 | 12.3716 | 0.3420 | 0.7183 | 0.5031 | 39.7537 | 0.7991 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
 | de_palacio | 20 | 12.1644 | 0.3473 | 0.7232 | 0.4997 | 44.2656 | 0.7931 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
 | de_palacio | 10 | 11.8333 | 0.3305 | 0.7264 | 0.4904 | 51.7261 | 0.7898 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| de_vertigo | 100 | 12.0245 | 0.4403 | 0.6757 | 0.4510 | 38.3416 | 0.8094 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| de_vertigo | 50 | 11.4382 | 0.4246 | 0.6832 | 0.4468 | 41.0331 | 0.8066 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
 | de_vertigo | 20 | 11.3501 | 0.4295 | 0.6922 | 0.4380 | 46.4118 | 0.7969 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
 | de_vertigo | 10 | 11.4104 | 0.4433 | 0.7000 | 0.4425 | 52.1205 | 0.7862 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
 
@@ -324,29 +345,56 @@ T-Warp、T-Diff、OFE分别对应 `Temporal_Warping_Error`、`Temporal_Differenc
 | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | T-Warp↓ | T-Diff↓ | OFE↓ | FVD↓ |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 0-shot | 11.1011 | 0.3657 | 0.7289 | 0.4581 | 43.0778 | 48.9258 | 16.9266 | 1334.9445 |
-| 100-shot | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
-| 50-shot | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 | 未同步 |
+| 100-shot | 12.8341 | 0.4119 | 0.6730 | 0.4846 | 40.3321 | 46.2007 | 16.3582 | 984.8784 |
+| 50-shot | 12.4543 | 0.4072 | 0.6850 | 0.4765 | 40.4484 | 46.3713 | 16.4332 | 1030.1365 |
 | 20-shot | 12.3794 | 0.4088 | 0.6889 | 0.4725 | 38.7084 | 44.8006 | 16.5945 | 950.1136 |
 | 10-shot | 12.2896 | 0.3971 | 0.6932 | 0.4662 | 37.4045 | 43.6475 | 16.7706 | 933.5771 |
 
-### 连续生成：10／20-shot 逐图结果
+### 连续生成：逐图结果
 
 | 目标地图 | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary F1↑ | T-Warp↓ | T-Diff↓ | OFE↓ | FVD↓ | 原始指标 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| cs_office | 100 | 12.9196 | 0.5287 | 0.6679 | 0.4507 | 39.2649 | 45.0055 | 14.5538 | 704.0578 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| cs_office | 50 | 12.5058 | 0.5351 | 0.6892 | 0.4306 | 37.5142 | 43.7319 | 14.2201 | 751.1638 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
 | cs_office | 20 | 12.1699 | 0.5378 | 0.6863 | 0.4436 | 35.9450 | 42.2949 | 14.5927 | 832.0142 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
 | cs_office | 10 | 12.6481 | 0.5146 | 0.6985 | 0.4221 | 37.0186 | 43.1744 | 15.8381 | 832.8553 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_cs_office/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| de_golden | 100 | 14.4747 | 0.3600 | 0.6305 | 0.5258 | 34.1063 | 39.1925 | 17.5258 | 1153.4139 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| de_golden | 50 | 14.2368 | 0.3578 | 0.6384 | 0.5217 | 34.6652 | 39.7623 | 17.5321 | 1217.6998 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
 | de_golden | 20 | 14.3498 | 0.3444 | 0.6452 | 0.5141 | 32.5848 | 37.7831 | 18.0469 | 1025.2139 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
 | de_golden | 10 | 13.8450 | 0.3303 | 0.6371 | 0.5153 | 33.1870 | 38.3790 | 18.1840 | 960.8682 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_golden/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| de_palacio | 100 | 12.2570 | 0.3306 | 0.7197 | 0.5110 | 41.5991 | 47.8714 | 17.3676 | 1199.8149 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| de_palacio | 50 | 11.9723 | 0.3221 | 0.7306 | 0.5074 | 42.4912 | 48.4397 | 17.6372 | 1067.8219 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
 | de_palacio | 20 | 12.0625 | 0.3403 | 0.7265 | 0.5007 | 41.4207 | 47.5213 | 17.6013 | 982.6016 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
 | de_palacio | 10 | 11.9303 | 0.3263 | 0.7304 | 0.4931 | 40.4969 | 46.8213 | 17.7553 | 1003.1593 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_palacio/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| de_vertigo | 100 | 11.6851 | 0.4282 | 0.6738 | 0.4508 | 46.3582 | 52.7334 | 15.9858 | 882.2270 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| de_vertigo | 50 | 11.1021 | 0.4137 | 0.6820 | 0.4464 | 47.1229 | 53.5514 | 16.3434 | 1083.8604 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
 | de_vertigo | 20 | 10.9353 | 0.4126 | 0.6976 | 0.4317 | 44.8832 | 51.6030 | 16.1372 | 960.6246 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
 | de_vertigo | 10 | 10.7349 | 0.4170 | 0.7070 | 0.4343 | 38.9155 | 46.2153 | 15.3051 | 937.4257 | [JSON](outputs_eval/benchmark_v2/exp37_fs_both_de_vertigo/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
 
-### 本机尚缺的 both 项目
+### 本机同步状态与剩余项目
 
-- 四图 `cs_office`、`de_golden`、`de_palacio`、`de_vertigo` 的100／50-shot共8个适配点：训练目录、定位query目录、离散及连续生成query目录均未同步；对应24份任务指标缺失，无法报告这两档的四图macro。此处仅描述本机同步状态，不判断远端是否运行。
-- 10／20-shot 的正式四图 `map-models` 汇总JSON未同步；上表macro为单图JSON等权复算。
-- `exp37_fs_both_b1` 是独立P3＋U2 family，仍未同步，不能计入 `exp37_fs_both`。Seen-retention已暂停，不计入本次缺失。
+- **query结果无缺失**：16/16适配点、48/48份单图指标；100／50-shot正式 `map-models` 三项各齐。10／20-shot正式汇总JSON尚未同步，本页macro直接由四图单图JSON等权复算。
+- 正式训练权重／Trainer状态已全部同步并核验：16/16个both点final400/400，和32个单任务点合计48个训练终点；query指标96份齐全，完成性分别见[进度表](#exp37-both-progress-20261109)。`exp37_fs_joint` 与 `exp37_fs_both_b1` 是独立family，没有本机few-shot完成证据。Seen-retention按用户决定暂停，未有both retention证据。
+
+<a id="exp37-both-analysis-20261109"></a>
+
+## 2026-11-09：both few-shot结果分析
+
+下表均为四张Unseen地图等权宏平均；0-shot使用未适配的Seen Stage2@6000模型，10／20／50／100-shot各由四个独立目标图模型构成。定位、离散和连续分别使用上述原始JSON与推理口径。
+
+| Shot | XY↓ | Z↓ | Pitch↓ | Yaw↓ | 离散PSNR↑ | 离散LPIPS↓ | FID↓ | 连续PSNR↑ | 连续LPIPS↓ | FVD↓ |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 0 | 341.5329 | 18.9907 | 9.0030 | 93.0790 | 11.0518 | 0.7285 | 100.0587 | 11.1011 | 0.7289 | 1334.9445 |
+| 10 | 222.5440 | 15.1374 | 6.2334 | 88.4703 | 12.4688 | 0.6883 | 51.5688 | 12.2896 | 0.6932 | 933.5771 |
+| 20 | 206.1598 | 14.3399 | 5.7314 | 85.0548 | 12.5950 | 0.6826 | 45.3569 | 12.3794 | 0.6889 | 950.1136 |
+| 50 | 188.9630 | 13.2528 | 5.0187 | 80.8331 | 12.8144 | 0.6747 | 40.3697 | 12.4543 | 0.6850 | 1030.1365 |
+| 100 | 171.8577 | 11.9646 | 4.8400 | 74.9741 | 13.0418 | 0.6673 | 39.5391 | 12.8341 | 0.6730 | 984.8784 |
+
+1. 按既定协议，100-shot相对zero-shot的XY误差降低49.68%、FID降低60.48%、FVD降低26.22%。定位和生成均显示目标图适配收益；这只是观察结果，不能据此证明辅助损失的因果贡献。
+2. 10→20→50→100-shot的四项定位宏误差逐步降低，离散PSNR、LPIPS、FID也逐步改善。各点均训练400次optimizer update，但joint base样本曝光分别为3200／8000／19200／40000，不能称等FLOPs，也不能把变化只归因于独立support样本数。
+3. 连续PSNR、LPIPS逐步改善，FVD依次为933.5771／950.1136／1030.1365／984.8784，非单调且100-shot高于10-shot。不能根据Unseen query重新选择shot或其它超参数，也不能据此断言过拟合。
+4. 与旧单任务100-shot作描述性比较：both XY 171.8577 vs loc 187.4802（−8.33%），Z −9.66%、Yaw −2.51%、Pitch +9.00%；both离散PSNR 13.0418 vs gen 13.2371（−0.1953 dB）、FID 39.5391 vs 37.0743（+6.65%）；连续FVD 984.8784 vs 917.9839（+7.29%）。这些观测值未显示双任务全面超过单任务。both定位／生成推理batch=16／32，旧单任务为1，且生成含438个activeDropout、`stochastic_layers_batch_dependent=true`；Seen初始化及历史训练预算也不同。因此这些跨family差值不能归因于辅助loss。
+5. 同协议 `exp37_fs_joint` few-shot结果仍缺，不能检验“辅助 > joint > single”。Seen-retention已暂停，暂无both retention证据，不能宣称保留Seen能力。下一步应冻结配方、补齐并同步joint对照和匹配推理口径；不使用Unseen query选择方法。本次仅整理已有结果，未运行实验。
 
 ## 2026-11-06：单任务 few-shot 实验分析与总结（历史快照；[最新 both 同步结果](#exp37-both-results-20261107)）
 
@@ -361,7 +409,7 @@ T-Warp、T-Diff、OFE分别对应 `Temporal_Warping_Error`、`Temporal_Differenc
 
 ## 历史工作与执行优先级
 
-当前单任务gen／loc四图四shot及both四图10／20-shot已同步，已完成组无需重跑。both四图100／50-shot及joint的目标图query仍缺本机证据；最新清单见[2026-11-07同步节](#exp37-both-results-20261107)。后续安排保持预先选定的辅助候选与冻结协议；保持来源与适配配方冻结，剩余retention继续暂停。为每个family/shot完成四图后再报告等图macro，不用未完成子集冒充完整曲线。
+当前gen／loc／both共48个适配点的final400训练终点和96份query单图指标均已核验；100／50-shot正式汇总齐，10／20-shot正式汇总未同步但四图macro已由单图复算。joint few-shot仍缺本机证据；详见[2026-11-09结果](#exp37-both-results-20261109)与[分析](#exp37-both-analysis-20261109)。下一步冻结配方补齐同协议joint对照并匹配推理口径；不依据Unseen query选择方法。剩余retention继续暂停。
 
 原主线若需补齐：`exp35` joint缺四图×四shot=16次，`exp35_gen/loc`各缺四图×20/10-shot=8次，共32次历史适配；`exp35_gen_de_vertigo` 50-shot本地已有四类推理manifest但缺metric摘要；`exp31_loc/exp32_loc`原表尚缺Unseen zero-shot。`exp36_1`四图四shot已登记完成；这些结果保持原来源和配方，不改名充作exp37结果。历史配置和手动命令已存在，本次不重新创建或启动它们。
 

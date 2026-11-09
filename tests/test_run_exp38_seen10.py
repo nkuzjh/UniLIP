@@ -206,6 +206,73 @@ class Exp38RunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Resume recipe or runtime changed"):
             RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
 
+    def test_constloc12_recipe_source_and_runtime(self):
+        base = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc4.yaml")
+        variant = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc12.yaml")
+        differences = {key for key in base.keys() | variant.keys()
+                       if base.get(key) != variant.get(key)}
+        self.assertEqual(differences, {"alpha_loc_loss", "exp38_experiment"})
+        self.assertEqual(variant["alpha_loc_loss"], 12.0)
+        self.assertEqual(variant["exp38_experiment"], "exp38_s2_joint_constloc12")
+        self.assertEqual(variant["finetune_init_ckpt_path"], RUN.SOURCE)
+        self.assertFalse(variant["is_loc_aux_loss"])
+        self.source()
+        for mode, extra in (("minimal", ()),
+                            ("full", ("--asset-mode", "full", "--data-dir", "alternate/full_assets"))):
+            with self.subTest(mode=mode):
+                args = self.args("train", "exp38_s2_joint_constloc12", *extra)
+                config = RUN.resolve_config(args, for_training=True)
+                RUN.validate_config(config)
+                commands, plan, out = RUN.training_plan(args, config)
+                self.assertEqual(out.name, "exp38_s2_joint_constloc12")
+                self.assertEqual(option(commands[0], "--max_steps"), "7550")
+                self.assertEqual(option(commands[0], "--warmup_steps"), "252")
+                self.assertEqual(option(commands[0], "--gradient_accumulation_steps"), "32")
+                self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 7550])
+                self.assertEqual(plan["runtime"]["save_total_limit"], 2)
+                with patch.object(RUN, "tensor_header", return_value={"tensor_count": 2830}):
+                    self.assertEqual(RUN.preflight_stage2_source(config)["step"], 12000)
+        source_recipe = self.root / "outputs/csgo_1b/exp37/resolved_config.yaml"
+        source = RUN.read_yaml(source_recipe)
+        source["alpha_loc_loss"] = 12.0
+        source_recipe.write_text(yaml.safe_dump(source))
+        with self.assertRaisesRegex(ValueError, "Source exp37 fixed recipe differs in alpha_loc_loss"):
+            RUN.preflight_stage2_source(variant)
+        changed = dict(variant, alpha_loc_loss=4.0)
+        with self.assertRaises(ValueError):
+            RUN.validate_config(changed)
+
+    def test_constloc12_routes_and_resume_identity(self):
+        name = "exp38_s2_joint_constloc12"
+        for step in (4000, 7550):
+            for task, count in (("all", 3), ("localization", 1),
+                                ("gen", 1), ("gen_continuous", 1)):
+                with self.subTest(step=step, task=task):
+                    args = self.args("infer", name, "--checkpoint-step", str(step),
+                                     "--split", "test", "--task", task)
+                    commands, path, config = RUN.evaluation_plan(
+                        args, RUN.resolve_config(args, for_training=False))
+                    self.assertEqual(len(commands), count)
+                    self.assertIn(f"{name}/checkpoint-{step}/test", str(path))
+                    self.assertIn(f"{name}/checkpoint-{step}/model.safetensors", config["ckpt_path"])
+                    self.assertEqual(config["alpha_loc_loss"], 12.0)
+        checkpoint, original, plan = self.managed(name)
+        args = self.args("train", name, "--resume", "--stop-after-step", "0")
+        resumed = RUN.resolve_config(args, for_training=True)
+        self.assertNotIn("training_stop_after_step", resumed)
+        _, resumed_plan, _ = RUN.training_plan(args, resumed)
+        self.assertEqual(resumed_plan["resume_checkpoint"], RUN.relative(checkpoint))
+        self.assertEqual(resumed_plan["fingerprint"], plan["fingerprint"])
+        saved = checkpoint.parent / "resolved_config.yaml"
+        saved.write_text(yaml.safe_dump(self.config("exp38_s2_joint_constloc4")))
+        with self.assertRaisesRegex(ValueError, "belongs to another exp38 arm"):
+            RUN.resolve_config(args, for_training=True)
+        saved.write_text(yaml.safe_dump(original))
+        plan_path = checkpoint.parent / "experiment_plan.json"
+        plan_path.write_text(json.dumps({**plan, "experiment": "exp38_s2_joint_constloc4"}))
+        with self.assertRaisesRegex(ValueError, "identity"):
+            RUN.training_plan(args, resumed)
+
     def test_stop_and_fingerprint_preserve_full_horizon(self):
         first = self.config()
         explicit = self.config("exp38_s2_joint", "--stop-after-step", "4000")

@@ -25,8 +25,10 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-JOINT_EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_joint_constloc4")
+JOINT_EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_joint_constloc4", "exp38_s2_joint_constloc12")
 EXPERIMENTS = (*JOINT_EXPERIMENTS, "exp38_s2_both")
+ALPHA_BY_EXPERIMENT = {"exp38_s2_joint": 8.0, "exp38_s2_joint_constloc4": 4.0,
+                       "exp38_s2_joint_constloc12": 12.0, "exp38_s2_both": 8.0}
 SOURCE = "outputs/csgo_1b/exp37/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
 SOURCE_HORIZON = 19550
@@ -191,7 +193,7 @@ def validate_config(config: dict) -> None:
         steps, values = config.get(stem + "_schedule_steps"), config.get(stem + "_schedule_values")
         if (steps is None) != (values is None) or steps is not None and (len(steps) != len(values) or steps != sorted(set(steps))):
             raise ValueError(f"Invalid {stem} schedule")
-    expected_alpha = 4.0 if experiment == "exp38_s2_joint_constloc4" else 8.0
+    expected_alpha = ALPHA_BY_EXPERIMENT[experiment]
     if config.get("alpha_loc_loss") != expected_alpha:
         raise ValueError(f"{experiment} requires alpha_loc_loss={expected_alpha}")
     if experiment in JOINT_EXPERIMENTS:
@@ -366,7 +368,7 @@ def preflight_stage2_source(config: dict) -> dict:
         raise ValueError("Source exp37 training runtime differs")
     if source_recipe.get("alpha_loc_loss") != 8.0:
         raise ValueError("Source exp37 requires alpha_loc_loss=8.0")
-    expected_alpha = 4.0 if config.get("exp38_experiment") == "exp38_s2_joint_constloc4" else 8.0
+    expected_alpha = ALPHA_BY_EXPERIMENT[config["exp38_experiment"]]
     if config.get("alpha_loc_loss") != expected_alpha:
         raise ValueError(f"Target exp38 requires alpha_loc_loss={expected_alpha}")
     for key in ("benchmark_v2_manifest", "benchmark_v2_split", "train_maps", "val_maps", "test_maps",

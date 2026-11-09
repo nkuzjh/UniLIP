@@ -27,10 +27,12 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-STAGE1 = ("exp37", "exp39")
+EXP39_ALPHA = {"exp39": 4.0, "exp39_consloc12": 12.0}
+EXP39_EXPERIMENTS = tuple(EXP39_ALPHA)
+STAGE1 = ("exp37", *EXP39_EXPERIMENTS)
 EXP39_MAX_STEPS = 19550
 EXP39_CHECKPOINT_STEPS = (12000, 16000, EXP39_MAX_STEPS)
-EXPERIMENTS = ("exp37", "exp39", "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
+EXPERIMENTS = (*STAGE1, "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 SINGLES = ("exp37_s2_gen", "exp37_s2_loc")
 JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 MANIFEST = json.loads((ROOT / "data/csgo_benchmark_v2/benchmark_manifest.json").read_text())
@@ -107,7 +109,7 @@ def final_checkpoint_step(experiment: str) -> int:
     out = output_dir(experiment)
     if not (out / "resolved_config.yaml").is_file() or not (out / "experiment_plan.json").is_file():
         raise ValueError(f"Final evaluation requires a managed training recipe: {out}")
-    if experiment == "exp39":
+    if experiment in EXP39_EXPERIMENTS:
         config = read_yaml(out / "resolved_config.yaml")
         validate_config(config)
         plan = json.loads((out / "experiment_plan.json").read_text(encoding="utf-8"))
@@ -189,7 +191,7 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
         if args.resume and args.seed != config.get("seed"):
             raise ValueError("Resume seed differs from saved training recipe")
         config["seed"] = args.seed
-        if args.experiment == "exp39" and args.resume and args.stop_after_step is None:
+        if args.experiment in EXP39_EXPERIMENTS and args.resume and args.stop_after_step is None:
             config.pop("training_stop_after_step", None)
         if args.stop_after_step is not None:
             if args.stop_after_step < 0:
@@ -234,9 +236,9 @@ def validate_config(config: dict) -> None:
             raise ValueError("Stage 1 must start from original model and pi05")
         stop = config.get("training_stop_after_step")
         if stop is not None and (type(stop) is not int or
-                                 (stop not in EXP39_CHECKPOINT_STEPS if experiment == "exp39" else stop <= 0)):
+                                 (stop not in EXP39_CHECKPOINT_STEPS if experiment in EXP39_EXPERIMENTS else stop <= 0)):
             raise ValueError("Invalid Stage 1 stop")
-        if experiment == "exp39":
+        if experiment in EXP39_EXPERIMENTS:
             if config.get("training_checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS):
                 raise ValueError("exp39 must save only checkpoints 12000, 16000, and 19550")
             if config.get("save_final_model_at_output_root") is not False:
@@ -246,7 +248,7 @@ def validate_config(config: dict) -> None:
                            if config.get(key) != base.get(key)}
             allowed = {"exp37_experiment", "alpha_loc_loss", "training_checkpoint_steps",
                        "save_final_model_at_output_root", *RECIPE_OVERRIDES}
-            if differences - allowed or config.get("alpha_loc_loss") != 4.0:
+            if differences - allowed or config.get("alpha_loc_loss") != EXP39_ALPHA[experiment]:
                 raise ValueError("exp39 must match exp37 except localization loss and checkpoint controls")
     else:
         if config.get("finetune_init_strict") is not True or any(config.get(k) for k in ("resume_ckpt_path", "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path")):
@@ -327,7 +329,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
         raise ValueError("GPU count × micro batch must divide source batch 128")
     gas = 128 // (len(devices) * micro)
     stage2 = args.experiment not in STAGE1
-    exp39 = args.experiment == "exp39"
+    exp39 = args.experiment in EXP39_EXPERIMENTS
     if exp39:
         runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
                        gradient_accumulation_steps=gas, seed=args.seed,
@@ -648,7 +650,7 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     stage2 = args.experiment not in STAGE1
     if stage2:
         allowed = (4000, 6000) if args.split == "validation" else (6000,)
-    elif args.experiment == "exp39":
+    elif args.experiment in EXP39_EXPERIMENTS:
         allowed = EXP39_CHECKPOINT_STEPS
     elif step == 16000 or args.split == "validation" and step == 8000:
         allowed = (8000, 16000) if args.split == "validation" else (16000,)
@@ -671,11 +673,11 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
             raise ValueError(f"Checkpoint is absent: {checkpoint}")
         state = trainer_state(path_in_repo(checkpoint).parent / "trainer_state.json")
         if (state["global_step"] != step or stage2 and state["max_steps"] != 6000
-                or args.experiment == "exp39" and state["max_steps"] != EXP39_MAX_STEPS):
+                or args.experiment in EXP39_EXPERIMENTS and state["max_steps"] != EXP39_MAX_STEPS):
             raise ValueError("Selected evaluation checkpoint has wrong Trainer step/horizon")
         if (stage2 and (args.split == "test" or step == 6000)
                 or args.experiment == "exp37" and step not in (8000, 16000)
-                or args.experiment == "exp39" and step == EXP39_MAX_STEPS):
+                or args.experiment in EXP39_EXPERIMENTS and step == EXP39_MAX_STEPS):
             if final_checkpoint_step(args.experiment) != step:
                 raise ValueError("Test/final evaluation requires completed checkpoint")
     target = f"{args.experiment}/checkpoint-{step}/{args.split}/seed_{args.seed}"
