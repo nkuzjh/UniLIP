@@ -59,7 +59,8 @@ def _checkpoint_identity(value) -> str | None:
 
 
 def guard_inference_output(output_dir, task: str, batch_size: int, *,
-                           checkpoint=None, split=None, seed=42, maps=None) -> None:
+                           checkpoint=None, split=None, seed=42, maps=None,
+                           model_mode_policy=None) -> None:
     """Check identity before touching predictions; mark new batched partial runs.
 
     A partial batched run is pinned too, so changing batch/RNG in an interrupted
@@ -76,6 +77,8 @@ def guard_inference_output(output_dir, task: str, batch_size: int, *,
         "seed": int(seed),
         "maps": list(maps) if maps is not None else None,
     }
+    if model_mode_policy is not None:
+        identity["model_mode_policy"] = model_mode_policy
     marker = root / "inference_execution_plan.json"
     if marker.is_file():
         if json.loads(marker.read_text(encoding="utf-8")) != identity:
@@ -84,16 +87,23 @@ def guard_inference_output(output_dir, task: str, batch_size: int, *,
     if manifest.is_file():
         old = json.loads(manifest.read_text(encoding="utf-8"))
         validate_execution_metadata(old, task, batch_size)
+        execution = old.get("inference_execution") or {}
+        old_policy = execution.get("model_mode_policy")
+        if model_mode_policy == "disable_lora_dropout_v1":
+            if old_policy != model_mode_policy:
+                raise ValueError(f"Existing inference model mode differs: {manifest}")
+        elif old_policy == "disable_lora_dropout_v1":
+            raise ValueError(f"Existing inference model mode differs: {manifest}")
         if (checkpoint is not None and _checkpoint_identity(old.get("checkpoint", old.get("ckpt_path"))) != identity["checkpoint"]
             or split is not None and old.get("benchmark_v2_split", old.get("split")) != split
             or old.get("seed", old.get("inference_seed")) != int(seed)
             or maps is not None and old.get("maps") != list(maps)):
             raise ValueError(f"Existing inference identity differs: {manifest}")
-    elif batch_size > 1 and root.exists() and not marker.exists():
+    elif (batch_size > 1 or model_mode_policy is not None) and root.exists() and not marker.exists():
         if ((root / "gen_imgs").is_dir() and any((root / "gen_imgs").rglob("*.jpg"))
             or any(root.glob("loc_results*.json"))):
             raise ValueError(f"Unidentified partial predictions in {root}; use a new output directory")
-    if batch_size > 1 and not marker.exists():
+    if (batch_size > 1 or model_mode_policy is not None) and not marker.exists():
         root.mkdir(parents=True, exist_ok=True)
         marker.write_text(json.dumps(identity, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

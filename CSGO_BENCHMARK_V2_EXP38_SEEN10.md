@@ -74,7 +74,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 
 ## 实施与实验进度
 
-设计先于实现保存；代码、配置和手动命令已完成，both配方统一采用 **P4＋U2、perception attention=false**。截至2026-11-09，`exp38_s2_joint@local4000` 的test三任务结果已同步并核对完成；下列CPU验收为此前实现阶段的记录。
+设计先于实现保存；代码、配置和手动命令已完成，both配方统一采用 **P4＋U2、perception attention=false**。截至2026-11-10，`exp38_s2_joint@local4000` 与 `exp38_s2_joint_constloc4@local4000` 的test三任务结果已同步并核对完成；constloc4另有本机训练模型、计划与Trainer状态证据；下列CPU验收为此前实现阶段的记录。
 
 - 新入口：[run_exp38_seen10.py](scripts/run_exp38_seen10.py)；配置：[joint](csgo_configs/exp38_s2_joint.yaml)、[both](csgo_configs/exp38_s2_both.yaml)。`validate` 和不带 `--execute` 的命令只读；首次train默认在4000停下，`--stop-after-step 0` 可一次跑完7550。
 - 新runner的9项CPU测试通过；精确保存／暂停恢复的8项CPU测试通过，使用临时目录中的合成小模型确认同一horizon、两节点完整恢复材料、跨epoch无额外checkpoint及不重复导出根模型。既有exp37入口23项、Unseen-4入口13项回归通过，共53项。
@@ -86,10 +86,11 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 |---|---|---|---|
 | `exp38_s2_joint` | 已确认达到local4000；训练权重／Trainer状态未同步 | 已完成：定位／离散／连续 | 未见同步结果；最终训练完成状态待核查 |
 | `exp38_s2_both` | 未启动；计划local7550 | 待执行：定位／离散／连续 | 待执行：定位／离散／连续 |
+| `exp38_s2_joint_constloc4` | 本机状态local4000/7550；4000模型、计划与Trainer状态已同步 | 已完成：定位／离散／连续 | 未见同步结果；最终训练完成状态待核查 |
 
 joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluation_config；本机尚无 `outputs/csgo_1b/exp38_s2_joint/`，不能据此确认local7550是否已经训练完成。已有4000三任务结果无需重复推理或评测。执行命令见 [record.md](record.md#exp38-seen10-20261107)。
 
-## 中间节点对照：累计16000步 test（2026-11-09 更新）
+## 中间节点对照：累计16000步 test（2026-11-10 更新）
 
 按指定对照节点，已同步并核对 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成结果，**三个任务均已完成**。推理manifest与结果摘要均绑定各自的 `checkpoint-16000/model.safetensors`；两份checkpoint的 `trainer_state.json` 均为 `global_step=16000,max_steps=19500`。定位／离散各20000条，连续12800帧，均覆盖完整十图。
 
@@ -111,7 +112,7 @@ joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluati
 - 离散生成：[discrete/summary.json](outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json)。
 - 连续生成：[continuous/summary.json](outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/continuous/summary.json)。
 
-以下三表已填入exp32单任务@16000及 `exp38_s2_joint@local4000` 的实测宏平均结果，统一保留三位小数；两者累计更新次数均为16000。其余行继续预留，“—”表示尚无同步实测结果。本次仅整理已有产物，未启动训练、推理或评测。
+以下三表已填入exp32单任务@16000、`exp38_s2_joint@local4000` 及 `exp38_s2_joint_constloc4@local4000` 的实测宏平均结果，统一保留三位小数；累计更新次数均为16000。其余行继续预留，“—”表示尚无同步实测结果。本次仅整理已有产物，未启动训练、推理或评测。
 
 ### test 定位对照
 
@@ -120,7 +121,7 @@ joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluati
 | `exp32_loc` | 16000（单阶段） | 16000 | test推理／评测已完成 | 50.708 | 3.050 | 3.039 | 26.880 |
 | `exp38_s2_joint` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 52.309 | 2.974 | 3.236 | 27.945 |
 | `exp38_s2_both` | Stage 2 local4000 | 16000 | 待训练／推理／评测 | — | — | — | — |
-| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — |
+| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 51.578 | 3.030 | 2.890 | 27.858 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — |
 | `exp39` | 16000（单阶段，αloc=4） | 16000 | 新配置；未启动 | — | — | — | — |
 | `exp39_consloc12` | 16000（单阶段，αloc=12） | 16000 | 新配置；未启动 | — | — | — | — |
@@ -133,7 +134,7 @@ joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluati
 | `exp32_gen` | 16000（单阶段） | 16000 | test推理／评测已完成 | 13.815 | 0.410 | 0.616 | 0.514 | 36.167 |
 | `exp38_s2_joint` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 13.529 | 0.402 | 0.634 | 0.504 | 37.218 |
 | `exp38_s2_both` | Stage 2 local4000 | 16000 | 待训练／推理／评测 | — | — | — | — | — |
-| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — | — |
+| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 13.514 | 0.403 | 0.633 | 0.505 | 37.212 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — | — |
 | `exp39` | 16000（单阶段，αloc=4） | 16000 | 新配置；未启动 | — | — | — | — | — |
 | `exp39_consloc12` | 16000（单阶段，αloc=12） | 16000 | 新配置；未启动 | — | — | — | — | — |
@@ -146,7 +147,7 @@ joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluati
 | `exp32_gen` | 16000（单阶段） | 16000 | test推理／评测已完成 | 14.098 | 0.412 | 0.605 | 0.523 | 36.496 | 42.628 | 17.365 | 867.691 |
 | `exp38_s2_joint` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 13.805 | 0.407 | 0.623 | 0.512 | 38.080 | 44.109 | 17.215 | 973.564 |
 | `exp38_s2_both` | Stage 2 local4000 | 16000 | 待训练／推理／评测 | — | — | — | — | — | — | — | — |
-| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — | — | — | — | — |
+| `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | test推理／评测已完成 | 13.801 | 0.408 | 0.622 | 0.513 | 38.025 | 44.052 | 17.331 | 962.502 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 新配置；未启动 | — | — | — | — | — | — | — | — |
 | `exp39` | 16000（单阶段，αloc=4） | 16000 | 新配置；未启动 | — | — | — | — | — | — | — | — |
 | `exp39_consloc12` | 16000（单阶段，αloc=12） | 16000 | 新配置；未启动 | — | — | — | — | — | — | — | — |
@@ -171,6 +172,31 @@ joint@4000的完成状态依据同步的推理manifest、评测摘要和evaluati
 - 连续生成仅OFE改善（17.365→17.215）；PSNR下降0.293，LPIPS增大0.018，TWE／TDE分别增大1.584／1.481，FVD从867.691增至973.564（约+12.20%）。SSIM与Boundary_F1也下降。
 
 因此，当前4000节点的联合无辅助路线在多数指标上仍未达到对应单任务表现。该比较同时包含联合目标与两阶段优化路径差异，不能只据此将退化归因于梯度冲突，也尚不能评价P4＋U2的辅助收益。后续按预定计划补齐同节点 `exp38_s2_both`、`exp37@16000`、constloc4对照及7550最终节点结果；不依据本次中间test调参或选择checkpoint。若远端尚未完成7550，按record中的本实验 `--resume --stop-after-step 0` 继续；若已经完成，只同步训练状态和缺失结果。
+
+<a id="exp38-constloc4-results-20261110"></a>
+
+### 2026-11-10：exp38_s2_joint_constloc4@4000 同步记录与阶段性比较
+
+本次同步节点为 **Stage 2 local4000，累计12000＋4000＝16000**。根目录及checkpoint内的Trainer状态均为 `global_step=4000,max_steps=7550`；训练计划、resolved_config与4000模型文件已同步，配置指纹与计划一致。模型头部声明的长度与文件大小吻合，未载入模型或重新运行评测。**本机尚无7550 checkpoint及评测结果，不能把本次结果记为final。**
+
+训练配方为exp37@12000权重初始化、主定位αloc=4、辅助损失关闭，普通LR=2e-5、action connector／norm／projector LR=1e-4、warmup252、基础batch128（1卡×micro64×GAS2）。来源在[训练计划](outputs/csgo_1b/exp38_s2_joint_constloc4/experiment_plan.json)中绑定SHA-256 `0388328dc2e260bca15bb071fc4e9ff189fe631686fba553f187aea9917de8ae`；训练状态见[Trainer状态](outputs/csgo_1b/exp38_s2_joint_constloc4/checkpoint-4000/trainer_state.json)。
+
+| 任务 | 数据与实际推理设置 | 同步结果与核对状态 |
+|---|---|---|
+| 定位 | seen_discrete_test；十图各2000条；seed42、batch32、10步flow | [定位摘要](outputs_loc/benchmark_v2/exp38_s2_joint_constloc4/checkpoint-4000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json)；20000条，十图宏平均一致 |
+| 离散生成 | seen_discrete_test；十图各2000张；seed42、batch16、20步生成 | [离散summary](outputs_eval/benchmark_v2/exp38_s2_joint_constloc4/checkpoint-4000/test/seed_42/infer_bs16/discrete/summary.json)；20000张，逐图指标与摘要一致，覆盖率100% |
+| 连续生成 | seen_continuous；十图各20×64帧；seed42、batch16、20步生成 | [连续summary](outputs_eval/benchmark_v2/exp38_s2_joint_constloc4/checkpoint-4000/test/seed_42/infer_bs16/continuous/summary.json)；12800帧，逐图指标与摘要一致，覆盖率100% |
+
+生成评测逐图GT／预测／匹配数量一致，无missing或额外预测；metric_profile=benchmark_v2_core、指标batch1、paired_size448，连续clip_length16／clip_stride16／fvd_size224。对比αloc=8的 `exp38_s2_joint@4000`，三任务的split、地图、样本数、seed、资产及选图SHA、样本顺序哈希、推理batch、步数与噪声策略一致；evaluation_config仅实验身份、目标checkpoint和αloc不同。两组生成沿用相同加载模式与批量推理实现，不混用历史batch1／8结果。
+
+阶段性分析（相对差使用未舍入的宏平均计算）：
+
+- **定位的主要收益是Pitch，XY也改善，但Z退步。** α8→4后，XY为52.309→51.578（−1.40%，7/10图改善），Pitch为3.236→2.890（−10.69%，10/10图改善），Yaw为27.945→27.858（−0.31%，6/10图改善）；Z为2.974→3.030（+1.90%，仅1/10图改善）。降低主定位权重并未使定位整体退化，也没有在四项误差上全面占优。
+- **离散生成接近持平，没有明显恢复生成能力。** PSNR为13.529→13.514（−0.015），SSIM、LPIPS和Boundary_F1小幅改善；FID为37.218→37.212（−0.006）。这不足以支持“降低定位权重明显释放生成能力”的预期。
+- **连续生成有部分小幅收益。** FVD为973.564→962.502（−1.14%，6/10图改善）；LPIPS、TWE、TDE略降，SSIM与Boundary_F1略升，但PSNR略降，OFE由17.215升至17.331（+0.67%）。不能概括为时序指标全面改善。
+- **与同累计16000步的单任务相比，联合模型仍存在差距。** 定位相对exp32_loc：Pitch低4.90%、Z低0.64%，但XY高1.72%、Yaw高3.64%。离散生成五项主指标仍全部落后于exp32_gen；连续生成八项主指标中仅OFE略优，FVD为962.502，对照为867.691。当前α4主要改善了部分定位表现，尚未消除联合生成相对单任务的差距。
+
+后续按既定计划完成或同步7550最终节点，并对照已经配置的α12和Stage 1 α4／12实验，观察阶段性变化是否延续。本次不据中间test结果新增调参、改变训练长度或指定最终Ours。仅更新文档，未启动训练、推理或评测。
 
 <a id="constloc4-stage1-stage2-20261109"></a>
 
@@ -232,7 +258,7 @@ exp39的 `max_steps=19550` 始终固定，`num_train_epochs=50` 沿用原配置�
 
 | 实验 | 训练状态 | checkpoint保留 | validation状态 | test状态 |
 |---|---|---|---|---|
-| `exp38_s2_joint_constloc4` | 新配置；未启动 | 计划local4000／7550 | 不新增 | 两节点三任务待执行 |
+| `exp38_s2_joint_constloc4` | 已训练至local4000/7550；模型／状态已同步 | local4000已到；7550待同步 | 不新增 | local4000三任务完成；7550未见同步结果 |
 | `exp39` | 新配置；未启动 | 计划12000／16000／19550 | 16000／19550待执行 | 16000／19550三任务待执行 |
 | `exp37`（对照） | 已有完整权重 | 本机有12000／16000／19550 | 16000待补；final已有历史结果 | 16000待补；final按同batch核对或补齐 |
 

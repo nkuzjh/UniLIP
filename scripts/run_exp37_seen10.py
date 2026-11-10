@@ -610,7 +610,13 @@ def evaluation_snapshots(args: argparse.Namespace, legacy_path: Path, config: di
             value["test_loc_batch_size"] = args.test_loc_batch_size
         snapshots[path] = value
     for kind in kinds:
-        path = legacy_path if args.test_gen_batch_size == 1 else ROOT / "outputs_eval/benchmark_v2" / target / f"infer_bs{args.test_gen_batch_size}" / kind / "evaluation_config.yaml"
+        if args.test_gen_batch_size == 1:
+            path = legacy_path
+        else:
+            gen_root = ROOT / "outputs_eval/benchmark_v2" / target / f"infer_bs{args.test_gen_batch_size}"
+            if args.disable_lora_dropout:
+                gen_root /= "lora_dropout_off"
+            path = gen_root / kind / "evaluation_config.yaml"
         value = copy.deepcopy(config)
         if kind == "continuous" and args.test_gen_batch_size > 1:
             value["benchmark_v2_split"] = "seen_continuous"
@@ -645,6 +651,16 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
 
 def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], Path, dict]:
     step = final_checkpoint_step(args.experiment) if args.checkpoint_step == "final" else args.checkpoint_step
+    if args.disable_lora_dropout and (
+        args.command not in ("infer", "metrics")
+        or args.experiment != "exp37_s2_both"
+        or step != 6000
+        or args.split != "test"
+        or args.task != "gen"
+        or args.test_gen_batch_size != 8
+        or args.seed != 42
+    ):
+        raise ValueError("--disable-lora-dropout requires exp37_s2_both checkpoint-6000 test gen batch8 seed42 infer/metrics")
     if type(step) is not int or step <= 0:
         raise ValueError("infer/metrics require positive --checkpoint-step or final")
     stage2 = args.experiment not in STAGE1
@@ -687,6 +703,8 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     config["ckpt_path"] = str(checkpoint)
     config["benchmark_v2_split"] = split
     config["seed"] = args.seed
+    if args.disable_lora_dropout:
+        config["disable_lora_dropout"] = True
     config.pop("training_stop_after_step", None)
     for key in ("is_loc_aux_loss", "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss"):
         config[key] = False
@@ -702,12 +720,13 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
                          "--test-loc-batch-size", str(args.test_loc_batch_size)])
     for kind in kinds:
         selected_split = split if kind == "discrete" else "seen_continuous"
-        output = f"outputs_eval/benchmark_v2/{target}" + ("" if args.test_gen_batch_size == 1 else f"/infer_bs{args.test_gen_batch_size}") + f"/{kind}"
+        output = f"outputs_eval/benchmark_v2/{target}" + ("" if args.test_gen_batch_size == 1 else f"/infer_bs{args.test_gen_batch_size}") + ("/lora_dropout_off" if args.disable_lora_dropout else "") + f"/{kind}"
         if args.command == "infer":
             path = eval_config if args.test_gen_batch_size == 1 else ROOT / output / "evaluation_config.yaml"
             commands.append([sys.executable, "eval_csgo.py", "--csgo_config", relative(path), *common, "--output_dir", output,
                              "--benchmark_v2_split", selected_split,
-                             "--test-gen-batch-size", str(args.test_gen_batch_size)])
+                             "--test-gen-batch-size", str(args.test_gen_batch_size),
+                             *(["--disable-lora-dropout"] if args.disable_lora_dropout else [])])
             continue
         for map_name in MAPS:
             cmd = [sys.executable, "benchmark_csgo_v1_conti.py" if kind == "continuous" else "benchmark_csgo_v1.py",
@@ -755,6 +774,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--task", choices=("all", "localization", "loc", "generation", "gen", "gen_continuous"), default="all")
     p.add_argument("--test-loc-batch-size", type=positive_batch_size, default=DEFAULT_TEST_LOC_BATCH_SIZE)
     p.add_argument("--test-gen-batch-size", type=positive_batch_size, default=DEFAULT_TEST_GEN_BATCH_SIZE)
+    p.add_argument("--disable-lora-dropout", action="store_true")
     p.add_argument("--asset-mode", choices=("minimal", "full"))
     p.add_argument("--data-dir")
     p.add_argument("--model-path")
@@ -765,6 +785,8 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.disable_lora_dropout and args.command not in ("infer", "metrics"):
+            raise ValueError("--disable-lora-dropout applies only to infer/metrics")
         if args.metrics_device == "cpu" and args.command != "metrics":
             raise ValueError("--metrics-device cpu applies only to metrics")
         if args.command != "train" and (args.resume or args.stop_after_step is not None):
@@ -821,6 +843,17 @@ def main(argv: list[str] | None = None) -> int:
                     task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
                     batch_size = args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
                     validate_execution_metadata(manifest, task, batch_size)
+                    if args.disable_lora_dropout:
+                        execution = manifest.get("inference_execution", {})
+                        disabled = execution.get("disabled_lora_dropout_modules")
+                        if (execution.get("model_mode_policy") != "disable_lora_dropout_v1"
+                                or execution.get("active_dropout_modules") != []
+                                or not isinstance(disabled, list) or len(disabled) != 438
+                                or any(not isinstance(item, dict)
+                                       or "lora_dropout" not in str(item.get("name", "")).split(".")
+                                       or not isinstance(item.get("p"), (int, float))
+                                       or item["p"] != 0.05 for item in disabled)):
+                            raise ValueError(f"LoRA Dropout-off inference provenance differs: {relative(manifest_path)}")
                     if not same_path(manifest.get("config_path", ""), snapshot_path):
                         raise ValueError(f"Inference config path differs: {relative(manifest_path)}")
                     if task == "loc":

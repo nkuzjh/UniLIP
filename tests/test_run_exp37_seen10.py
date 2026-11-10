@@ -812,6 +812,104 @@ class Exp37RunnerTests(unittest.TestCase):
                              ["cpu" if arg == "cuda" and index == default_command.index("--device") + 1
                               else arg for index, arg in enumerate(default_command)])
 
+    def test_lora_dropout_off_routes_to_separate_config_infer_and_metrics(self):
+        base = ("--checkpoint-step", "6000", "--split", "test", "--task", "gen",
+                "--test-gen-batch-size", "8", "--seed", "42")
+        config = self.config("exp37_s2_both", for_training=False)
+        on = self.args("infer", "exp37_s2_both", *base)
+        off = self.args("infer", "exp37_s2_both", *base, "--disable-lora-dropout")
+        on_commands, _, on_config = RUNNER.evaluation_plan(on, config)
+        off_commands, legacy_path, off_config = RUNNER.evaluation_plan(off, config)
+        on_output = option(on_commands[0], "--output_dir")
+        off_output = option(off_commands[0], "--output_dir")
+        self.assertEqual(off_output, on_output.replace("/infer_bs8/discrete",
+                                                        "/infer_bs8/lora_dropout_off/discrete"))
+        self.assertEqual(on_output, "outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete")
+        self.assertNotIn("--disable-lora-dropout", on_commands[0])
+        self.assertIn("--disable-lora-dropout", off_commands[0])
+        self.assertNotIn("disable_lora_dropout", on_config)
+        self.assertIs(off_config["disable_lora_dropout"], True)
+        snapshots = RUNNER.evaluation_snapshots(off, legacy_path, off_config)
+        off_path = RUNNER.path_in_repo(option(off_commands[0], "--csgo_config"))
+        self.assertEqual(set(snapshots), {off_path})
+        self.assertEqual(snapshots[off_path], {**off_config, "test_gen_batch_size": 8})
+        self.assertEqual(off_path.parent, self.root / off_output)
+        self.assertNotIn(legacy_path, snapshots)
+
+        metric_args = self.args("metrics", "exp37_s2_both", *base, "--disable-lora-dropout")
+        metric_commands, metric_legacy, metric_config = RUNNER.evaluation_plan(metric_args, config)
+        self.assertEqual(metric_legacy, legacy_path)
+        self.assertEqual(RUNNER.evaluation_snapshots(metric_args, metric_legacy, metric_config), snapshots)
+        self.assertTrue(all(off_output in option(cmd, "--pred") for cmd in metric_commands[:10]))
+        self.assertEqual(option(metric_commands[-1], "--input_root"), off_output)
+        self.assertTrue(all("--disable-lora-dropout" not in cmd for cmd in metric_commands))
+
+    def test_lora_dropout_off_rejects_other_scope(self):
+        base = ["--checkpoint-step", "6000", "--split", "test", "--task", "gen",
+                "--test-gen-batch-size", "8", "--seed", "42"]
+        changes = [
+            ("--experiment", "exp37_s2_gen"),
+            ("--checkpoint-step", "4000"),
+            ("--split", "validation"),
+            ("--task", "all"),
+            ("--test-gen-batch-size", "16"),
+            ("--seed", "43"),
+        ]
+        for key, value in changes:
+            with self.subTest(key=key, value=value):
+                args = ["infer", "--experiment", "exp37_s2_both", *base,
+                        key, value, "--disable-lora-dropout"]
+                parsed = RUNNER.parser().parse_args(args)
+                with self.assertRaisesRegex(ValueError, "requires exp37_s2_both"):
+                    RUNNER.evaluation_plan(parsed, self.config("exp37_s2_both", for_training=False))
+        for command in ("train", "validate"):
+            with self.subTest(command=command), patch("sys.stderr", io.StringIO()) as stderr:
+                self.assertEqual(RUNNER.main([command, "--experiment", "exp37_s2_both",
+                                              "--disable-lora-dropout"]), 1)
+                self.assertIn("applies only to infer/metrics", stderr.getvalue())
+
+    def test_lora_dropout_off_metrics_preflight_checks_mode_and_active_modules(self):
+        self.completed_checkpoint("exp37_s2_both", 6000)
+        base = ["metrics", "--experiment", "exp37_s2_both", "--checkpoint-step", "6000",
+                "--split", "test", "--task", "gen", "--test-gen-batch-size", "8",
+                "--disable-lora-dropout"]
+        args = RUNNER.parser().parse_args(base)
+        config = RUNNER.resolve_config(args, for_training=False)
+        _, path, evaluated = RUNNER.evaluation_plan(args, config)
+        snapshot_path, snapshot = next(iter(RUNNER.evaluation_snapshots(args, path, evaluated).items()))
+        snapshot_path.parent.mkdir(parents=True)
+        snapshot_path.write_text(yaml.safe_dump(snapshot))
+        manifest_path = snapshot_path.parent / "inference_manifest.json"
+        payload = {"config_path": RUNNER.relative(snapshot_path),
+                   "inference_execution": execution_contract("gen", 8)}
+        disabled = [{"name": f"layer.{i}.lora_dropout.default", "p": 0.05}
+                    for i in range(438)]
+        for execution in (
+            {},
+            {"model_mode_policy": "preserve_loaded_module_modes_v1",
+             "active_dropout_modules": [], "disabled_lora_dropout_modules": disabled},
+            {"model_mode_policy": "disable_lora_dropout_v1",
+             "active_dropout_modules": [{"name": "other", "p": 0.2}],
+             "disabled_lora_dropout_modules": disabled},
+            {"model_mode_policy": "disable_lora_dropout_v1",
+             "active_dropout_modules": [], "disabled_lora_dropout_modules": disabled[:-1]},
+        ):
+            manifest_path.write_text(json.dumps({**payload, "inference_execution":
+                                                 {**payload["inference_execution"], **execution}}))
+            with patch.object(RUNNER.subprocess, "run") as run, \
+                 patch("sys.stderr", io.StringIO()) as stderr:
+                self.assertEqual(RUNNER.main([*base, "--execute"]), 1)
+                self.assertIn("LoRA Dropout-off inference provenance", stderr.getvalue())
+                run.assert_not_called()
+        manifest_path.write_text(json.dumps({**payload, "inference_execution":
+                                             {**payload["inference_execution"],
+                                              "model_mode_policy": "disable_lora_dropout_v1",
+                                              "active_dropout_modules": [],
+                                              "disabled_lora_dropout_modules": disabled}}))
+        with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUNNER.main([*base, "--execute"]), 0)
+            self.assertEqual(run.call_count, 11)
+
     def test_metrics_cpu_dry_run_and_execute_hide_cuda_devices(self):
         base = ["metrics", "--experiment", "exp37_s2_gen", "--checkpoint-step", "6000",
                 "--split", "test", "--task", "gen", "--seed", "42",

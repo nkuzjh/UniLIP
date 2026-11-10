@@ -553,7 +553,31 @@ def _generate_batch_images(pipe, batch, config, generator, requested_batch_size)
     return images
 
 
-def _generation_module_mode_metadata(model):
+def _disable_lora_dropout_modules(model):
+    """Switch only injected LoRA Dropout modules to inference mode."""
+    modules = [
+        (name, module)
+        for name, module in model.named_modules()
+        if "lora_dropout" in name.split(".")
+        and isinstance(module, torch.nn.modules.dropout._DropoutNd)
+    ]
+    if not modules:
+        raise ValueError("--disable-lora-dropout found no LoRA Dropout modules")
+    if not any(module.training and float(module.p) > 0 for _, module in modules):
+        raise ValueError("--disable-lora-dropout found no active LoRA Dropout modules")
+    disabled = [
+        {"name": name, "p": float(module.p)}
+        for name, module in modules
+        if module.training and float(module.p) > 0
+    ]
+    for _, module in modules:
+        module.eval()
+    if any(module.training and float(module.p) > 0 for _, module in modules):
+        raise ValueError("LoRA Dropout remains active after disabling it")
+    return disabled
+
+
+def _generation_module_mode_metadata(model, *, disabled_lora_dropout_modules=None):
     """Observe loaded stochastic module modes without changing inference behavior."""
     active_dropout_modules = [
         {"name": name, "p": float(module.p)}
@@ -561,10 +585,38 @@ def _generation_module_mode_metadata(model):
         if isinstance(module, torch.nn.modules.dropout._DropoutNd)
         and module.training and float(module.p) > 0
     ]
-    return {
-        "model_mode_policy": "preserve_loaded_module_modes_v1",
+    metadata = {
+        "model_mode_policy": (
+            "disable_lora_dropout_v1" if disabled_lora_dropout_modules is not None
+            else "preserve_loaded_module_modes_v1"
+        ),
         "active_dropout_modules": active_dropout_modules,
         "stochastic_layers_batch_dependent": bool(active_dropout_modules),
+    }
+    if disabled_lora_dropout_modules is not None:
+        metadata["disabled_lora_dropout_modules"] = list(disabled_lora_dropout_modules)
+    return metadata
+
+
+def _validate_lora_dropout_off_preflight(config, disabled, metadata):
+    if metadata["active_dropout_modules"]:
+        raise ValueError("Dropout-off inference still has active Dropout modules: "
+                         f"{metadata['active_dropout_modules']}")
+    if (config.get("exp37_experiment") == "exp37_s2_both"
+            and (len(disabled) != 438 or any(item["p"] != 0.05 for item in disabled))):
+        raise ValueError("exp37_s2_both expected 438 active LoRA Dropout modules with p=0.05")
+
+
+def _lora_dropout_off_runtime_environment(model):
+    device = str(model.device)
+    return {
+        "torch_version": str(torch.__version__),
+        "transformers_version": str(transformers.__version__),
+        "cuda_runtime_version": torch.version.cuda,
+        "cudnn_version": torch.backends.cudnn.version(),
+        "device": device,
+        "gpu_name": (torch.cuda.get_device_name(model.device)
+                     if device.startswith("cuda") and torch.cuda.is_available() else None),
     }
 
 map_path_dict = {
@@ -776,6 +828,7 @@ def run_csgo_generation_from_config(
     benchmark_v2_shots_per_map: Optional[int] = None,
     benchmark_v2_asset_manifest: Optional[str] = None,
     test_gen_batch_size: Optional[int] = None,
+    disable_lora_dropout: bool = False,
     release_model: bool = False,
 ) -> Dict[str, object]:
     with open(csgo_config_path, 'r') as f:
@@ -800,6 +853,11 @@ def run_csgo_generation_from_config(
     )
     if inference_batch_size > 1:
         csgo_config["test_gen_batch_size"] = inference_batch_size
+    disable_lora_dropout = disable_lora_dropout or csgo_config.get("disable_lora_dropout", False)
+    if disable_lora_dropout:
+        if not csgo_config.get("is_lora", False):
+            raise ValueError("--disable-lora-dropout requires a LoRA model")
+        csgo_config["disable_lora_dropout"] = True
     print("csgo_config: ", csgo_config)
 
     # 设置随机种子
@@ -850,6 +908,9 @@ def run_csgo_generation_from_config(
         raise ValueError(f"Checkpoint path {ckpt_path} does not exist. Please provide a valid checkpoint path in the config.")
     print(f"🚀 Loading model from {csgo_config['ckpt_path']}...")
     load_custom_checkpoint(model, ckpt_path)
+    disabled_lora_dropout_modules = (
+        _disable_lora_dropout_modules(model) if disable_lora_dropout else None
+    )
 
     image_processor = AutoProcessor.from_pretrained(model.config.mllm_hf_path).image_processor
 
@@ -871,6 +932,7 @@ def run_csgo_generation_from_config(
         checkpoint=csgo_config.get("ckpt_path"),
         split=csgo_config.get("benchmark_v2_split"),
         seed=seed, maps=test_dataset.map_names,
+        model_mode_policy="disable_lora_dropout_v1" if disable_lora_dropout else None,
     )
 
     dataloader = DataLoader(test_dataset, batch_size=inference_batch_size, shuffle=False, collate_fn=collate_fn)
@@ -887,8 +949,20 @@ def run_csgo_generation_from_config(
     vis_data_num = 30
     inference_sample_count = 0
 
-    tracker = InferenceExecutionTracker("gen", inference_batch_size) if inference_batch_size > 1 else None
-    module_mode_metadata = _generation_module_mode_metadata(model) if tracker is not None else None
+    tracker = (InferenceExecutionTracker("gen", inference_batch_size)
+               if inference_batch_size > 1 or disable_lora_dropout else None)
+    module_mode_metadata = (
+        _generation_module_mode_metadata(
+            model, disabled_lora_dropout_modules=disabled_lora_dropout_modules
+        ) if tracker is not None else None
+    )
+    if disable_lora_dropout:
+        _validate_lora_dropout_off_preflight(
+            csgo_config, disabled_lora_dropout_modules, module_mode_metadata)
+        module_mode_metadata["runtime_environment"] = _lora_dropout_off_runtime_environment(model)
+        print("LoRA Dropout-off preflight: policy=disable_lora_dropout_v1 "
+              f"disabled={len(disabled_lora_dropout_modules)} "
+              f"active={len(module_mode_metadata['active_dropout_modules'])}")
     if module_mode_metadata is not None and module_mode_metadata["stochastic_layers_batch_dependent"]:
         print("Batch generation preserves ordered initial noise draws; active Dropout masks "
               "can change with batch size. See inference_execution.active_dropout_modules.")
@@ -1062,6 +1136,7 @@ def main():
     parser.add_argument("--benchmark_v2_shots_per_map", type=int, default=None)
     parser.add_argument("--benchmark_v2_asset_manifest", type=str, default=None)
     parser.add_argument("--test-gen-batch-size", type=int, default=DEFAULT_TEST_GEN_BATCH_SIZE)
+    parser.add_argument("--disable-lora-dropout", action="store_true")
     args = parser.parse_args()
     run_csgo_generation_from_config(
         args.csgo_config,
@@ -1074,6 +1149,7 @@ def main():
         benchmark_v2_shots_per_map=args.benchmark_v2_shots_per_map,
         benchmark_v2_asset_manifest=args.benchmark_v2_asset_manifest,
         test_gen_batch_size=args.test_gen_batch_size,
+        disable_lora_dropout=args.disable_lora_dropout,
     )
 
 if __name__ == "__main__":
