@@ -27,7 +27,7 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-EXP39_ALPHA = {"exp39": 4.0, "exp39_consloc12": 12.0}
+EXP39_ALPHA = {"exp39": 4.0, "exp39_consloc12": 12.0, "exp39_consloc2": 2.0}
 EXP39_EXPERIMENTS = tuple(EXP39_ALPHA)
 STAGE1 = ("exp37", *EXP39_EXPERIMENTS)
 EXP39_MAX_STEPS = 19550
@@ -409,7 +409,9 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     metadata = dict(experiment=args.experiment, fingerprint=identity, runtime=runtime, command=cmd,
                     resume_checkpoint=relative(checkpoint) if checkpoint else None,
                     source_checkpoint=previous.get("source_checkpoint") if previous else None,
-                    evaluation_steps=({"validation": [12000, 16000, "final"],
+                    evaluation_steps=({"validation": [16000, "final"],
+                                       "test": [16000, "final"]} if args.experiment == "exp39_consloc2" else
+                                      {"validation": [12000, 16000, "final"],
                                        "test": [12000, 16000, "final"]} if exp39 else
                                       {"validation": [4000, 6000] if stage2 else [8000, 16000, "final"],
                                        "test": [6000] if stage2 else [16000, "final"]}),
@@ -667,7 +669,7 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
     if stage2:
         allowed = (4000, 6000) if args.split == "validation" else (6000,)
     elif args.experiment in EXP39_EXPERIMENTS:
-        allowed = EXP39_CHECKPOINT_STEPS
+        allowed = EXP39_CHECKPOINT_STEPS[1:] if args.experiment == "exp39_consloc2" else EXP39_CHECKPOINT_STEPS
     elif step == 16000 or args.split == "validation" and step == 8000:
         allowed = (8000, 16000) if args.split == "validation" else (16000,)
     else:
