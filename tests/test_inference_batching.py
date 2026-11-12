@@ -81,6 +81,43 @@ class InferenceBatchingTests(unittest.TestCase):
                 guard_inference_output(root, "gen", 16)
             self.assertFalse((root / "inference_execution_plan.json").exists())
 
+    def test_dropout_mode_pins_marker_and_manifest_in_both_directions(self):
+        policy = "disable_lora_dropout_v1"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "off"
+            guard_inference_output(root, "gen", 8, model_mode_policy=policy)
+            marker = json.loads((root / "inference_execution_plan.json").read_text())
+            self.assertEqual(marker["model_mode_policy"], policy)
+            guard_inference_output(root, "gen", 8, model_mode_policy=policy)
+            with self.assertRaisesRegex(ValueError, "differs"):
+                guard_inference_output(root, "gen", 8)
+
+            on = Path(tmp) / "on"
+            guard_inference_output(on, "gen", 8)
+            self.assertNotIn("model_mode_policy", json.loads(
+                (on / "inference_execution_plan.json").read_text()))
+            with self.assertRaisesRegex(ValueError, "differs"):
+                guard_inference_output(on, "gen", 8, model_mode_policy=policy)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "inference_manifest.json").write_text(json.dumps({
+                "inference_execution": {**execution_contract("gen", 8),
+                                        "model_mode_policy": policy},
+                "seed": 42,
+            }))
+            with self.assertRaisesRegex(ValueError, "model mode differs"):
+                guard_inference_output(root, "gen", 8)
+            guard_inference_output(root, "gen", 8, model_mode_policy=policy)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "inference_manifest.json").write_text(json.dumps({
+                "inference_execution": execution_contract("gen", 8), "seed": 42,
+            }))
+            with self.assertRaisesRegex(ValueError, "model mode differs"):
+                guard_inference_output(root, "gen", 8, model_mode_policy=policy)
+
 
 if __name__ == "__main__":
     unittest.main()

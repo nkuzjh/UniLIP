@@ -1,0 +1,126 @@
+# exp37_s2_both LoRA dropout comparison
+
+Single inference seed (42), 20,000 paired test samples, ten-map equal-weight macro. Differences are descriptive; no statistical significance claim.
+
+- Baseline (dropout on): `/data/home/jiahao/UniLIP_outputs/outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete`
+- Candidate (dropout off): `/data/home/jiahao/UniLIP_outputs/outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/lora_dropout_off/discrete`
+- Checkpoint: `outputs/csgo_1b/exp37_s2_both/checkpoint-6000/model.safetensors`; LoRA dropout modules: 438
+
+`Δ = off − on`. Higher is better for PSNR, SSIM, Boundary_F1, CLIP; lower is better for LPIPS, Pixel_MAE_255, FID.
+
+## PSNR
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 13.737802 | 13.790191 | +0.052388 | improved |
+| cs_agency | 12.967447 | 12.989344 | +0.021898 | improved |
+| cs_italy | 14.714542 | 14.757445 | +0.042902 | improved |
+| de_ancient | 16.198989 | 16.318246 | +0.119257 | improved |
+| de_anubis | 13.546990 | 13.621249 | +0.074259 | improved |
+| de_dust2 | 13.539740 | 13.605630 | +0.065890 | improved |
+| de_inferno | 13.139071 | 13.146900 | +0.007829 | improved |
+| de_mirage | 12.849303 | 12.900044 | +0.050741 | improved |
+| de_nuke | 12.601117 | 12.638373 | +0.037256 | improved |
+| de_overpass | 13.102846 | 13.142489 | +0.039643 | improved |
+| de_train | 14.717978 | 14.782186 | +0.064209 | improved |
+
+## SSIM
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 0.405471 | 0.408575 | +0.003104 | improved |
+| cs_agency | 0.513083 | 0.516797 | +0.003714 | improved |
+| cs_italy | 0.390536 | 0.392890 | +0.002354 | improved |
+| de_ancient | 0.395237 | 0.398707 | +0.003469 | improved |
+| de_anubis | 0.444442 | 0.447758 | +0.003316 | improved |
+| de_dust2 | 0.418663 | 0.423253 | +0.004590 | improved |
+| de_inferno | 0.359817 | 0.360813 | +0.000996 | improved |
+| de_mirage | 0.427513 | 0.428966 | +0.001453 | improved |
+| de_nuke | 0.374430 | 0.377440 | +0.003010 | improved |
+| de_overpass | 0.355403 | 0.358527 | +0.003123 | improved |
+| de_train | 0.375583 | 0.380602 | +0.005019 | improved |
+
+## Boundary_F1
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 0.509182 | 0.510873 | +0.001692 | improved |
+| cs_agency | 0.463325 | 0.464793 | +0.001468 | improved |
+| cs_italy | 0.535758 | 0.538965 | +0.003207 | improved |
+| de_ancient | 0.557231 | 0.557472 | +0.000241 | improved |
+| de_anubis | 0.499700 | 0.501547 | +0.001847 | improved |
+| de_dust2 | 0.510016 | 0.512027 | +0.002011 | improved |
+| de_inferno | 0.517697 | 0.518809 | +0.001112 | improved |
+| de_mirage | 0.501123 | 0.502153 | +0.001030 | improved |
+| de_nuke | 0.478018 | 0.481304 | +0.003286 | improved |
+| de_overpass | 0.520839 | 0.522695 | +0.001856 | improved |
+| de_train | 0.508109 | 0.508967 | +0.000858 | improved |
+
+## LPIPS
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 0.623842 | 0.621419 | -0.002424 | improved |
+| cs_agency | 0.613613 | 0.610561 | -0.003052 | improved |
+| cs_italy | 0.588270 | 0.585549 | -0.002721 | improved |
+| de_ancient | 0.596934 | 0.594660 | -0.002274 | improved |
+| de_anubis | 0.614538 | 0.612149 | -0.002389 | improved |
+| de_dust2 | 0.611251 | 0.608132 | -0.003119 | improved |
+| de_inferno | 0.631979 | 0.630790 | -0.001190 | improved |
+| de_mirage | 0.629482 | 0.626312 | -0.003170 | improved |
+| de_nuke | 0.686447 | 0.684218 | -0.002229 | improved |
+| de_overpass | 0.644637 | 0.643098 | -0.001539 | improved |
+| de_train | 0.621272 | 0.618717 | -0.002556 | improved |
+
+## Pixel_MAE_255
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 41.324009 | 41.003801 | -0.320209 | improved |
+| cs_agency | 44.183708 | 43.915525 | -0.268183 | improved |
+| cs_italy | 36.725262 | 36.454027 | -0.271235 | improved |
+| de_ancient | 31.004841 | 30.489320 | -0.515521 | improved |
+| de_anubis | 41.416783 | 41.033685 | -0.383098 | improved |
+| de_dust2 | 41.113573 | 40.719293 | -0.394280 | improved |
+| de_inferno | 44.591242 | 44.440184 | -0.151058 | improved |
+| de_mirage | 45.585546 | 45.191983 | -0.393563 | improved |
+| de_nuke | 47.873270 | 47.640361 | -0.232909 | improved |
+| de_overpass | 43.621491 | 43.307852 | -0.313638 | improved |
+| de_train | 37.124377 | 36.845773 | -0.278604 | improved |
+
+## FID
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 35.840201 | 36.881798 | +1.041597 | worsened |
+| cs_agency | 32.119427 | 32.421223 | +0.301796 | worsened |
+| cs_italy | 35.673336 | 36.892277 | +1.218941 | worsened |
+| de_ancient | 39.295959 | 41.128136 | +1.832176 | worsened |
+| de_anubis | 34.208969 | 34.548111 | +0.339142 | worsened |
+| de_dust2 | 38.730389 | 39.726276 | +0.995888 | worsened |
+| de_inferno | 33.545742 | 35.671276 | +2.125534 | worsened |
+| de_mirage | 38.174614 | 39.291718 | +1.117104 | worsened |
+| de_nuke | 32.597656 | 33.112480 | +0.514824 | worsened |
+| de_overpass | 38.214092 | 39.250412 | +1.036320 | worsened |
+| de_train | 35.841824 | 36.776070 | +0.934246 | worsened |
+
+## CLIP
+
+| Map | On | Off | Δ off − on | Direction |
+| --- | ---: | ---: | ---: | --- |
+| **Macro** | 0.832762 | 0.833851 | +0.001090 | improved |
+| cs_agency | 0.851237 | 0.853381 | +0.002144 | improved |
+| cs_italy | 0.848663 | 0.849872 | +0.001209 | improved |
+| de_ancient | 0.866124 | 0.867791 | +0.001668 | improved |
+| de_anubis | 0.831302 | 0.836460 | +0.005158 | improved |
+| de_dust2 | 0.829269 | 0.829008 | -0.000261 | worsened |
+| de_inferno | 0.815528 | 0.816717 | +0.001189 | improved |
+| de_mirage | 0.806684 | 0.810463 | +0.003779 | improved |
+| de_nuke | 0.815279 | 0.817242 | +0.001962 | improved |
+| de_overpass | 0.829995 | 0.826775 | -0.003220 | worsened |
+| de_train | 0.833535 | 0.830802 | -0.002733 | worsened |
+
+## Provenance limits
+
+- One inference seed; differences are descriptive, not statistical significance.
+- The original run has no checkpoint weight hash or complete GPU/software environment versions; matching checkpoint path and recorded settings cannot exclude those differences.

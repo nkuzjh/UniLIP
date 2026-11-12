@@ -10,6 +10,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from csgo_datasets.inference_batching import execution_contract
 import yaml
 from csgo_datasets.inference_batching import execution_contract
 
@@ -180,6 +181,164 @@ class Exp38RunnerTests(unittest.TestCase):
             "alpha_loc_aux_schedule_steps", "alpha_loc_perception_schedule_steps",
             "training_stop_after_step", "model_name_or_path",
         })
+
+    def test_constloc4_recipe_changes_only_alpha_and_identity(self):
+        joint = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint.yaml")
+        constloc4 = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc4.yaml")
+        differences = {key for key in joint.keys() | constloc4.keys()
+                       if joint.get(key) != constloc4.get(key)}
+        self.assertEqual(differences, {"alpha_loc_loss", "exp38_experiment"})
+        self.assertEqual((joint["alpha_loc_loss"], constloc4["alpha_loc_loss"]), (8.0, 4.0))
+        for name, alpha in (("exp38_s2_joint", 8.0), ("exp38_s2_joint_constloc4", 4.0),
+                            ("exp38_s2_both", 8.0)):
+            with self.subTest(name=name):
+                config = self.config(name)
+                RUN.validate_config(config)
+                self.assertEqual(config["alpha_loc_loss"], alpha)
+        config = self.config("exp38_s2_joint_constloc4")
+        config["is_loc_aux_loss"] = True
+        with self.assertRaisesRegex(ValueError, "recipe differs in fixed field is_loc_aux_loss"):
+            RUN.validate_config(config)
+        config = self.config("exp38_s2_joint_constloc4")
+        config["alpha_loc_loss"] = 8.0
+        with self.assertRaisesRegex(ValueError, "recipe differs in fixed field alpha_loc_loss"):
+            RUN.validate_config(config)
+
+    def test_constloc4_source_stays_alpha8_and_training_runtime(self):
+        self.source()
+        for mode, extra in (("minimal", ()),
+                            ("full", ("--asset-mode", "full", "--data-dir", "alternate/full_assets"))):
+            with self.subTest(mode=mode):
+                args = self.args("train", "exp38_s2_joint_constloc4", *extra)
+                config = RUN.resolve_config(args, for_training=True)
+                RUN.validate_config(config)
+                command, plan, out = RUN.training_plan(args, config)
+                self.assertEqual(out.name, "exp38_s2_joint_constloc4")
+                self.assertEqual(plan["runtime"]["source_batch"], 128)
+                self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 7550])
+                self.assertEqual(plan["runtime"]["warmup_steps"], 252)
+                self.assertEqual(option(command[0], "--gradient_accumulation_steps"), "32")
+                self.assertEqual(option(command[0], "--save_total_limit"), "2")
+                with patch.object(RUN, "tensor_header", return_value={"tensor_count": 2830}):
+                    self.assertEqual(RUN.preflight_stage2_source(config)["step"], 12000)
+        source_recipe = self.root / "outputs/csgo_1b/exp37/resolved_config.yaml"
+        source = RUN.read_yaml(source_recipe)
+        source["alpha_loc_loss"] = 4.0
+        source_recipe.write_text(yaml.safe_dump(source))
+        config = self.config("exp38_s2_joint_constloc4")
+        with self.assertRaisesRegex(ValueError, "Source exp37 fixed recipe differs in alpha_loc_loss"):
+            RUN.preflight_stage2_source(config)
+
+    def test_constloc4_checkpoint_task_and_batch_routes(self):
+        for step in (4000, 7550):
+            for task, expected in (("all", (1, 2)), ("localization", (1, 0)),
+                                   ("gen", (0, 1)), ("gen_continuous", (0, 1))):
+                with self.subTest(step=step, task=task):
+                    args = self.args("infer", "exp38_s2_joint_constloc4", "--checkpoint-step", str(step),
+                                     "--task", task, "--test-loc-batch-size", "8",
+                                     "--test-gen-batch-size", "4")
+                    commands, path, config = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+                    loc = [command for command in commands if Path(command[1]).name == "eval_csgo_loc.py"]
+                    gen = [command for command in commands if Path(command[1]).name == "eval_csgo.py"]
+                    self.assertEqual((len(loc), len(gen)), expected)
+                    self.assertEqual([option(command, "--test-loc-batch-size") for command in loc], ["8"] * expected[0])
+                    self.assertEqual([option(command, "--test-gen-batch-size") for command in gen], ["4"] * expected[1])
+                    self.assertIn(f"exp38_s2_joint_constloc4/checkpoint-{step}/test", str(path))
+                    self.assertIn(f"exp38_s2_joint_constloc4/checkpoint-{step}/model.safetensors", config["ckpt_path"])
+                    self.assertEqual(config["alpha_loc_loss"], 4.0)
+                    self.assertFalse(config["is_loc_aux_loss"])
+                    self.assertEqual(len(RUN.evaluation_snapshots(args, path, config)), sum(expected))
+        args = self.args("metrics", "exp38_s2_joint_constloc4", "--checkpoint-step", "final",
+                         "--task", "localization")
+        commands, path, config = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+        self.assertEqual(commands, [])
+        self.assertIn("checkpoint-7550", str(path))
+        self.assertEqual(len(RUN.evaluation_snapshots(args, path, config)), 1)
+
+    def test_constloc4_resume_rejects_mixed_arm_artifacts(self):
+        ckpt, config, plan = self.managed("exp38_s2_joint_constloc4")
+        args = self.args("train", "exp38_s2_joint_constloc4", "--resume", "--stop-after-step", "0")
+        resumed_config = RUN.resolve_config(args, for_training=True)
+        _, resumed, _ = RUN.training_plan(args, resumed_config)
+        self.assertEqual(resumed["resume_checkpoint"], RUN.relative(ckpt))
+        self.assertEqual(resumed["fingerprint"], plan["fingerprint"])
+        joint = self.config("exp38_s2_joint")
+        saved = ckpt.parent / "resolved_config.yaml"
+        saved.write_text(yaml.safe_dump(joint))
+        with self.assertRaisesRegex(ValueError, "belongs to another exp38 arm"):
+            RUN.resolve_config(args, for_training=True)
+        saved.write_text(yaml.safe_dump(config))
+        mixed_plan = dict(plan, experiment="exp38_s2_joint", fingerprint=RUN.fingerprint(joint, plan["runtime"]))
+        (ckpt.parent / "experiment_plan.json").write_text(json.dumps(mixed_plan))
+        with self.assertRaisesRegex(ValueError, "Resume recipe or runtime changed"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+
+    def test_constloc12_recipe_source_and_runtime(self):
+        base = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc4.yaml")
+        variant = RUN.read_yaml(self.root / "csgo_configs/exp38_s2_joint_constloc12.yaml")
+        differences = {key for key in base.keys() | variant.keys()
+                       if base.get(key) != variant.get(key)}
+        self.assertEqual(differences, {"alpha_loc_loss", "exp38_experiment"})
+        self.assertEqual(variant["alpha_loc_loss"], 12.0)
+        self.assertEqual(variant["exp38_experiment"], "exp38_s2_joint_constloc12")
+        self.assertEqual(variant["finetune_init_ckpt_path"], RUN.SOURCE)
+        self.assertFalse(variant["is_loc_aux_loss"])
+        self.source()
+        for mode, extra in (("minimal", ()),
+                            ("full", ("--asset-mode", "full", "--data-dir", "alternate/full_assets"))):
+            with self.subTest(mode=mode):
+                args = self.args("train", "exp38_s2_joint_constloc12", *extra)
+                config = RUN.resolve_config(args, for_training=True)
+                RUN.validate_config(config)
+                commands, plan, out = RUN.training_plan(args, config)
+                self.assertEqual(out.name, "exp38_s2_joint_constloc12")
+                self.assertEqual(option(commands[0], "--max_steps"), "7550")
+                self.assertEqual(option(commands[0], "--warmup_steps"), "252")
+                self.assertEqual(option(commands[0], "--gradient_accumulation_steps"), "32")
+                self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 7550])
+                self.assertEqual(plan["runtime"]["save_total_limit"], 2)
+                with patch.object(RUN, "tensor_header", return_value={"tensor_count": 2830}):
+                    self.assertEqual(RUN.preflight_stage2_source(config)["step"], 12000)
+        source_recipe = self.root / "outputs/csgo_1b/exp37/resolved_config.yaml"
+        source = RUN.read_yaml(source_recipe)
+        source["alpha_loc_loss"] = 12.0
+        source_recipe.write_text(yaml.safe_dump(source))
+        with self.assertRaisesRegex(ValueError, "Source exp37 fixed recipe differs in alpha_loc_loss"):
+            RUN.preflight_stage2_source(variant)
+        changed = dict(variant, alpha_loc_loss=4.0)
+        with self.assertRaises(ValueError):
+            RUN.validate_config(changed)
+
+    def test_constloc12_routes_and_resume_identity(self):
+        name = "exp38_s2_joint_constloc12"
+        for step in (4000, 7550):
+            for task, count in (("all", 3), ("localization", 1),
+                                ("gen", 1), ("gen_continuous", 1)):
+                with self.subTest(step=step, task=task):
+                    args = self.args("infer", name, "--checkpoint-step", str(step),
+                                     "--split", "test", "--task", task)
+                    commands, path, config = RUN.evaluation_plan(
+                        args, RUN.resolve_config(args, for_training=False))
+                    self.assertEqual(len(commands), count)
+                    self.assertIn(f"{name}/checkpoint-{step}/test", str(path))
+                    self.assertIn(f"{name}/checkpoint-{step}/model.safetensors", config["ckpt_path"])
+                    self.assertEqual(config["alpha_loc_loss"], 12.0)
+        checkpoint, original, plan = self.managed(name)
+        args = self.args("train", name, "--resume", "--stop-after-step", "0")
+        resumed = RUN.resolve_config(args, for_training=True)
+        self.assertNotIn("training_stop_after_step", resumed)
+        _, resumed_plan, _ = RUN.training_plan(args, resumed)
+        self.assertEqual(resumed_plan["resume_checkpoint"], RUN.relative(checkpoint))
+        self.assertEqual(resumed_plan["fingerprint"], plan["fingerprint"])
+        saved = checkpoint.parent / "resolved_config.yaml"
+        saved.write_text(yaml.safe_dump(self.config("exp38_s2_joint_constloc4")))
+        with self.assertRaisesRegex(ValueError, "belongs to another exp38 arm"):
+            RUN.resolve_config(args, for_training=True)
+        saved.write_text(yaml.safe_dump(original))
+        plan_path = checkpoint.parent / "experiment_plan.json"
+        plan_path.write_text(json.dumps({**plan, "experiment": "exp38_s2_joint_constloc4"}))
+        with self.assertRaisesRegex(ValueError, "identity"):
+            RUN.training_plan(args, resumed)
 
     def test_stop_and_fingerprint_preserve_full_horizon(self):
         first = self.config()
@@ -378,6 +537,82 @@ class Exp38RunnerTests(unittest.TestCase):
         summary["manifest"] = str(other_manifest)
         summary["inference_provenance"]["payload"] = payload
         assert_rejected(payload, summary, "Localization summary checkpoint/manifest differs")
+
+    def test_symlinked_loc_summary_metrics_preflight(self):
+        self.managed("exp38_s2_joint", 4000)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        physical = self.root / "physical_loc"
+        physical.mkdir()
+        (self.root / "outputs_loc").symlink_to(physical, target_is_directory=True)
+        base = ["--experiment", "exp38_s2_joint", "--checkpoint-step", "4000",
+                "--split", "test", "--task", "localization", "--execute"]
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["infer", *base]), 0)
+            launch.assert_called_once()
+        output = self.root / "outputs_loc/benchmark_v2/exp38_s2_joint/checkpoint-4000/test/seed_42/infer_bs32"
+        config_path = output / "evaluation_config.yaml"
+        config = RUN.read_yaml(config_path)
+        manifest = {"config_path": str(config_path.resolve()),
+                    "benchmark_v2_manifest": str(manifest_file),
+                    "benchmark_v2_split": "seen_discrete_test", "maps": RUN.MAPS,
+                    "sample_count": 20000, "checkpoint": str(RUN.path_in_repo(config["ckpt_path"])),
+                    "ckpt_path": str(RUN.path_in_repo(config["ckpt_path"])), "seed": 42,
+                    "benchmark_v2_support_seed": None,
+                    "benchmark_v2_shots_per_map": None,
+                    "inference_execution": execution_contract("loc", 32)}
+        manifest_path = output / "inference_manifest.json"
+        manifest_path.write_text(json.dumps(manifest))
+        metrics = {"XY_Dist": 1.0, "Z_Dist": 2.0, "Pitch_Dist": 3.0, "Yaw_Dist": 4.0}
+        summary = RUN.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_discrete_test", maps=RUN.MAPS,
+            per_map={name: metrics for name in RUN.MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=20000)
+        self.assertEqual(summary["inference_provenance"]["path"], str(manifest_path.resolve()))
+        summary_path = output / "benchmark_csgo_v2_loc.json"
+        summary_path.write_text(json.dumps(summary))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 0)
+            launch.assert_not_called()
+        alternate = physical / "other" / "inference_manifest.json"
+        alternate.parent.mkdir()
+        alternate.write_text(json.dumps(manifest))
+        summary["inference_provenance"]["path"] = str(alternate)
+        summary_path.write_text(json.dumps(summary))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()), \
+             patch("sys.stderr", io.StringIO()) as error:
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            self.assertIn("inference provenance differs", error.getvalue())
+            launch.assert_not_called()
+        pristine = RUN.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_discrete_test", maps=RUN.MAPS,
+            per_map={name: metrics for name in RUN.MAPS}, metrics_macro_map=metrics,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=20000)
+        for key, bad in (("checkpoint", "outputs/other/model.safetensors"),
+                         ("split", "seen_validation"), ("seed", 43),
+                         ("sample_count", 5000)):
+            with self.subTest(key=key):
+                corrupted = dict(pristine, **{key: bad})
+                summary_path.write_text(json.dumps(corrupted))
+                with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUN.main(["metrics", *base]), 1)
+                    launch.assert_not_called()
+        corrupted = json.loads(json.dumps(pristine))
+        corrupted["inference_provenance"]["payload"]["seed"] = 43
+        summary_path.write_text(json.dumps(corrupted))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            launch.assert_not_called()
+        summary_path.write_text(json.dumps(pristine))
+        manifest["inference_execution"] = execution_contract("loc", 1)
+        manifest_path.write_text(json.dumps(manifest))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *base]), 1)
+            launch.assert_not_called()
 
     def test_dry_run_has_no_writes_or_subprocess(self):
         before = sorted(str(p.relative_to(self.root)) for p in self.root.rglob("*"))

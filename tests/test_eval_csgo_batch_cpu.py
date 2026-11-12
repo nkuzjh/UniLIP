@@ -32,9 +32,12 @@ class BatchEvaluationCpuTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         gen_ns = {"Image": Image, "torch": torch,
+                  "transformers": SimpleNamespace(__version__="test-version"),
                   "add_template_for_inference": lambda text, **kwargs: [text, "negative"]}
         cls.gen = production_definitions(
-            "eval_csgo.py", {"_generate_batch_images", "_generation_module_mode_metadata"}, gen_ns
+            "eval_csgo.py", {"_generate_batch_images", "_generation_module_mode_metadata",
+                             "_disable_lora_dropout_modules", "_validate_lora_dropout_off_preflight",
+                             "_lora_dropout_off_runtime_environment"}, gen_ns
         )
         cls.gen_manifest = staticmethod(production_definitions(
             "eval_csgo.py", {"_write_inference_manifest"},
@@ -130,6 +133,78 @@ class BatchEvaluationCpuTest(unittest.TestCase):
         self.assertTrue(torch.equal(torch.random.get_rng_state(), rng_before))
         model.eval()
         self.assertFalse(self.gen["_generation_module_mode_metadata"](model)["stochastic_layers_batch_dependent"])
+
+    def test_only_injected_lora_dropout_is_disabled_without_rng_or_weight_changes(self):
+        class Adapter(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.lora_dropout = torch.nn.ModuleDict({"default": torch.nn.Dropout(p=0.05)})
+                self.weight = torch.nn.Parameter(torch.arange(3, dtype=torch.float32))
+
+        class Model(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.adapter = Adapter()
+                self.other_dropout = torch.nn.Dropout(p=0.2)
+                self.not_lora_dropout_extra = torch.nn.Dropout(p=0.3)
+
+        model = Model()
+        model.other_dropout.eval()
+        modes = {name: module.training for name, module in model.named_modules()}
+        rng_before = torch.random.get_rng_state().clone()
+        weights_before = {name: value.clone() for name, value in model.state_dict().items()}
+        disabled = self.gen["_disable_lora_dropout_modules"](model)
+        self.assertEqual(disabled, [{"name": "adapter.lora_dropout.default", "p": 0.05}])
+        after = {name: module.training for name, module in model.named_modules()}
+        self.assertEqual([name for name in modes if modes[name] != after[name]],
+                         ["adapter.lora_dropout.default"])
+        self.assertTrue(model.training)
+        self.assertEqual(model.not_lora_dropout_extra.p, 0.3)
+        self.assertTrue(torch.equal(torch.random.get_rng_state(), rng_before))
+        self.assertTrue(all(torch.equal(value, weights_before[name])
+                            for name, value in model.state_dict().items()))
+        metadata = self.gen["_generation_module_mode_metadata"](
+            model, disabled_lora_dropout_modules=disabled)
+        self.assertEqual(metadata["model_mode_policy"], "disable_lora_dropout_v1")
+        self.assertEqual(metadata["disabled_lora_dropout_modules"], disabled)
+        self.assertEqual(metadata["active_dropout_modules"],
+                         [{"name": "not_lora_dropout_extra", "p": 0.3}])
+        with tempfile.TemporaryDirectory() as tmp:
+            self.gen_manifest(tmp, "off/evaluation_config.yaml", {}, ["de_train"], 1,
+                              "model.safetensors", 42, inference_execution=metadata)
+            payload = json.loads((Path(tmp) / "inference_manifest.json").read_text())
+            self.assertEqual(payload["inference_execution"], metadata)
+
+    def test_dropout_off_requires_active_lora_module(self):
+        with self.assertRaisesRegex(ValueError, "no LoRA Dropout"):
+            self.gen["_disable_lora_dropout_modules"](torch.nn.Sequential(torch.nn.Dropout()))
+        model = torch.nn.Module()
+        model.lora_dropout = torch.nn.Dropout(p=0.05)
+        model.eval()
+        with self.assertRaisesRegex(ValueError, "no active LoRA Dropout"):
+            self.gen["_disable_lora_dropout_modules"](model)
+
+    def test_dropout_off_preflight_rejects_remaining_dropout_and_wrong_exp37_count(self):
+        validate = self.gen["_validate_lora_dropout_off_preflight"]
+        disabled = [{"name": f"layer.{i}.lora_dropout.default", "p": 0.05}
+                    for i in range(438)]
+        metadata = {"active_dropout_modules": []}
+        validate({"exp37_experiment": "exp37_s2_both"}, disabled, metadata)
+        with self.assertRaisesRegex(ValueError, "438"):
+            validate({"exp37_experiment": "exp37_s2_both"}, disabled[:-1], metadata)
+        with self.assertRaisesRegex(ValueError, "p=0.05"):
+            validate({"exp37_experiment": "exp37_s2_both"},
+                     [{**disabled[0], "p": 0.1}, *disabled[1:]], metadata)
+        with self.assertRaisesRegex(ValueError, "still has active"):
+            validate({}, disabled, {"active_dropout_modules": [{"name": "other", "p": 0.2}]})
+
+    def test_dropout_off_records_cpu_runtime_versions(self):
+        environment = self.gen["_lora_dropout_off_runtime_environment"](
+            SimpleNamespace(device=torch.device("cpu")))
+        self.assertEqual(environment["torch_version"], str(torch.__version__))
+        self.assertEqual(environment["transformers_version"], "test-version")
+        self.assertEqual(environment["device"], "cpu")
+        self.assertIsNone(environment["gpu_name"])
 
     def test_localization_collator_flow_tail_and_coverage(self):
         tokenizer = SimpleNamespace(model_max_length=512, pad_token_id=0)
