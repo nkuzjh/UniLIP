@@ -24,6 +24,7 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     DEFAULT_TEST_GEN_BATCH_SIZE, DEFAULT_TEST_LOC_BATCH_SIZE,
     positive_batch_size, validate_execution_metadata,
 )
+from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
 EXPERIMENTS = ("exp38_s2_joint", "exp38_s2_both")
 SOURCE = "outputs/csgo_1b/exp37/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
@@ -445,11 +446,11 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
                 "sample_count": expected_count, "seed": seed, "kind": "localization"}
     if any(summary.get(key) != value for key, value in expected.items()):
         raise ValueError(f"Localization summary split/maps/count/seed differs: {relative(summary_path)}")
-    if (path_in_repo(summary.get("checkpoint", "")) != path_in_repo(config["ckpt_path"]) or
-        path_in_repo(summary.get("manifest", "")) != path_in_repo(config["benchmark_v2_manifest"])):
+    if (path_in_repo(summary.get("checkpoint", "")).resolve() != path_in_repo(config["ckpt_path"]).resolve() or
+        path_in_repo(summary.get("manifest", "")).resolve() != path_in_repo(config["benchmark_v2_manifest"]).resolve()):
         raise ValueError(f"Localization summary checkpoint/manifest differs: {relative(summary_path)}")
     provenance = summary.get("inference_provenance", {})
-    if (path_in_repo(provenance.get("path", "")) != output / "inference_manifest.json" or
+    if (path_in_repo(provenance.get("path", "")).resolve() != (output / "inference_manifest.json").resolve() or
         provenance.get("payload") != manifest):
         raise ValueError(f"Localization summary inference provenance differs: {relative(summary_path)}")
 
@@ -608,7 +609,7 @@ def main(argv: list[str] | None = None) -> int:
                     task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
                     batch_size = args.test_loc_batch_size if task == "loc" else args.test_gen_batch_size
                     validate_execution_metadata(manifest, task, batch_size)
-                    if path_in_repo(manifest.get("config_path", "")) != snapshot_path:
+                    if path_in_repo(manifest.get("config_path", "")).resolve() != path_in_repo(snapshot_path).resolve():
                         raise ValueError(f"Inference config path differs: {relative(manifest_path)}")
                     if task == "loc":
                         validate_batched_localization_summary(snapshot_path, snapshot_cfg,

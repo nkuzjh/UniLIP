@@ -8895,14 +8895,15 @@ python scripts/run_exp37_seen10.py metrics --experiment exp37_s2 --checkpoint-st
 ### exp38_s2_joint
 
 ```bash
+python scripts/run_exp38_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp38_s2_joint
-TRAIN_GPUS=1
-EVAL_GPU=1
+TRAIN_GPUS=0
+EVAL_GPU=0
 MASTER_PORT=29690
-python scripts/run_exp38_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp38_s2_joint.nohup.out 2>&1 < /dev/null &
@@ -8919,12 +8920,12 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp38_s2_both
-TRAIN_GPUS=1
-EVAL_GPU=1
+TRAIN_GPUS=0,1
+EVAL_GPU=0
 MASTER_PORT=29691
 python scripts/run_exp38_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 16 --test-gen-batch-size 8 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp38_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 16 --test-gen-batch-size 8 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp38_s2_both.nohup.out 2>&1 < /dev/null &
 
 python scripts/run_exp38_seen10.py train --resume --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute

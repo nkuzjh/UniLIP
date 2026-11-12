@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import yaml
+from csgo_datasets.inference_batching import execution_contract
 
 REPO = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("run_exp38_seen10", REPO / "scripts/run_exp38_seen10.py")
@@ -73,6 +74,72 @@ class Exp38RunnerTests(unittest.TestCase):
         for filename in ("model.safetensors", "training_args.bin", "scheduler.pt", "rng_state.pth", "optimizer.pt"):
             (ckpt / filename).touch()
         return ckpt, config, plan
+
+    def batched_metrics_fixture(self):
+        """Saved batch outputs whose on-disk paths differ from their output aliases."""
+        (self.root / "outputs").mkdir()
+        for alias, target in (("outputs/csgo_1b", "real_train"),
+                              ("outputs_loc", "real_loc"),
+                              ("outputs_eval", "real_eval")):
+            physical = self.root / target
+            physical.mkdir()
+            (self.root / alias).symlink_to(physical, target_is_directory=True)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        ckpt, _, _ = self.managed()
+        args = self.args("metrics", "exp38_s2_joint", "--checkpoint-step", "4000",
+                         "--task", "all", "--test-loc-batch-size", "32",
+                         "--test-gen-batch-size", "16", "--execute")
+        config = RUN.resolve_config(args, for_training=False)
+        _, legacy_path, evaluated = RUN.evaluation_plan(args, config)
+        snapshots = RUN.evaluation_snapshots(args, legacy_path, evaluated)
+        report = self.root / "data/csgo_benchmark_v2/minimal_dataset_report.json"
+        asset_identity = {
+            "asset_backend": "minimal",
+            "asset_manifest_path": str(report),
+            "asset_manifest_sha256": RUN.digest_file(report),
+            "selected_images_sha256": json.loads(report.read_text())["selected_images"]["sha256"],
+        }
+        location = None
+        for snapshot_path, snapshot_cfg in snapshots.items():
+            snapshot_path.parent.mkdir(parents=True)
+            snapshot_path.write_text(yaml.safe_dump(snapshot_cfg, sort_keys=False))
+            task = "loc" if "outputs_loc" in snapshot_path.parts else "gen"
+            batch_size = 32 if task == "loc" else 16
+            count = 12800 if snapshot_cfg["benchmark_v2_split"] == "seen_continuous" else 20000
+            payload = {
+                "config_path": str(snapshot_path.resolve()),
+                "benchmark_v2_manifest": str(manifest_file.resolve()),
+                "benchmark_v2_split": snapshot_cfg["benchmark_v2_split"],
+                "benchmark_v2_support_seed": snapshot_cfg.get("benchmark_v2_support_seed"),
+                "benchmark_v2_shots_per_map": snapshot_cfg.get("benchmark_v2_shots_per_map"),
+                "maps": RUN.MAPS,
+                "sample_count": count,
+                "checkpoint": str((ckpt / "model.safetensors").resolve()),
+                "ckpt_path": str((ckpt / "model.safetensors").resolve()),
+                "seed": 42,
+                "inference_execution": execution_contract(task, batch_size),
+                **asset_identity,
+            }
+            provenance_path = snapshot_path.parent / "inference_manifest.json"
+            provenance_path.write_text(json.dumps(payload))
+            if task == "loc":
+                summary = RUN.aggregates.build_localization_summary(
+                    manifest=str(manifest_file.resolve()), split="seen_discrete_test",
+                    maps=RUN.MAPS,
+                    per_map={name: {"L2_5D": 1.0} for name in RUN.MAPS},
+                    metrics_macro_map={"L2_5D": 1.0},
+                    inference_provenance={"path": str(provenance_path.resolve()), "payload": payload},
+                    checkpoint=payload["checkpoint"], seed=42,
+                    support_seed=payload["benchmark_v2_support_seed"],
+                    shots_per_map=payload["benchmark_v2_shots_per_map"],
+                    sample_count=count,
+                )
+                summary_path = snapshot_path.parent / "benchmark_csgo_v2_loc.json"
+                summary_path.write_text(json.dumps(summary))
+                location = (snapshot_path, provenance_path, summary_path)
+        assert location is not None
+        return location
 
     def test_fixed_recipes_and_training_horizon(self):
         for name in RUN.EXPERIMENTS:
@@ -246,6 +313,71 @@ class Exp38RunnerTests(unittest.TestCase):
         (final / "trainer_state.json").write_text(json.dumps({"global_step": 7550, "max_steps": 7550}))
         (final / "model.safetensors").touch()
         RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+
+    def test_batched_metrics_accepts_resolved_output_paths_without_reinferring(self):
+        snapshot_path, provenance_path, summary_path = self.batched_metrics_fixture()
+        summary = json.loads(summary_path.read_text())
+        self.assertNotEqual(Path(summary["inference_provenance"]["path"]),
+                            provenance_path)
+        self.assertEqual(Path(summary["inference_provenance"]["path"]),
+                         provenance_path.resolve())
+        self.assertNotEqual(Path(summary["checkpoint"]),
+                            RUN.path_in_repo("outputs/csgo_1b/exp38_s2_joint/checkpoint-4000/model.safetensors"))
+        with patch.object(RUN.subprocess, "run") as launch, \
+             patch("sys.stdout", io.StringIO()):
+            code = RUN.main(["metrics", "--experiment", "exp38_s2_joint",
+                             "--checkpoint-step", "4000", "--task", "all", "--execute",
+                             "--test-loc-batch-size", "32", "--test-gen-batch-size", "16"])
+        self.assertEqual(code, 0)
+        self.assertEqual(launch.call_count, 22)
+        commands = [call.args[0] for call in launch.call_args_list]
+        self.assertEqual(sum(Path(cmd[1]).name == "benchmark_csgo_v1.py" for cmd in commands), 10)
+        self.assertEqual(sum(Path(cmd[1]).name == "benchmark_csgo_v1_conti.py" for cmd in commands), 10)
+        self.assertEqual(sum(Path(cmd[1]).name == "aggregate_csgo_benchmark_v2_metrics.py"
+                             for cmd in commands), 2)
+        self.assertFalse(any(Path(cmd[1]).name.startswith("eval_csgo") for cmd in commands))
+
+    def test_batched_metrics_rejects_other_source_files(self):
+        snapshot_path, provenance_path, summary_path = self.batched_metrics_fixture()
+        command = ["metrics", "--experiment", "exp38_s2_joint", "--checkpoint-step", "4000",
+                   "--task", "all", "--execute", "--test-loc-batch-size", "32",
+                   "--test-gen-batch-size", "16"]
+        original_payload = json.loads(provenance_path.read_text())
+        original_summary = json.loads(summary_path.read_text())
+
+        def assert_rejected(payload, summary, message):
+            provenance_path.write_text(json.dumps(payload))
+            summary_path.write_text(json.dumps(summary))
+            with patch.object(RUN.subprocess, "run") as launch, \
+                 patch("sys.stdout", io.StringIO()), patch("sys.stderr", io.StringIO()) as errors:
+                self.assertEqual(RUN.main(command), 1)
+                self.assertIn(message, errors.getvalue())
+                launch.assert_not_called()
+
+        payload = dict(original_payload, config_path=str(self.root / "other_evaluation_config.yaml"))
+        assert_rejected(payload, original_summary, "Inference config path differs")
+
+        alternate = self.root / "other_inference_manifest.json"
+        alternate.write_text(json.dumps(original_payload))
+        summary = json.loads(json.dumps(original_summary))
+        summary["inference_provenance"]["path"] = str(alternate)
+        assert_rejected(original_payload, summary, "Localization summary inference provenance differs")
+
+        other_checkpoint = self.root / "other_model.safetensors"
+        other_checkpoint.touch()
+        payload = dict(original_payload, checkpoint=str(other_checkpoint), ckpt_path=str(other_checkpoint))
+        summary = json.loads(json.dumps(original_summary))
+        summary["checkpoint"] = str(other_checkpoint)
+        summary["inference_provenance"]["payload"] = payload
+        assert_rejected(payload, summary, "Localization summary checkpoint/manifest differs")
+
+        other_manifest = self.root / "other_benchmark_manifest.json"
+        shutil.copyfile(REPO / "data/csgo_benchmark_v2/benchmark_manifest.json", other_manifest)
+        payload = dict(original_payload, benchmark_v2_manifest=str(other_manifest))
+        summary = json.loads(json.dumps(original_summary))
+        summary["manifest"] = str(other_manifest)
+        summary["inference_provenance"]["payload"] = payload
+        assert_rejected(payload, summary, "Localization summary checkpoint/manifest differs")
 
     def test_dry_run_has_no_writes_or_subprocess(self):
         before = sorted(str(p.relative_to(self.root)) for p in self.root.rglob("*"))
