@@ -25,7 +25,7 @@ from csgo_datasets.inference_batching import (  # noqa: E402
     positive_batch_size, validate_execution_metadata,
 )
 from scripts import aggregate_csgo_benchmark_v2_metrics as aggregates  # noqa: E402
-EXPERIMENTS = ("exp40_s2_P4", "exp40_s2_U2", "exp40_s2_both")
+EXPERIMENTS = ("exp40_s2_P4", "exp40_s2_U2", "exp40_s2_both", "exp40_1_s2_both")
 SOURCE = "outputs/csgo_1b/exp39/checkpoint-12000/model.safetensors"
 SOURCE_STEP = 12000
 SOURCE_HORIZON = 19550
@@ -37,7 +37,25 @@ EXPECTED_COUNTS = {"train": 50000, "validation": 5000, "discrete_test": 20000, "
 SOURCE_SHAPE = (2830, 1128, ("language_model.model.", "model.llm_connector.", "model.dit.", "model.action_dit."))
 LR_STAGE2 = {k: 2e-5 for k in ("learning_rate", "mm_projector_lr", "action_dit_lr", "llm_lora_lr", "llm_connector_lora_lr", "gen_dit_lora_lr", "action_dit_lora_lr", "action_io_mlp_lr")}
 LR_STAGE2.update({k: 1e-4 for k in ("action_dit_projector_lr", "action_dit_connector_lr", "action_dit_norm_lr")})
+LR_STAGE2_1 = {key: (3e-5 if value == 2e-5 else 1.5e-4)
+               for key, value in LR_STAGE2.items()}
+LEGACY_SPEC = {"source": SOURCE, "source_step": SOURCE_STEP, "max_steps": MAX_STEPS,
+               "checkpoint_steps": CHECKPOINT_STEPS, "warmup_steps": 252,
+               "ramp_step": 503, "save_total_limit": 2, "learning_rates": LR_STAGE2}
+NEW_SPEC = {"source": "outputs/csgo_1b/exp39/checkpoint-16000/model.safetensors",
+            "source_step": 16000, "max_steps": 6000, "checkpoint_steps": (2000, 4000, 6000),
+            "warmup_steps": 200, "ramp_step": 400, "save_total_limit": 3,
+            "learning_rates": LR_STAGE2_1}
+EXPERIMENT_SPECS = {name: (NEW_SPEC if name == "exp40_1_s2_both" else LEGACY_SPEC)
+                    for name in EXPERIMENTS}
 RECIPE_OVERRIDES = {"model_name_or_path", "pi05_pytorch_weight_path", "data_dir", "benchmark_v2_asset_manifest", "seed", "training_stop_after_step"}
+
+
+def experiment_spec(experiment: str) -> dict:
+    try:
+        return EXPERIMENT_SPECS[experiment]
+    except KeyError as exc:
+        raise ValueError(f"Unknown experiment: {experiment}") from exc
 
 
 def path_in_repo(path: str | Path) -> Path:
@@ -91,18 +109,20 @@ def trainer_state(path: Path) -> dict:
 
 
 def final_checkpoint_step(experiment: str) -> int:
-    """Require the managed local 7550 checkpoint to be complete."""
+    """Require the managed final local checkpoint to be complete."""
+    max_steps = experiment_spec(experiment)["max_steps"]
     out = output_dir(experiment)
     if not (out / "resolved_config.yaml").is_file() or not (out / "experiment_plan.json").is_file():
         raise ValueError(f"Final evaluation requires a managed training recipe: {out}")
-    ckpt = out / f"checkpoint-{MAX_STEPS}"
+    ckpt = out / f"checkpoint-{max_steps}"
     state = trainer_state(ckpt / "trainer_state.json")
-    if state["global_step"] != MAX_STEPS or state["max_steps"] != MAX_STEPS or not (ckpt / "model.safetensors").is_file():
+    if state["global_step"] != max_steps or state["max_steps"] != max_steps or not (ckpt / "model.safetensors").is_file():
         raise ValueError(f"Final checkpoint is incomplete: {ckpt}")
-    return MAX_STEPS
+    return max_steps
 
 
 def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
+    spec = experiment_spec(args.experiment)
     out = output_dir(args.experiment)
     saved = out / "resolved_config.yaml"
     if (args.resume or not for_training) and saved.is_file():
@@ -140,10 +160,11 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
             raise ValueError("Resume seed differs from saved training recipe")
         config["seed"] = args.seed
         if not args.resume and args.stop_after_step is None:
-            config["training_stop_after_step"] = CHECKPOINT_STEPS[0]
+            config["training_stop_after_step"] = spec["checkpoint_steps"][0]
         if args.stop_after_step is not None:
-            if args.stop_after_step not in (0, *CHECKPOINT_STEPS):
-                raise ValueError("--stop-after-step must be 0, 4000, or 7550")
+            if args.stop_after_step not in (0, *spec["checkpoint_steps"]):
+                allowed = ", ".join(map(str, (0, *spec["checkpoint_steps"])))
+                raise ValueError(f"--stop-after-step must be {allowed}")
             if args.stop_after_step == 0:
                 config.pop("training_stop_after_step", None)
             else:
@@ -153,6 +174,7 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
 
 def validate_config(config: dict) -> None:
     experiment = config.get("exp40_experiment")
+    spec = experiment_spec(experiment)
     expected = read_yaml(recipe_path(experiment))
     for key in set(config) | set(expected):
         if key not in RECIPE_OVERRIDES and config.get(key, object()) != expected.get(key, object()):
@@ -172,18 +194,18 @@ def validate_config(config: dict) -> None:
         raise ValueError("Microbatch-mean GAS normalization required")
     if config.get("is_lora") is not True or config.get("llm_train_mode") != "lora":
         raise ValueError("LoRA architecture changed")
-    if config.get("finetune_init_ckpt_path") != SOURCE or config.get("finetune_init_strict") is not True:
-        raise ValueError("exp40 requires strict model-only initialization from exp39@12000")
+    if config.get("finetune_init_ckpt_path") != spec["source"] or config.get("finetune_init_strict") is not True:
+        raise ValueError(f"exp40 requires strict model-only initialization from exp39@{spec['source_step']}")
     if any(config.get(k) for k in ("resume_ckpt_path", "base_init_ckpt_path", "gen_init_ckpt_path", "loc_init_ckpt_path")):
         raise ValueError("exp40 may not initialize from another checkpoint")
-    if config.get("training_checkpoint_steps") != list(CHECKPOINT_STEPS):
-        raise ValueError("Only checkpoints 4000 and 7550 may be saved")
+    if config.get("training_checkpoint_steps") != list(spec["checkpoint_steps"]):
+        raise ValueError(f"Only checkpoints {spec['checkpoint_steps']} may be saved")
     if config.get("save_final_model_at_output_root") is not False:
         raise ValueError("Root model export must be disabled")
     stop = config.get("training_stop_after_step")
-    if stop is not None and (type(stop) is not int or stop not in CHECKPOINT_STEPS):
+    if stop is not None and (type(stop) is not int or stop not in spec["checkpoint_steps"]):
         raise ValueError("Invalid exp40 stop step")
-    for key, value in LR_STAGE2.items():
+    for key, value in spec["learning_rates"].items():
         if config.get(key) != value:
             raise ValueError(f"Stage 2 {key} changed")
     for stem in ("alpha_loc", "alpha_loc_aux", "alpha_loc_perception"):
@@ -192,8 +214,8 @@ def validate_config(config: dict) -> None:
             raise ValueError(f"Invalid {stem} schedule")
     if config.get("alpha_loc_loss") != 4.0:
         raise ValueError("exp40 requires alpha_loc_loss=4")
-    p4 = experiment in ("exp40_s2_P4", "exp40_s2_both")
-    u2 = experiment in ("exp40_s2_U2", "exp40_s2_both")
+    p4 = experiment in ("exp40_s2_P4", "exp40_s2_both", "exp40_1_s2_both")
+    u2 = experiment in ("exp40_s2_U2", "exp40_s2_both", "exp40_1_s2_both")
     if (config.get("is_loc_perception_loss") is not p4
         or config.get("is_loc_aux_loss") is not u2
         or config.get("is_aux_loc_combined_em_unc_loss") is not u2):
@@ -204,8 +226,8 @@ def validate_config(config: dict) -> None:
         values = config.get(stem + "_schedule_values")
         if config.get(stem + "_loss") != 0.0:
             raise ValueError(f"{stem} initial weight must be zero")
-        if enabled and (steps != [0, 503] or values != [0.0, end]):
-            raise ValueError(f"{stem} must ramp through local step 503")
+        if enabled and (steps != [0, spec["ramp_step"]] or values != [0.0, end]):
+            raise ValueError(f"{stem} must ramp through local step {spec['ramp_step']}")
         if not enabled and (steps is not None or values is not None):
             raise ValueError(f"{stem} schedule must be absent when disabled")
     if p4 and config.get("loc_perception_use_attention_weight") is not False:
@@ -226,32 +248,35 @@ def latest_checkpoint(out: Path) -> Path | None:
     return max(choices)[1] if choices else None
 
 
-def valid_source_record(record: object) -> bool:
+def valid_source_record(record: object, experiment: str) -> bool:
+    spec = experiment_spec(experiment)
     return (isinstance(record, dict)
-            and record.get("path") == SOURCE and record.get("step") == SOURCE_STEP
+            and record.get("path") == spec["source"] and record.get("step") == spec["source_step"]
             and isinstance(record.get("sha256"), str)
             and len(record["sha256"]) == 64
             and all(c in "0123456789abcdef" for c in record["sha256"]))
 
 
 def check_sibling_source(experiment: str, source_record: dict) -> None:
+    spec = experiment_spec(experiment)
     for sibling in EXPERIMENTS:
-        if sibling == experiment:
+        if sibling == experiment or experiment_spec(sibling)["source"] != spec["source"]:
             continue
         sibling_plan = output_dir(sibling) / "experiment_plan.json"
         if sibling_plan.is_file():
             plan = json.loads(sibling_plan.read_text(encoding="utf-8"))
             peer = plan.get("source_checkpoint")
-            if (plan.get("experiment") != sibling or not valid_source_record(peer)
+            if (plan.get("experiment") != sibling or not valid_source_record(peer, sibling)
                 or peer["sha256"] != source_record["sha256"]):
                 raise ValueError(f"exp40 sibling {sibling} uses a different source")
 
 
 def check_resume(out: Path, identity: str, resume: bool) -> tuple[Path | None, dict | None]:
+    spec = experiment_spec(out.name)
     plan_path = out / "experiment_plan.json"
     present_steps = {int(p.name[11:]) for p in out.glob("checkpoint-*")
                      if p.is_dir() and p.name[11:].isdigit()}
-    if not present_steps.issubset(CHECKPOINT_STEPS):
+    if not present_steps.issubset(spec["checkpoint_steps"]):
         raise ValueError(f"Unexpected exp40 checkpoint steps: {sorted(present_steps)}")
     if (out / "model.safetensors").exists():
         raise ValueError("Unexpected exp40 root model export")
@@ -273,7 +298,7 @@ def check_resume(out: Path, identity: str, resume: bool) -> tuple[Path | None, d
     state = trainer_state(checkpoint / "trainer_state.json")
     if state["global_step"] != int(checkpoint.name[11:]):
         raise ValueError("Resume checkpoint directory and Trainer step differ")
-    if state["max_steps"] != MAX_STEPS:
+    if state["max_steps"] != spec["max_steps"]:
         raise ValueError("Resume checkpoint has wrong exp40 horizon")
     world_size = plan.get("runtime", {}).get("world_size")
     if type(world_size) is not int or world_size <= 0:
@@ -287,13 +312,14 @@ def check_resume(out: Path, identity: str, resume: bool) -> tuple[Path | None, d
     if plan.get("experiment") != out.name:
         raise ValueError("Resume plan experiment identity changed")
     source = plan.get("source_checkpoint")
-    if not valid_source_record(source):
+    if not valid_source_record(source, out.name):
         raise ValueError("Resume plan lacks pinned source provenance")
     check_sibling_source(out.name, source)
     return checkpoint, plan
 
 
 def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], dict, Path]:
+    spec = experiment_spec(args.experiment)
     devices = args.cuda_devices.split(",")
     if not all(d.strip() for d in devices) or len(set(devices)) != len(devices):
         raise ValueError("--cuda-devices must list distinct devices")
@@ -302,9 +328,9 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
         raise ValueError("GPU count × micro batch must divide source batch 128")
     gas = 128 // (len(devices) * micro)
     runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
-                   gradient_accumulation_steps=gas, seed=args.seed, checkpoint_steps=list(CHECKPOINT_STEPS),
-                   save_total_limit=2, report_to=args.report_to, max_steps=MAX_STEPS,
-                   warmup_steps=252, warmup_ratio=0.0,
+                   gradient_accumulation_steps=gas, seed=args.seed, checkpoint_steps=list(spec["checkpoint_steps"]),
+                   save_total_limit=spec["save_total_limit"], report_to=args.report_to, max_steps=spec["max_steps"],
+                   warmup_steps=spec["warmup_steps"], warmup_ratio=0.0,
                    optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
                    adam_epsilon=1e-8, weight_decay=0.0, max_grad_norm=1.0)
     out = output_dir(args.experiment)
@@ -312,22 +338,22 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     checkpoint, previous = check_resume(out, identity, args.resume)
     if checkpoint:
         state = trainer_state(checkpoint / "trainer_state.json")
-        if state["max_steps"] != MAX_STEPS:
+        if state["max_steps"] != spec["max_steps"]:
             raise ValueError("Resume checkpoint has wrong exp40 horizon")
         stop = config.get("training_stop_after_step")
         if stop is not None and state["global_step"] >= stop:
             raise ValueError("Checkpoint has reached requested stop")
-        if state["global_step"] == MAX_STEPS:
+        if state["global_step"] == spec["max_steps"]:
             raise ValueError("Experiment already reached final checkpoint")
     cmd = [sys.executable, "-m", "torch.distributed.run", f"--nproc_per_node={len(devices)}",
            f"--master_port={args.master_port}", "train_csgo.py", "--csgo_config", relative(out / "resolved_config.yaml"),
            "--deepspeed", "deepspeed_scripts/zero0.json", "--model_name_or_path", config["model_name_or_path"],
            "--unilip_factor", "10.6", "--mllm_hf_path", config["mllm_hf_path"], "--version", "internvl",
            "--data_type", "mix", "--csgo_image_folder", config["data_dir"], "--output_dir", relative(out),
-           "--num_train_epochs", "50", "--max_steps", str(MAX_STEPS), "--warmup_steps", "252",
+           "--num_train_epochs", "50", "--max_steps", str(spec["max_steps"]), "--warmup_steps", str(spec["warmup_steps"]),
            "--per_device_train_batch_size", str(micro), "--per_device_eval_batch_size", "1",
            "--gradient_accumulation_steps", str(gas), "--eval_strategy", "no", "--save_strategy", "no",
-           "--save_total_limit", "2", "--save_only_model", "False", "--seed", str(args.seed),
+           "--save_total_limit", str(spec["save_total_limit"]), "--save_only_model", "False", "--seed", str(args.seed),
            "--learning_rate", str(config["learning_rate"]), "--weight_decay", "0", "--warmup_ratio", "0",
            "--lr_scheduler_type", config["lr_scheduler_type"], "--model_max_length", "1024", "--logging_steps", "10",
            "--dataloader_num_workers", "4", "--n_query", "256", "--n_und_query", "0", "--report_to", args.report_to,
@@ -340,8 +366,8 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     metadata = dict(experiment=args.experiment, fingerprint=identity, runtime=runtime, command=cmd,
                     resume_checkpoint=relative(checkpoint) if checkpoint else None,
                     source_checkpoint=previous.get("source_checkpoint") if previous else None,
-                    evaluation_steps={"validation": list(CHECKPOINT_STEPS), "test": list(CHECKPOINT_STEPS)},
-                    cumulative_steps={str(step): SOURCE_STEP + step for step in CHECKPOINT_STEPS},
+                    evaluation_steps={"validation": list(spec["checkpoint_steps"]), "test": list(spec["checkpoint_steps"])},
+                    cumulative_steps={str(step): spec["source_step"] + step for step in spec["checkpoint_steps"]},
                     dataset_counts=dict(EXPECTED_COUNTS))
     return [cmd], metadata, out
 
@@ -373,16 +399,18 @@ def tensor_header(path: Path) -> dict:
 
 
 def preflight_stage2_source(config: dict) -> dict:
-    """Pin the managed exp39@12000 model without requiring Stage 1 completion."""
-    if config.get("finetune_init_ckpt_path") != SOURCE:
-        raise ValueError("exp40 source must be exp39@12000")
-    source = path_in_repo(SOURCE)
+    """Pin the selected managed exp39 model without requiring Stage 1 completion."""
+    spec = experiment_spec(config["exp40_experiment"])
+    source_path, source_step = spec["source"], spec["source_step"]
+    if config.get("finetune_init_ckpt_path") != source_path:
+        raise ValueError(f"exp40 source must be exp39@{source_step}")
+    source = path_in_repo(source_path)
     checkpoint = source.parent
     if not source.is_file():
-        raise ValueError(f"Missing exp39@12000 model: {source}")
+        raise ValueError(f"Missing exp39@{source_step} model: {source}")
     state = trainer_state(checkpoint / "trainer_state.json")
-    if state["global_step"] != SOURCE_STEP or state["max_steps"] != SOURCE_HORIZON:
-        raise ValueError("exp39 source must be global_step=12000/max_steps=19550")
+    if state["global_step"] != source_step or state["max_steps"] != SOURCE_HORIZON:
+        raise ValueError(f"exp39 source must be global_step={source_step}/max_steps={SOURCE_HORIZON}")
     source_out = output_dir("exp39")
     source_recipe = read_yaml(source_out / "resolved_config.yaml")
     source_plan = json.loads((source_out / "experiment_plan.json").read_text(encoding="utf-8"))
@@ -414,8 +442,8 @@ def preflight_stage2_source(config: dict) -> dict:
             raise ValueError(f"Source exp39 recipe differs in {key}")
     # Source and destination may use different minimal/full asset layouts.
     header = tensor_header(source)
-    result = {"path": SOURCE, "sha256": digest_file(source), "size_bytes": source.stat().st_size,
-              "step": SOURCE_STEP, "source_max_steps": SOURCE_HORIZON,
+    result = {"path": source_path, "sha256": digest_file(source), "size_bytes": source.stat().st_size,
+              "step": source_step, "source_max_steps": SOURCE_HORIZON,
               "state_path": relative(checkpoint / "trainer_state.json"),
               "source_recipe": relative(source_out / "resolved_config.yaml"),
               "source_plan": relative(source_out / "experiment_plan.json"), **header}
@@ -499,9 +527,10 @@ def validate_batched_localization_summary(config_path: Path, config: dict,
 
 
 def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str]], Path, dict]:
-    step = MAX_STEPS if args.checkpoint_step == "final" else args.checkpoint_step
-    if step not in CHECKPOINT_STEPS:
-        raise ValueError("exp40 evaluation requires checkpoint 4000 or final=7550")
+    spec = experiment_spec(args.experiment)
+    step = spec["max_steps"] if args.checkpoint_step == "final" else args.checkpoint_step
+    if step not in spec["checkpoint_steps"]:
+        raise ValueError(f"exp40 evaluation requires checkpoint {spec['checkpoint_steps']}; final={spec['max_steps']}")
     if "," in args.cuda_devices:
         raise ValueError("Evaluation uses one device")
     checkpoint = Path("outputs/csgo_1b") / args.experiment / f"checkpoint-{step}" / "model.safetensors"
@@ -513,15 +542,15 @@ def evaluation_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[s
         plan = json.loads(plan_path.read_text(encoding="utf-8"))
         if plan.get("experiment") != args.experiment or plan.get("fingerprint") != fingerprint(config, plan.get("runtime", {})):
             raise ValueError("Evaluation plan identity/fingerprint differs from saved recipe")
-        if not valid_source_record(plan.get("source_checkpoint")):
+        if not valid_source_record(plan.get("source_checkpoint"), args.experiment):
             raise ValueError("Evaluation plan lacks pinned exp39 source provenance")
         check_sibling_source(args.experiment, plan["source_checkpoint"])
         if not path_in_repo(checkpoint).is_file():
             raise ValueError(f"Checkpoint is absent: {checkpoint}")
         state = trainer_state(path_in_repo(checkpoint).parent / "trainer_state.json")
-        if state["global_step"] != step or state["max_steps"] != MAX_STEPS:
+        if state["global_step"] != step or state["max_steps"] != spec["max_steps"]:
             raise ValueError("Selected evaluation checkpoint has wrong Trainer step/horizon")
-        if step == MAX_STEPS and final_checkpoint_step(args.experiment) != step:
+        if step == spec["max_steps"] and final_checkpoint_step(args.experiment) != step:
             raise ValueError("Final evaluation requires completed checkpoint")
     target = f"{args.experiment}/checkpoint-{step}/{args.split}/seed_{args.seed}"
     eval_config = ROOT / "outputs_eval/benchmark_v2" / target / "evaluation_config.yaml"
@@ -585,7 +614,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--experiment", choices=EXPERIMENTS)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--resume", action="store_true")
-    p.add_argument("--stop-after-step", type=int, help="Local optimizer step 4000 or 7550; 0 removes the stop (default first run stops at 4000)")
+    p.add_argument("--stop-after-step", type=int, help="Local optimizer checkpoint step for the selected experiment; 0 removes the stop (default first checkpoint)")
     p.add_argument("--cuda-devices", default="0")
     p.add_argument("--micro-batch", type=int)
     p.add_argument("--master-port", type=int, default=29638)

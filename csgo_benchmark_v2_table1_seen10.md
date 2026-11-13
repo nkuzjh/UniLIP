@@ -157,17 +157,17 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | RDT | `csgo_aligned_aug_v1` | final 19500 | 1 | 1681.640 M | 1681.640 M | 73.165 M | 43.2506 | 2.7827 | 2.3061 | 20.7786 | [JSON](../RoboticsDiffusionTransformer/outputs/csgo_aligned_aug_v1/RDT/seed_42/evaluation/localization/summary_equal_map.json) |
 | OpenVLA-OFT | `csgo_seen10_aligned_v2` | final 19500 | 1 | 7739.887 M | 7724.644 M | 197.493 M | 36.9560 | 2.2642 | 1.1460 | 17.1370 | [JSON](../openvla-oft/outputs/csgo_benchmark_v2_seen10_aligned_v2/OpenVLA-OFT/seed_42/evaluation/localization/summary_equal_map.json) |
 | $\pi_{0.5}^{\dagger}$ | `pi0.5_exp32_loc_main_frozen_vl` | final 19500 | 未记录 | 3431.291 M | 3431.291 M | 80.023 M | 53.5425 | 3.4532 | 1.2515 | 25.4504 | [JSON](../openpi/outputs/csgo_benchmark_v2_seen10/pi0.5_exp32_loc_main_frozen_vl/seed_0/evaluation/localization_late/summary_equal_map.json) |
-| UniLIP full-head · loc-only | `exp31_loc` | final 19500 | 1（配置） | 2237.966 M | 1254.461 M | 452.164 M | 79.2937 | 4.1339 | 2.7075 | 36.1728 | [JSON](outputs_loc/benchmark_v2/exp31_loc/seen/benchmark_csgo_v2_loc.json) |
-| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 2237.966 M | 1254.461 M | 1135.684 M | 82.7500 | 4.3542 | 2.9693 | 37.1299 | [JSON](outputs_loc/benchmark_v2/exp31_1/seen/benchmark_csgo_v2_loc.json) |
-| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 2237.966 M | 1254.461 M | 1135.684 M | 99.0970 | 4.9604 | 3.2192 | 45.1100 | [JSON](outputs_loc/benchmark_v2/exp31/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 loc-only | `exp37_s2_loc` | local 6000 | 8 | 2269.423 M | 1285.918 M | 55.689 M | 46.3411 | 2.8749 | 2.5172 | 25.1531 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 8 | 2288.441 M | 1285.918 M | 77.003 M | 47.1732 | 2.8362 | 2.6514 | 26.3147 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 2288.441 M | 1285.918 M | 77.003 M | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
+| UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 32 | 2288.441 M | 1285.918 M | 77.003 M | 47.5643 | 2.8302 | 2.6703 | 26.0658 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs32/loc_metrics.json) | -->
 | UniLIP LoRA · loc-only | `exp32_loc` | final 19500 | 1（配置） | 2269.423 M | 1285.918 M | 55.689 M | 48.9611 | 3.0059 | 2.9704 | 26.0468 | [JSON](outputs_loc/benchmark_v2/exp32_loc/seen/benchmark_csgo_v2_loc.json) |
 | UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 2288.441 M | 1285.918 M | 77.003 M | 123.1938 | 6.3845 | 3.3523 | 55.4486 | [JSON](outputs_loc/benchmark_v2/exp32/seen/benchmark_csgo_v2_loc.json) |
 | UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 2288.441 M | 1285.918 M | 77.003 M | 63.0377 | 3.5604 | 3.0882 | 31.6713 | [JSON](outputs_loc/benchmark_v2/exp32_1/seen/benchmark_csgo_v2_loc.json) |
 | UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 2288.441 M | 1285.918 M | 77.003 M | 49.9381 | 2.9983 | 2.6749 | 26.8646 | [JSON](outputs_loc/benchmark_v2/exp37/checkpoint-19550/test/seed_42/benchmark_csgo_v2_loc.json) |
-| UniLIP · Stage 2 loc-only | `exp37_s2_loc` | local 6000 | 8 | 2269.423 M | 1285.918 M | 55.689 M | 46.3411 | 2.8749 | 2.5172 | 25.1531 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
-| UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 8 | 2288.441 M | 1285.918 M | 77.003 M | 47.1732 | 2.8362 | 2.6514 | 26.3147 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
-| UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 2288.441 M | 1285.918 M | 77.003 M | 46.7915 | 2.7853 | 2.7759 | 26.0181 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/benchmark_csgo_v2_loc.json) |
-| UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 32 | 2288.441 M | 1285.918 M | 77.003 M | 47.5643 | 2.8302 | 2.6703 | 26.0658 | [JSON](outputs_loc/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs32/loc_metrics.json) |
+| UniLIP full-head · loc-only | `exp31_loc` | final 19500 | 1（配置） | 2237.966 M | 1254.461 M | 452.164 M | 79.2937 | 4.1339 | 2.7075 | 36.1728 | [JSON](outputs_loc/benchmark_v2/exp31_loc/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 2237.966 M | 1254.461 M | 1135.684 M | 82.7500 | 4.3542 | 2.9693 | 37.1299 | [JSON](outputs_loc/benchmark_v2/exp31_1/seen/benchmark_csgo_v2_loc.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 2237.966 M | 1254.461 M | 1135.684 M | 99.0970 | 4.9604 | 3.2192 | 45.1100 | [JSON](outputs_loc/benchmark_v2/exp31/seen/benchmark_csgo_v2_loc.json) |
 
 #### 原 batch1 结果（历史留存）
 
@@ -185,17 +185,17 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | Lumina-Accessory | `--` | 原表未注明 | 未记录 | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 12.823 | 0.643 | 0.511 | 31.098 | [原表](#离散生成)（产物待绑定§） |
 | Show-o2 | `--`‡ | 19500（候选‡） | 未记录 | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 14.5386 | 0.5910 | 0.5289 | 37.4297 | [候选JSON‡](../Show-o/outputs/csgo_benchmark_v2_aligned/csgo_seen10_exp32gen_aligned_v2_final/seed_42/evaluations/late/discrete/summary_equal_map.json) |
 | Puffin | `exp32gen_aligned` | 原表未注明 | 未记录 | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 14.3186 | 0.5924 | 0.5357 | 33.2448 | [原表](#离散生成)（产物待绑定§） |
-| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 683.519 M | 14.5605 | 0.5888 | 0.5258 | 28.6290 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/discrete/summary.json) |
-| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 14.9542 | 0.5725 | 0.5375 | 27.9493 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/discrete/summary.json) |
-| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 14.6271 | 0.5847 | 0.5294 | 28.3035 | [JSON](outputs_eval/benchmark_v2/exp31/seen/discrete/summary.json) |
-| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 13.9649 | 0.6106 | 0.5163 | 35.5836 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json) |
-| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.1528 | 0.6035 | 0.5229 | 36.6005 | [JSON](outputs_eval/benchmark_v2/exp32/seen/discrete/summary.json) |
-| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 13.9070 | 0.6146 | 0.5151 | 36.2159 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/discrete/summary.json) |
-| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 1822.416 M | 1681.653 M | 77.003 M | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
 | UniLIP · Stage 2 gen-only | `exp37_s2_gen` | local 6000 | 8 | 1822.416 M | 1681.653 M | 38.910 M | 14.1692 | 0.6025 | 0.5217 | 34.3244 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json)；CPU评测；推理batch8 |
 | UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 8 | 1822.416 M | 1681.653 M | 77.003 M | 13.7476 | 0.6230 | 0.5099 | 35.8618 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
 | UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 1822.416 M | 1681.653 M | 77.003 M | 13.7378 | 0.6238 | 0.5092 | 35.8402 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/discrete/summary.json) |
 | UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 16 | 1822.416 M | 1681.653 M | 77.003 M | 13.7606 | 0.6230 | 0.5101 | 35.6276 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs16/discrete/summary.json) |
+| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 13.9649 | 0.6106 | 0.5163 | 35.5836 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/discrete/summary.json) |
+| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.1528 | 0.6035 | 0.5229 | 36.6005 | [JSON](outputs_eval/benchmark_v2/exp32/seen/discrete/summary.json) |
+| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 13.9070 | 0.6146 | 0.5151 | 36.2159 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/discrete/summary.json) |
+| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 1822.416 M | 1681.653 M | 77.003 M | 13.6163 | 0.6272 | 0.5078 | 36.3942 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/discrete/summary.json) |
+| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 683.519 M | 14.5605 | 0.5888 | 0.5258 | 28.6290 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/discrete/summary.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 14.9542 | 0.5725 | 0.5375 | 27.9493 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/discrete/summary.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 14.6271 | 0.5847 | 0.5294 | 28.3035 | [JSON](outputs_eval/benchmark_v2/exp31/seen/discrete/summary.json) |
 
 #### 原 batch1 结果（历史留存）
 
@@ -213,17 +213,17 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | Lumina-Accessory | `--` | 原表未注明 | 未记录 | 5710.672 M§ | 5710.670 M§ | 227.964 M§ | 13.722 | 0.634 | 38.103 | 44.423 | 932.545 | [原表](#连续生成)（产物待绑定§） |
 | Show-o2 | `--`‡ | 19500（候选‡） | 未记录 | 3263.077 M‡ | 3030.113 M‡ | 336.481 M‡ | 15.4463 | 0.5765 | 32.7094 | 39.0428 | 887.3028 | [候选JSON‡](../Show-o/outputs/csgo_benchmark_v2_aligned/csgo_seen10_exp32gen_aligned_v2_final/seed_42/evaluations/late/continuous/summary_equal_map.json) |
 | Puffin | `exp32gen_aligned` | 原表未注明 | 未记录 | 4560.858 M§ | 3898.988 M§ | 88.824 M§ | 15.4657 | 0.5679 | 28.1975 | 35.2320 | 844.2427 | [原表](#连续生成)（产物待绑定§） |
-| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 683.519 M | 15.1641 | 0.5622 | 31.4090 | 38.0330 | 737.1975 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/continuous/summary.json) |
-| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 15.5707 | 0.5446 | 28.8793 | 35.6882 | 674.1797 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/continuous/summary.json) |
-| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 15.1897 | 0.5592 | 31.0365 | 37.6569 | 727.5069 | [JSON](outputs_eval/benchmark_v2/exp31/seen/continuous/summary.json) |
-| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 14.3418 | 0.5929 | 35.6983 | 41.8670 | 848.0710 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json) |
-| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.5725 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | [JSON](outputs_eval/benchmark_v2/exp32/seen/continuous/summary.json) |
-| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.2285 | 0.5981 | 36.1777 | 42.2848 | 891.6025 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/continuous/summary.json) |
-| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 1822.416 M | 1681.653 M | 77.003 M | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
 | UniLIP · Stage 2 gen-only | `exp37_s2_gen` | local 6000 | 8 | 1822.416 M | 1681.653 M | 38.910 M | 14.6329 | 0.5814 | 34.4580 | 40.6634 | 822.6760 | [JSON](outputs_eval/benchmark_v2/exp37_s2_gen/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json)；CUDA评测；推理batch8 |
 | UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 8 | 1822.416 M | 1681.653 M | 77.003 M | 14.0769 | 0.6085 | 37.0982 | 43.1798 | 928.6481 | [JSON](outputs_eval/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | UniLIP · Stage 2 P4＋U2 | `exp37_s2_both` | local 6000 | 8 | 1822.416 M | 1681.653 M | 77.003 M | 14.0884 | 0.6082 | 37.1505 | 43.2095 | 922.6230 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both/checkpoint-6000/test/seed_42/infer_bs8/continuous/summary.json) |
 | UniLIP · Stage 2 P3＋U2 | `exp37_s2_both_b1` | local 6000 | 16 | 1822.416 M | 1681.653 M | 77.003 M | 14.1008 | 0.6078 | 37.1682 | 43.2016 | 906.5443 | [JSON](outputs_eval/benchmark_v2/exp37_s2_both_b1/checkpoint-6000/test/seed_42/infer_bs16/continuous/summary.json) |
+| UniLIP LoRA · gen-only | `exp32_gen` | final 19500 | 1（配置） | 1822.416 M | 1681.653 M | 38.910 M | 14.3418 | 0.5929 | 35.6983 | 41.8670 | 848.0710 | [JSON](outputs_eval/benchmark_v2/exp32_gen/seen/continuous/summary.json) |
+| UniLIP LoRA · joint | `exp32` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.5725 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | [JSON](outputs_eval/benchmark_v2/exp32/seen/continuous/summary.json) |
+| UniLIP LoRA · joint＋aux | `exp32_1` | final 19550 | 1（配置） | 1822.416 M | 1681.653 M | 77.003 M | 14.2285 | 0.5981 | 36.1777 | 42.2848 | 891.6025 | [JSON](outputs_eval/benchmark_v2/exp32_1/seen/continuous/summary.json) | -->
+| UniLIP · Stage 1 joint | `exp37` | Stage 1 final 19550 | 1 | 1822.416 M | 1681.653 M | 77.003 M | 13.8818 | 0.6171 | 37.9583 | 43.9776 | 943.6128 | [JSON](outputs_eval/benchmark_v2/exp37/checkpoint-19550/test/seed_42/continuous/summary.json) |
+| UniLIP full-head · gen-only | `exp31_gen` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 683.519 M | 15.1641 | 0.5622 | 31.4090 | 38.0330 | 737.1975 | [JSON](outputs_eval/benchmark_v2/exp31_gen/seen/continuous/summary.json) |
+| UniLIP full-head · joint | `exp31_1` | final 19500 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 15.5707 | 0.5446 | 28.8793 | 35.6882 | 674.1797 | [JSON](outputs_eval/benchmark_v2/exp31_1/seen/continuous/summary.json) |
+| UniLIP full-head · joint＋aux | `exp31` | final 19550 | 1（配置） | 1785.802 M | 1645.039 M | 1135.684 M | 15.1897 | 0.5592 | 31.0365 | 37.6569 | 727.5069 | [JSON](outputs_eval/benchmark_v2/exp31/seen/continuous/summary.json) |
 
 #### 原 batch1 结果（历史留存）
 

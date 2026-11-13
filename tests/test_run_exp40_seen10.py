@@ -46,11 +46,11 @@ class Exp40RunnerTests(unittest.TestCase):
     def config(self, experiment="exp40_s2_P4", *extra):
         return RUN.resolve_config(self.args("train", experiment, *extra), for_training=True)
 
-    def source(self):
-        source = RUN.path_in_repo(RUN.SOURCE)
+    def source(self, step=12000):
+        source = RUN.path_in_repo(f"outputs/csgo_1b/exp39/checkpoint-{step}/model.safetensors")
         source.parent.mkdir(parents=True)
-        source.write_bytes(b"synthetic source header")
-        (source.parent / "trainer_state.json").write_text(json.dumps({"global_step": 12000, "max_steps": 19550}))
+        source.write_bytes(f"synthetic source header {step}".encode())
+        (source.parent / "trainer_state.json").write_text(json.dumps({"global_step": step, "max_steps": 19550}))
         out = self.root / "outputs/csgo_1b/exp39"
         recipe = RUN.read_yaml(self.root / "csgo_configs/exp39.yaml")
         (out / "resolved_config.yaml").write_text(yaml.safe_dump(recipe))
@@ -61,24 +61,26 @@ class Exp40RunnerTests(unittest.TestCase):
                                                                   "source_checkpoint": None}))
         return source
 
-    def managed(self, experiment="exp40_s2_P4", step=4000, *, full=False):
+    def managed(self, experiment="exp40_s2_P4", step=None, *, full=False):
+        spec = RUN.experiment_spec(experiment)
+        step = spec["checkpoint_steps"][0] if step is None else step
         extra = ("--asset-mode", "full", "--data-dir", "alternate/full_assets") if full else ()
         args = self.args("train", experiment, *extra)
         config = RUN.resolve_config(args, for_training=True)
         _, plan, out = RUN.training_plan(args, config)
         out.mkdir(parents=True)
-        plan["source_checkpoint"] = {"path": RUN.SOURCE, "sha256": "a" * 64, "step": 12000}
+        plan["source_checkpoint"] = {"path": spec["source"], "sha256": "a" * 64, "step": spec["source_step"]}
         (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
         (out / "experiment_plan.json").write_text(json.dumps(plan))
         checkpoint = out / f"checkpoint-{step}"
         checkpoint.mkdir()
-        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": step, "max_steps": 7550}))
+        (checkpoint / "trainer_state.json").write_text(json.dumps({"global_step": step, "max_steps": spec["max_steps"]}))
         for name in ("model.safetensors", "training_args.bin", "scheduler.pt", "optimizer.pt", "rng_state.pth"):
             (checkpoint / name).touch()
         return checkpoint, config, plan
 
     def test_three_fixed_recipes_and_horizon(self):
-        for arm in RUN.EXPERIMENTS:
+        for arm in RUN.EXPERIMENTS[:3]:
             with self.subTest(arm=arm):
                 config = self.config(arm)
                 RUN.validate_config(config)
@@ -115,6 +117,117 @@ class Exp40RunnerTests(unittest.TestCase):
         changed["alpha_loc_loss"] = 8.0
         with self.assertRaises(ValueError):
             RUN.validate_config(changed)
+
+    def test_legacy_plan_fingerprints_stay_fixed(self):
+        expected = {
+            "exp40_s2_P4": "c54dd93b31aed08896745f9ec080239cadac033dd5c863170ac55d2785653440",
+            "exp40_s2_U2": "00aa9df8d67411e61482ea283991b7a940478898825acdc4fd2d7e0f497188be",
+            "exp40_s2_both": "e57b1be6c0bca748fa84d98e458a6359eaa7713f97c96b6e2ba6e1f282d3b14e",
+        }
+        for arm, digest in expected.items():
+            with self.subTest(arm=arm):
+                args = self.args("train", arm)
+                _, plan, _ = RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+                self.assertEqual(plan["fingerprint"], digest)
+
+    def test_exp40_1_fixed_recipe_and_schedule(self):
+        arm = "exp40_1_s2_both"
+        config = self.config(arm)
+        RUN.validate_config(config)
+        legacy = self.config("exp40_s2_both")
+        changed = {"finetune_init_ckpt_path", "training_checkpoint_steps",
+                   "alpha_loc_perception_schedule_steps", "alpha_loc_aux_schedule_steps",
+                   "exp40_experiment", "training_stop_after_step", *RUN.LR_STAGE2}
+        for key in set(config) | set(legacy):
+            if key not in changed:
+                self.assertEqual(config.get(key), legacy.get(key), key)
+        self.assertEqual(config["finetune_init_ckpt_path"], RUN.NEW_SPEC["source"])
+        self.assertTrue(config["finetune_init_strict"])
+        self.assertEqual(config["training_stop_after_step"], 2000)
+        self.assertEqual(config["training_checkpoint_steps"], [2000, 4000, 6000])
+        self.assertEqual(config["alpha_loc_perception_schedule_steps"], [0, 400])
+        self.assertEqual(config["alpha_loc_aux_schedule_steps"], [0, 400])
+        self.assertEqual(config["alpha_loc_perception_schedule_values"], [0.0, .05])
+        self.assertEqual(config["alpha_loc_aux_schedule_values"], [0.0, 1.0])
+        self.assertFalse(config["loc_perception_use_attention_weight"])
+        self.assertEqual(config["aux_loc_combined_num_samples"], 2)
+        self.assertEqual(config["aux_loc_combined_candidate_tau"], 1.0)
+        for key, value in RUN.LR_STAGE2_1.items():
+            self.assertEqual(config[key], value, key)
+        commands, plan, _ = RUN.training_plan(self.args("train", arm), config)
+        command = commands[0]
+        for flag, value in (("--max_steps", "6000"), ("--warmup_steps", "200"),
+                            ("--save_total_limit", "3"), ("--save_only_model", "False"),
+                            ("--gradient_accumulation_steps", "32"), ("--seed", "42"),
+                            ("--optim", "adamw_torch")):
+            self.assertEqual(option(command, flag), value)
+        self.assertEqual(plan["runtime"]["checkpoint_steps"], [2000, 4000, 6000])
+        self.assertEqual(plan["cumulative_steps"], {"2000": 18000, "4000": 20000, "6000": 22000})
+        self.assertEqual(plan["evaluation_steps"], {"validation": [2000, 4000, 6000],
+                                                    "test": [2000, 4000, 6000]})
+        self.assertFalse(config["save_final_model_at_output_root"])
+        for stop in (0, 2000, 4000, 6000):
+            selected = self.config(arm, "--stop-after-step", str(stop))
+            self.assertEqual(selected.get("training_stop_after_step"), stop or None)
+            self.assertEqual(RUN.fingerprint(config, {}), RUN.fingerprint(selected, {}))
+        for stop in (1, 7550):
+            with self.assertRaises(ValueError):
+                self.config(arm, "--stop-after-step", str(stop))
+        for key, value in (("finetune_init_ckpt_path", RUN.SOURCE),
+                           ("learning_rate", 2e-5),
+                           ("alpha_loc_aux_schedule_steps", [0, 503]),
+                           ("training_checkpoint_steps", [4000, 7550])):
+            altered = dict(config, **{key: value})
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                RUN.validate_config(altered)
+
+    def test_exp40_1_source_coexists_with_legacy_and_rejects_wrong_identity(self):
+        self.source(12000)
+        new_source = self.source(16000)
+        old_peer = self.root / "outputs/csgo_1b/exp40_s2_P4"
+        old_peer.mkdir(parents=True)
+        (old_peer / "experiment_plan.json").write_text(json.dumps({
+            "experiment": "exp40_s2_P4", "source_checkpoint":
+            {"path": RUN.SOURCE, "step": 12000, "sha256": "a" * 64}}))
+        with patch.object(RUN, "tensor_header", return_value={"tensor_count": 2830}):
+            record = RUN.preflight_stage2_source(self.config("exp40_1_s2_both"))
+        self.assertEqual(record["path"], RUN.NEW_SPEC["source"])
+        self.assertEqual(record["step"], 16000)
+        self.assertEqual(record["sha256"], RUN.digest_file(new_source))
+        (new_source.parent / "trainer_state.json").write_text(json.dumps({"global_step": 16000, "max_steps": 16000}))
+        with patch.object(RUN, "tensor_header", return_value={}):
+            with self.assertRaisesRegex(ValueError, "max_steps=19550"):
+                RUN.preflight_stage2_source(self.config("exp40_1_s2_both"))
+        bad = self.config("exp40_1_s2_both")
+        bad["finetune_init_ckpt_path"] = RUN.SOURCE
+        with self.assertRaisesRegex(ValueError, "exp39@16000"):
+            RUN.preflight_stage2_source(bad)
+
+    def test_exp40_1_staged_resume_keeps_full_horizon_and_source(self):
+        arm = "exp40_1_s2_both"
+        ckpt, _, original = self.managed(arm)
+        for target in (4000, 6000):
+            args = self.args("train", arm, "--resume", "--stop-after-step", str(target))
+            commands, plan, _ = RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+            self.assertEqual(option(commands[0], "--max_steps"), "6000")
+            self.assertEqual(option(commands[0], "--warmup_steps"), "200")
+            self.assertEqual(plan["resume_checkpoint"], RUN.relative(ckpt))
+            self.assertEqual(plan["source_checkpoint"], original["source_checkpoint"])
+            self.assertEqual(plan["fingerprint"], original["fingerprint"])
+        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 2000, "max_steps": 7550}))
+        with self.assertRaisesRegex(ValueError, "wrong exp40 horizon"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 2000, "max_steps": 6000}))
+        plan_path = ckpt.parent / "experiment_plan.json"
+        plan_path.write_text(json.dumps({**original, "source_checkpoint":
+                                         {"path": RUN.SOURCE, "step": 12000, "sha256": "a" * 64}}))
+        with self.assertRaisesRegex(ValueError, "source provenance"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+        plan_path.write_text(json.dumps(original))
+        final = ckpt.parent / "checkpoint-6000"
+        final.mkdir()
+        with self.assertRaisesRegex(ValueError, "Unexpected exp40 checkpoint|Incomplete resume checkpoint"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
 
     def test_stop_resume_fingerprint_batch_and_assets(self):
         first = self.config()
@@ -236,6 +349,82 @@ class Exp40RunnerTests(unittest.TestCase):
         commands, _, _ = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
         self.assertEqual(len(commands), 11)
         self.assertTrue(all("seen_validation" in cmd for cmd in commands))
+
+    def test_exp40_1_evaluation_nodes_and_final_provenance(self):
+        arm = "exp40_1_s2_both"
+        for step in (2000, 4000, 6000):
+            for split, count in (("validation", 2), ("test", 3)):
+                with self.subTest(step=step, split=split):
+                    args = self.args("infer", arm, "--checkpoint-step", str(step), "--split", split)
+                    commands, path, config = RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+                    self.assertEqual(len(commands), count)
+                    self.assertIn(f"checkpoint-{step}/{split}", str(path))
+                    self.assertEqual(option(commands[0], "--test-loc-batch-size"), "32")
+                    self.assertTrue(all(option(c, "--test-gen-batch-size") == "16" for c in commands[1:]))
+                    self.assertFalse(config["is_loc_perception_loss"])
+                    self.assertFalse(config["is_loc_aux_loss"])
+                    self.assertFalse(config["is_aux_loc_combined_em_unc_loss"])
+                    self.assertEqual(len(RUN.evaluation_snapshots(args, path, config)), count)
+                    metric_args = self.args("metrics", arm, "--checkpoint-step", str(step), "--split", split)
+                    metrics, _, _ = RUN.evaluation_plan(metric_args, RUN.resolve_config(metric_args, for_training=False))
+                    self.assertEqual(len(metrics), 11 if split == "validation" else 22)
+        final_args = self.args("infer", arm, "--checkpoint-step", "final", "--split", "validation")
+        self.assertIn("checkpoint-6000", str(RUN.evaluation_plan(
+            final_args, RUN.resolve_config(final_args, for_training=False))[1]))
+        old_step = self.args("infer", arm, "--checkpoint-step", "7550")
+        with self.assertRaisesRegex(ValueError, "checkpoint"):
+            RUN.evaluation_plan(old_step, RUN.resolve_config(old_step, for_training=False))
+
+        ckpt, _, plan = self.managed(arm, 6000)
+        executed = self.args("infer", arm, "--checkpoint-step", "final", "--execute")
+        RUN.evaluation_plan(executed, RUN.resolve_config(executed, for_training=False))
+        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 6000, "max_steps": 7550}))
+        with self.assertRaisesRegex(ValueError, "wrong Trainer step/horizon"):
+            RUN.evaluation_plan(executed, RUN.resolve_config(executed, for_training=False))
+        (ckpt / "trainer_state.json").write_text(json.dumps({"global_step": 6000, "max_steps": 6000}))
+        plan_path = ckpt.parent / "experiment_plan.json"
+        plan_path.write_text(json.dumps({**plan, "source_checkpoint":
+                                         {"path": RUN.SOURCE, "step": 12000, "sha256": "a" * 64}}))
+        with self.assertRaisesRegex(ValueError, "source provenance"):
+            RUN.evaluation_plan(executed, RUN.resolve_config(executed, for_training=False))
+
+    def test_exp40_1_metrics_batch_provenance(self):
+        arm = "exp40_1_s2_both"
+        self.managed(arm)
+        manifest_file = self.root / "data/csgo_benchmark_v2/benchmark_manifest.json"
+        shutil.copyfile(REPO / "data/csgo_benchmark_v2/benchmark_manifest.json", manifest_file)
+        args = ["--experiment", arm, "--checkpoint-step", "2000", "--split", "validation",
+                "--task", "localization", "--execute"]
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["infer", *args]), 0)
+            launch.assert_called_once()
+        output = self.root / f"outputs_loc/benchmark_v2/{arm}/checkpoint-2000/validation/seed_42/infer_bs32"
+        config_path = output / "evaluation_config.yaml"
+        config = RUN.read_yaml(config_path)
+        manifest = {"config_path": str(config_path.resolve()), "benchmark_v2_manifest": str(manifest_file),
+                    "benchmark_v2_split": "seen_validation", "maps": RUN.MAPS, "sample_count": 5000,
+                    "checkpoint": str(RUN.path_in_repo(config["ckpt_path"])),
+                    "ckpt_path": str(RUN.path_in_repo(config["ckpt_path"])), "seed": 42,
+                    "benchmark_v2_support_seed": None, "benchmark_v2_shots_per_map": None,
+                    "inference_execution": execution_contract("loc", 32)}
+        manifest_path = output / "inference_manifest.json"
+        manifest_path.write_text(json.dumps(manifest))
+        metric = {"XY_Dist": 1.0, "Z_Dist": 2.0, "Pitch_Dist": 3.0, "Yaw_Dist": 4.0}
+        summary = RUN.aggregates.build_localization_summary(
+            manifest=manifest_file, split="seen_validation", maps=RUN.MAPS,
+            per_map={name: metric for name in RUN.MAPS}, metrics_macro_map=metric,
+            inference_provenance={"path": str(manifest_path), "payload": manifest},
+            checkpoint=manifest["checkpoint"], seed=42, support_seed=None,
+            shots_per_map=None, sample_count=5000)
+        (output / "benchmark_csgo_v2_loc.json").write_text(json.dumps(summary))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *args]), 0)
+            launch.assert_not_called()
+        manifest["inference_execution"] = execution_contract("loc", 1)
+        manifest_path.write_text(json.dumps(manifest))
+        with patch.object(RUN.subprocess, "run") as launch, patch("sys.stdout", io.StringIO()), patch("sys.stderr", io.StringIO()):
+            self.assertEqual(RUN.main(["metrics", *args]), 1)
+            launch.assert_not_called()
 
     def test_batch_one_configs_are_isolated_by_route(self):
         args = self.args("infer", "exp40_s2_both", "--checkpoint-step", "4000", "--task", "all",
