@@ -3661,6 +3661,10 @@ aggregate "outputs_eval/benchmark_v2/${EXPERIMENT}/zero_shot/crossmap/continuous
 **Training**
 ```bash
 set -euo pipefail
+export WANDB_MODE=offline
+CUDA_VISIBLE_DEVICES=0,1 torchrun --nproc_per_node=2 --master_port=29565 train_csgo.py --csgo_config csgo_configs/exp32_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_gen --num_train_epochs 35 --per_device_train_batch_size 64 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
+
+set -euo pipefail
 CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29565 train_csgo.py --csgo_config csgo_configs/exp32_gen.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_gen --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit False --fix_connect False --fix_llm False --lora_r 32 --lora_alpha 64
 ```
 
@@ -3801,6 +3805,9 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
 **Training**
 ```bash
 set -euo pipefail
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29566 train_csgo.py --csgo_config csgo_configs/exp32_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_loc --num_train_epochs 35 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 4000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64
+
+set -euo pipefail
 CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=29566 train_csgo.py --csgo_config csgo_configs/exp32_loc.yaml --deepspeed deepspeed_scripts/zero0.json --model_name_or_path UniLIP-1B --unilip_factor 10.6 --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type "mix" --csgo_image_folder data/preprocessed_data --mm_use_im_start_end False --mm_use_im_patch_token False --bf16 True --output_dir outputs/csgo_1b/exp32_loc --num_train_epochs 50 --per_device_train_batch_size 128 --per_device_eval_batch_size 128 --gradient_accumulation_steps 1 --eval_strategy "no" --save_strategy "steps" --save_steps 2000 --save_total_limit 4 --learning_rate 1e-4 --weight_decay 0. --warmup_ratio 0.003 --lr_scheduler_type "cosine_with_min_lr" --model_max_length 1024 --logging_steps 1 --tf32 True --gradient_checkpointing True --dataloader_num_workers 4 --lazy_preprocess True --n_query 256 --n_und_query 0 --report_to wandb --fix_dit True --fix_connect True --fix_llm False --lora_r 32 --lora_alpha 64
 ```
 
@@ -3842,6 +3849,22 @@ CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py \
 ```
 
 如使用完整数据，将 setup 中的 `ASSET_ARGS=()`；若完整数据位于其他目录，还须修改原始测试 YAML 的 `data_dir`。
+
+#### Seen-10 TEST: exp32_loc checkpoint-12000
+**Inference and metric (same command)**
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT=outputs/csgo_1b/exp32_loc/checkpoint-12000/model.safetensors
+ASSET_ARGS=(--benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json)
+LOC_ROOT=outputs_loc/benchmark_v2/exp32_loc/checkpoint-12000/test/seed_42/infer_bs32
+
+CUDA_VISIBLE_DEVICES=0 python eval_csgo_loc.py \
+  --csgo_config csgo_configs/test/exp32_loc_loc.yaml \
+  --output_dir "$LOC_ROOT" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-loc-batch-size 32 "${ASSET_ARGS[@]}"
+```
 
 ## exp33
 - initialization: final Seen-10 `exp31` model; CrossMap-4 joint adaptation, full-head route.
@@ -9787,17 +9810,18 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp39_consloc2
-TRAIN_GPUS=0
+TRAIN_GPUS=0,1
 EVAL_GPU=0
 MASTER_PORT=29696
 python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 for STEP in 16000 final; do
-  python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-  python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 done
 ' >> fst_outs/exp39_consloc2.nohup.out 2>&1 < /dev/null &
+
+python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
 
 
@@ -9823,11 +9847,12 @@ TRAIN_GPUS=0
 EVAL_GPU=0
 MASTER_PORT=29697
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_P4.nohup.out 2>&1 < /dev/null &
+
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
 
 
@@ -9842,11 +9867,12 @@ TRAIN_GPUS=0
 EVAL_GPU=0
 MASTER_PORT=29697
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_P4.nohup.out 2>&1 < /dev/null &
+
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
 
 
@@ -9865,11 +9891,12 @@ TRAIN_GPUS=0
 EVAL_GPU=0
 MASTER_PORT=29698
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
+
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
 
 
@@ -9884,11 +9911,12 @@ TRAIN_GPUS=0
 EVAL_GPU=0
 MASTER_PORT=29698
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
+
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
 
 

@@ -35,6 +35,8 @@ use_short_instruction: True
 ### data
 benchmark_v2_manifest: "data/csgo_benchmark_v2/benchmark_manifest.json"
 benchmark_v2_split: "seen_train"
+# Load images/radars from the self-contained Benchmark v2 minimal bundle.
+benchmark_v2_asset_manifest: "data/csgo_benchmark_v2/minimal_dataset_report.json"
 data_dir: "data/preprocessed_data"
 train_maps: ['cs_agency', 'cs_italy', 'de_ancient', 'de_anubis', 'de_dust2', 'de_inferno', 'de_mirage', 'de_nuke', 'de_overpass', 'de_train']
 val_maps: ['cs_agency', 'cs_italy', 'de_ancient', 'de_anubis', 'de_dust2', 'de_inferno', 'de_mirage', 'de_nuke', 'de_overpass', 'de_train']

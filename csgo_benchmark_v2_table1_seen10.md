@@ -125,6 +125,23 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 - **Puffin§**：同配方审计 Total 4,560,857,827；文本 pose、`reasoning=False` 的生成路径使用 VAE 处理雷达，RADIO 视觉编码器 651,642,880 和视觉 projector 10,226,688 闲置，故 Active 为 3,898,988,259；LoRA 保持未合并。当前本机可找到的完整 legacy 评测与表中指标不符，未以 legacy 权重冒充 aligned 正式产物；此处列的是 aligned 配置参数，待对应 checkpoint／清单同步后复核。
 - **UniLIP**：定位 Active = 视觉塔 304,012,288 + 多模态投影 4,482,816 + LLM（含 LoRA）511,398,016 + 定位私有模块 466,025,248 = 1,285,918,368。生成入口只构建生成实例，没有调用 `initialize_localization_modules`，所以相同联合 checkpoint 在生成任务的 **Total 小于定位任务**；这不是把完整训练模型声称为更小模型。生成 Total 1,822,415,843，Active 再扣从未调用的 `lm_head` 135,903,488 和 VAE `down_blocks/down_mlp` 4,859,200，仅保留实际 decoder。完整训练 checkpoint 参数量分别为：`exp32_loc` 2,269,423,363，`exp32_gen` 2,274,580,227，`exp32/exp32_1` 2,288,441,091。主表 Total 始终使用任务推理实例口径；辅助 loss 未引入额外推理模块，联合两组的训练参数并集相同。
 
+### exp32／exp32_1 完成两个任务的模型总参数量（2026-11-14 补充）
+
+本小节统计**同一个模型完成定位＋图像生成两个任务所需的总权重**：共享主干只计一次，合并两个任务分支；离散生成与连续生成共用同一组权重。Total 为完整模型的唯一参数总数，Active 为两个任务前向所用参数的并集，Trainable 为联合训练可更新参数的并集。下表各单元格同时给出精确整数与 M 值（M = 10⁶，保留三位小数）。
+
+| Experiment | Total params（个；M） | Active params（个；M） | Trainable params（个；M） |
+|---|---:|---:|---:|
+| `exp32` | 2,288,441,091；2288.441 M | 2,147,678,403；2147.678 M | 77,002,784；77.003 M |
+| `exp32_1` | 2,288,441,091；2288.441 M | 2,147,678,403；2147.678 M | 77,002,784；77.003 M |
+
+合并去重的计算依据：
+
+- **Active** = 共享视觉／多模态投影／LLM 主干 **819,893,120** + 定位分支 **466,025,248** + 生成分支 **861,760,035** = **2,147,678,403**。
+- **Total** = Active **2,147,678,403** + 完整模型中保留的语言输出头 **135,903,488** + VAE `down_blocks/down_mlp` **4,859,200** = **2,288,441,091**。
+- **Trainable** = 共享 LLM LoRA **17,596,416** + 定位分支可训练参数 **38,092,576** + 生成分支可训练参数 **21,313,792** = **77,002,784**。原任务表中的 77,002,784 已是同一联合训练总数，合并时计一次。
+
+核对来源：[exp32 完整权重头部](outputs/csgo_1b/exp32/model.safetensors)、[exp32_1 逐项训练参数日志](logs/csgo_1b/exp32_1/train_20260920_183417/train.log)、[exp32 配置](csgo_configs/exp32.yaml)、[exp32_1 配置](csgo_configs/exp32_1.yaml)、[两任务前向](unilip/model/language_model/unified_unilip.py)及 [VAE 实现](unilip/model/vae_modules.py)。`exp32_1` 的 Total／Trainable 由日志总数及逐项参数表核对，Active 按相同结构与前向统计；当前原路径下缺少其完整权重，本次未重新读取其 checkpoint 头部。辅助目标复用已有模块，两组模型的参数结构与以上三项合计相同。
+
 ## exp37 新实验身份与 Table 1 实测候选（2026-11-04）
 
 当前为1次Stage1＋5次Stage2，共六组。2026-11-09本机核查：原四组 Stage2 的 batch8 最终 test 摘要共9份；`exp37_s2_both_b1` 新增最终 test 三项，定位推理 batch32、离散／连续生成推理 batch16，合计12份不同 batch 的 test 摘要。B1 的 local4000／6000 定位（batch32）与离散生成（batch16）validation 也已同步。B1 [训练状态](outputs/csgo_1b/exp37_s2_both_b1/trainer_state.json)记录 local6000/6000；最终 checkpoint 参数头部、训练日志和评测清单已核对。B2 的 validation 仍仅有 local4000 定位（batch1）；`exp37_s2_gen` 的 batch8 离散指标在CPU计算、连续指标在CUDA计算。完整结果、来源和跨 batch 限制见[主实验文档 B1 补充](csgo_benchmark_v2_experiments_results.md#exp37-b1-seen10-update-20261109)，原四组 batch8 队列历史见[专题](CSGO_BENCHMARK_V2_EXP37_SEEN10.md#exp37-bs8-update-20261109)。本实测区不覆盖上方历史Table 1行，不预先指定最终Ours；`exp31*`／`exp37*` 参数量见[本节参数审计](#exp31-exp37-parameter-audit-20261109)。
