@@ -10,6 +10,7 @@ from typing import Dict, Optional, Sequence, List
 import time
 import torch, gc
 import glob
+import re
 import transformers
 import tokenizers
 import random
@@ -287,6 +288,8 @@ class TrainingArguments(transformers.TrainingArguments):
     resume_checkpoint_train_batch_size: Optional[int] = None
     resume_checkpoint_gradient_accumulation_steps: Optional[int] = None
     resume_checkpoint_world_size: Optional[int] = None
+    csgo_global_batch_size: Optional[int] = None
+    resume_allow_bf16_world_size_change: bool = False
 
 
 
@@ -787,6 +790,107 @@ def _get_current_train_batch_unit(training_args) -> int:
     return max(1, int(training_args.per_device_train_batch_size))
 
 
+_RESUME_BATCH_METADATA_FILENAME = "unilip_resume_batch.json"
+
+
+def _positive_resume_int(value, name: str) -> int:
+    try:
+        result = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{name} must be a positive integer, got {value!r}") from exc
+    if result < 1 or str(result) != str(value).strip():
+        raise ValueError(f"{name} must be a positive integer, got {value!r}")
+    return result
+
+
+def _checkpoint_world_size(checkpoint_path: str, override=None) -> int:
+    """Read saved topology; TrainingArguments.world_size reflects the current process."""
+    if override is not None:
+        return _positive_resume_int(override, "resume_checkpoint_world_size")
+
+    metadata_path = os.path.join(checkpoint_path, _RESUME_BATCH_METADATA_FILENAME)
+    if os.path.isfile(metadata_path):
+        with open(metadata_path, encoding="utf-8") as handle:
+            metadata = json.load(handle)
+        return _positive_resume_int(metadata.get("world_size"), f"{metadata_path}: world_size")
+
+    names = os.listdir(checkpoint_path)
+    ranks = sorted(
+        int(match.group(1))
+        for name in names
+        if (match := re.fullmatch(r"rng_state_(\d+)\.pth", name)) is not None
+    )
+    if ranks:
+        if ranks != list(range(len(ranks))):
+            raise ValueError(f"Incomplete checkpoint RNG ranks in {checkpoint_path}: {ranks}")
+        return len(ranks)
+    if "rng_state.pth" in names:
+        return 1
+    raise ValueError(
+        f"Cannot infer checkpoint world_size safely from {checkpoint_path}. "
+        "Set resume_checkpoint_world_size explicitly or restore checkpoint RNG files."
+    )
+
+
+def _resume_gradient_accumulation(target_effective_batch: int, per_device_batch: int, current_world_size: int) -> int:
+    target = _positive_resume_int(target_effective_batch, "resume_target_effective_batch_size")
+    per_device = _positive_resume_int(per_device_batch, "per_device_train_batch_size")
+    world_size = _positive_resume_int(current_world_size, "current_world_size")
+    denominator = per_device * world_size
+    if target % denominator:
+        raise ValueError(
+            "Cannot preserve resume effective batch size exactly: "
+            f"target_effective_batch={target}, current_train_batch_unit={per_device}, "
+            f"world_size={world_size}."
+        )
+    return target // denominator
+
+
+def _synchronize_resume_deepspeed_batch(training_args) -> None:
+    """TrainingArguments already resolved DeepSpeed's 'auto' values at construction."""
+    config_owner = getattr(training_args, "hf_deepspeed_config", None)
+    plugin = getattr(training_args, "deepspeed_plugin", None)
+    if config_owner is None and plugin is None:
+        return
+    if config_owner is None or plugin is None:
+        raise ValueError("Incomplete DeepSpeed configuration in TrainingArguments")
+    if getattr(plugin, "hf_ds_config", None) is not config_owner:
+        raise ValueError("Accelerate and Trainer DeepSpeed configurations are not shared")
+    config = config_owner.config
+    config["train_micro_batch_size_per_gpu"] = int(training_args.per_device_train_batch_size)
+    config["gradient_accumulation_steps"] = int(training_args.gradient_accumulation_steps)
+    config["train_batch_size"] = (
+        config["train_micro_batch_size_per_gpu"]
+        * config["gradient_accumulation_steps"]
+        * _get_current_world_size(training_args)
+    )
+    plugin.gradient_accumulation_steps = config["gradient_accumulation_steps"]
+    plugin.deepspeed_config = config
+
+
+class ResumeBatchMetadataCallback(TrainerCallback):
+    def on_save(self, args, state, control, **kwargs):
+        if not state.is_world_process_zero:
+            return control
+        checkpoint_path = os.path.join(args.output_dir, f"checkpoint-{state.global_step}")
+        metadata = {
+            "version": 1,
+            "world_size": _positive_resume_int(args.world_size, "world_size"),
+            "per_device_train_batch_size": _positive_resume_int(args.per_device_train_batch_size, "per_device_train_batch_size"),
+            "gradient_accumulation_steps": _positive_resume_int(args.gradient_accumulation_steps, "gradient_accumulation_steps"),
+        }
+        metadata["effective_batch_size"] = (
+            metadata["world_size"] * metadata["per_device_train_batch_size"]
+            * metadata["gradient_accumulation_steps"]
+        )
+        path = os.path.join(checkpoint_path, _RESUME_BATCH_METADATA_FILENAME)
+        temporary_path = f"{path}.{os.getpid()}.tmp"
+        with open(temporary_path, "w", encoding="utf-8") as handle:
+            json.dump(metadata, handle, indent=2)
+        os.replace(temporary_path, path)
+        return control
+
+
 def _sanitize_trainer_state_for_resume(trainer_state: Dict, trainer_state_path: str) -> bool:
     valid_trainer_state_keys = set(getattr(TrainerState, "__dataclass_fields__", {}).keys())
     if not valid_trainer_state_keys:
@@ -841,7 +945,9 @@ def validate_resume_total_optimization_steps(trainer, checkpoint_path: Optional[
         )
     current_max_steps = int(initial_values[-1])
     current_update_steps_per_epoch = int(initial_values[1])
-    current_total_train_batch_size = int(initial_values[4])
+    # The tuple layout changed across Transformers versions. The public helper
+    # reports this diagnostic without depending on a positional return value.
+    current_total_train_batch_size = int(trainer.get_total_train_batch_size(trainer.args))
 
     if current_max_steps != checkpoint_max_steps:
         raise ValueError(
@@ -907,7 +1013,7 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
     state_changed = _sanitize_trainer_state_for_resume(trainer_state, trainer_state_path)
 
     checkpoint_training_args = _load_checkpoint_training_args(checkpoint_path)
-    logging.warning("Resume checkpoint Loaded:  %s", checkpoint_training_args)
+    logging.info("Resume checkpoint training arguments available: %s", checkpoint_training_args is not None)
 
     checkpoint_train_batch_size = checkpoint_train_batch_override
     if checkpoint_train_batch_size is None and checkpoint_training_args is not None:
@@ -915,12 +1021,10 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
     if checkpoint_train_batch_size is None:
         checkpoint_train_batch_size = trainer_state.get("train_batch_size", None)
     if checkpoint_train_batch_size is None:
-        logging.warning(
-            "Cannot infer checkpoint train batch size from %s; keep current gradient_accumulation_steps=%s.",
-            trainer_state_path,
-            training_args.gradient_accumulation_steps,
+        raise ValueError(
+            f"Cannot infer checkpoint per_device_train_batch_size from {checkpoint_path}. "
+            "Set resume_checkpoint_train_batch_size explicitly."
         )
-        return checkpoint_path
 
     checkpoint_train_batch_size = int(checkpoint_train_batch_size)
     checkpoint_grad_accum = checkpoint_grad_accum_override
@@ -930,42 +1034,21 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
         raise ValueError(
             "Cannot infer checkpoint gradient_accumulation_steps safely. "
             "Add `resume_checkpoint_gradient_accumulation_steps` to the csgo_config for this resume. "
-            "For your old exp27_1_dust2 checkpoint this should be 1."
+            "The saved checkpoint must supply this value."
         )
     checkpoint_grad_accum = int(checkpoint_grad_accum)
 
     current_world_size = _get_current_world_size(training_args)
-    checkpoint_world_size = checkpoint_world_size_override
-    if checkpoint_world_size is None:
-        checkpoint_world_size = current_world_size
-    if checkpoint_world_size is None:
-        raise ValueError(
-            "Cannot infer checkpoint world_size safely. "
-            "Add `resume_checkpoint_world_size` to the csgo_config for this resume. "
-            "For your old exp27_1_dust2 checkpoint this should be 2."
-        )
-    checkpoint_world_size = int(checkpoint_world_size)
+    checkpoint_world_size = _checkpoint_world_size(checkpoint_path, checkpoint_world_size_override)
 
     current_train_batch_unit = _get_current_train_batch_unit(training_args)
 
     if preserve_effective_batch:
         if target_effective_batch is None:
             target_effective_batch = checkpoint_train_batch_size * checkpoint_grad_accum * checkpoint_world_size
-        target_effective_batch = int(target_effective_batch)
-        denom = current_train_batch_unit * current_world_size
-        if target_effective_batch % denom != 0:
-            raise ValueError(
-                "Cannot preserve resume effective batch size exactly: "
-                f"target_effective_batch={target_effective_batch}, "
-                f"current_train_batch_unit={current_train_batch_unit}, "
-                f"world_size={current_world_size}. "
-                "Set resume_target_effective_batch_size to a divisible value or change per_device_train_batch_size."
-            )
-        new_grad_accum = target_effective_batch // denom
-        if new_grad_accum < 1:
-            raise ValueError(
-                f"Computed invalid gradient_accumulation_steps={new_grad_accum} from target_effective_batch={target_effective_batch}."
-            )
+        new_grad_accum = _resume_gradient_accumulation(
+            target_effective_batch, current_train_batch_unit, current_world_size
+        )
         if int(training_args.gradient_accumulation_steps) != new_grad_accum:
             logging.info(
                 "Resume batch override: checkpoint_train_batch_size=%s, checkpoint_grad_accum=%s, "
@@ -981,6 +1064,7 @@ def prepare_resume_batch_size_override(training_args, checkpoint_path: Optional[
                 new_grad_accum,
             )
             training_args.gradient_accumulation_steps = new_grad_accum
+        _synchronize_resume_deepspeed_batch(training_args)
 
     if rewrite_state_batch:
         new_state_batch_size = int(training_args.per_device_train_batch_size)
@@ -2522,6 +2606,16 @@ def train(attn_implementation=None, *, probe_request=None):
     if not isinstance(csgo_forward_sampler_epoch, bool):
         raise ValueError("csgo_forward_sampler_epoch must be a boolean")
     training_args.csgo_forward_sampler_epoch = csgo_forward_sampler_epoch
+    global_batch_size = csgo_config.get("csgo_global_batch_size", training_args.csgo_global_batch_size)
+    training_args.csgo_global_batch_size = (
+        None if global_batch_size is None else _positive_resume_int(global_batch_size, "csgo_global_batch_size")
+    )
+    allow_world_size_change = csgo_config.get(
+        "resume_allow_bf16_world_size_change", training_args.resume_allow_bf16_world_size_change
+    )
+    if not isinstance(allow_world_size_change, bool):
+        raise ValueError("resume_allow_bf16_world_size_change must be a boolean")
+    training_args.resume_allow_bf16_world_size_change = allow_world_size_change
 
     # Keep Benchmark v2 sampling in the YAML for reproducibility, while
     # allowing a CLI override for support-seed and shot-scaling experiments.
@@ -3620,7 +3714,7 @@ def train(attn_implementation=None, *, probe_request=None):
 
 
     unilip_log_callback = UniLIPLogCallback()
-    callbacks = [unilip_log_callback]
+    callbacks = [unilip_log_callback, ResumeBatchMetadataCallback()]
     if exact_checkpoint_callback is not None:
         callbacks.append(exact_checkpoint_callback)
     if training_stop_after_step is not None:

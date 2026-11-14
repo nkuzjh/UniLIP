@@ -1,4 +1,5 @@
 import os
+import hashlib
 import random
 import time
 import torch
@@ -310,6 +311,36 @@ class DistributedTaskTypeBatchSampler(BatchSampler):
 if is_sagemaker_mp_enabled():
     from transformers.trainer_pt_utils import smp_forward_backward
 
+class DistributedGlobalBatchSampler(DistributedTaskTypeBatchSampler):
+    """Split the original global batches across ranks and accumulation steps."""
+
+    def __init__(self, dataset, batch_size, global_batch_size, num_replicas, rank,
+                 gradient_accumulation_steps, shuffle=True):
+        expected = batch_size * num_replicas * gradient_accumulation_steps
+        if global_batch_size != expected:
+            raise ValueError(
+                f"csgo_global_batch_size={global_batch_size} must equal "
+                f"per-device batch * world size * gradient accumulation ({expected})"
+            )
+        if not 0 <= rank < num_replicas:
+            raise ValueError(f"Invalid sampler rank {rank} for world size {num_replicas}")
+        super().__init__(dataset, global_batch_size, shuffle=shuffle,
+                         num_replicas=1, rank=0, drop_last=True)
+        self.micro_batch_size = batch_size
+        self.replica_count = num_replicas
+        self.replica_rank = rank
+        self.accumulation_steps = gradient_accumulation_steps
+
+    def __iter__(self):
+        for global_batch in super().__iter__():
+            for micro_step in range(self.accumulation_steps):
+                start = (micro_step * self.replica_count + self.replica_rank) * self.micro_batch_size
+                yield global_batch[start:start + self.micro_batch_size]
+
+    def __len__(self):
+        return super().__len__() * self.accumulation_steps
+
+
 class SamplerEpochDataLoader(DataLoader):
     """Forward Trainer's epoch update to the existing batch sampler."""
 
@@ -324,6 +355,14 @@ class NonMixTrainer(Trainer):
         # Since the model returns python floats (scalars), we just need to store the latest value
         self.latest_loss_info = {}
         self._step_timing = self._new_step_timing()
+
+    def train(self, *args, **kwargs):
+        if not getattr(self.args, "resume_allow_bf16_world_size_change", False):
+            return super().train(*args, **kwargs)
+        from unilip.train.bf16_resume import bf16_cross_world_resume
+
+        with bf16_cross_world_resume():
+            return super().train(*args, **kwargs)
 
     def _new_step_timing(self):
         return {
@@ -377,9 +416,20 @@ class NonMixTrainer(Trainer):
         if checkpoint is None:
             return
 
+        single_rank_fallback = False
         if self.args.world_size > 1:
             process_index = self.args.process_index
             rng_file = os.path.join(checkpoint, f"rng_state_{process_index}.pth")
+            single_rng_file = os.path.join(checkpoint, "rng_state.pth")
+            if (not os.path.isfile(rng_file) and os.path.isfile(single_rng_file)
+                    and getattr(self.args, "resume_allow_bf16_world_size_change", False)):
+                rng_file = single_rng_file
+                single_rank_fallback = True
+                logger.warning(
+                    "Resuming single-rank RNG on rank %s: rank 0 restores the saved stream; "
+                    "new ranks use deterministic independent seeds. Cross-world resume "
+                    "does not reproduce the original single-rank random trajectory.", process_index
+                )
             if not os.path.isfile(rng_file):
                 logger.info(
                     f"Didn't find an RNG file for process {process_index}, if you are resuming a training that "
@@ -400,6 +450,17 @@ class NonMixTrainer(Trainer):
         except TypeError:
             checkpoint_rng_state = torch.load(rng_file)
 
+        if single_rank_fallback and self.args.process_index > 0:
+            seed_material = checkpoint_rng_state["cpu"].cpu().numpy().tobytes()
+            seed_material += str(self.args.process_index).encode("ascii")
+            seed = int.from_bytes(hashlib.sha256(seed_material).digest()[:8], "little")
+            random.seed(seed)
+            np.random.seed(seed % (2 ** 32))
+            torch.random.default_generator.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed(seed)
+            return
+
         random.setstate(checkpoint_rng_state["python"])
         np.random.set_state(checkpoint_rng_state["numpy"])
         torch.random.set_rng_state(checkpoint_rng_state["cpu"])
@@ -408,7 +469,14 @@ class NonMixTrainer(Trainer):
 
         is_distributed = self.args.parallel_mode == ParallelMode.DISTRIBUTED
         if torch.cuda.is_available():
-            set_rng_state_for_device("CUDA", torch.cuda, checkpoint_rng_state, is_distributed)
+            if single_rank_fallback:
+                cuda_rng = checkpoint_rng_state.get("cuda")
+                if isinstance(cuda_rng, (list, tuple)):
+                    cuda_rng = cuda_rng[0] if cuda_rng else None
+                if cuda_rng is not None:
+                    torch.cuda.set_rng_state(cuda_rng, device=torch.cuda.current_device())
+            else:
+                set_rng_state_for_device("CUDA", torch.cuda, checkpoint_rng_state, is_distributed)
         if is_torch_npu_available():
             set_rng_state_for_device("NPU", torch.npu, checkpoint_rng_state, is_distributed)
         if is_torch_hpu_available():
@@ -426,14 +494,25 @@ class NonMixTrainer(Trainer):
             raise ValueError("Trainer: training requires a train_dataset.")
 
         # 使用新的分布式采样器
-        batch_sampler = DistributedTaskTypeBatchSampler(
-            self.train_dataset,
-            batch_size=self._train_batch_size, # 注意：使用 _train_batch_size (per_device)
-            shuffle=True,
-            num_replicas=self.args.world_size,
-            rank=self.args.process_index,
-            drop_last=self.args.dataloader_drop_last,
-        )
+        global_batch_size = getattr(self.args, "csgo_global_batch_size", None)
+        if global_batch_size is not None:
+            batch_sampler = DistributedGlobalBatchSampler(
+                self.train_dataset,
+                batch_size=self._train_batch_size,
+                global_batch_size=global_batch_size,
+                num_replicas=self.args.world_size,
+                rank=self.args.process_index,
+                gradient_accumulation_steps=self.args.gradient_accumulation_steps,
+            )
+        else:
+            batch_sampler = DistributedTaskTypeBatchSampler(
+                self.train_dataset,
+                batch_size=self._train_batch_size,
+                shuffle=True,
+                num_replicas=self.args.world_size,
+                rank=self.args.process_index,
+                drop_last=self.args.dataloader_drop_last,
+            )
 
         loader_class = (
             SamplerEpochDataLoader

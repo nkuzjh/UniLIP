@@ -62,6 +62,10 @@ fix_dit: False
 
 ### optimizer
 learning_rate: 1.0e-4
+resume_preserve_effective_batch_size: True
+resume_target_effective_batch_size: 128
+csgo_global_batch_size: 128
+resume_allow_bf16_world_size_change: True
 mm_projector_lr: 1.0e-4
 weight_decay: 0.0
 warmup_ratio: 0.003
