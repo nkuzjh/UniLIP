@@ -102,6 +102,19 @@ class CSGOStagedTrainingTests(unittest.TestCase):
             args.save_total_limit = 1
             with self.assertRaisesRegex(ValueError, "save_total_limit"):
                 validate_checkpoint_saving(args, [2, 5], None, False)
+            self.assertIsInstance(
+                validate_checkpoint_saving(args, [2, 5], None, False,
+                                           allow_checkpoint_rotation=True),
+                SaveAtExactStepsCallback,
+            )
+            with self.assertRaisesRegex(ValueError, "must be a boolean"):
+                validate_checkpoint_saving(args, [2, 5], None, False,
+                                           allow_checkpoint_rotation=1)
+            for invalid_limit in (None, 0, True):
+                args.save_total_limit = invalid_limit
+                with self.subTest(limit=invalid_limit), self.assertRaisesRegex(ValueError, "positive save_total_limit"):
+                    validate_checkpoint_saving(args, [2, 5], None, False,
+                                               allow_checkpoint_rotation=True)
             args.save_total_limit = 2
             args.save_strategy = "steps"
             with self.assertRaisesRegex(ValueError, "save_strategy"):
@@ -176,6 +189,42 @@ class CSGOStagedTrainingTests(unittest.TestCase):
                 sorted(p.name for p in Path(output_dir).glob("checkpoint-*")),
                 ["checkpoint-2", "checkpoint-5"],
             )
+
+    def test_rolling_full_checkpoints_survive_pause_and_resume(self):
+        with tempfile.TemporaryDirectory() as output_dir:
+            args = TrainingArguments(
+                output_dir=output_dir, max_steps=5, per_device_train_batch_size=1,
+                save_strategy="no", save_only_model=False, save_total_limit=2,
+                use_cpu=True, report_to="none", disable_tqdm=True,
+            )
+            steps = [1, 2, 3, 4, 5]
+
+            def make_trainer(stop):
+                callbacks = [validate_checkpoint_saving(
+                    args, steps, stop, False, allow_checkpoint_rotation=True)]
+                if stop is not None:
+                    callbacks.append(StopAndSaveAtStepCallback(stop))
+                return Trainer(model=TinyTrainModel(PretrainedConfig()), args=args,
+                               train_dataset=TinyDataset(), callbacks=callbacks)
+
+            paused = make_trainer(2)
+            paused.train()
+            root = Path(output_dir)
+            self.assertEqual(paused.state.global_step, 2)
+            self.assertEqual(sorted(p.name for p in root.glob("checkpoint-*")),
+                             ["checkpoint-1", "checkpoint-2"])
+            resumed = make_trainer(None)
+            resumed.train(resume_from_checkpoint=str(root / "checkpoint-2"))
+            self.assertEqual(resumed.state.global_step, 5)
+            self.assertEqual(sorted(p.name for p in root.glob("checkpoint-*")),
+                             ["checkpoint-4", "checkpoint-5"])
+            for step in (4, 5):
+                checkpoint = root / f"checkpoint-{step}"
+                state = json.loads((checkpoint / "trainer_state.json").read_text())
+                self.assertEqual((state["global_step"], state["max_steps"]), (step, 5))
+                for name in ("model.safetensors", "training_args.bin", "optimizer.pt",
+                             "scheduler.pt", "rng_state.pth"):
+                    self.assertTrue((checkpoint / name).is_file(), (step, name))
 
     def test_final_root_export_is_opt_in_for_exact_checkpoint_runs(self):
         save_model = Mock()

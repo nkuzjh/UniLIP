@@ -32,6 +32,15 @@ EXP39_EXPERIMENTS = tuple(EXP39_ALPHA)
 STAGE1 = ("exp37", *EXP39_EXPERIMENTS)
 EXP39_MAX_STEPS = 19550
 EXP39_CHECKPOINT_STEPS = (12000, 16000, EXP39_MAX_STEPS)
+CONSLOC2_CHECKPOINT_STEPS = (4000, 8000, 12000, 16000, EXP39_MAX_STEPS)
+
+
+def exp39_checkpoint_steps(experiment: str) -> tuple[int, ...]:
+    return CONSLOC2_CHECKPOINT_STEPS if experiment == "exp39_consloc2" else EXP39_CHECKPOINT_STEPS
+
+
+def exp39_save_total_limit(experiment: str) -> int:
+    return 2 if experiment == "exp39_consloc2" else 3
 EXPERIMENTS = (*STAGE1, "exp37_s2_gen", "exp37_s2_loc", "exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
 SINGLES = ("exp37_s2_gen", "exp37_s2_loc")
 JOINT_STAGE2 = ("exp37_s2", "exp37_s2_both", "exp37_s2_both_b1")
@@ -111,14 +120,16 @@ def final_checkpoint_step(experiment: str) -> int:
         raise ValueError(f"Final evaluation requires a managed training recipe: {out}")
     if experiment in EXP39_EXPERIMENTS:
         config = read_yaml(out / "resolved_config.yaml")
-        validate_config(config)
+        validate_config(config, allow_legacy_consloc2=True)
         plan = json.loads((out / "experiment_plan.json").read_text(encoding="utf-8"))
         runtime = plan.get("runtime", {})
         if (plan.get("experiment") != experiment or plan.get("fingerprint") != fingerprint(config, runtime)
                 or runtime.get("max_steps") != EXP39_MAX_STEPS
-                or runtime.get("checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS)
+                or runtime.get("checkpoint_steps") != config["training_checkpoint_steps"]
                 or runtime.get("epochs") != 50 or runtime.get("source_batch") != 128
-                or runtime.get("save_total_limit") != 3 or runtime.get("warmup_ratio") != 0.003):
+                or runtime.get("save_total_limit") != (3 if config["training_checkpoint_steps"] == list(EXP39_CHECKPOINT_STEPS)
+                                                        else exp39_save_total_limit(experiment))
+                or runtime.get("warmup_ratio") != 0.003):
             raise ValueError("exp39 final plan identity or horizon changed")
         ckpt = out / f"checkpoint-{EXP39_MAX_STEPS}"
         state = trainer_state(ckpt / "trainer_state.json")
@@ -207,12 +218,21 @@ def resolve_config(args: argparse.Namespace, *, for_training: bool) -> dict:
             except (ValueError, OSError):
                 # A dry plan may precede Stage 1. Execute requires preflight.
                 pass
+        if (args.experiment == "exp39_consloc2"
+                and config.get("training_checkpoint_steps") == list(EXP39_CHECKPOINT_STEPS)):
+            # The stored recipe is verified against its original plan in training_plan.
+            config["training_checkpoint_steps"] = list(CONSLOC2_CHECKPOINT_STEPS)
+            config["training_checkpoint_allow_rotation"] = True
     return config
 
 
-def validate_config(config: dict) -> None:
+def validate_config(config: dict, *, allow_legacy_consloc2: bool = False) -> None:
     experiment = config.get("exp37_experiment")
     expected = read_yaml(recipe_path(experiment))
+    if (allow_legacy_consloc2 and experiment == "exp39_consloc2"
+            and config.get("training_checkpoint_steps") == list(EXP39_CHECKPOINT_STEPS)):
+        expected["training_checkpoint_steps"] = list(EXP39_CHECKPOINT_STEPS)
+        expected.pop("training_checkpoint_allow_rotation")
     for key in set(config) | set(expected):
         if key not in RECIPE_OVERRIDES and config.get(key, object()) != expected.get(key, object()):
             raise ValueError(f"{experiment} recipe differs in fixed field {key}")
@@ -236,18 +256,21 @@ def validate_config(config: dict) -> None:
             raise ValueError("Stage 1 must start from original model and pi05")
         stop = config.get("training_stop_after_step")
         if stop is not None and (type(stop) is not int or
-                                 (stop not in EXP39_CHECKPOINT_STEPS if experiment in EXP39_EXPERIMENTS else stop <= 0)):
+                                 (stop not in exp39_checkpoint_steps(experiment) if experiment in EXP39_EXPERIMENTS else stop <= 0)):
             raise ValueError("Invalid Stage 1 stop")
         if experiment in EXP39_EXPERIMENTS:
-            if config.get("training_checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS):
-                raise ValueError("exp39 must save only checkpoints 12000, 16000, and 19550")
+            allowed_steps = (EXP39_CHECKPOINT_STEPS if allow_legacy_consloc2 and experiment == "exp39_consloc2"
+                             and config.get("training_checkpoint_steps") == list(EXP39_CHECKPOINT_STEPS)
+                             else exp39_checkpoint_steps(experiment))
+            if config.get("training_checkpoint_steps") != list(allowed_steps):
+                raise ValueError(f"{experiment} has invalid checkpoint steps")
             if config.get("save_final_model_at_output_root") is not False:
                 raise ValueError("exp39 root model export must be disabled")
             base = read_yaml(recipe_path("exp37"))
             differences = {key for key in config.keys() | base.keys()
                            if config.get(key) != base.get(key)}
             allowed = {"exp37_experiment", "alpha_loc_loss", "training_checkpoint_steps",
-                       "save_final_model_at_output_root", *RECIPE_OVERRIDES}
+                       "training_checkpoint_allow_rotation", "save_final_model_at_output_root", *RECIPE_OVERRIDES}
             if differences - allowed or config.get("alpha_loc_loss") != EXP39_ALPHA[experiment]:
                 raise ValueError("exp39 must match exp37 except localization loss and checkpoint controls")
     else:
@@ -275,6 +298,34 @@ def fingerprint(config: dict, runtime: dict) -> str:
     fixed = copy.deepcopy(config)
     fixed.pop("training_stop_after_step", None)
     return hashlib.sha256(json.dumps({"config": fixed, "runtime": runtime}, sort_keys=True).encode()).hexdigest()
+
+
+def legacy_consloc2_plan_identity(args: argparse.Namespace, config: dict, runtime: dict,
+                                  out: Path) -> str | None:
+    """Plan an old save policy migration only when all other training inputs match."""
+    saved_path, plan_path = out / "resolved_config.yaml", out / "experiment_plan.json"
+    if (args.experiment != "exp39_consloc2"
+            or not saved_path.is_file() or not plan_path.is_file()):
+        return None
+    saved = read_yaml(saved_path)
+    if saved.get("training_checkpoint_steps") != list(EXP39_CHECKPOINT_STEPS):
+        return None
+    validate_config(saved, allow_legacy_consloc2=True)
+    expected_config = copy.deepcopy(config)
+    expected_config["training_checkpoint_steps"] = list(EXP39_CHECKPOINT_STEPS)
+    expected_config.pop("training_checkpoint_allow_rotation")
+    saved.pop("training_stop_after_step", None)
+    expected_config.pop("training_stop_after_step", None)
+    if saved != expected_config:
+        raise ValueError("Legacy exp39_consloc2 recipe changed beyond checkpoint saving")
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    expected_runtime = {**runtime, "checkpoint_steps": list(EXP39_CHECKPOINT_STEPS),
+                        "save_total_limit": 3}
+    if (plan.get("experiment") != args.experiment or plan.get("runtime") != expected_runtime
+            or plan.get("fingerprint") != fingerprint(saved, expected_runtime)
+            or plan.get("source_checkpoint") is not None):
+        raise ValueError("Legacy exp39_consloc2 plan changed beyond checkpoint saving")
+    return plan["fingerprint"]
 
 
 def latest_checkpoint(out: Path) -> Path | None:
@@ -333,7 +384,8 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     if exp39:
         runtime = dict(epochs=50, source_batch=128, world_size=len(devices), micro_batch=micro,
                        gradient_accumulation_steps=gas, seed=args.seed,
-                       checkpoint_steps=list(EXP39_CHECKPOINT_STEPS), save_total_limit=3,
+                       checkpoint_steps=list(exp39_checkpoint_steps(args.experiment)),
+                       save_total_limit=exp39_save_total_limit(args.experiment),
                        report_to=args.report_to, max_steps=EXP39_MAX_STEPS,
                        warmup_steps=None, warmup_ratio=config["warmup_ratio"],
                        optimizer="adamw_torch", adam_beta1=0.9, adam_beta2=0.999,
@@ -349,12 +401,13 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
     if exp39:
         present = {int(p.name[11:]) for p in out.glob("checkpoint-*")
                    if p.is_dir() and p.name[11:].isdigit()}
-        if not present.issubset(EXP39_CHECKPOINT_STEPS):
+        if not present.issubset(exp39_checkpoint_steps(args.experiment)):
             raise ValueError(f"Unexpected exp39 checkpoint steps: {sorted(present)}")
         if (out / "model.safetensors").exists():
             raise ValueError("Unexpected exp39 root model export")
     identity = fingerprint(config, runtime)
-    checkpoint, previous = check_resume(out, identity, args.resume)
+    prior_identity = legacy_consloc2_plan_identity(args, config, runtime, out)
+    checkpoint, previous = check_resume(out, prior_identity or identity, args.resume)
     if exp39:
         if previous and previous.get("source_checkpoint") is not None:
             raise ValueError("exp39 resume plan has unexpected source checkpoint")
@@ -382,7 +435,7 @@ def training_plan(args: argparse.Namespace, config: dict) -> tuple[list[list[str
             raise ValueError("Checkpoint has reached requested stop")
         if exp39 and state["global_step"] == EXP39_MAX_STEPS:
             raise ValueError("exp39 already reached final checkpoint")
-    save_args = (["--save_strategy", "no", "--save_total_limit", "3"] if exp39 else
+    save_args = (["--save_strategy", "no", "--save_total_limit", str(runtime["save_total_limit"])] if exp39 else
                  ["--save_strategy", "steps", "--save_steps", str(runtime["save_steps"]),
                   "--save_total_limit", "6"])
     cmd = [sys.executable, "-m", "torch.distributed.run", f"--nproc_per_node={len(devices)}",
@@ -808,7 +861,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.experiment is None:
             raise ValueError("--experiment is required")
         config = resolve_config(args, for_training=args.command == "train")
-        validate_config(config)
+        validate_config(config, allow_legacy_consloc2=args.command in ("infer", "metrics"))
         if args.command == "train":
             commands, metadata, out = training_plan(args, config)
             if args.execute and args.experiment not in STAGE1 and not args.resume:

@@ -1,11 +1,11 @@
 # exp39_consloc2 Seen10 Stage 1: original UniLIP-1B + pi05, paired joint, main localization alpha 2.
 # Train with a fixed 19550-step scheduler horizon and 50 epochs; default is the full run.
-# Full checkpoints only at 12000, 16000, 19550; keep all three and no root model export.
-# Evaluate validation/test at 16000 and final; 12000 is saved for sourcing or resume.
+# Full checkpoints at 4000, 8000, 12000, 16000, 19550; retain the latest two.
+# Evaluate validation/test at 16000 and final; earlier saves are for sourcing or resume.
 # Source batch 128 (default one GPU: micro 4, GAS 32).
 # Default backend is minimal assets; switch to full with --asset-mode full --data-dir PATH.
 # Train/infer/metrics and resume use the saved resolved_config.yaml backend/recipe.
-# Invoke through scripts/run_exp37_seen10.py. Stop at 12000 or 16000 explicitly;
+# Invoke through scripts/run_exp37_seen10.py. Stop at a listed save step explicitly;
 # resume this experiment with --resume --stop-after-step 0 to finish the full horizon.
 debug: false
 is_multi_task: true
@@ -111,7 +111,10 @@ aux_loc_timestep_weight_renorm: none
 is_noisy_loc_loss: false
 exp37_experiment: exp39_consloc2
 training_checkpoint_steps:
+- 4000
+- 8000
 - 12000
 - 16000
 - 19550
+training_checkpoint_allow_rotation: true
 save_final_model_at_output_root: false

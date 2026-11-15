@@ -353,18 +353,61 @@ def final_model(out: Path, *, strict: bool) -> Path:
     model = out / "model.safetensors"
     if strict:
         state_path = out / "trainer_state.json"
-        if not model.is_file() or not state_path.is_file():
-            raise ValueError(f"Missing completed 400-step adaptation: {out}")
+        missing = [str(path) for path in (model, state_path) if not path.is_file()]
+        if missing:
+            raise ValueError(
+                f"Missing completed 400-step adaptation: {out}; missing files: "
+                f"{', '.join(missing)}; expected Trainer global_step/max_steps=400/400. "
+                "Check the earlier training log for the first error.")
         state = seen37.trainer_state(state_path)
         if state["global_step"] != 400 or state["max_steps"] != 400:
-            raise ValueError(f"Adaptation has not completed exactly 400 steps: {state_path}")
+            raise ValueError(
+                f"Adaptation has not completed exactly 400 steps: {state_path}; "
+                f"Trainer global_step/max_steps={state['global_step']}/{state['max_steps']} "
+                "(expected 400/400). Check the earlier training log for the first error.")
     return model
+
+
+def adaptation_status(out: Path) -> dict:
+    paths = {"resolved_config.yaml": out / "resolved_config.yaml",
+             "experiment_plan.json": out / "experiment_plan.json",
+             "model.safetensors": out / "model.safetensors",
+             "trainer_state.json": out / "trainer_state.json"}
+    present = {name: path.is_file() for name, path in paths.items()}
+    result = {"snapshot": present["experiment_plan.json"],
+              "model": present["model.safetensors"],
+              "state": present["trainer_state.json"],
+              "global_step": None, "max_steps": None,
+              "missing_artifacts": [name for name, exists in present.items() if not exists]}
+    if present["trainer_state.json"]:
+        try:
+            state = seen37.trainer_state(paths["trainer_state.json"])
+            result["global_step"], result["max_steps"] = state["global_step"], state["max_steps"]
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            result["training_status"] = "invalid_state"
+            result["state_error"] = str(exc)
+            return result
+    if not any(present.values()):
+        result["training_status"] = "missing"
+    elif (present["resolved_config.yaml"] and present["experiment_plan.json"] and
+          not present["model.safetensors"] and not present["trainer_state.json"]):
+        result["training_status"] = "snapshot_only"
+    elif (not result["missing_artifacts"] and
+          (result["global_step"], result["max_steps"]) == (400, 400)):
+        result["training_status"] = "complete"
+    else:
+        result["training_status"] = "incomplete"
+    return result
 
 
 def train_command(config: dict, out: Path, shots: int, args: argparse.Namespace) -> list[str]:
     local = copy.copy(args)
     local.experiment, local.shots = "exp37_fs_gen", shots
-    return legacy.train_command(config, out, local)
+    command = legacy.train_command(config, out, local)
+    if args.master_port == 0:
+        port_index = command.index("--master_port=0")
+        command[port_index:port_index + 1] = ["--standalone", "--nnodes=1"]
+    return command
 
 
 def validate_predictions(output: Path, maps: tuple[str, ...], task: str) -> None:
@@ -394,7 +437,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--pi05-path")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--support-seed", type=int, default=0)
-    p.add_argument("--master-port", type=int, default=29642)
+    p.add_argument("--master-port", type=int, default=29642,
+                   help="0: independent single-node torchrun rendezvous; 1-65535: fixed port (default: 29642)")
     p.add_argument("--cuda-device", default="0")
     p.add_argument("--report-to", default="none")
     p.add_argument("--execute", action="store_true")
@@ -407,7 +451,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
     if args.seed != 42 or args.support_seed != 0 or args.shots not in SHOTS:
         raise ValueError("Protocol fixes seed 42, support seed 0 and shots 100/50/20/10")
     if (not args.cuda_device or "," in args.cuda_device or
-        any(c.isspace() for c in args.cuda_device) or not 1 <= args.master_port <= 65535):
+        any(c.isspace() for c in args.cuda_device) or not 0 <= args.master_port <= 65535):
         raise ValueError("Select one CUDA device and a valid master port")
     if args.zero_shot and args.map is not None:
         raise ValueError("Zero-shot has no --map")
@@ -440,9 +484,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             details["source_error"] = str(exc)
             details["source_status"] = "waiting" if not SOURCE.is_file() else "invalid"
         details["adaptations"] = [
-            {"map": m, "shots": n, "snapshot": (model_dir(m, n) / "experiment_plan.json").is_file(),
-             "model": (model_dir(m, n) / "model.safetensors").is_file(),
-             "state": (model_dir(m, n) / "trainer_state.json").is_file()}
+            {"map": m, "shots": n, **adaptation_status(model_dir(m, n))}
             for m in MAPS for n in SHOTS]
         return commands, writes, details
     if args.command == "train":
@@ -540,7 +582,7 @@ def main(argv: list[str] | None = None) -> int:
         commands, writes, details = plan(args)
         print(json.dumps({"mode": "execute" if args.execute else "dry-run", "details": details,
                           "writes": [rel(path) for path, _ in writes],
-                          "commands": [shlex.join(command) for command in commands]}, indent=2))
+                          "commands": [shlex.join(command) for command in commands]}, indent=2), flush=True)
         if args.execute and args.command not in ("validate", "source-check", "status"):
             for path, content in writes:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -548,6 +590,8 @@ def main(argv: list[str] | None = None) -> int:
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": args.cuda_device}
             for command in commands:
                 subprocess.run(command, cwd=ROOT, env=env, check=True)
+                if args.command == "train":
+                    final_model(model_dir(args.map, args.shots), strict=True)
         return 0
     except (ValueError, OSError, KeyError, TypeError, yaml.YAMLError,
             subprocess.CalledProcessError) as exc:

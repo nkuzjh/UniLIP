@@ -1,10 +1,11 @@
 """CPU checks for exp32_gen@12000 Unseen-4 transfer preparation."""
 from __future__ import annotations
 
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -140,15 +141,116 @@ class Exp32GenUnseen4Tests(unittest.TestCase):
     def test_few_infer_requires_final_400(self):
         with tempfile.TemporaryDirectory() as directory:
             out = Path(directory)
+            with self.assertRaisesRegex(ValueError, "model.safetensors.*trainer_state.json.*400/400.*earlier training log"):
+                runner.final_model(out, strict=True)
             (out / "model.safetensors").write_bytes(b"model")
             state = out / "trainer_state.json"
+            with self.assertRaisesRegex(ValueError, "trainer_state.json.*400/400"):
+                runner.final_model(out, strict=True)
             state.write_text(json.dumps({"global_step": 399, "max_steps": 400}),
                              encoding="utf-8")
-            with self.assertRaisesRegex(ValueError, "exactly 400"):
+            with self.assertRaisesRegex(ValueError, "exactly 400.*399/400"):
                 runner.final_model(out, strict=True)
             state.write_text(json.dumps({"global_step": 400, "max_steps": 400}),
                              encoding="utf-8")
             self.assertEqual(runner.final_model(out, strict=True), out / "model.safetensors")
+
+    def test_status_reports_missing_snapshot_incomplete_and_complete(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            def output(map_name, shots):
+                return root / map_name / str(shots)
+
+            for shots in (50, 20, 10):
+                out = output("cs_office", shots)
+                out.mkdir(parents=True)
+                (out / "resolved_config.yaml").write_text("fixture", encoding="utf-8")
+                (out / "experiment_plan.json").write_text("{}", encoding="utf-8")
+            for shots, step in ((20, 399), (10, 400)):
+                out = output("cs_office", shots)
+                (out / "model.safetensors").write_bytes(b"model")
+                (out / "trainer_state.json").write_text(
+                    json.dumps({"global_step": step, "max_steps": 400}), encoding="utf-8")
+            with patch.object(runner, "model_dir", side_effect=output), patch.object(
+                    runner, "source_checkpoint", return_value=(runner.SOURCE, {"verified": True})):
+                _, _, details = runner.plan(args("status"))
+            points = {(p["map"], p["shots"]): p for p in details["adaptations"]}
+            missing = points["cs_office", 100]
+            self.assertEqual(missing["training_status"], "missing")
+            self.assertEqual(missing["global_step"], None)
+            self.assertEqual(set(missing["missing_artifacts"]), {
+                "resolved_config.yaml", "experiment_plan.json", "model.safetensors", "trainer_state.json"})
+            snapshot = points["cs_office", 50]
+            self.assertEqual(snapshot["training_status"], "snapshot_only")
+            self.assertEqual(snapshot["missing_artifacts"], ["model.safetensors", "trainer_state.json"])
+            incomplete = points["cs_office", 20]
+            self.assertEqual((incomplete["training_status"], incomplete["global_step"],
+                              incomplete["max_steps"], incomplete["missing_artifacts"]),
+                             ("incomplete", 399, 400, []))
+            complete = points["cs_office", 10]
+            self.assertEqual((complete["training_status"], complete["global_step"],
+                              complete["max_steps"], complete["missing_artifacts"]),
+                             ("complete", 400, 400, []))
+
+    def test_train_execute_checks_process_and_completed_artifacts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = fake_source(root)
+            command = ["train", "--map", "cs_office", "--shots", "10", "--execute"]
+            def out_dir(_map, _shots):
+                return root / "adapt"
+
+            def completed_run(*_args, **_kwargs):
+                (out / "model.safetensors").write_bytes(b"model")
+                (out / "trainer_state.json").write_text(
+                    json.dumps({"global_step": 400, "max_steps": 400}), encoding="utf-8")
+                return subprocess.CompletedProcess([], 0)
+
+            with patch.object(runner, "validate_matrix"), patch.object(runner, "SOURCE", source), patch.object(
+                    runner.seen37, "tensor_header", return_value=HEADER), patch.object(
+                    runner, "model_dir", side_effect=out_dir), patch.object(
+                    runner.subprocess, "run", side_effect=subprocess.CalledProcessError(1, ["train"])) as run, \
+                    redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
+                self.assertEqual(runner.main(command), 1)
+                self.assertEqual(run.call_count, 1, errors.getvalue())
+                self.assertIn("returned non-zero exit status", errors.getvalue())
+
+            # A new output directory is required for each fresh adaptation attempt.
+            for name, side_effect, expected in (
+                    ("missing", None, 1), ("complete", completed_run, 0)):
+                with self.subTest(name=name), tempfile.TemporaryDirectory() as output_root:
+                    out = Path(output_root) / "adapt"
+                    with patch.object(runner, "validate_matrix"), patch.object(runner, "SOURCE", source), patch.object(
+                            runner.seen37, "tensor_header", return_value=HEADER), patch.object(
+                            runner, "model_dir", return_value=out), patch.object(
+                            runner.subprocess, "run", side_effect=side_effect) as run, \
+                            redirect_stdout(StringIO()), redirect_stderr(StringIO()) as errors:
+                        self.assertEqual(runner.main(command), expected)
+                        self.assertEqual(run.call_count, 1)
+                        if name == "missing":
+                            self.assertIn("Missing completed 400-step adaptation", errors.getvalue())
+
+    def test_torchrun_port_zero_is_standalone_and_fixed_port_preserved(self):
+        out = Path("/tmp/exp32-test-only")
+        cfg = runner.recipe(args("train", "--map", "cs_office", "--shots", "10"),
+                            "cs_office", 10, zero_shot=False)
+        for port in (0, 29740):
+            with self.subTest(port=port):
+                local = args("train", "--map", "cs_office", "--shots", "10",
+                             "--master-port", str(port))
+                command = runner.train_command(cfg, out, 10, local)
+                self.assertEqual(command[command.index("--max_steps") + 1], "400")
+                if port == 0:
+                    self.assertIn("--standalone", command)
+                    self.assertIn("--nnodes=1", command)
+                    self.assertFalse(any(part.startswith("--master_port") for part in command))
+                else:
+                    self.assertIn("--master_port=29740", command)
+                    self.assertNotIn("--standalone", command)
+        for port in (-1, 65536):
+            with self.subTest(invalid_port=port), self.assertRaisesRegex(ValueError, "valid master port"):
+                runner.plan(args("train", "--map", "cs_office", "--shots", "10",
+                                 "--master-port", str(port)))
 
     def test_strict_source_identity_and_no_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -2598,6 +2598,7 @@ def train(attn_implementation=None, *, probe_request=None):
     exact_checkpoint_callback = validate_checkpoint_saving(
         training_args, training_checkpoint_steps, training_stop_after_step,
         save_final_model_at_output_root,
+        allow_checkpoint_rotation=csgo_config.get("training_checkpoint_allow_rotation", False),
     )
     csgo_loss_per_microbatch_mean = csgo_config.get("csgo_loss_per_microbatch_mean", False)
     if not isinstance(csgo_loss_per_microbatch_mean, bool):

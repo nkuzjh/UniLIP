@@ -3799,10 +3799,10 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
 如使用完整数据，将 setup 中的 `ASSET_ARGS=()`、`GT_ROOT=data/preprocessed_data`、`GT_SUFFIX=/imgs` 一并设置；推理与指标命令都使用同一个开关。若完整数据位于其他目录，还须同步修改两个原始测试 YAML 的 `data_dir` 与指标命令的 `--data_dir`。
 
 <a id="exp32-gen-test-12000"></a>
+
 #### Seen-10 TEST: exp32_gen checkpoint-12000
 
 使用exp32_gen checkpoint-12000评估Seen-10离散与连续两项。默认使用已验证的 minimal 资源包；以下命令依次执行初始化、离散推理与评测、连续推理与评测，并按地图汇总指标。推理 batch 为 16，指标计算 batch 为 1，seed 为 42。
-
 ```bash
 set -euo pipefail
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
@@ -3835,9 +3835,21 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
   --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN_MAPS[@]}" \
   --input_root "${GEN_ROOT}/discrete" --kind discrete \
   --output "${GEN_ROOT}/discrete/summary.json"
+```
+
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT=outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors
+test -f "$CKPT"
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+ASSET_ARGS=(--benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json)
+GT_ROOT=data/csgo_benchmark_v2/images
+GT_SUFFIX=
+GEN_ROOT=outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16
 
 # 连续生成：推理
-CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
+CUDA_VISIBLE_DEVICES=1 python eval_csgo.py \
   --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml \
   --output_dir "${GEN_ROOT}/continuous" --ckpt_path "$CKPT" --seed 42 \
   --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}" \
@@ -3845,7 +3857,7 @@ CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
 
 # 连续生成：逐图评测与汇总
 for map_name in "${SEEN_MAPS[@]}"; do
-  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py \
+  CUDA_VISIBLE_DEVICES=1 python benchmark_csgo_v1_conti.py \
     --gt "${GT_ROOT}/${map_name}${GT_SUFFIX}" \
     --pred "${GEN_ROOT}/continuous/gen_imgs/${map_name}" \
     --batch_size 1 --device cuda --paired_size 448 \
@@ -6843,11 +6855,13 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 ```bash
 set -euo pipefail
 mkdir -p fst_outs
+python scripts/run_exp32_3maps.py train "${TRAIN_ARGS[@]}" --stop-after-step 3600 --execute --resume
+
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp32_3maps_gen_single
 TRAIN_GPUS=1,3
-EVAL_GPU=1
+EVAL_GPU=3
 MODEL_PATH="${MODEL_PATH:-UniLIP-1B}"
 PI05_PATH="${PI05_PATH:-$HOME/.cache/openpi/openpi-assets/checkpoints/pi05_base}"
 TRAIN_ARGS=(
@@ -6856,7 +6870,6 @@ TRAIN_ARGS=(
   --seed 42 --report-to none --asset-mode minimal
   --model-path "$MODEL_PATH" --pi05-path "$PI05_PATH"
 )
-python scripts/run_exp32_3maps.py train "${TRAIN_ARGS[@]}" --stop-after-step 3600 --execute
 python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp32_3maps.py train "${TRAIN_ARGS[@]}" --resume --stop-after-step 4800 --execute
@@ -9085,7 +9098,7 @@ done
 
 <a id="exp32-gen-12000-crossmap-manual"></a>
 
-本节记录运行服务器保存好checkpoint-12000后的手动执行方案；代码与配置准备后仅作规划与 CPU 验证，训练、推理、指标计算及结果聚合均等待手动执行。使用独立入口 `scripts/run_exp32_gen_unseen4.py` 和配置 `csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`。命令接口：`{validate,source-check,status,train,infer,metrics,aggregate}`；`--experiment exp32_fs_gen`（唯一family，默认）、`--map`、`--shots`（默认100）、`--zero-shot`、`--split query`（唯一）、`--task {all,gen,gen_continuous}`（默认all）、`--test-gen-batch-size`（默认32）、`--asset-mode {minimal,full}`（默认minimal）、`--data-dir`、`--model-path`、`--pi05-path`、`--seed 42`、`--support-seed 0`、`--cuda-device 0`、`--master-port 29642`、`--report-to none`、`--execute`。`validate`／`source-check`／`status`永远只读；train/infer/metrics/aggregate省略`--execute`时只做dry-run，显式加入才会写文件或运行。
+本节记录运行服务器保存好checkpoint-12000后的手动执行方案；代码与配置准备后仅作规划与 CPU 验证，训练、推理、指标计算及结果聚合均等待手动执行。使用独立入口 `scripts/run_exp32_gen_unseen4.py` 和配置 `csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`。命令接口：`{validate,source-check,status,train,infer,metrics,aggregate}`；`--experiment exp32_fs_gen`（唯一family，默认）、`--map`、`--shots`（默认100）、`--zero-shot`、`--split query`（唯一）、`--task {all,gen,gen_continuous}`（默认all）、`--test-gen-batch-size`（默认32）、`--asset-mode {minimal,full}`（默认minimal）、`--data-dir`、`--model-path`、`--pi05-path`、`--seed 42`、`--support-seed 0`、`--cuda-device 0`、`--master-port 29642`（正整数固定端口，0为自动选择）、`--report-to none`、`--execute`。`validate`／`source-check`／`status`永远只读；train/infer/metrics/aggregate省略`--execute`时只做dry-run，显式加入才会写文件或运行。
 
 父模型来源必须严格为 `outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors`，并有同目录 `trainer_state.json` 和 `config.json`；检查Trainer步数、生成单任务配置与LoRA张量结构，其中`global_step`必须等于12000。`max_steps`允许13650，不要求final checkpoint。禁止使用final或其他step兜底；来源未通过检查就停止。few-shot每个任务只加载父模型权重并新建optimizer／scheduler，不恢复父训练状态。
 
@@ -9118,31 +9131,106 @@ python scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
 
 ```bash
 set -euo pipefail
-GPU=0
+GPU=1
 COMMON=(--experiment exp32_fs_gen --zero-shot --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --cuda-device "$GPU" --report-to none)
 python scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --execute
 python scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --execute
 python scripts/run_exp32_gen_unseen4.py aggregate "${COMMON[@]}" --execute
 ```
+```bash
+set -euo pipefail
+GPU=1
+COMMON=(--experiment exp32_fs_gen --zero-shot --task continuous --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --cuda-device "$GPU" --report-to none)
+python scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --execute
+python scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --execute
+python scripts/run_exp32_gen_unseen4.py aggregate "${COMMON[@]}" --execute
+```
 
-###### Few-shot：单GPU顺序执行16组
+###### Few-shot：两张GPU各自顺序执行8组
 
-先确认zero-shot任务已经结束，再执行。对每个地图、shot顺序执行train→infer→metrics；全部16组成功后，对四档shot分别聚合两项生成任务。训练命令不提供自动恢复400步训练；遇到中断时先归档非空模型输出目录，再从头运行。已有非空model输出会被拒绝覆盖。推理也拒绝覆盖非空任务目录；某项推理中断时，先人工归档该项的 `discrete` 或 `continuous` 目录，再用 `--task gen` 或 `--task gen_continuous` 单独补跑，保留其他已完成任务。端口`29740`可调整；需逐个确认可用。
+先确认对应GPU上的zero-shot任务已经结束，再手动启动以下队列。GPU0负责 `cs_office/de_golden`，GPU1负责 `de_palacio/de_vertigo`；每图按100／50／20／10-shot依次train→infer→metrics。`PORT=0` 使用本入口的自动端口模式，转换为单节点 `torchrun --standalone`；各队列独立选择端口。需要固定端口时，给每个同时运行的队列选择不同的空闲正整数端口，不能仅因GPU不同就共用29740。
+
+后台子shell由 `nohup bash -euo pipefail -c` 启动，任何一步失败即退出；外层终端的 `set -e` 默认不会传入新的Bash。四图聚合单独放在两队列之后，等四张地图结果都完成并同步到同一服务器后手动执行。训练仍要求空的新目录；推理也拒绝覆盖非空任务目录。已有完整模型只补infer／metrics，部分推理先归档失败的discrete或continuous目录，再用对应 `--task gen` 或 `--task gen_continuous` 单独补跑。
+
+2026-11-15 远程端口冲突记录：`EADDRINUSE port29740` 发生在torchrun建立rendezvous阶段，训练尚未启动；后续 `Missing completed 400-step adaptation` 是缺少适配模型引起的连带报错。原两个队列复用29740且未在子shell启用失败即停，还在单图后过早要求四图聚合。同步新版runner后按下方自动端口命令执行；不自动重启远程任务。
+
+**端口冲突后的占位目录处理。** 此次torchrun启动失败前，runner已写入 `resolved_config.yaml` 和 `experiment_plan.json`。重试前在远程执行下列检查；只归档恰好为空或仅含这两个占位文件的目录，其他有训练／模型产物的目录保持原样并报错。此段不恢复或覆盖已有模型。若另一个队列尚在运行，先等它结束，再检查其对应目录。
+
+```bash
+python - <<'PY_ARCHIVE'
+from datetime import datetime
+from pathlib import Path
+
+stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+for map_name in ("de_palacio", "de_vertigo"):
+    for shots in (100, 50, 20, 10):
+        path = Path(f"outputs/csgo_1b/exp32_fs_gen_{map_name}/shot_{shots}/seed_0")
+        if not path.exists():
+            continue
+        entries = list(path.iterdir())
+        allowed = {"resolved_config.yaml", "experiment_plan.json"}
+        if any(not item.is_file() or item.name not in allowed for item in entries):
+            raise SystemExit(f"保留含训练或模型产物的目录，请单独检查: {path}")
+        target = path.with_name(f"seed_0.port_failed_{stamp}")
+        if target.exists():
+            raise SystemExit(f"归档目标已存在: {target}")
+        path.rename(target)
+        print(f"已归档: {path} -> {target}")
+PY_ARCHIVE
+```
+
+**队列1：office／golden，GPU0。** 若此队列已经在运行或已完成，按实际进度保留，不重复启动；仅在两地图均待运行时使用下面完整队列。
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+GPU=0
+PORT=0
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+python -u scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+for MAP in cs_office de_golden; do
+  for SHOTS in 100 50 20 10; do
+    printf "\n[train] map=%s shots=%s GPU=%s\n" "$MAP" "$SHOTS" "$GPU"
+    python -u scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
+    printf "\n[infer] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+    printf "\n[metrics] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_12000_office_golden.nohup.out 2>&1 < /dev/null &
+```
+
+**队列2：palacio／vertigo，GPU1。** 两张地图在该队列内顺序执行；可以与GPU0队列独立运行。
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+GPU=1
+PORT=29741
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+python -u scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+for MAP in de_palacio de_vertigo; do
+  for SHOTS in 100 50 20 10; do
+    printf "\n[train] map=%s shots=%s GPU=%s\n" "$MAP" "$SHOTS" "$GPU"
+    python -u scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
+    printf "\n[infer] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+    printf "\n[metrics] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_12000_palacio_vertigo.nohup.out 2>&1 < /dev/null &
+```
+
+**两队列完成后再聚合。** 四图结果须位于同一服务器；只完成palacio／vertigo时先不运行以下四图宏平均。该命令读取已有指标，不启动训练或推理。
 
 ```bash
 set -euo pipefail
-GPU=0
-PORT=29740
-COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
-for MAP in cs_office de_golden de_palacio de_vertigo; do
-  for SHOTS in 100 50 20 10; do
-    python scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
-    python scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
-    python scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
-  done
-done
 for SHOTS in 100 50 20 10; do
-  python scripts/run_exp32_gen_unseen4.py aggregate --shots "$SHOTS" "${COMMON[@]}" --execute
+  python scripts/run_exp32_gen_unseen4.py aggregate \
+    --experiment exp32_fs_gen --shots "$SHOTS" --task all --split query \
+    --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --execute
 done
 ```
 
@@ -9159,6 +9247,194 @@ python scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${C
 python scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
 ```
 
+
+###### Few-shot：磁盘写满后的续跑命令（2026-11-16；resume 队列）
+
+依据远程服务器 `2026-11-15 23:55 +08:00` 的检查结果安排以下队列。此次日志中的明确失败是 `No space left on device`：`de_palacio/20-shot` 在保存模型时中断；`cs_office/100-shot` 在保存推理图片时中断。这里的 resume 指继续实验队列；本入口没有训练 `--resume`，每个 few-shot 只保存 final400，不保存可恢复的中间 optimizer／scheduler／RNG。
+
+| GPU | 地图／shots | 已有状态 | 本次处理 |
+| --- | --- | --- | --- |
+| 0 | cs_office／100 | 模型完整，Trainer 400/400；离散1856/2000且无manifest，连续目录非空但0图 | 保留模型，归档该组中断推理目录，重新完成两类推理和指标 |
+| 0 | cs_office／50、20、10；de_golden／100、50、20、10 | 尚未开始 | 7组依次 train→infer→metrics |
+| 1 | de_palacio／100、50 | 模型、离散／连续推理和指标均已完成 | 跳过并保留 |
+| 1 | de_palacio／20 | Trainer虽为400/400，但模型只有663 MiB且文件大小校验失败；完整模型约4338 MiB | 归档整个损坏模型目录，从父模型@12000重新训练400步，再做推理和指标 |
+| 1 | de_palacio／10；de_vertigo／100、50、20、10 | 尚未开始 | 5组依次 train→infer→metrics |
+
+**先处理磁盘空间，再执行准备和队列。** 13个待重训／新训模型的 `model.safetensors` 合计还需要约55.1 GiB，另需各组其他模型文件、生成图片、指标缓存和临时文件空间；建议输出盘至少预留100 GiB，并确认inode余量。同盘改名归档不会释放磁盘空间；需要释放容量时，将选定的归档或其他文件迁往有空间的磁盘。本节不包含自动删除命令。检查时GPU0上还有Seen-10 test推理（PID1495442），以下GPU0队列会等待该卡空闲，保留现有进程；GPU1队列可独立提交，也会先等待对应卡空闲。
+
+**准备：在远程项目根目录、UniLIP环境执行一次。** 容量检查后确认已解决空间不足，再执行source-check和归档块。归档只针对本次确认中断的 `cs_office/100-shot/infer_bs32` 和 `de_palacio/20-shot/seed_0`，保留原始产物；归档前同时检查office模型完整性和palacio20模型确实不完整。若现场状态已变化，检查会停止，应重新核对进度。
+
+2026-11-16修正交互终端退出：此前最外层的 `set -euo pipefail` 会让当前Bash在命令失败时退出。下列前台命令先取消当前终端的严格模式，把失败即停放入独立子Bash；报错只停止该块工作，终端保留。准备块将完整标准输出和错误输出同时显示并保存至 `/tmp/exp32_fs_gen_recovery.*`，末尾分别报告子进程和 `tee` 的退出码；两者均为0才可提交后续队列。日志创建或写入失败也会明确提示。请原样复制代码块并保留实际换行，Python中的 `<Q`、`*`、`__metadata__` 不需要添加反斜杠。
+
+```bash
+set +e
+set +u
+set +o pipefail
+bash -Eeuo pipefail <<'BASH_FS_GEN_DISK_CHECK'
+trap 'printf "\n[ERROR] disk check line=%s exit=%s\n" "$LINENO" "$?" >&2' ERR
+df -h . outputs/csgo_1b outputs_eval/benchmark_v2 fst_outs
+df -i . outputs/csgo_1b outputs_eval/benchmark_v2 fst_outs
+BASH_FS_GEN_DISK_CHECK
+FS_GEN_DISK_STATUS=$?
+printf '容量检查退出码=%s；非0时先处理上方错误。\n' "$FS_GEN_DISK_STATUS"
+```
+
+```bash
+# 清除之前在当前终端设置的严格模式；严格检查只在下面的子Bash内启用。
+set +e
+set +u
+set +o pipefail
+if FS_GEN_RECOVERY_LOG=$(mktemp /tmp/exp32_fs_gen_recovery.XXXXXX); then
+  printf '错误日志：%s\n' "$FS_GEN_RECOVERY_LOG"
+  bash -Eeuo pipefail <<'BASH_FS_GEN_RECOVERY' 2>&1 | tee "$FS_GEN_RECOVERY_LOG"
+trap 'printf "\n[ERROR] recovery line=%s exit=%s\n" "$LINENO" "$?" >&2' ERR
+python -u scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+python -u - <<'PY_FS_GEN_RECOVERY'
+import json
+import struct
+from datetime import datetime
+from pathlib import Path
+
+def weight_complete(path):
+    if not path.is_file():
+        print(f"[CHECK] missing: {path}", flush=True)
+        return False
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            length = struct.unpack("<Q", f.read(8))[0]
+            if not 0 < length < min(size, 16 * 1024 * 1024):
+                print(f"[CHECK] invalid header length: {path}", flush=True)
+                return False
+            header = json.loads(f.read(length))
+        end = max(v["data_offsets"][1] for k, v in header.items() if k != "__metadata__")
+        expected = 8 + length + end
+        print(f"[CHECK] {path}: actual={size}, expected={expected}", flush=True)
+        return size == expected
+    except (ValueError, KeyError, TypeError, struct.error) as exc:
+        print(f"[CHECK] invalid weights: {path}: {exc!r}", flush=True)
+        return False
+
+office = Path("outputs/csgo_1b/exp32_fs_gen_cs_office/shot_100/seed_0")
+state = json.loads((office / "trainer_state.json").read_text())
+if (state.get("global_step"), state.get("max_steps")) != (400, 400) or not weight_complete(office / "model.safetensors"):
+    raise SystemExit("cs_office/100模型不完整，停止；请重新核对状态。")
+inference = Path("outputs_eval/benchmark_v2/exp32_fs_gen_cs_office/shot_100/seed_0/infer_bs32")
+broken = Path("outputs/csgo_1b/exp32_fs_gen_de_palacio/shot_20/seed_0")
+if inference.exists() and (any(inference.rglob("inference_manifest.json")) or any(inference.rglob("benchmark_csgo_v2*.json"))):
+    raise SystemExit("office/100已出现manifest或指标，保留现场并重新核对，避免归档完成项。")
+if broken.exists() and weight_complete(broken / "model.safetensors"):
+    raise SystemExit("palacio/20模型现已完整，保留模型并重新核对，不自动重训。")
+stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+moves = [(p, p.with_name(p.name + ".interrupted_" + stamp))
+         for p in (inference, broken) if p.exists()]
+if any(target.exists() for _, target in moves):
+    raise SystemExit("归档目标已存在，停止。")
+for path, target in moves:
+    path.rename(target)
+    print(f"归档: {path} -> {target}", flush=True)
+print("[OK] 恢复准备完成。", flush=True)
+PY_FS_GEN_RECOVERY
+BASH_FS_GEN_RECOVERY
+  FS_GEN_RECOVERY_STATUS=("${PIPESTATUS[@]}")
+  printf '\n子进程退出码=%s；日志写入退出码=%s；日志=%s\n' \
+    "${FS_GEN_RECOVERY_STATUS[0]}" "${FS_GEN_RECOVERY_STATUS[1]}" "$FS_GEN_RECOVERY_LOG"
+  if [[ "${FS_GEN_RECOVERY_STATUS[0]}" == 0 && "${FS_GEN_RECOVERY_STATUS[1]}" == 0 ]]; then
+    printf '[OK] 准备成功，可以按记录提交后续队列。\n'
+  else
+    printf '[FAILED] 准备或日志写入失败，请保留上述错误，暂不提交后续队列。\n'
+  fi
+else
+  printf '[FAILED] 无法在 /tmp 创建日志文件，未执行恢复准备。\n'
+fi
+```
+
+`cs_office/100-shot` 两类推理从各自第一个样本重新生成，保持seed42、batch32和原Dropout策略；不把1856张旧图与新一轮生成混合。`de_palacio/20-shot` 从同一父模型@12000新建optimizer／scheduler训练，不能从截断权重接续。两个队列均使用自动端口 `--master-port 0`，每组仍为单卡适配，support_seed=0、400步、microbatch=shots、GAS=1，minimal资产和metric batch1不变。
+
+**续跑队列1：GPU0，保留office100模型，补推理后完成其余7组。** 先完成上方准备，再提交一次。等待GPU0现有进程全部结束后才开始工作；`nvidia-smi`查询失败或任一步骤失败均退出。独立日志与原始失败日志分开保存。
+
+```bash
+mkdir -p fst_outs
+printf "\n[reuse model; infer+metrics] cs_office shots=100 GPU=%s\n" "$GPU"
+python -u scripts/run_exp32_gen_unseen4.py infer --map cs_office --shots 100 "${COMMON[@]}" --execute
+python -u scripts/run_exp32_gen_unseen4.py metrics --map cs_office --shots 100 "${COMMON[@]}" --execute
+
+nohup bash -euo pipefail -c '
+GPU=0
+PORT=29740
+while true; do
+  ACTIVE_PIDS=$(nvidia-smi --id="$GPU" --query-compute-apps=pid --format=csv,noheader)
+  if [[ -z "$ACTIVE_PIDS" ]]; then break; fi
+  printf "[wait] GPU=%s busy; check again in 60s\n" "$GPU"
+  sleep 60
+done
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+python -u scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+
+for MAP in cs_office de_golden; do
+  for SHOTS in 100 50 20 10; do
+    if [[ "$MAP" == cs_office && "$SHOTS" == 100 ]]; then continue; fi
+    printf "\n[train] map=%s shots=%s GPU=%s\n" "$MAP" "$SHOTS" "$GPU"
+    python -u scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
+    printf "\n[infer] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+    printf "\n[metrics] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+  done
+done
+printf "\n[DONE] GPU0 office/golden resume queue completed\n"
+' >> fst_outs/exp32_fs_gen_12000_office_golden.resume_20261116.nohup.out 2>&1 < /dev/null &
+echo "GPU0 resume queue PID=$!"
+```
+
+**续跑队列2：GPU1，跳过palacio100／50，重训palacio20后完成其余5组。** 先完成上方准备，再提交一次；可与GPU0等待／运行中的队列并行。此队列仅训练palacio20／10和vertigo四档，共6组。
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+GPU=1
+PORT=29741
+while true; do
+  ACTIVE_PIDS=$(nvidia-smi --id="$GPU" --query-compute-apps=pid --format=csv,noheader)
+  if [[ -z "$ACTIVE_PIDS" ]]; then break; fi
+  printf "[wait] GPU=%s busy; check again in 60s\n" "$GPU"
+  sleep 60
+done
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+python -u scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+for MAP in de_palacio de_vertigo; do
+  for SHOTS in 100 50 20 10; do
+    if [[ "$MAP" == de_palacio && ( "$SHOTS" == 100 || "$SHOTS" == 50 ) ]]; then continue; fi
+    printf "\n[train] map=%s shots=%s GPU=%s\n" "$MAP" "$SHOTS" "$GPU"
+    python -u scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
+    printf "\n[infer] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+    printf "\n[metrics] map=%s shots=%s\n" "$MAP" "$SHOTS"
+    python -u scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+  done
+done
+printf "\n[DONE] GPU1 palacio/vertigo resume queue completed\n"
+' >> fst_outs/exp32_fs_gen_12000_palacio_vertigo.resume_20261116.nohup.out 2>&1 < /dev/null &
+echo "GPU1 resume queue PID=$!"
+```
+
+**两队列均出现 `[DONE]` 后，单独执行四图聚合。** 沿用已有palacio100／50指标，与本次补齐结果共同计算100／50／20／10-shot的离散和连续四图宏平均。任一队列失败就先停止聚合，按最新状态补缺；以上队列是针对本次快照的续跑方案，再次中断后不要原样重复提交或重新归档已完成产物。
+
+```bash
+set +e
+set +u
+set +o pipefail
+bash -Eeuo pipefail <<'BASH_FS_GEN_AGGREGATE'
+trap 'printf "\n[ERROR] aggregate line=%s exit=%s\n" "$LINENO" "$?" >&2' ERR
+for SHOTS in 100 50 20 10; do
+  python scripts/run_exp32_gen_unseen4.py aggregate \
+    --experiment exp32_fs_gen --shots "$SHOTS" --task all --split query \
+    --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --execute
+done
+BASH_FS_GEN_AGGREGATE
+FS_GEN_AGGREGATE_STATUS=$?
+printf '聚合退出码=%s；非0时按上方错误补缺。\n' "$FS_GEN_AGGREGATE_STATUS"
+```
 
 ##### exp37_fs_gen bs32
 
@@ -10199,7 +10475,7 @@ exp39_consloc12首个checkpoint为12000；exp38新组首个为local4000。保存
 
 | 实验 | 训练入口 | 模型来源 | 保存节点 | validation／test节点 | 累计final |
 |---|---|---|---|---|---|
-| exp39_consloc2 | run_exp37_seen10.py | 原始UniLIP＋π0.5 | 12000／16000／19550 | 16000／19550 | 19550 |
+| exp39_consloc2 | run_exp37_seen10.py | 原始UniLIP＋π0.5 | 4000／8000／12000／16000／19550（滚动keep2） | 16000／19550 | 19550 |
 | exp40_s2_P4 | run_exp40_seen10.py | exp39@12000 | local4000／7550 | local4000／7550 | 19550 |
 | exp40_s2_U2 | run_exp40_seen10.py | 同上 | local4000／7550 | local4000／7550 | 19550 |
 | exp40_s2_both | run_exp40_seen10.py | 同上 | local4000／7550 | local4000／7550 | 19550 |
@@ -10218,17 +10494,19 @@ python scripts/run_exp40_seen10.py validate
 
 ### exp39_consloc2：Stage 1主αloc=2，无辅助
 
-从原始初始化训练到19550，仅保存12000／16000／19550；之后评测16000与final两个节点。12000为未来分叉保留，本实验不安排该点推理／评测。普通LR=1e-4，action connector／norm／projector LR=5e-4，warmup ratio=0.003，其他优化设置继承exp39。
+从原始初始化训练到19550；2026-11-16改为每4000步保存完整checkpoint，即4000／8000／12000／16000，另存final=19550，最多保留最近2份。训练结束后仅保留16000／19550；12000会在final保存时清理。之后仍只评测16000与final两个节点，4000／8000／12000仅作中间保存。普通LR=1e-4，action connector／norm／projector LR=5e-4，warmup ratio=0.003，其他优化设置继承exp39。
+
+保存节点不触发自动暂停或评测，现有 --stop-after-step 0 命令仍连续训练到final；显式设置 --stop-after-step 4000／8000／12000／16000 可在对应保存点暂停。新设置在使用更新后入口启动或恢复时生效，正在运行的进程不会热更新，也不会补回已经错过的4000／8000权重。
 
 ```bash
+set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
-set -euo pipefail
 EXPERIMENT=exp39_consloc2
-TRAIN_GPUS=0,1
-EVAL_GPU=0
+TRAIN_GPUS=1,3
+EVAL_GPU=1
 MASTER_PORT=29696
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
 for STEP in 16000 final; do
   python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
@@ -10240,7 +10518,7 @@ python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 ```
 
 
-若训练在12000或16000之后中断，恢复已有完整状态，再补上述评测循环。若已经完成19550，只执行缺失的infer／metrics，不再执行train：
+若训练在4000／8000／12000／16000保存之后中断，恢复最新完整状态，再补上述评测循环。若已经完成19550，只执行缺失的infer／metrics，不再执行train：
 
 ```bash
 python scripts/run_exp37_seen10.py train --experiment exp39_consloc2 --resume --stop-after-step 0 --micro-batch 64 --cuda-devices 0 --master-port 29696 --execute
@@ -10451,8 +10729,8 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_1_s2_both
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=1,3
+EVAL_GPU=1
 MASTER_PORT=29740
 SAVED_STEP=2000
 case "$SAVED_STEP" in

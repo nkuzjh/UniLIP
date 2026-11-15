@@ -169,6 +169,7 @@ class Exp37RunnerTests(unittest.TestCase):
                 self.assertEqual(option(command, "--num_train_epochs"), "50")
                 self.assertEqual(option(command, "--save_only_model"), "False")
                 self.assertEqual(option(command, "--save_total_limit"),
+                                 "2" if experiment == "exp39_consloc2" else
                                  "3" if experiment in RUNNER.EXP39_EXPERIMENTS else "6")
                 self.assertEqual(metadata["runtime"]["gradient_accumulation_steps"], 32)
                 if experiment == "exp37":
@@ -182,8 +183,10 @@ class Exp37RunnerTests(unittest.TestCase):
                     self.assertEqual(option(command, "--save_strategy"), "no")
                     self.assertNotIn("--save_steps", command)
                     self.assertNotIn("--warmup_steps", command)
-                    self.assertEqual(metadata["runtime"]["checkpoint_steps"], [12000, 16000, 19550])
-                    self.assertEqual(config["training_checkpoint_steps"], [12000, 16000, 19550])
+                    expected_steps = ([4000, 8000, 12000, 16000, 19550]
+                                      if experiment == "exp39_consloc2" else [12000, 16000, 19550])
+                    self.assertEqual(metadata["runtime"]["checkpoint_steps"], expected_steps)
+                    self.assertEqual(config["training_checkpoint_steps"], expected_steps)
                     self.assertIs(config["save_final_model_at_output_root"], False)
                     self.assertEqual(config["warmup_ratio"], 0.003)
                     self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr": 1e-5})
@@ -214,6 +217,30 @@ class Exp37RunnerTests(unittest.TestCase):
                      "scheduler.pt", "rng_state.pth"):
             (checkpoint / name).touch()
         return checkpoint
+
+    def legacy_consloc2_fixture(self, step: int | None = None) -> Path:
+        experiment = "exp39_consloc2"
+        config = self.config(experiment)
+        config["training_checkpoint_steps"] = [12000, 16000, 19550]
+        config.pop("training_checkpoint_allow_rotation")
+        _, plan, out = RUNNER.training_plan(self.args("train", experiment), self.config(experiment))
+        old_runtime = {**plan["runtime"], "checkpoint_steps": [12000, 16000, 19550],
+                       "save_total_limit": 3}
+        plan["runtime"] = old_runtime
+        plan["fingerprint"] = RUNNER.fingerprint(config, old_runtime)
+        out.mkdir(parents=True)
+        (out / "resolved_config.yaml").write_text(yaml.safe_dump(config))
+        (out / "experiment_plan.json").write_text(json.dumps(plan))
+        if step is not None:
+            checkpoint = out / f"checkpoint-{step}"
+            checkpoint.mkdir()
+            (checkpoint / "trainer_state.json").write_text(json.dumps({
+                "global_step": step, "max_steps": 19550,
+            }))
+            for name in ("training_args.bin", "model.safetensors", "optimizer.pt",
+                         "scheduler.pt", "rng_state.pth"):
+                (checkpoint / name).touch()
+        return out
 
     def test_exp39_only_changes_loc_alpha_and_checkpoint_controls(self):
         base = yaml.safe_load((self.root / "csgo_configs/exp37.yaml").read_text())
@@ -311,7 +338,8 @@ class Exp37RunnerTests(unittest.TestCase):
         variant = self.config("exp39_consloc2")
         differences = {key for key in base.keys() | variant.keys()
                        if base.get(key) != variant.get(key)}
-        self.assertEqual(differences, {"exp37_experiment", "alpha_loc_loss"})
+        self.assertEqual(differences, {"exp37_experiment", "alpha_loc_loss",
+                                       "training_checkpoint_steps", "training_checkpoint_allow_rotation"})
         self.assertEqual(variant["exp37_experiment"], "exp39_consloc2")
         self.assertEqual(variant["alpha_loc_loss"], 2.0)
         self.assertFalse(variant["is_loc_aux_loss"])
@@ -330,8 +358,9 @@ class Exp37RunnerTests(unittest.TestCase):
         self.assertEqual(option(command[0], "--max_steps"), "19550")
         self.assertEqual(option(command[0], "--gradient_accumulation_steps"), "32")
         self.assertEqual(plan["runtime"]["source_batch"], 128)
-        self.assertEqual(plan["runtime"]["checkpoint_steps"], [12000, 16000, 19550])
-        self.assertEqual(plan["runtime"]["save_total_limit"], 3)
+        self.assertEqual(plan["runtime"]["checkpoint_steps"], [4000, 8000, 12000, 16000, 19550])
+        self.assertEqual(plan["runtime"]["save_total_limit"], 2)
+        self.assertTrue(variant["training_checkpoint_allow_rotation"])
         self.assertEqual(plan["evaluation_steps"], {
             "validation": [16000, "final"], "test": [16000, "final"]})
         self.assertIsNone(plan["source_checkpoint"])
@@ -399,6 +428,100 @@ class Exp37RunnerTests(unittest.TestCase):
         plan_path.write_text(json.dumps({**previous, "experiment": "exp39"}))
         with self.assertRaisesRegex(ValueError, "identity"):
             RUNNER.training_plan(resume, saved)
+
+    def test_consloc2_new_stop_steps_and_rolling_resume(self):
+        experiment = "exp39_consloc2"
+        for step in (4000, 8000, 12000, 16000, 19550):
+            with self.subTest(step=step):
+                config = self.config(experiment, "--stop-after-step", str(step))
+                RUNNER.validate_config(config)
+        for step in (4000, 8000):
+            with self.subTest(resume=step):
+                checkpoint = self.exp39_resume_fixture(step, experiment)
+                args = self.args("train", experiment, "--resume")
+                config = RUNNER.resolve_config(args, for_training=True)
+                command, plan, _ = RUNNER.training_plan(args, config)
+                self.assertEqual(plan["resume_checkpoint"], RUNNER.relative(checkpoint))
+                self.assertEqual(option(command[0], "--save_total_limit"), "2")
+                shutil.rmtree(checkpoint.parent)
+        for invalid in (1, 3999, 4001, 19551):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                RUNNER.validate_config(self.config(experiment, "--stop-after-step", str(invalid)))
+
+    def test_consloc2_legacy_plan_evaluates_and_migrates_only_on_execute(self):
+        experiment = "exp39_consloc2"
+        for checkpoint_step in (None, 16000):
+            with self.subTest(checkpoint_step=checkpoint_step):
+                out = self.legacy_consloc2_fixture(checkpoint_step)
+                old_config = (out / "resolved_config.yaml").read_bytes()
+                old_plan = (out / "experiment_plan.json").read_bytes()
+                if checkpoint_step is not None:
+                    evaluate = self.args("infer", experiment, "--checkpoint-step", "16000", "--execute")
+                    old_evaluation_config = RUNNER.resolve_config(evaluate, for_training=False)
+                    RUNNER.validate_config(old_evaluation_config, allow_legacy_consloc2=True)
+                    self.assertEqual(old_evaluation_config["training_checkpoint_steps"], [12000, 16000, 19550])
+                    routes, _, _ = RUNNER.evaluation_plan(evaluate, old_evaluation_config)
+                    self.assertEqual(len(routes), 2)
+                    final = out / "checkpoint-19550"
+                    (out / "checkpoint-16000").rename(final)
+                    (final / "trainer_state.json").write_text(json.dumps({
+                        "global_step": 19550, "max_steps": 19550,
+                    }))
+                    self.assertEqual(RUNNER.final_checkpoint_step(experiment), 19550)
+                    final.rename(out / "checkpoint-16000")
+                    (out / "checkpoint-16000" / "trainer_state.json").write_text(json.dumps({
+                        "global_step": 16000, "max_steps": 19550,
+                    }))
+                dry_args = self.args("train", experiment, *(('--resume',) if checkpoint_step else ()))
+                dry_config = RUNNER.resolve_config(dry_args, for_training=True)
+                _, dry_plan, _ = RUNNER.training_plan(dry_args, dry_config)
+                self.assertEqual(dry_plan["runtime"]["checkpoint_steps"], [4000, 8000, 12000, 16000, 19550])
+                self.assertEqual(dry_plan["runtime"]["save_total_limit"], 2)
+                self.assertEqual((out / "resolved_config.yaml").read_bytes(), old_config)
+                self.assertEqual((out / "experiment_plan.json").read_bytes(), old_plan)
+                execute = self.args("train", experiment, "--execute",
+                                    *(('--resume',) if checkpoint_step else ()))
+                with patch.object(RUNNER.subprocess, "run") as run, patch("sys.stdout", io.StringIO()):
+                    self.assertEqual(RUNNER.main([
+                        "train", "--experiment", experiment, "--execute",
+                        *(('--resume',) if checkpoint_step else ()),
+                    ]), 0)
+                    run.assert_called_once()
+                migrated = RUNNER.resolve_config(execute, for_training=True)
+                self.assertEqual(migrated["training_checkpoint_steps"], [4000, 8000, 12000, 16000, 19550])
+                migrated_plan = json.loads((out / "experiment_plan.json").read_text())
+                self.assertEqual(migrated_plan["runtime"]["save_total_limit"], 2)
+                self.assertEqual(migrated_plan["runtime"]["checkpoint_steps"], [4000, 8000, 12000, 16000, 19550])
+                self.assertNotEqual((out / "experiment_plan.json").read_bytes(), old_plan)
+                shutil.rmtree(out)
+
+    def test_consloc2_legacy_migration_rejects_other_changes(self):
+        experiment = "exp39_consloc2"
+        for kind in ("recipe", "runtime", "fingerprint", "rng"):
+            with self.subTest(kind=kind):
+                out = self.legacy_consloc2_fixture(12000)
+                config_path, plan_path = out / "resolved_config.yaml", out / "experiment_plan.json"
+                if kind == "recipe":
+                    config = yaml.safe_load(config_path.read_text())
+                    config["alpha_loc_loss"] = 2.5
+                    config_path.write_text(yaml.safe_dump(config))
+                elif kind in ("runtime", "fingerprint"):
+                    plan = json.loads(plan_path.read_text())
+                    if kind == "runtime":
+                        plan["runtime"]["gradient_accumulation_steps"] = 99
+                    else:
+                        plan["fingerprint"] = "0" * 64
+                    plan_path.write_text(json.dumps(plan))
+                else:
+                    (out / "checkpoint-12000" / "rng_state.pth").unlink()
+                original_config, original_plan = config_path.read_bytes(), plan_path.read_bytes()
+                args = self.args("train", experiment, "--resume", "--execute")
+                config = RUNNER.resolve_config(args, for_training=True)
+                with self.assertRaises(ValueError):
+                    RUNNER.training_plan(args, config)
+                self.assertEqual(config_path.read_bytes(), original_config)
+                self.assertEqual(plan_path.read_bytes(), original_plan)
+                shutil.rmtree(out)
 
     def test_exp39_micro_batches_and_full_assets_keep_base_batch(self):
         for experiment in RUNNER.EXP39_EXPERIMENTS:
