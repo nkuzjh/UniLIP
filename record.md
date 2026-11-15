@@ -3798,6 +3798,71 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
 
 如使用完整数据，将 setup 中的 `ASSET_ARGS=()`、`GT_ROOT=data/preprocessed_data`、`GT_SUFFIX=/imgs` 一并设置；推理与指标命令都使用同一个开关。若完整数据位于其他目录，还须同步修改两个原始测试 YAML 的 `data_dir` 与指标命令的 `--data_dir`。
 
+<a id="exp32-gen-test-12000"></a>
+#### Seen-10 TEST: exp32_gen checkpoint-12000
+
+使用exp32_gen checkpoint-12000评估Seen-10离散与连续两项。默认使用已验证的 minimal 资源包；以下命令依次执行初始化、离散推理与评测、连续推理与评测，并按地图汇总指标。推理 batch 为 16，指标计算 batch 为 1，seed 为 42。
+
+```bash
+set -euo pipefail
+SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
+CKPT=outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors
+test -f "$CKPT"
+V2_MANIFEST=data/csgo_benchmark_v2/benchmark_manifest.json
+ASSET_ARGS=(--benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json)
+GT_ROOT=data/csgo_benchmark_v2/images
+GT_SUFFIX=
+GEN_ROOT=outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16
+
+# 离散生成：推理
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
+  --csgo_config csgo_configs/test/exp32_gen_gen.yaml \
+  --output_dir "${GEN_ROOT}/discrete" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_discrete_test --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-gen-batch-size 16 "${ASSET_ARGS[@]}"
+
+# 离散生成：逐图评测与汇总
+for map_name in "${SEEN_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1.py \
+    --gt "${GT_ROOT}/${map_name}${GT_SUFFIX}" \
+    --pred "${GEN_ROOT}/discrete/gen_imgs/${map_name}" \
+    --batch_size 1 --device cuda --paired_size 448 \
+    --data_dir data/preprocessed_data --map_name "$map_name" \
+    --metric_profile benchmark_v2_core --benchmark_v2_manifest "$V2_MANIFEST" \
+    --benchmark_v2_split seen_discrete_test "${ASSET_ARGS[@]}"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
+  --manifest "$V2_MANIFEST" --split seen_discrete_test --maps "${SEEN_MAPS[@]}" \
+  --input_root "${GEN_ROOT}/discrete" --kind discrete \
+  --output "${GEN_ROOT}/discrete/summary.json"
+
+# 连续生成：推理
+CUDA_VISIBLE_DEVICES=0 python eval_csgo.py \
+  --csgo_config csgo_configs/test/exp32_gen_gen_conti.yaml \
+  --output_dir "${GEN_ROOT}/continuous" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split seen_continuous --benchmark_v2_maps "${SEEN_MAPS[@]}" \
+  --test-gen-batch-size 16 "${ASSET_ARGS[@]}"
+
+# 连续生成：逐图评测与汇总
+for map_name in "${SEEN_MAPS[@]}"; do
+  CUDA_VISIBLE_DEVICES=0 python benchmark_csgo_v1_conti.py \
+    --gt "${GT_ROOT}/${map_name}${GT_SUFFIX}" \
+    --pred "${GEN_ROOT}/continuous/gen_imgs/${map_name}" \
+    --batch_size 1 --device cuda --paired_size 448 \
+    --data_dir data/preprocessed_data --map_name "$map_name" \
+    --frame_diff_threshold 2 --min_track_len 4 \
+    --clip_length 16 --clip_stride 16 --fvd_size 224 \
+    --metric_profile benchmark_v2_core --benchmark_v2_manifest "$V2_MANIFEST" \
+    --benchmark_v2_split seen_continuous "${ASSET_ARGS[@]}"
+done
+python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
+  --manifest "$V2_MANIFEST" --split seen_continuous --maps "${SEEN_MAPS[@]}" \
+  --input_root "${GEN_ROOT}/continuous" --kind continuous \
+  --output "${GEN_ROOT}/continuous/summary.json"
+```
+
+如使用完整数据，将 setup 中的 `ASSET_ARGS=()`、`GT_ROOT=data/preprocessed_data`、`GT_SUFFIX=/imgs` 一并设置；推理与指标命令都使用同一个开关。若完整数据位于其他目录，还须同步修改两个原始测试 YAML 的 `data_dir` 与指标命令的 `--data_dir`。
+
 ### exp32_loc
 - parent: `exp14_2_loc`; Seen-10 localization-only, LoRA route.
 - v2 change: same manifest and Z calibration, with generation head held inactive.
@@ -6765,15 +6830,50 @@ python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoin
 - G0：生成单任务参照。
 - 配置：`csgo_configs/exp32_3maps_gen_single.yaml`；第一评测 checkpoint：`checkpoint-2400`，使用 `seen_validation`。
 
+#### @3600 @4800 exp32_3maps_gen_single
+
+远程双卡从头训练 → 3600 test 推理／评测 → 完整恢复到 4800 → 4800 test 推理／评测。
+
+- 训练使用 GPU `0,1`：每卡 batch `64`，梯度累积 `1`，有效 batch `128`；推理和指标计算使用 GPU `0`，batch `1`。
+- 保持 `50` epoch 的完整学习率调度；当前三图共 `15000` 条训练样本、每 epoch `117` 个更新步，总计 `5850` 步。`--stop-after-step` 只控制保存并停止的位置。
+- 首次执行要求 `outputs/csgo_1b/exp32_3maps_gen_single` 没有已有运行的 checkpoint／权重；若有旧实验，请先另行归档。此命令用于双卡从头训练，第二段用 `--resume` 恢复同一双卡运行。
+- 在仓库根目录、已激活训练环境后执行。minimal 数据包默认位于 `data/csgo_benchmark_v2`，含 `minimal_dataset_report.json`；`UniLIP-1B` 和 pi05 权重需在远程可访问。若路径不同，可在执行前 `export MODEL_PATH=/实际路径/UniLIP-1B`、`export PI05_PATH=/实际路径/pi05_base`，两段训练会使用同一组路径。
+- `--task all` 对本生成单任务实验执行三图的离散／连续生成 test 及逐图、三图汇总指标，不执行定位。`--report-to none` 不连接 W&B。
+
+```bash
+set -euo pipefail
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp32_3maps_gen_single
+TRAIN_GPUS=1,3
+EVAL_GPU=1
+MODEL_PATH="${MODEL_PATH:-UniLIP-1B}"
+PI05_PATH="${PI05_PATH:-$HOME/.cache/openpi/openpi-assets/checkpoints/pi05_base}"
+TRAIN_ARGS=(
+  --experiment "$EXPERIMENT"
+  --cuda-devices "$TRAIN_GPUS" --micro-batch 64 --master-port 29632
+  --seed 42 --report-to none --asset-mode minimal
+  --model-path "$MODEL_PATH" --pi05-path "$PI05_PATH"
+)
+python scripts/run_exp32_3maps.py train "${TRAIN_ARGS[@]}" --stop-after-step 3600 --execute
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 3600 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 3600 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py train "${TRAIN_ARGS[@]}" --resume --stop-after-step 4800 --execute
+python scripts/run_exp32_3maps.py infer --experiment "$EXPERIMENT" --checkpoint-step 4800 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp32_3maps.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4800 --split test --task all --seed 42 --cuda-devices "$EVAL_GPU" --execute
+' >>fst_outs/exp32_3maps_gen_single_dual_gpu_step3600_step4800.nohup.out 2>&1 < /dev/null &
+```
+
 **Training**
 ```bash
 set -euo pipefail
 EXPERIMENT=exp32_3maps_gen_single
-python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 2400 --cuda-devices 0 --execute
+python scripts/run_exp32_3maps.py train --experiment "$EXPERIMENT" --stop-after-step 3600 --cuda-devices 0 --execute
 
-nohup python scripts/run_exp32_3maps.py train --master-port 29633 --experiment exp32_3maps_gen_single --stop-after-step 2400 --cuda-devices 5 --execute >fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
+nohup python scripts/run_exp32_3maps.py train --master-port 29633 --experiment exp32_3maps_gen_single --stop-after-step 3600 --cuda-devices 5 --execute >fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
 
-nohup python scripts/run_exp32_3maps.py train --master-port 29633 --resume --experiment exp32_3maps_gen_single --stop-after-step 0 --cuda-devices 5 --execute >>fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
+nohup python scripts/run_exp32_3maps.py train --master-port 29633 --resume --experiment exp32_3maps_gen_single --stop-after-step 4800 --cuda-devices 5 --execute >>fst_outs/exp32_3maps_gen_single.nohup.out 2>&1 &
 ```
 
 **Inference**
@@ -8739,10 +8839,325 @@ done
 ' >> fst_outs/exp37_unseen4_zero_shot_exp37_fs_both_b1.nohup.out 2>&1 < /dev/null &
 ```
 
+##### exp32_fs_loc：exp32_loc@16000 定位 zero-shot（2026-11-15）
+
+直接加载定位单任务模型 `outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors`，使用其定位测试配置 `csgo_configs/test/exp32_loc_loc.yaml`。`exp32_fs_loc` 是本次输出标识；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，split 为 `crossmap_query_test`，推理 seed=42、batch=16，使用 minimal 资产包，每图2000条、合计8000条。zero-shot 不传 support seed 或 shots。
+
+以下片段在项目根目录、UniLIP 环境内执行，`GPU=0` 可改为空闲卡。定位推理同时计算各图与四图等权宏平均，写入 `$LOC_ROOT/benchmark_csgo_v2_loc.json` 和 `inference_manifest.json`，无需另跑 metrics 或 aggregate。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+GPU=1
+CKPT=outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors
+LOC_ROOT=outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16
+CROSS_MAPS=(cs_office de_golden de_palacio de_vertigo)
+test -f "$CKPT"
+
+CUDA_VISIBLE_DEVICES="$GPU" python eval_csgo_loc.py \
+  --csgo_config csgo_configs/test/exp32_loc_loc.yaml \
+  --output_dir "$LOC_ROOT" --ckpt_path "$CKPT" --seed 42 \
+  --benchmark_v2_split crossmap_query_test \
+  --benchmark_v2_maps "${CROSS_MAPS[@]}" \
+  --benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json \
+  --test-loc-batch-size 16
+' >> fst_outs/exp32_fs_loc_zero_shot_step16000_bs16.nohup.out 2>&1 < /dev/null &
+```
+
 #### 第二步：单个family／地图／shot，顺序训练与query评测（retention暂停）
 
 模板适用于上述任意family；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，shot为100/50/20/10。训练成功后先目标图query，再全Seen-10 retention；query定位/离散各2000、连续1280帧；retention定位/离散各20000、连续12800帧。端口只是建议，手动启动前检查占用。
 
+
+
+##### exp32_fs_loc：exp32_loc@16000 定位 few-shot（2026-11-15）
+
+四张地图 `cs_office/de_golden/de_palacio/de_vertigo` 各自执行100／50／20／10-shot，共16次独立定位适配；每次重新加载 `outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors`，新建optimizer／scheduler，训练400步，support seed=0、训练／推理seed=42。训练microbatch=shot、GAS=1，定位query推理batch=16。每个模型仅训练自己的support，评测自己的2000条query；retention继续暂停。
+
+普通／活动LoRA LR=2e-5，Action connector／norm／projector LR=1e-4；AdamW β=(0.9,0.999)、eps=1e-8、WD=0、clip=1，cosine min_lr_rate=0.1，warmup_ratio=0.003（400步约2步）。固定αloc=1，全部辅助loss关闭，生成分支冻结；沿用 `exp37_fs_loc` 的定位适配配方，初始化来源为exp32_loc@16000。来源与目标均为定位单任务结构，使用 `finetune_init_strict=true` 检查完整模型权重及形状。不能套用exp37入口的固定checkpoint-6000来源检查。
+
+执行服务器须具备 `outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors`；few-shot还须保留同目录 `trainer_state.json`，其global_step必须为16000。2026-11-15本机核对时未见这两项来源文件，命令执行前需同步到上述路径，不自动改用最终模型或其他step。
+
+**先在项目根目录、UniLIP环境的同一个Bash终端定义以下函数。** 调用格式为 `run_exp32_fs_loc 地图 shot GPU master_port`。函数按顺序生成本次配置、训练、检查final400、执行query定位与指标计算；最后只保存根目录final模型，无中间optimizer checkpoint，不支持训练断点恢复。若输出模型目录已非空会拒绝覆盖；中断后须先人工归档不完整目录。GPU和端口按空闲资源调整；若另开终端，需要重新执行函数定义。
+
+```bash
+run_exp32_fs_loc() (
+  set -euo pipefail
+  MAP="$1"
+  SHOTS="$2"
+  GPU="$3"
+  MASTER_PORT="$4"
+  [[ "$GPU" =~ ^[0-9]+$ ]] || { echo "GPU must be one numeric CUDA device index" >&2; exit 2; }
+  # Serialize training and query for maps assigned to the same GPU.
+  mkdir -p fst_outs/.locks
+  exec {GPU_LOCK_FD}>"fst_outs/.locks/exp32_fs_loc_cuda${GPU}.lock"
+  flock "$GPU_LOCK_FD"
+  MODEL_DIR="outputs/csgo_1b/exp32_fs_loc_${MAP}/shot_${SHOTS}/seed_0"
+  LOC_ROOT="outputs_loc/benchmark_v2/exp32_fs_loc_${MAP}/shot_${SHOTS}/seed_0/infer_bs16"
+
+  python - "$MAP" "$SHOTS" "$MODEL_DIR" "$LOC_ROOT" <<'PY'
+from pathlib import Path
+import copy
+import hashlib
+import json
+import sys
+import yaml
+
+map_name, shots, model_dir, loc_root = sys.argv[1:]
+shots = int(shots)
+assert map_name in ("cs_office", "de_golden", "de_palacio", "de_vertigo")
+assert shots in (100, 50, 20, 10)
+source = Path("outputs/csgo_1b/exp32_loc/checkpoint-16000/model.safetensors")
+assert source.is_file(), source
+source_state = json.loads((source.parent / "trainer_state.json").read_text())
+assert source_state["global_step"] == 16000, "source must be exp32_loc@16000"
+out, evaluation = Path(model_dir), Path(loc_root)
+if out.exists() and any(out.iterdir()):
+    raise SystemExit(f"Refusing to overwrite existing training output: {out}")
+if evaluation.exists() and any(evaluation.iterdir()):
+    raise SystemExit(f"Refusing to overwrite existing query output: {evaluation}")
+
+# Reuse the localization recipe; the only loaded parent is exp32_loc@16000.
+cfg = yaml.safe_load(Path("csgo_configs/exp37_s2_loc.yaml").read_text())
+for key in ("exp37_experiment", "resume_ckpt_path", "base_init_ckpt_path",
+            "gen_init_ckpt_path", "loc_init_ckpt_path", "pretrain_path",
+            "warmup_steps", "training_stop_after_step"):
+    cfg.pop(key, None)
+for stem in ("alpha_loc", "alpha_loc_aux", "alpha_loc_perception"):
+    cfg.pop(stem + "_schedule_steps", None)
+    cfg.pop(stem + "_schedule_values", None)
+cfg.update({
+    "benchmark_v2_experiment": "exp32_fs_loc",
+    "model_name_or_path": "UniLIP-1B",
+    "finetune_init_ckpt_path": source.as_posix(),
+    "finetune_init_strict": True,
+    "benchmark_v2_manifest": "data/csgo_benchmark_v2/benchmark_manifest.json",
+    "benchmark_v2_asset_manifest": "data/csgo_benchmark_v2/minimal_dataset_report.json",
+    "benchmark_v2_split": "crossmap_support",
+    "benchmark_v2_support_seed": 0, "benchmark_v2_shots_per_map": shots,
+    "train_maps": [map_name], "val_maps": [map_name], "test_maps": [map_name],
+    "seed": 42, "alpha_loc_loss": 1.0,
+    "warmup_ratio": 0.003, "weight_decay": 0.0,
+    "lr_scheduler_type": "cosine_with_min_lr",
+    "lr_scheduler_kwargs": {"min_lr_rate": 0.1},
+    "csgo_loss_per_microbatch_mean": True, "csgo_forward_sampler_epoch": True,
+    "save_final_model_at_output_root": True,
+})
+for key in ("learning_rate", "mm_projector_lr", "action_dit_lr", "llm_lora_lr",
+            "llm_connector_lora_lr", "gen_dit_lora_lr", "action_dit_lora_lr", "action_io_mlp_lr"):
+    cfg[key] = 2e-5
+for key in ("action_dit_connector_lr", "action_dit_norm_lr", "action_dit_projector_lr"):
+    cfg[key] = 1e-4
+assert (cfg["task_mix_ratio"], cfg["is_multi_task_balanced"],
+        cfg["enable_gen_head_lora"], cfg["enable_loc_head_lora"],
+        cfg["freeze_inactive_head"]) == (1.0, False, False, True, True)
+assert all(cfg[key] is False for key in (
+    "is_loc_aux_loss", "is_aux_loc_em_loss", "is_aux_loc_uncertainty_loss",
+    "is_aux_loc_combined_em_unc_loss", "is_loc_perception_loss",
+    "is_loc_repa_loss", "is_repa_loss", "is_gen_aux_loss"))
+out.mkdir(parents=True, exist_ok=True)
+evaluation.mkdir(parents=True, exist_ok=True)
+(out / "resolved_config.yaml").write_text(yaml.safe_dump(cfg, sort_keys=False))
+plan = {"family": "exp32_fs_loc", "map": map_name, "shots": shots,
+        "support_seed": 0, "seed": 42, "max_steps": 400,
+        "micro_batch": shots, "gradient_accumulation_steps": 1,
+        "source": {"path": source.as_posix(), "step": 16000},
+        "config_sha256": hashlib.sha256(yaml.safe_dump(cfg, sort_keys=True).encode()).hexdigest()}
+(out / "experiment_plan.json").write_text(json.dumps(plan, indent=2) + "\n")
+ecfg = copy.deepcopy(cfg)
+ecfg.update({"ckpt_path": (out / "model.safetensors").as_posix(),
+             "benchmark_v2_split": "crossmap_query_test",
+             "benchmark_v2_allow_map_subset_summary": True, "test_loc_batch_size": 16})
+(evaluation / "evaluation_config.yaml").write_text(yaml.safe_dump(ecfg, sort_keys=False))
+PY
+
+  CUDA_VISIBLE_DEVICES="$GPU" python -m torch.distributed.run \
+    --nproc_per_node=1 --master_port="$MASTER_PORT" train_csgo.py \
+    --csgo_config "$MODEL_DIR/resolved_config.yaml" \
+    --deepspeed deepspeed_scripts/zero0.json \
+    --model_name_or_path UniLIP-1B --unilip_factor 10.6 \
+    --mllm_hf_path OpenGVLab/InternVL3-1B-hf --version internvl --data_type mix \
+    --csgo_image_folder data/preprocessed_data --output_dir "$MODEL_DIR" \
+    --num_train_epochs 10 --max_steps 400 \
+    --per_device_train_batch_size "$SHOTS" --per_device_eval_batch_size "$SHOTS" \
+    --gradient_accumulation_steps 1 --eval_strategy no --save_strategy no \
+    --seed 42 --learning_rate 2e-5 --weight_decay 0 --warmup_ratio 0.003 \
+    --lr_scheduler_type cosine_with_min_lr --model_max_length 1024 \
+    --logging_steps 1 --dataloader_num_workers 4 --n_query 256 --n_und_query 0 \
+    --report_to none --lora_r 32 --lora_alpha 64 \
+    --optim adamw_torch --adam_beta1 0.9 --adam_beta2 0.999 \
+    --adam_epsilon 1e-8 --max_grad_norm 1.0 \
+    --mm_use_im_start_end False --mm_use_im_patch_token False \
+    --bf16 True --tf32 True --gradient_checkpointing True --lazy_preprocess True \
+    --fix_vit True --fix_llm False --fix_connect True --fix_dit True \
+    --benchmark_v2_support_seed 0 --benchmark_v2_shots_per_map "$SHOTS" \
+    --benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json
+
+  python - "$MODEL_DIR" <<'PY'
+from pathlib import Path
+import json
+import sys
+p = Path(sys.argv[1])
+state = json.loads((p / "trainer_state.json").read_text())
+assert state["global_step"] == state["max_steps"] == 400, state
+assert (p / "model.safetensors").is_file(), p
+PY
+
+  CUDA_VISIBLE_DEVICES="$GPU" python eval_csgo_loc.py \
+    --csgo_config "$LOC_ROOT/evaluation_config.yaml" \
+    --output_dir "$LOC_ROOT" --ckpt_path "$MODEL_DIR/model.safetensors" --seed 42 \
+    --benchmark_v2_split crossmap_query_test --benchmark_v2_maps "$MAP" \
+    --benchmark_v2_support_seed 0 --benchmark_v2_shots_per_map "$SHOTS" \
+    --benchmark_v2_asset_manifest data/csgo_benchmark_v2/minimal_dataset_report.json \
+    --test-loc-batch-size 16
+)
+export -f run_exp32_fs_loc
+```
+
+**按地图启动四档shot队列。** 每段开头的 `GPU` 可独立选择：默认cs_office／de_golden使用cuda1，de_palacio／de_vertigo使用cuda3，GPU参数通过Bash位置参数传入后台进程。可以一次提交四段；函数使用Linux `flock` 为每张GPU加锁，同GPU每次仅运行一个map／shot的训练＋query，其余等待，不同GPU可并行。每段只有一层shot循环，日志按地图保存；master_port也可按需修改。
+
+```bash
+mkdir -p fst_outs
+GPU=1
+nohup bash -c '
+set -euo pipefail
+GPU="$1"
+for SHOTS in 100 50 20 10; do
+  run_exp32_fs_loc cs_office "$SHOTS" "$GPU" 29730
+done
+' _ "$GPU" >> fst_outs/exp32_fs_loc_cs_office.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+GPU=1
+nohup bash -c '
+set -euo pipefail
+GPU="$1"
+for SHOTS in 100 50 20 10; do
+  run_exp32_fs_loc de_golden "$SHOTS" "$GPU" 29731
+done
+' _ "$GPU" >> fst_outs/exp32_fs_loc_de_golden.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+GPU=3
+nohup bash -c '
+set -euo pipefail
+GPU="$1"
+for SHOTS in 100 50 20 10; do
+  run_exp32_fs_loc de_palacio "$SHOTS" "$GPU" 29732
+done
+' _ "$GPU" >> fst_outs/exp32_fs_loc_de_palacio.nohup.out 2>&1 < /dev/null &
+```
+
+```bash
+mkdir -p fst_outs
+GPU=3
+nohup bash -c '
+set -euo pipefail
+GPU="$1"
+for SHOTS in 100 50 20 10; do
+  run_exp32_fs_loc de_vertigo "$SHOTS" "$GPU" 29733
+done
+' _ "$GPU" >> fst_outs/exp32_fs_loc_de_vertigo.nohup.out 2>&1 < /dev/null &
+```
+
+定位指标由 `eval_csgo_loc.py` 同时写入每个 `infer_bs16/benchmark_csgo_v2_loc.json`，无需额外metrics命令。四张地图均完成且结果已同步到同一台服务器后，再运行以下四图等权聚合；本family使用通用聚合器，不传给只识别exp37 family的入口。
+
+```bash
+set -euo pipefail
+for SHOTS in 100 50 20 10; do
+  python scripts/aggregate_csgo_benchmark_v2_metrics.py map-models \
+    --manifest data/csgo_benchmark_v2/benchmark_manifest.json \
+    --split crossmap_query_test --kind localization \
+    --input_pattern "outputs_loc/benchmark_v2/exp32_fs_loc_{map}/shot_${SHOTS}/seed_0/infer_bs16/benchmark_csgo_v2_loc.json" \
+    --output "outputs_loc/benchmark_v2/exp32_fs_loc/shot_${SHOTS}/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json"
+done
+```
+
+本段仅提供手动命令，尚未运行或登记为完成；原exp37系列配置和结果保持原身份。
+
+
+##### exp32_fs_gen：exp32_gen@12000 生成 zero-shot／few-shot（2026-11-15；仅手动执行）
+
+<a id="exp32-gen-12000-crossmap-manual"></a>
+
+本节记录运行服务器保存好checkpoint-12000后的手动执行方案；代码与配置准备后仅作规划与 CPU 验证，训练、推理、指标计算及结果聚合均等待手动执行。使用独立入口 `scripts/run_exp32_gen_unseen4.py` 和配置 `csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`。命令接口：`{validate,source-check,status,train,infer,metrics,aggregate}`；`--experiment exp32_fs_gen`（唯一family，默认）、`--map`、`--shots`（默认100）、`--zero-shot`、`--split query`（唯一）、`--task {all,gen,gen_continuous}`（默认all）、`--test-gen-batch-size`（默认32）、`--asset-mode {minimal,full}`（默认minimal）、`--data-dir`、`--model-path`、`--pi05-path`、`--seed 42`、`--support-seed 0`、`--cuda-device 0`、`--master-port 29642`、`--report-to none`、`--execute`。`validate`／`source-check`／`status`永远只读；train/infer/metrics/aggregate省略`--execute`时只做dry-run，显式加入才会写文件或运行。
+
+父模型来源必须严格为 `outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors`，并有同目录 `trainer_state.json` 和 `config.json`；检查Trainer步数、生成单任务配置与LoRA张量结构，其中`global_step`必须等于12000。`max_steps`允许13650，不要求final checkpoint。禁止使用final或其他step兜底；来源未通过检查就停止。few-shot每个任务只加载父模型权重并新建optimizer／scheduler，不恢复父训练状态。
+
+Zero-shot一次覆盖`cs_office/de_golden/de_palacio/de_vertigo`四图，每图query离散2000条、连续1280帧，仅评测两个生成任务，不含定位。Few-shot为四图×100／50／20／10-shot共16次独立生成适配，每次400步，仅训练该图support；microbatch=shots、GAS=1，support seed=0、train/infer seed=42。各流程仅涉及生成任务，few-shot全部辅助loss关闭；普通／活动LoRA LR=2e-5、cosine min_lr_rate=0.1、warmup_ratio=0.003。单GPU顺序执行；generation推理batch=32、metric batch=1。保持旧生成推理Dropout策略，以匹配`exp37_fs_gen`。来源训练预算与其不同，不能称作等预算消融。默认minimal资产；retention评测暂停。
+
+模型输出为`outputs/csgo_1b/exp32_fs_gen_${MAP}/shot_${SHOTS}/seed_0`。zero评测根目录为`outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/{discrete,continuous}`；few评测目录使用相同family/map/shot/seed层级及`infer_bs32`。四图宏平均文件写至`outputs_eval/benchmark_v2/exp32_fs_gen/shot_N/seed_0/infer_bs32/map_models/benchmark_v2_{discrete,continuous}_crossmap.json`。`benchmark_v2_core`沿用现有 LPIPS／CLIP／FID／FVD 等指标依赖，不调用 full profile 的外部定位器。若模型或π05路径与默认配置不同，首次命令传`--model-path`／`--pi05-path`以保存本地快照；默认`/home/jiahao/...`路径须在执行机确实存在，否则覆盖为实际路径。
+
+###### 执行前只读检查与dry-run
+
+在项目根目录、UniLIP环境运行。下列命令不会执行训练或评测：
+
+```bash
+set -euo pipefail
+python scripts/run_exp32_gen_unseen4.py validate --experiment exp32_fs_gen --zero-shot --task all --test-gen-batch-size 32 --asset-mode minimal
+python scripts/run_exp32_gen_unseen4.py train --experiment exp32_fs_gen --map cs_office --shots 100 --task all --test-gen-batch-size 32 --asset-mode minimal
+python scripts/run_exp32_gen_unseen4.py infer --experiment exp32_fs_gen --zero-shot --task all --test-gen-batch-size 32 --asset-mode minimal
+python scripts/run_exp32_gen_unseen4.py status --experiment exp32_fs_gen --zero-shot
+```
+
+等运行服务器的checkpoint-12000保存完整后先运行来源检查。失败即停止，不要继续后续块：
+
+```bash
+set -euo pipefail
+python scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+```
+
+###### Zero-shot：四图推理、指标和聚合
+
+仅在source-check通过后运行。单GPU默认`GPU=0`；按空闲设备修改即可。此块会执行命令，建议前台顺序完成后再启动few-shot，避免GPU争用。必要时首次加入正确的`--model-path`／`--pi05-path`覆盖。
+
+```bash
+set -euo pipefail
+GPU=0
+COMMON=(--experiment exp32_fs_gen --zero-shot --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --cuda-device "$GPU" --report-to none)
+python scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --execute
+python scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --execute
+python scripts/run_exp32_gen_unseen4.py aggregate "${COMMON[@]}" --execute
+```
+
+###### Few-shot：单GPU顺序执行16组
+
+先确认zero-shot任务已经结束，再执行。对每个地图、shot顺序执行train→infer→metrics；全部16组成功后，对四档shot分别聚合两项生成任务。训练命令不提供自动恢复400步训练；遇到中断时先归档非空模型输出目录，再从头运行。已有非空model输出会被拒绝覆盖。推理也拒绝覆盖非空任务目录；某项推理中断时，先人工归档该项的 `discrete` 或 `continuous` 目录，再用 `--task gen` 或 `--task gen_continuous` 单独补跑，保留其他已完成任务。端口`29740`可调整；需逐个确认可用。
+
+```bash
+set -euo pipefail
+GPU=0
+PORT=29740
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+for MAP in cs_office de_golden de_palacio de_vertigo; do
+  for SHOTS in 100 50 20 10; do
+    python scripts/run_exp32_gen_unseen4.py train --map "$MAP" --shots "$SHOTS" --master-port "$PORT" "${COMMON[@]}" --execute
+    python scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+    python scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+  done
+done
+for SHOTS in 100 50 20 10; do
+  python scripts/run_exp32_gen_unseen4.py aggregate --shots "$SHOTS" "${COMMON[@]}" --execute
+done
+```
+
+若模型训练已完成，只需补做某一组的推理和指标，可用下面单点示例（不启动训练）；按实际`MAP`、`SHOTS`替换值。`source-check`仍须先通过。
+
+```bash
+set -euo pipefail
+GPU=0
+MAP=cs_office
+SHOTS=100
+COMMON=(--experiment exp32_fs_gen --task all --split query --test-gen-batch-size 32 --asset-mode minimal --seed 42 --support-seed 0 --cuda-device "$GPU" --report-to none)
+python scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+python scripts/run_exp32_gen_unseen4.py infer --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+python scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "${COMMON[@]}" --execute
+```
 
 
 ##### exp37_fs_gen bs32

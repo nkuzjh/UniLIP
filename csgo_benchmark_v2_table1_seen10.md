@@ -193,6 +193,53 @@ Table 1 汇报 CSGO Benchmark v2 Seen-10 split 的定位、离散条件生成与
 | UniLIP · Stage 2 loc-only | `exp37_s2_loc` | local 6000 | 1 | 2269.423 M | 1285.918 M | 55.689 M | 46.3528 | 2.8725 | 2.5183 | 25.1111 | [JSON](outputs_loc/benchmark_v2/exp37_s2_loc/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
 | UniLIP · Stage 2 joint | `exp37_s2` | local 6000 | 1 | 2288.441 M | 1285.918 M | 77.003 M | 47.1936 | 2.8386 | 2.6494 | 26.3374 | [JSON](outputs_loc/benchmark_v2/exp37_s2/checkpoint-6000/test/seed_42/benchmark_csgo_v2_loc.json) |
 
+<a id="exp32-loc-16000-crossmap-transfer"></a>
+
+### exp32_loc@16000：CrossMap-4 zero-shot／few-shot 定位（远程同步结果）
+
+本小节补充 `exp32_fs_loc` 的跨地图定位迁移结果。评测 split 为 `crossmap_query_test`，四图为 `cs_office`、`de_golden`、`de_palacio`、`de_vertigo`，每图 2,000 条 query、每档合计 8,000 条；四图等权宏平均，四项距离指标均越低越好，统一保留四位小数。所有推理使用 minimal 资产、seed=42、batch=16。这些结果与上方 Seen-10 最终 test 主表采用不同 split，在此单列。
+
+**实验来源与适配配方。** zero-shot 直接使用 `exp32_loc/checkpoint-16000/model.safetensors`。few-shot 按地图分别使用 10／20／50／100 条 support，各自从同一来源重新初始化，按每模型 400 步配方独立适配，共 16 组模型；生成分支冻结、辅助 loss 关闭，仅做定位适配。support seed=0，训练／推理 seed=42；路径中的 `seed_0` 表示 support seed。四图汇总聚合的是四个地图专属模型的 query 结果。来源与配方见[实验计划样例](outputs/csgo_1b/exp32_fs_loc_cs_office/shot_100/seed_0/experiment_plan.json)、[训练配置样例](outputs/csgo_1b/exp32_fs_loc_cs_office/shot_100/seed_0/resolved_config.yaml)及 [zero-shot 推理清单](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/inference_manifest.json)。
+
+#### 四图等权宏平均
+
+| 设置 | 每图 support 数 | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 原始结果／汇总 |
+|---|---:|---:|---:|---:|---:|---|
+| zero-shot | 0 | 340.5861 | 19.7136 | 6.6002 | 91.7632 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/benchmark_csgo_v2_loc.json) |
+| 10-shot | 10 | 224.5855 | 14.9123 | 5.1495 | 87.2405 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/shot_10/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json) |
+| 20-shot | 20 | 210.7048 | 14.3860 | 4.7877 | 83.5639 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/shot_20/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json) |
+| 50-shot | 50 | 201.6408 | 13.9464 | 4.5524 | 81.9826 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/shot_50/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json) |
+| 100-shot | 100 | 188.9463 | 13.0254 | 4.2253 | 75.7199 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/shot_100/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json) |
+
+#### 逐地图结果
+
+| 地图 | 设置 | XY_Dist↓ | Z_Dist↓ | Pitch_Dist↓ | Yaw_Dist↓ | 原始结果 |
+|---|---|---:|---:|---:|---:|---|
+| `cs_office` | zero-shot | 447.6809 | 15.3504 | 6.6557 | 95.1943 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `cs_office` | 10-shot | 165.3169 | 4.1149 | 5.4877 | 87.6499 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_cs_office/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `cs_office` | 20-shot | 148.0759 | 3.1389 | 4.9745 | 82.6743 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_cs_office/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `cs_office` | 50-shot | 134.0038 | 2.9574 | 4.5344 | 83.6886 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_cs_office/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `cs_office` | 100-shot | 113.6239 | 2.5909 | 4.4713 | 72.8739 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_cs_office/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_golden` | zero-shot | 284.7781 | 17.8336 | 5.2061 | 90.0379 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_golden` | 10-shot | 232.8028 | 15.3951 | 4.1608 | 87.5222 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_golden/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_golden` | 20-shot | 220.6584 | 14.4311 | 3.9971 | 85.6038 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_golden/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_golden` | 50-shot | 195.9143 | 13.7926 | 3.8977 | 84.3134 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_golden/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_golden` | 100-shot | 191.6206 | 13.2865 | 3.3930 | 77.6973 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_golden/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_palacio` | zero-shot | 364.6475 | 20.7722 | 4.1097 | 91.4569 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_palacio` | 10-shot | 286.7440 | 18.1009 | 3.7111 | 87.3239 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_palacio/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_palacio` | 20-shot | 267.0953 | 18.5689 | 3.5174 | 80.1042 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_palacio/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_palacio` | 50-shot | 274.2355 | 18.5113 | 3.5263 | 76.8391 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_palacio/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_palacio` | 100-shot | 256.4392 | 16.8377 | 3.7639 | 70.7223 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_palacio/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_vertigo` | zero-shot | 265.2378 | 24.8980 | 10.4294 | 90.3638 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc/zero_shot/seed_42/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_vertigo` | 10-shot | 213.4784 | 22.0381 | 7.2385 | 86.4660 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_vertigo/shot_10/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_vertigo` | 20-shot | 206.9898 | 21.4051 | 6.6619 | 85.8733 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_vertigo/shot_20/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_vertigo` | 50-shot | 202.4095 | 20.5243 | 6.2513 | 83.0893 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_vertigo/shot_50/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+| `de_vertigo` | 100-shot | 194.1013 | 19.3863 | 5.2731 | 81.5860 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_de_vertigo/shot_100/seed_0/infer_bs16/benchmark_csgo_v2_loc.json) |
+
+本次单一 support seed 下，10→20→50→100-shot 的四项宏平均误差均逐档下降；zero-shot 到 100-shot 的 XY_Dist 从 340.5861 降至 188.9463。这是上述种子与配方下的观察，尚无跨 seed 均值或方差。
+
+**同步与核验范围。** 已同步 1 份 zero-shot 四图结果、16 份 few-shot 单图结果及 4 份 few-shot 四图汇总；全部宏平均均与对应四图原始指标的算术平均一致。当前本地完整训练档案为 9/16 组：`cs_office` 与 `de_golden` 的全部四档，以及 `de_palacio` 的 10-shot；这九组的严格初始化配置、来源 step=16000 与训练完成 step=400 均已核对。`de_palacio` 的 100-shot 仅同步了实验计划，20／50-shot 及 `de_vertigo` 四档的训练档案尚未同步齐。来源 `exp32_loc@16000` 权重当前本地也缺失；其来源身份按评测清单、已同步的实验计划与配置记录列示。其余七组的评测指标照已同步 JSON 收录，训练完成状态尚未在本地逐组独立验证。
+
 ### exp37 离散生成（最终test）
 
 | Method／训练方式 | Experiment | Checkpoint | 推理 batch | Total params | Active params | Trainable params | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |

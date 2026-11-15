@@ -1,0 +1,25 @@
+# Fixed transfer protocol for exp32_gen checkpoint-12000. The runner rejects drift.
+schema_version: 1
+family: exp32_fs_gen
+source: outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors
+source_recipe: csgo_configs/exp32_gen.yaml
+manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+minimal_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+maps: [cs_office, de_golden, de_palacio, de_vertigo]
+shots: [100, 50, 20, 10]
+support_seed: 0
+seed: 42
+max_steps: 400
+inference_batch_size: 32
+metric_batch_size: 1
+retention: false
+evaluation:
+  paired_size: 448
+  frame_diff_threshold: 2
+  min_track_len: 4
+  clip_length: 16
+  clip_stride: 16
+  fvd_size: 224
+  external_loc_repo_root: csgosquare
+  external_loc_config_path: configs_reg_newdata/exp5_2.yaml
+  external_loc_checkpoint_path: checkpoints_reg_newdata/exp5_2/20251227_091745/current_model.pth
