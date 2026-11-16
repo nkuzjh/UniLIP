@@ -1444,6 +1444,8 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 
 以下为2026-11-09历史同步状态：本节更新exp37 Unseen-4每图独立适配进度与结果，不改历史表格数值。协议见[exp37 Unseen-4](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md)，手动命令见[record.md](record.md#exp37-unseen4-fewshot-20261103)。gen／loc各16点的原48份单图query与both四图四档的48份均齐全，合计**96份单图指标、每类任务32份**；both为16/16点、48/48份，zero-shot三项齐。query结果无缺失；gen／loc／both共48个final400训练终点均有本机正式模型和Trainer状态核验证据，详见[专题进度表](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-progress-20261109)。joint／both_b1的few-shot无本机完成证据。旧gen／loc／joint使用batch=1；both定位`infer_bs16`、生成`infer_bs32`，生成元数据有438个activeDropout及`stochastic_layers_batch_dependent=true`，跨family差异不能严格归因辅助loss。100／50-shot三项正式`map-models`汇总均齐且与四图单图等权复算一致；10／20-shot正式汇总未同步，宏平均由单图JSON复算。retention暂停；本次未运行训练、推理或评测。数值、来源和解释见[2026-11-09 both结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-results-20261109)及[分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-both-analysis-20261109)。
 
+2026-11-16新增 `exp37_s1_fs_joint`：来源固定为Stage 1 `exp37@19550`，另规划16个joint适配点；当前仅完成代码／配置／命令准备，未计入旧64点已完成统计。设置与手动命令见[直接迁移协议](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-s1-19550-unseen4-protocol)及[record.md](record.md#exp37-s1-19550-unseen4-manual)。
+
 ## zero-shot 实验进度
 
 | Family | 未适配Seen来源 | 推理 | Metric | 正式checkpoint |
@@ -1451,6 +1453,7 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_gen | exp37_s2_gen | ✅ 离散／连续（bs32；bs1历史保留） | ✅ 对齐batch的四图正式宏平均 | Seen local6000 |
 | exp37_fs_loc | exp37_s2_loc | ✅ 定位（bs16；bs1历史保留） | ✅ 对齐batch的四图正式宏平均 | Seen local6000 |
 | exp37_fs_joint | exp37_s2 | ✅ 定位／离散／连续（loc16／gen32；bs1历史保留） | ✅ 对齐batch的四图正式宏平均 | Seen local6000 |
+| exp37_s1_fs_joint | exp37@19550（Stage 1直接） | 代码／配置／命令已准备；未启动 | 待定位／离散／连续评测 | Stage 1 final19550 |
 | exp37_fs_both | exp37_s2_both | ✅ 定位／离散／连续（loc16／gen32） | ✅ 对齐batch的四图正式宏平均 | Seen local6000 |
 | exp37_fs_both_b1 | exp37_s2_both_b1 | 未同步（joint） | 未同步 | Seen local6000 |
 
@@ -1472,6 +1475,10 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_joint_de_golden | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | final400；不做Unseen中途选点 |
 | exp37_fs_joint_de_palacio | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | final400；不做Unseen中途选点 |
 | exp37_fs_joint_de_vertigo | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | ✅400/400／✅定位+离散+连续（loc16／gen32）／暂停 | final400；不做Unseen中途选点 |
+| exp37_s1_fs_joint_cs_office | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint_de_golden | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint_de_palacio | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint_de_vertigo | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 未启动／待Q三任务／暂停 | 计划final400；父exp37@19550 |
 | exp37_fs_both_cs_office | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
 | exp37_fs_both_de_golden | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
 | exp37_fs_both_de_palacio | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验；不做Unseen中途选点 |
@@ -1507,6 +1514,11 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_joint | 50-shot（loc bs16） | 四个map-specific local400 | 193.3055 | 13.3759 | 4.8543 | 81.4052 |
 | exp37_fs_joint | 20-shot（loc bs16） | 四个map-specific local400 | 206.3759 | 14.3912 | 5.3183 | 84.9582 |
 | exp37_fs_joint | 10-shot（loc bs16） | 四个map-specific local400 | 223.9695 | 15.2190 | 5.4017 | 88.5198 |
+| exp37_s1_fs_joint | 0-shot（loc bs16；待运行） | Stage 1 final19550 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 100-shot（loc bs16；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 50-shot（loc bs16；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 20-shot（loc bs16；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 10-shot（loc bs16；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
 | exp37_fs_both | 0-shot（bs16） | Seen local6000 | 341.5329 | 18.9907 | 9.0030 | 93.0790 |
 | exp37_fs_both | 100-shot（bs16） | 四个map-specific final模型（final400已核验） | 171.8577 | 11.9646 | 4.8400 | 74.9741 |
 | exp37_fs_both | 50-shot（bs16） | 四个map-specific final模型（final400已核验） | 188.9630 | 13.2528 | 5.0187 | 80.8331 |
@@ -1540,6 +1552,11 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_joint | 50-shot（gen bs32） | 四个map-specific local400 | 12.8645 | 0.6757 | 0.4753 | 40.6680 |
 | exp37_fs_joint | 20-shot（gen bs32） | 四个map-specific local400 | 12.6104 | 0.6807 | 0.4688 | 45.4271 |
 | exp37_fs_joint | 10-shot（gen bs32） | 四个map-specific local400 | 12.5602 | 0.6845 | 0.4661 | 52.8807 |
+| exp37_s1_fs_joint | 0-shot（gen bs32；待运行） | Stage 1 final19550 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 100-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 50-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 20-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 10-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 |
 | exp37_fs_both | 0-shot（bs32） | Seen local6000 | 11.0518 | 0.7285 | 0.4604 | 100.0587 |
 | exp37_fs_both | 100-shot（bs32） | 四个map-specific final模型（final400已核验） | 13.0418 | 0.6673 | 0.4807 | 39.5391 |
 | exp37_fs_both | 50-shot（bs32） | 四个map-specific final模型（final400已核验） | 12.8144 | 0.6747 | 0.4761 | 40.3697 |
@@ -1572,6 +1589,11 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 | exp37_fs_joint | 50-shot（gen bs32） | 四个map-specific local400 | 12.4957 | 0.6837 | 40.3112 | 46.2875 | 1010.9113 |
 | exp37_fs_joint | 20-shot（gen bs32） | 四个map-specific local400 | 12.3564 | 0.6856 | 38.2192 | 44.3905 | 960.9629 |
 | exp37_fs_joint | 10-shot（gen bs32） | 四个map-specific local400 | 12.3481 | 0.6904 | 35.9603 | 42.3631 | 964.6313 |
+| exp37_s1_fs_joint | 0-shot（gen bs32；待运行） | Stage 1 final19550 | 待评测 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 100-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 50-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 20-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 | 待评测 |
+| exp37_s1_fs_joint | 10-shot（gen bs32；待运行） | 计划四个map-specific final400 | 待评测 | 待评测 | 待评测 | 待评测 | 待评测 |
 | exp37_fs_both | 0-shot（bs32） | Seen local6000 | 11.1011 | 0.7289 | 43.0778 | 48.9258 | 1334.9445 |
 | exp37_fs_both | 100-shot（bs32） | 四个map-specific final模型（final400已核验） | 12.8341 | 0.6730 | 40.3321 | 46.2007 | 984.8784 |
 | exp37_fs_both | 50-shot（bs32） | 四个map-specific final模型（final400已核验） | 12.4543 | 0.6850 | 40.4484 | 46.3713 | 1030.1365 |

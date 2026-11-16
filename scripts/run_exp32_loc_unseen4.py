@@ -322,9 +322,7 @@ def train_command(config: dict, base: Path, shots: int, args: argparse.Namespace
     inherited.experiment = "exp37_fs_loc"
     inherited.shots = shots
     command = legacy.train_command(config, base, inherited)
-    if args.master_port == 0:
-        command[command.index("--master_port=0")] = "--standalone"
-        command.insert(command.index("--standalone") + 1, "--nnodes=1")
+    # The shared builder handles both automatic and fixed rendezvous ports.
     return command
 
 
@@ -366,6 +364,8 @@ def status(args: argparse.Namespace) -> dict:
 
 def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, str]], dict]:
     validate_matrix()
+    if args.split != "query":
+        raise ValueError("Only query split is supported")
     if args.experiment != FAMILY or args.seed != 42 or args.support_seed != 0:
         raise ValueError("Experiment/seed/support seed differs from fixed protocol")
     if args.report_to != "none":
@@ -390,7 +390,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
         raise ValueError(f"{args.command} is read-only; omit --execute")
     commands: list[list[str]] = []
     writes: list[tuple[Path, str]] = []
-    details = {"family": FAMILY, "zero_shot": args.zero_shot, "map": args.map,
+    details = {"family": FAMILY, "split": args.split, "zero_shot": args.zero_shot, "map": args.map,
                "shots": None if args.zero_shot else args.shots, "batch_size": args.test_loc_batch_size}
     if args.command == "validate":
         for map_name in MAPS:
@@ -501,6 +501,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--zero-shot", action="store_true")
     p.add_argument("--map", choices=MAPS)
     p.add_argument("--shots", type=int)
+    p.add_argument("--split", choices=("query",), default="query")
     p.add_argument("--task", choices=("all", "loc"), default="all")
     p.add_argument("--test-loc-batch-size", type=positive_batch_size, default=16)
     p.add_argument("--cuda-device", default="0")

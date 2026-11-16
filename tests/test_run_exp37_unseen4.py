@@ -5,6 +5,7 @@ import copy
 import json
 from pathlib import Path
 import shutil
+import struct
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -24,16 +25,22 @@ def option(cmd: list[str], key: str) -> str:
     return cmd[cmd.index(key) + 1]
 
 
+def write_small_safetensors(path: Path, data: bytes = b"abcd") -> None:
+    header = json.dumps({"model.weight": {"dtype": "U8", "shape": [len(data)],
+                                          "data_offsets": [0, len(data)]}}).encode()
+    path.write_bytes(struct.pack("<Q", len(header)) + header + data)
+
+
 class Exp37Unseen4Tests(unittest.TestCase):
-    def test_all_80_points_validate_without_parent_weights(self):
+    def test_all_96_points_validate_without_parent_weights(self):
         commands, writes, info = runner.plan(args("validate"))
         self.assertEqual((commands, writes), ([], []))
-        self.assertEqual(info["validated_points"], 80)
+        self.assertEqual(info["validated_points"], 96)
 
     def test_train_plan_fixed_protocol(self):
         families = {"exp37_fs_gen": "gen", "exp37_fs_loc": "loc",
                     "exp37_fs_joint": "joint", "exp37_fs_both": "joint",
-                    "exp37_fs_both_b1": "joint"}
+                    "exp37_fs_both_b1": "joint", "exp37_s1_fs_joint": "joint"}
         batches = {100: (100, 25), 50: (48, 12), 20: (20, 5), 10: (8, 2)}
         for family, route in families.items():
             for shots, (base, micro) in batches.items():
@@ -69,7 +76,8 @@ class Exp37Unseen4Tests(unittest.TestCase):
                     else:
                         self.assertEqual(option(cmd, "--per_device_train_batch_size"), str(shots))
                         self.assertEqual(option(cmd, "--gradient_accumulation_steps"), "1")
-                    self.assertTrue(info["source"]["path"].endswith("checkpoint-6000/model.safetensors"))
+                    source_step = runner.source_step(family)
+                    self.assertTrue(info["source"]["path"].endswith(f"checkpoint-{source_step}/model.safetensors"))
                     self.assertIs(info["source"]["verified"], False)
 
     def test_combined_fixed_objective_and_control_gating(self):
@@ -264,6 +272,122 @@ class Exp37Unseen4Tests(unittest.TestCase):
                       ("--master-port", "70000")):
             with self.subTest(extra=extra), self.assertRaises(ValueError):
                 runner.plan(args("train", "--experiment", "exp37_fs_gen", "--map", "cs_office", *extra))
+
+    def test_stage1_routes_port_zero_batches_and_macro(self):
+        family = "exp37_s1_fs_joint"
+        self.assertEqual(runner.selected_tasks(family, "all"), ("loc", "gen", "gen_continuous"))
+        for task in ("loc", "gen", "gen_continuous"):
+            self.assertEqual(runner.selected_tasks(family, task), (task,))
+        train = args("train", "--experiment", family, "--map", "cs_office", "--master-port", "0")
+        commands, _, info = runner.plan(train)
+        self.assertIn("--standalone", commands[0])
+        self.assertIn("--nnodes=1", commands[0])
+        self.assertFalse(any(x.startswith("--master_port=") for x in commands[0]))
+        self.assertEqual(info["source"]["step"], 19550)
+        self.assertEqual(option(commands[0], "--per_device_train_batch_size"), "4")
+        self.assertEqual(option(commands[0], "--gradient_accumulation_steps"), "32")
+        zero = args("infer", "--experiment", family, "--zero-shot", "--task", "all",
+                    "--test-loc-batch-size", "16", "--test-gen-batch-size", "32")
+        commands, _, info = runner.plan(zero)
+        self.assertEqual(len(commands), 3)
+        self.assertEqual(info["source"]["step"], 19550)
+        self.assertIn("infer_bs16", option(commands[0], "--output_dir"))
+        self.assertTrue(all("infer_bs32" in option(c, "--output_dir") for c in commands[1:]))
+        for task in ("loc", "gen", "gen_continuous"):
+            cmd = runner.aggregate_command(family, 100, task, True)
+            self.assertIn("maps", cmd)
+            self.assertEqual(cmd[cmd.index("--maps") + 1:cmd.index("--input_root")], list(runner.MAPS))
+
+    def test_stage1_source_check_snapshot_and_truncated_weights(self):
+        family = "exp37_s1_fs_joint"
+        canonical_path = runner.ROOT / "csgo_configs/exp37.yaml"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "csgo_configs").mkdir()
+            shutil.copy2(canonical_path, root / "csgo_configs/exp37.yaml")
+            source_dir = root / "outputs/csgo_1b/exp37"
+            checkpoint_dir = source_dir / "checkpoint-19550"
+            checkpoint_dir.mkdir(parents=True)
+            checkpoint = checkpoint_dir / "model.safetensors"
+            write_small_safetensors(checkpoint)
+            state = {"global_step": 19550, "max_steps": 19550,
+                     "num_train_epochs": 50, "epoch": 50.0}
+            state_path = checkpoint_dir / "trainer_state.json"
+            state_path.write_text(json.dumps(state))
+            (source_dir / "trainer_state.json").write_text(json.dumps(state))
+            cfg = yaml.safe_load(canonical_path.read_text())
+            (source_dir / "resolved_config.yaml").write_text(yaml.safe_dump(cfg))
+            runtime = {"epochs": 50, "source_batch": 128, "save_steps": 4000,
+                       "seed": 42, "warmup_ratio": 0.003, "max_steps": None}
+            source_plan = {"experiment": "exp37", "runtime": runtime,
+                           "fingerprint": runner.seen37.fingerprint(cfg, runtime)}
+            plan_path = source_dir / "experiment_plan.json"
+            plan_path.write_text(json.dumps(source_plan))
+            with patch.object(runner, "ROOT", root), patch.object(runner.seen37, "ROOT", root), \
+                 patch.object(runner.seen37, "tensor_header", return_value={"tensor_count": 2830}):
+                check = args("source-check", "--experiment", family)
+                commands, writes, info = runner.plan(check)
+                self.assertEqual((commands, writes), ([], []))
+                self.assertTrue(info["source"]["verified"])
+                self.assertEqual(info["source"]["step"], 19550)
+                self.assertEqual(info["source"]["state_sha256"], runner.sha256(state_path))
+                with self.assertRaisesRegex(ValueError, "read-only"):
+                    runner.plan(args("source-check", "--experiment", family, "--execute"))
+                train = args("train", "--experiment", family, "--map", "cs_office",
+                             "--asset-mode", "full", "--data-dir", "/data/full")
+                recipe, adaptation_plan, out = runner.snapshot(family, "cs_office", 100, train, strict=True)
+                self.assertEqual(recipe["finetune_init_ckpt_path"], runner.rel(checkpoint))
+                self.assertIsNone(recipe["benchmark_v2_asset_manifest"])
+                self.assertEqual(recipe["data_dir"], "/data/full")
+                out.mkdir(parents=True)
+                (out / "resolved_config.yaml").write_text(yaml.safe_dump(recipe))
+                (out / "experiment_plan.json").write_text(json.dumps(adaptation_plan))
+                infer = args("infer", "--experiment", family, "--map", "cs_office", "--execute")
+                runner.read_snapshot(family, "cs_office", 100, infer)
+                saved = json.loads((out / "experiment_plan.json").read_text())
+                saved["source"]["step"] = 6000
+                (out / "experiment_plan.json").write_text(json.dumps(saved))
+                with self.assertRaisesRegex(ValueError, "checkpoint-19550"):
+                    runner.read_snapshot(family, "cs_office", 100, infer)
+                (out / "experiment_plan.json").write_text(json.dumps(adaptation_plan))
+                original = checkpoint.read_bytes()
+                checkpoint.write_bytes(original[:-1] + b"z")
+                with self.assertRaisesRegex(ValueError, "Saved source model hash differs"):
+                    runner.read_snapshot(family, "cs_office", 100, infer)
+                checkpoint.write_bytes(original)
+                state_path.write_text(json.dumps({**state, "log_history": []}))
+                with self.assertRaisesRegex(ValueError, "source recipe, plan, or state hash differs"):
+                    runner.read_snapshot(family, "cs_office", 100, infer)
+                state_path.write_text(json.dumps(state))
+                state_path.write_text(json.dumps({**state, "epoch": 49.0}))
+                with self.assertRaises(ValueError):
+                    runner.plan(check)
+                state_path.write_text(json.dumps(state))
+                source_plan["runtime"]["source_batch"] = 64
+                plan_path.write_text(json.dumps(source_plan))
+                with self.assertRaisesRegex(ValueError, "plan"):
+                    runner.plan(check)
+                source_plan["runtime"]["source_batch"] = 128
+                plan_path.write_text(json.dumps(source_plan))
+                checkpoint.write_bytes(checkpoint.read_bytes()[:-1])
+                with self.assertRaisesRegex(ValueError, "length"):
+                    runner.plan(check)
+                adapted = out / "model.safetensors"
+                write_small_safetensors(adapted)
+                adapted.write_bytes(adapted.read_bytes()[:-1])
+                (out / "trainer_state.json").write_text(json.dumps({"global_step": 400, "max_steps": 400}))
+                with self.assertRaisesRegex(ValueError, "length"):
+                    runner.final_model(out, strict=True, verify_size=True)
+
+    def test_stage1_train_success_requires_complete_final_model(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             patch.object(runner, "ROOT", Path(directory)), \
+             patch.object(runner, "plan", return_value=([["fake-train"]], [], {})), \
+             patch.object(runner.subprocess, "run") as run:
+            result = runner.main(["train", "--experiment", "exp37_s1_fs_joint",
+                                  "--map", "cs_office", "--execute"])
+            self.assertEqual(result, 1)
+            run.assert_called_once()
 
     def test_execute_fixture_snapshot_inference_and_provenance(self):
         original_root = runner.ROOT

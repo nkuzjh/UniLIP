@@ -2,8 +2,10 @@ schema_version: 1
 # This is a fixed protocol. The runner validates every declared field and
 # rejects drift rather than silently treating the YAML as an override.
 # Dry planning uses this matrix without loading the large Seen checkpoints.
-# Execution requires each matching exp37_s2 checkpoint-6000 and its completed
-# Trainer state, managed recipe/plan, and verified model tensor header/hash.
+# Stage 2 families require their matching exp37_s2 checkpoint-6000; the
+# exp37_s1_fs_joint family requires exp37 checkpoint-19550 directly.
+# Execution verifies completed Trainer state, managed recipe/plan, model
+# tensor header, file length (Stage 1 family), and source hashes.
 manifest: data/csgo_benchmark_v2/benchmark_manifest.json
 minimal_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
 maps: [cs_office, de_golden, de_palacio, de_vertigo]
@@ -44,6 +46,7 @@ families:
   exp37_fs_joint: {source: exp37_s2, route: joint}
   exp37_fs_both: {source: exp37_s2_both, route: joint}
   exp37_fs_both_b1: {source: exp37_s2_both_b1, route: joint}
+  exp37_s1_fs_joint: {source: exp37, source_step: 19550, route: joint}
 evaluation:
   batch_size: 1
   paired_size: 448

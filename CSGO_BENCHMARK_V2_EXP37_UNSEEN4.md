@@ -1,5 +1,7 @@
 # CSGO Benchmark v2：exp37 Unseen-4 每图独立 few-shot
 
+2026-11-16新增准备：`exp37_s1_fs_joint`直接使用 `exp37@19550` 进行Unseen-4 zero-shot／few-shot，16个joint适配点尚未启动；来源、配方和命令见[独立协议](#exp37-s1-19550-unseen4-protocol)。
+
 2026-11-16补充对照：独立family `exp32_fs_gen`（父模型exp32_gen@12000）的zero-shot／few-shot共40份逐图指标和10份汇总已齐；截至15:06:15 +08，本机训练快照14/16组完整，另2组仍在同步。详见[新增结果与进度](#exp32-gen-12000-unseen4-results-20261116)、[分析](#exp32-gen-12000-unseen4-analysis-20261116)。原exp37主线与本次对照分开统计。
 
 状态（2026-11-13 本机同步核查）：gen／loc／joint／both按定位bs16、生成bs32完成全部Unseen-4主线：64/64个final400模型、9/9项四图zero-shot、144/144份few-shot逐图指标和36/36份正式四图汇总均齐全。最新数值见[对齐batch完整结果](#exp37-unseen4-aligned-results-20261113)、[分析](#exp37-unseen4-aligned-analysis-20261113)；历史bs1结果保留。both_b1排除在本轮范围外，Seen-retention继续暂停。
@@ -24,7 +26,34 @@
 
 适配模型名为 `<family>_<map>`，例如 `exp37_fs_both_cs_office`。shot 和 support seed 放在输出子目录，不创建另外的模型名。五个 family × 四图 × 四种 shot = **80 次独立适配训练**，总计 32,000 optimizer updates；zero-shot 使用五个原模型，不增加训练。若在查看 Unseen 结果前依据 Seen validation 只选择一个 both 候选，则实际运行四个 family、64 次适配即可。代码同时保留两个候选，不自动择优、不自动运行矩阵。
 
-各来源都必须真正完成 Seen Stage2 local6000。不能以 Stage1 `exp37@19550`、Stage2@4000、旧 `exp32` 或另一张地图的适配模型代替。只加载模型权重，新建 optimizer、scheduler 和 local step；100/50/20/10-shot 之间不能接续训练。现有单任务 Stage2 源自旧 `exp32_gen/loc`，联合 Stage2 源自新 `exp37`，应保留这一区别，不能将整个历史训练预算声称为 FLOPs 相同。
+上表五个Stage 2来源都必须真正完成 Seen Stage2 local6000；新增Stage 1 family另见[直接迁移协议](#exp37-s1-19550-unseen4-protocol)。上表来源不能以 Stage1 `exp37@19550`、Stage2@4000、旧 `exp32` 或另一张地图的适配模型代替。只加载模型权重，新建 optimizer、scheduler 和 local step；100/50/20/10-shot 之间不能接续训练。现有单任务 Stage2 源自旧 `exp32_gen/loc`，联合 Stage2 源自新 `exp37`，应保留这一区别，不能将整个历史训练预算声称为 FLOPs 相同。
+
+<a id="exp37-s1-19550-unseen4-protocol"></a>
+
+## exp37@19550 Stage 1 直接迁移（2026-11-16；仅准备）
+
+新family为 `exp37_s1_fs_joint`。zero-shot直接使用 `outputs/csgo_1b/exp37/checkpoint-19550/model.safetensors`；few-shot也从同一父模型独立初始化，覆盖四图×100／50／20／10-shot共16个joint适配点，每点400步。原 `exp37_fs_joint` 的直接来源仍为 `exp37_s2@6000`，本组增加的是Stage 1直接迁移对照，输出名称和训练预算分别记录。
+
+| 项目 | 固定设置 |
+|---|---|
+| 配置／入口 | [配置矩阵](csgo_configs/benchmark_v2_exp37_unseen4.yaml)中的 `exp37_s1_fs_joint`；[运行入口](scripts/run_exp37_unseen4.py) |
+| 父模型核验 | checkpoint-19550的模型及Trainer状态，根目录managed配置／计划指纹、来源哈希与joint LoRA结构；仅接受完整19550/19550 |
+| 适配 | 单卡，400步；micro4／GAS32，support seed0，train/infer seed42；每个地图／shot新建optimizer／scheduler／local step |
+| 基础样本曝光 | 100／50／20／10-shot每次更新实际100／48／20／8个base样本，沿用原joint采样、尾样本轮换与microbatch mean |
+| 训练目标 | joint，αloc=8；全部辅助loss关闭；LoRA r32/alpha64/dropout0.05；LR2e-5，Action connector/norm/projector LR1e-4；cosine min_lr_rate0.1、warmup_ratio0.003 |
+| 数据与评测 | 默认minimal；仅query，retention暂停；定位batch16，离散／连续生成batch32，指标batch1；保存原Dropout策略 |
+| 运行方式 | `validate`无权重只做规划；`source-check`始终只读；其他命令仅显式 `--execute` 时写入／执行；自动端口 `--master-port 0` |
+| 命令 | [record.md中的预检、zero-shot、双GPU few-shot和聚合](record.md#exp37-s1-19550-unseen4-manual) |
+
+本组zero-shot定位／离散各8,000条query，连续5,120帧；每个few-shot模型只评测自身地图的2,000条定位／离散query与1,280连续帧。四图按地图等权汇总，FID／FVD同样取逐图指标的算术平均。本次没有启动训练、推理或指标计算，结果留待执行后填写。
+
+| 范围 | 当前状态 | 结果目录 |
+|---|---|---|
+| zero-shot三任务 | 代码／配置／命令已准备，未启动 | `<outputs_loc或outputs_eval>/benchmark_v2/exp37_s1_fs_joint/zero_shot/seed_42/` |
+| 四图×四档few-shot | 16点已规划，未启动 | 模型为 `outputs/csgo_1b/exp37_s1_fs_joint_<map>/shot_N/seed_0/`；评测为同family／地图／shot层级 |
+| few-shot四图宏平均 | 待四图完成后分别聚合 | `exp37_s1_fs_joint/shot_N/seed_0/infer_bs{16,32}/map_models/`，分别位于定位／生成结果根目录 |
+
+定位结果使用 `outputs_loc/benchmark_v2/` 与 `infer_bs16`；生成使用 `outputs_eval/benchmark_v2/` 与 `infer_bs32/{discrete,continuous}`。对应 `experiment_plan.json`／`evaluation_plan.json` 将记录19550父模型和本组完整身份。新family单独增加16个规划点，入口默认 `validate` 现覆盖原五个Stage 2 family的80点加本组16点，共96点；原2026-11-13的64个已完成适配模型及其指标统计仍只指原四个选定Stage 2 family。
 
 ## 公共训练设置
 
@@ -125,6 +154,10 @@ Seen／Unseen 的可执行示例统一见 [record.md](record.md#exp37-batched-in
 | exp37_fs_joint | de_golden | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
 | exp37_fs_joint | de_palacio | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
 | exp37_fs_joint | de_vertigo | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
+| exp37_s1_fs_joint | cs_office | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint | de_golden | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint | de_palacio | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 计划final400；父exp37@19550 |
+| exp37_s1_fs_joint | de_vertigo | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 未启动／待定位+离散+连续／暂停 | 计划final400；父exp37@19550 |
 | exp37_fs_both | cs_office | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
 | exp37_fs_both | de_golden | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |
 | exp37_fs_both | de_palacio | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | ✅400/400／✅定位+离散+连续／暂停 | final400已核验 |

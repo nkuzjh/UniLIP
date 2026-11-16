@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import struct
 import subprocess
 import sys
 
@@ -74,6 +75,43 @@ def sha256(path: Path) -> str:
     return _sha256_cached(path, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
 
 
+def source_step(family: str) -> int:
+    return FAMILIES[family].get("source_step", 6000)
+
+
+def verify_safetensors_size(path: Path) -> None:
+    """Reject a truncated or trailing-byte model before expensive execution."""
+    with path.open("rb") as stream:
+        prefix = stream.read(8)
+        if len(prefix) != 8:
+            raise ValueError(f"Incomplete safetensors header: {path}")
+        header_length = struct.unpack("<Q", prefix)[0]
+        if not 0 < header_length <= 100_000_000:
+            raise ValueError(f"Invalid safetensors header length: {path}")
+        raw = stream.read(header_length)
+        if len(raw) != header_length:
+            raise ValueError(f"Truncated safetensors header: {path}")
+    try:
+        header = json.loads(raw)
+        offsets = [value["data_offsets"] for key, value in header.items() if key != "__metadata__"]
+        if not offsets or any(type(pair) is not list or len(pair) != 2 or
+                              any(type(n) is not int for n in pair) or
+                              pair[0] < 0 or pair[1] <= pair[0] for pair in offsets):
+            raise ValueError("invalid tensor offsets")
+        intervals = sorted((start, end) for start, end in offsets)
+        cursor = 0
+        for start, end in intervals:
+            if start != cursor:
+                raise ValueError("tensor offsets have a gap or overlap")
+            cursor = end
+    except (TypeError, KeyError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Invalid safetensors tensor header: {path}") from exc
+    except ValueError as exc:
+        raise ValueError(f"Invalid safetensors tensor header: {path}: {exc}") from exc
+    if path.stat().st_size != 8 + header_length + cursor:
+        raise ValueError(f"Safetensors model length differs from tensor header: {path}")
+
+
 def validate_matrix() -> None:
     expected = {
         "schema_version": 1,
@@ -88,7 +126,8 @@ def validate_matrix() -> None:
                      "exp37_fs_loc": {"source": "exp37_s2_loc", "route": "loc"},
                      "exp37_fs_joint": {"source": "exp37_s2", "route": "joint"},
                      "exp37_fs_both": {"source": "exp37_s2_both", "route": "joint"},
-                     "exp37_fs_both_b1": {"source": "exp37_s2_both_b1", "route": "joint"}},
+                     "exp37_fs_both_b1": {"source": "exp37_s2_both_b1", "route": "joint"},
+                     "exp37_s1_fs_joint": {"source": "exp37", "source_step": 19550, "route": "joint"}},
         "training": {"save_strategy": "no", "eval_strategy": "no",
                      "joint_micro_batch": 4, "joint_gradient_accumulation_steps": 32,
                      "single_micro_batch": "shots", "single_gradient_accumulation_steps": 1,
@@ -145,7 +184,46 @@ def selected_eval_dir(args: argparse.Namespace, family: str, map_name: str | Non
                     task_batch_size(args, task))
 
 
+def stage1_parent_checkpoint(*, strict: bool) -> tuple[Path, dict]:
+    source = "exp37"
+    step = 19550
+    parent = ROOT / "outputs/csgo_1b" / source
+    path = parent / f"checkpoint-{step}" / "model.safetensors"
+    if not strict:
+        return path, {"path": rel(path), "sha256": None, "step": step, "verified": False}
+    if seen37.final_checkpoint_step(source) != step or not path.is_file():
+        raise ValueError(f"Missing completed exp37 checkpoint-{step}: {path}")
+    state_path = path.parent / "trainer_state.json"
+    state = seen37.trainer_state(state_path)
+    if (state["global_step"], state["max_steps"], state.get("num_train_epochs")) != (step, step, 50) or float(state.get("epoch", 0)) < 50:
+        raise ValueError(f"Incomplete exp37 Stage 1 Trainer state: {state_path}")
+    recipe_path = parent / "resolved_config.yaml"
+    recipe = seen37.read_yaml(recipe_path)
+    seen37.validate_config(recipe)
+    if recipe.get("exp37_experiment") != source or recipe.get("seed") != 42 or recipe.get("training_stop_after_step") is not None:
+        raise ValueError(f"Source exp37 Stage 1 recipe identity differs: {recipe_path}")
+    plan_path = parent / "experiment_plan.json"
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    runtime = plan.get("runtime", {})
+    if (plan.get("experiment") != source or
+        plan.get("fingerprint") != seen37.fingerprint(recipe, runtime) or
+        runtime.get("epochs") != 50 or runtime.get("source_batch") != 128 or
+        runtime.get("save_steps") != 4000 or runtime.get("seed") != 42 or
+        runtime.get("warmup_ratio") != 0.003 or "max_steps" not in runtime or
+        runtime["max_steps"] is not None):
+        raise ValueError(f"Source exp37 Stage 1 plan identity or runtime differs: {plan_path}")
+    verify_safetensors_size(path)
+    header = seen37.tensor_header(path, "exp37_s2")
+    return path, {"path": rel(path), "sha256": sha256(path), "step": step,
+                  "verified": True, "recipe_path": rel(recipe_path),
+                  "recipe_sha256": sha256(recipe_path), "plan_path": rel(plan_path),
+                  "plan_sha256": sha256(plan_path), "state_path": rel(state_path),
+                  "state_sha256": sha256(state_path), "header": header}
+
+
 def parent_checkpoint(family: str, *, strict: bool) -> tuple[Path, dict]:
+    if family == "exp37_s1_fs_joint":
+        return stage1_parent_checkpoint(strict=strict)
     source = FAMILIES[family]["source"]
     path = ROOT / "outputs/csgo_1b" / source / "checkpoint-6000/model.safetensors"
     if not strict:
@@ -246,7 +324,7 @@ def validate_recipe(cfg: dict, family: str, map_name: str, shots: int) -> None:
     if cfg.get("benchmark_v2_support_seed") != 0 or cfg.get("seed") != 42 or cfg.get("benchmark_v2_split") != "crossmap_support":
         raise ValueError("Saved recipe support/train seed or split differs")
     if cfg.get("finetune_init_strict") is not True or cfg.get("finetune_init_ckpt_path") != rel(parent_checkpoint(family, strict=False)[0]):
-        raise ValueError("Saved recipe source differs from fixed checkpoint-6000")
+        raise ValueError(f"Saved recipe source differs from fixed checkpoint-{source_step(family)}")
     if cfg.get("warmup_ratio") != 0.003 or "warmup_steps" in cfg or cfg.get("lr_scheduler_kwargs") != {"min_lr_rate": 0.1}:
         raise ValueError("Saved recipe optimizer schedule differs")
     if cfg.get("csgo_loss_per_microbatch_mean") is not True or cfg.get("csgo_forward_sampler_epoch") is not True:
@@ -265,7 +343,7 @@ def validate_recipe(cfg: dict, family: str, map_name: str, shots: int) -> None:
         raise ValueError("Saved recipe task sampling ratio differs")
     if cfg.get("benchmark_v2_manifest") != MATRIX["manifest"] or cfg.get("val_maps") != [map_name] or cfg.get("test_maps") != [map_name]:
         raise ValueError("Saved recipe manifest or map selectors differ")
-    if cfg.get("is_lora") is not True or cfg.get("llm_train_mode") != "lora" or cfg.get("lora_r") != 32 or cfg.get("lora_alpha") != 64:
+    if cfg.get("is_lora") is not True or cfg.get("llm_train_mode") != "lora" or cfg.get("lora_r") != 32 or cfg.get("lora_alpha") != 64 or cfg.get("lora_dropout") != 0.05:
         raise ValueError("Saved recipe LoRA architecture differs")
     for key in ("is_gen_aux_loss", "is_repa_loss", "is_loc_repa_loss", "is_aux_loc_em_loss",
                 "is_aux_loc_uncertainty_loss"):
@@ -336,12 +414,13 @@ def read_snapshot(family: str, map_name: str, shots: int, args: argparse.Namespa
         raise ValueError("Saved recipe hash differs")
     source = plan.get("source", {})
     parent, evidence = parent_checkpoint(family, strict=args.execute)
-    if source.get("path") != rel(parent) or source.get("step") != 6000 or not source.get("verified"):
-        raise ValueError("Saved source is not verified checkpoint-6000")
+    if source.get("path") != rel(parent) or source.get("step") != source_step(family) or source.get("verified") is not True:
+        raise ValueError(f"Saved source is not verified checkpoint-{source_step(family)}")
     if args.execute and source.get("sha256") != evidence["sha256"]:
         raise ValueError("Saved source model hash differs")
-    if args.execute and any(source.get(k) != evidence[k] for k in ("recipe_sha256", "plan_sha256")):
-        raise ValueError("Saved source recipe or plan hash differs")
+    source_hashes = ("recipe_sha256", "plan_sha256", "state_sha256") if family == "exp37_s1_fs_joint" else ("recipe_sha256", "plan_sha256")
+    if args.execute and any(source.get(k) != evidence[k] for k in source_hashes):
+        raise ValueError("Saved source recipe, plan, or state hash differs")
     if ((args.asset_mode and args.asset_mode != plan.get("asset_mode")) or
         (args.data_dir and args.data_dir != cfg.get("data_dir"))):
         raise ValueError("Requested asset backend differs from snapshot")
@@ -361,7 +440,10 @@ def zero_shot_snapshot(family: str, args: argparse.Namespace) -> tuple[dict, dic
             raise ValueError(f"Incomplete zero-shot snapshot: {base}")
         cfg = seen37.read_yaml(cfg_path)
         saved = json.loads(plan_path.read_text(encoding="utf-8"))
-        if saved.get("family") != family or saved.get("seed") != 42 or saved.get("source", {}).get("path") != rel(parent_checkpoint(family, strict=False)[0]):
+        if (saved.get("family") != family or saved.get("seed") != 42 or
+            saved.get("source", {}).get("path") != rel(parent_checkpoint(family, strict=False)[0]) or
+            (family == "exp37_s1_fs_joint" and (saved.get("source", {}).get("step") != source_step(family) or
+                                                saved.get("source", {}).get("verified") is not True))):
             raise ValueError("Zero-shot snapshot identity/source differs")
         if saved.get("config_sha256") != hashlib.sha256(yaml.safe_dump(cfg, sort_keys=True).encode()).hexdigest():
             raise ValueError("Zero-shot snapshot recipe hash differs")
@@ -371,9 +453,8 @@ def zero_shot_snapshot(family: str, args: argparse.Namespace) -> tuple[dict, dic
             (args.pi05_path and cfg.get("pi05_pytorch_weight_path") != str(Path(args.pi05_path).expanduser()))):
             raise ValueError("Requested zero-shot backend/model differs from snapshot")
         parent, evidence = parent_checkpoint(family, strict=args.execute)
-        if args.execute and (saved.get("source", {}).get("sha256") != evidence["sha256"] or
-                             saved.get("source", {}).get("recipe_sha256") != evidence["recipe_sha256"] or
-                             saved.get("source", {}).get("plan_sha256") != evidence["plan_sha256"]):
+        source_hashes = ("sha256", "recipe_sha256", "plan_sha256", "state_sha256") if family == "exp37_s1_fs_joint" else ("sha256", "recipe_sha256", "plan_sha256")
+        if args.execute and any(saved.get("source", {}).get(key) != evidence[key] for key in source_hashes):
             raise ValueError("Zero-shot source hash differs from snapshot")
         return cfg, saved, parent, []
     if args.execute and args.command != "infer":
@@ -399,7 +480,7 @@ def zero_shot_snapshot(family: str, args: argparse.Namespace) -> tuple[dict, dic
     return cfg, saved, parent, writes
 
 
-def final_model(out: Path, *, strict: bool) -> Path:
+def final_model(out: Path, *, strict: bool, verify_size: bool = False) -> Path:
     model = out / "model.safetensors"
     if strict:
         state_path = out / "trainer_state.json"
@@ -408,14 +489,18 @@ def final_model(out: Path, *, strict: bool) -> Path:
         state = seen37.trainer_state(state_path)
         if state["global_step"] != 400 or state["max_steps"] != 400:
             raise ValueError(f"Adaptation did not finish at step 400: {state_path}")
+        if verify_size:
+            verify_safetensors_size(model)
+            seen37.tensor_header(model, "exp37_s2")
     return model
 
 
 def train_command(cfg: dict, out: Path, args: argparse.Namespace) -> list[str]:
     route = FAMILIES[args.experiment]["route"]
     batch, gas = (4, 32) if route == "joint" else (args.shots, 1)
+    launcher = ["--standalone", "--nnodes=1"] if args.master_port == 0 else [f"--master_port={args.master_port}"]
     cmd = [sys.executable, "-m", "torch.distributed.run", "--nproc_per_node=1",
-           f"--master_port={args.master_port}", "train_csgo.py", "--csgo_config",
+           *launcher, "train_csgo.py", "--csgo_config",
            rel(out / "resolved_config.yaml"), "--deepspeed", "deepspeed_scripts/zero0.json",
            "--model_name_or_path", cfg["model_name_or_path"], "--unilip_factor", "10.6",
            "--mllm_hf_path", cfg["mllm_hf_path"], "--version", "internvl", "--data_type", "mix",
@@ -610,10 +695,10 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
     family, map_name, shots = args.experiment, args.map, args.shots
     if not args.cuda_device or not args.cuda_device.strip() or "," in args.cuda_device or any(c.isspace() for c in args.cuda_device):
         raise ValueError("--cuda-device must select exactly one device")
-    if not 1 <= args.master_port <= 65535:
-        raise ValueError("--master-port must be between 1 and 65535")
+    if not 0 <= args.master_port <= 65535:
+        raise ValueError("--master-port must be between 0 and 65535")
     if family not in FAMILIES and not (args.command == "validate" and family is None):
-        raise ValueError("--experiment must name one exp37_fs family")
+        raise ValueError("--experiment must name a configured exp37 transfer family")
     if shots not in SHOTS:
         raise ValueError(f"--shots must be one of {SHOTS}")
     if args.seed != 42 or args.support_seed != 0:
@@ -621,7 +706,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
     if args.zero_shot:
         if args.command == "train" or map_name is not None:
             raise ValueError("Zero-shot runs have no training or --map")
-    elif args.command not in ("aggregate", "validate") and map_name not in MAPS:
+    elif args.command not in ("aggregate", "validate", "source-check") and map_name not in MAPS:
         raise ValueError(f"--map must be one of {MAPS}")
     if args.command == "aggregate" and map_name is not None:
         raise ValueError("aggregate uses all four maps; omit --map")
@@ -631,20 +716,27 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
         raise ValueError("--task applies only to evaluation")
     if args.command == "train" and args.zero_shot:
         raise ValueError("Zero-shot has no adaptation training")
-    if args.command != "validate" and args.command != "aggregate":
+    if args.command not in ("validate", "aggregate", "source-check"):
         selected_tasks(family, args.task)
     commands: list[list[str]] = []
     writes: list[tuple[Path, str]] = []
     details = {"family": family, "map": map_name, "shots": shots, "zero_shot": args.zero_shot,
                "split": args.split, "task": args.task, "execute": args.execute}
+    if args.command == "source-check":
+        if args.execute:
+            raise ValueError("source-check is read-only; omit --execute")
+        _, evidence = parent_checkpoint(family, strict=True)
+        details["source"] = evidence
+        return commands, writes, details
     if args.command == "validate":
-        for fam in ([family] if args.experiment else FAMILIES):
+        families = [family] if args.experiment else FAMILIES
+        for fam in families:
             for m in MAPS:
                 for n in SHOTS:
                     local = copy.copy(args)
                     local.experiment, local.map, local.shots = fam, m, n
                     snapshot(fam, m, n, local, strict=False)
-        details["validated_points"] = 80 if not args.experiment else 16
+        details["validated_points"] = len(families) * len(MAPS) * len(SHOTS)
         return commands, writes, details
     if args.command == "train":
         cfg, source_plan, out = snapshot(family, map_name, shots, args, strict=args.execute)
@@ -678,7 +770,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             else:
                 for m in MAPS:
                     cfg, source_plan, out = read_snapshot(family, m, shots, args)
-                    checkpoint = final_model(out, strict=True)
+                    checkpoint = final_model(out, strict=True, verify_size=family == "exp37_s1_fs_joint")
                     if "loc" in selected_tasks(family, args.task):
                         validate_inference(selected_eval_dir(args, family, m, shots, "query", "loc", False),
                                            cfg, checkpoint, (m,), SPLITS["query"]["loc"],
@@ -711,7 +803,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
     else:
         if args.execute or (model_dir(family, map_name, shots) / "resolved_config.yaml").is_file():
             cfg, source_plan, out = read_snapshot(family, map_name, shots, args)
-            checkpoint = final_model(out, strict=args.execute)
+            checkpoint = final_model(out, strict=args.execute, verify_size=family == "exp37_s1_fs_joint")
         else:
             cfg, source_plan, out = snapshot(family, map_name, shots, args, strict=False)
             checkpoint = final_model(out, strict=False)
@@ -783,7 +875,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
 
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("command", choices=("validate", "train", "infer", "metrics", "aggregate"))
+    p.add_argument("command", choices=("validate", "source-check", "train", "infer", "metrics", "aggregate"))
     p.add_argument("--experiment", choices=tuple(FAMILIES))
     p.add_argument("--map", choices=MAPS)
     p.add_argument("--shots", type=int, default=100)
@@ -798,7 +890,8 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--pi05-path")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--support-seed", type=int, default=0)
-    p.add_argument("--master-port", type=int, default=29638)
+    p.add_argument("--master-port", type=int, default=29638,
+                   help="0: standalone single-node rendezvous; 1-65535: fixed port (default: 29638)")
     p.add_argument("--cuda-device", "--cuda-devices", dest="cuda_device", default="0")
     p.add_argument("--report-to", default="none")
     p.add_argument("--execute", action="store_true")
@@ -813,7 +906,7 @@ def main(argv: list[str] | None = None) -> int:
         commands, writes, details = plan(args)
         print(json.dumps({"mode": "execute" if args.execute else "dry-run", "details": details,
                           "writes": [rel(path) for path, _ in writes],
-                          "commands": [shlex.join(c) for c in commands]}, indent=2))
+                          "commands": [shlex.join(c) for c in commands]}, indent=2), flush=True)
         if args.execute:
             for path, content in writes:
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -821,6 +914,8 @@ def main(argv: list[str] | None = None) -> int:
             env = {**os.environ, "CUDA_VISIBLE_DEVICES": args.cuda_device}
             for command in commands:
                 subprocess.run(command, cwd=ROOT, env=env, check=True)
+                if args.command == "train" and args.experiment == "exp37_s1_fs_joint":
+                    final_model(model_dir(args.experiment, args.map, args.shots), strict=True, verify_size=True)
         return 0
     except (ValueError, OSError, KeyError, TypeError, yaml.YAMLError, subprocess.CalledProcessError) as exc:
         print(f"Error: {exc}", file=sys.stderr)

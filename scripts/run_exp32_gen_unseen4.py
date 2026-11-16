@@ -426,9 +426,7 @@ def train_command(config: dict, out: Path, shots: int, args: argparse.Namespace)
     # options after the YAML and would otherwise override the new family LR.
     lr_option = command.index("--learning_rate") + 1
     command[lr_option] = f"{config['learning_rate']:.0e}".replace("e-0", "e-")
-    if args.master_port == 0:
-        port_index = command.index("--master_port=0")
-        command[port_index:port_index + 1] = ["--standalone", "--nnodes=1"]
+    # The shared builder handles both automatic and fixed rendezvous ports.
     return command
 
 

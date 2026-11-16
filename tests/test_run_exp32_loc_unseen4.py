@@ -208,6 +208,50 @@ class Exp32LocTests(unittest.TestCase):
             self.assertFalse(any(path.exists() for path, _ in writes))
             run.assert_not_called()
 
+    def test_documented_query_commands_plan_without_execution(self):
+        zero_common = ("--experiment", runner.FAMILY, "--zero-shot", "--split", "query",
+                       "--task", "loc", "--test-loc-batch-size", "16", "--cuda-device", "1",
+                       "--seed", "42", "--report-to", "none", "--asset-mode", "minimal")
+        few_common = ("--experiment", runner.FAMILY, "--map", "cs_office", "--shots", "20",
+                      "--split", "query", "--task", "loc", "--test-loc-batch-size", "16",
+                      "--cuda-device", "3", "--support-seed", "0", "--seed", "42",
+                      "--report-to", "none", "--asset-mode", "minimal")
+        cases = [(command, zero_common) for command in ("infer", "metrics", "aggregate")]
+        cases += [(command, few_common + (("--master-port", "0") if command == "train" else ()))
+                  for command in ("train", "infer", "metrics")]
+        cases += [("aggregate", ("--experiment", runner.FAMILY, "--shots", "20",
+                                  "--split", "query", "--task", "loc",
+                                  "--test-loc-batch-size", "16"))]
+        with patch.object(runner, "digest", side_effect=AssertionError("unexpected hash")), \
+             patch.object(runner.subprocess, "run") as run:
+            for command, common in cases:
+                with self.subTest(command=command, zero_shot="--zero-shot" in common):
+                    parsed = args(command, *common)
+                    self.assertFalse(parsed.execute)
+                    commands, writes, details = runner.plan(parsed)
+                    self.assertEqual(details["split"], "query")
+                    self.assertTrue(commands or writes or details.get("summary"))
+                    self.assertFalse(any(path.exists() for path, _ in writes))
+            run.assert_not_called()
+
+    def test_default_and_explicit_query_match_and_retention_rejected(self):
+        cases = (("train", "--map", "cs_office", "--shots", "20"),
+                 ("infer", "--map", "cs_office", "--shots", "20"),
+                 ("metrics", "--zero-shot"),
+                 ("aggregate", "--shots", "20"))
+        for parts in cases:
+            with self.subTest(parts=parts):
+                implicit = runner.plan(args(*parts))
+                explicit = runner.plan(args(*parts, "--split", "query"))
+                self.assertEqual(implicit, explicit)
+        with redirect_stderr(StringIO()), self.assertRaises(SystemExit) as caught:
+            args("infer", "--zero-shot", "--split", "retention")
+        self.assertEqual(caught.exception.code, 2)
+        manual = args("infer", "--zero-shot")
+        manual.split = "retention"
+        with self.assertRaisesRegex(ValueError, "Only query split"):
+            runner.plan(manual)
+
     def test_status_missing_and_complete(self):
         first = runner.plan(args("status"))[2]["points"][0]
         self.assertFalse(first["snapshot"])
