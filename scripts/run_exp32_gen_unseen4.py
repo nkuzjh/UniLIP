@@ -23,6 +23,9 @@ from csgo_datasets.inference_batching import execution_contract, positive_batch_
 MATRIX_PATH = ROOT / "csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml"
 MATRIX = yaml.safe_load(MATRIX_PATH.read_text(encoding="utf-8"))
 FAMILY = "exp32_fs_gen"
+FEW_SHOT_LR = {"exp32_fs_gen": 2e-5,
+               "exp32_fs_gen_lr1e5": 1e-5,
+               "exp32_fs_gen_lr5e6": 5e-6}
 MAPS = ("cs_office", "de_golden", "de_palacio", "de_vertigo")
 SHOTS = (100, 50, 20, 10)
 TASKS = ("gen", "gen_continuous")
@@ -58,7 +61,8 @@ def json_text(value: dict) -> str:
 
 def validate_matrix() -> None:
     expected = {
-        "schema_version": 1, "family": FAMILY, "source": rel(SOURCE),
+        "schema_version": 1, "family": FAMILY,
+        "few_shot_learning_rates": FEW_SHOT_LR, "source": rel(SOURCE),
         "source_recipe": rel(SOURCE_RECIPE),
         "manifest": "data/csgo_benchmark_v2/benchmark_manifest.json",
         "minimal_asset_manifest": "data/csgo_benchmark_v2/minimal_dataset_report.json",
@@ -163,17 +167,29 @@ def selected_tasks(task: str) -> tuple[str, ...]:
     return (task,)
 
 
-def model_dir(map_name: str, shots: int) -> Path:
-    return ROOT / "outputs/csgo_1b" / f"{FAMILY}_{map_name}" / f"shot_{shots}" / "seed_0"
+def model_dir(map_name: str, shots: int, family: str = FAMILY) -> Path:
+    return ROOT / "outputs/csgo_1b" / f"{family}_{map_name}" / f"shot_{shots}" / "seed_0"
+
+
+def selected_model_dir(args: argparse.Namespace, map_name: str, shots: int) -> Path:
+    # Keep the original two-argument call for the default family and its callers.
+    if args.experiment == FAMILY:
+        return model_dir(map_name, shots)
+    return model_dir(map_name, shots, args.experiment)
 
 
 def eval_dir(map_name: str | None, shots: int, task: str, zero_shot: bool,
-             batch_size: int) -> Path:
-    return legacy.eval_dir(FAMILY, map_name, shots, "query", task, zero_shot, batch_size)
+             batch_size: int, family: str = FAMILY) -> Path:
+    return legacy.eval_dir(family, map_name, shots, "query", task, zero_shot, batch_size)
 
 
 def recipe(args: argparse.Namespace, map_name: str | None, shots: int | None,
            *, zero_shot: bool) -> dict:
+    family = args.experiment
+    if family not in FEW_SHOT_LR:
+        raise ValueError(f"Unknown few-shot family: {family}")
+    if zero_shot and family != FAMILY:
+        raise ValueError(f"{family} is few-shot only; use {FAMILY} --zero-shot")
     config = copy.deepcopy(seen37.read_yaml(BASE_RECIPE))
     config.pop("exp37_experiment", None)
     for key in tuple(config):
@@ -182,7 +198,7 @@ def recipe(args: argparse.Namespace, map_name: str | None, shots: int | None,
             key in (*RESUME_KEYS, *INIT_KEYS, "ckpt_path", "warmup_steps",
                     "alpha_loc_schedule_steps", "alpha_loc_schedule_values")):
             config.pop(key)
-    config["exp32_gen_unseen4_experiment"] = FAMILY
+    config["exp32_gen_unseen4_experiment"] = family
     config["benchmark_v2_asset_manifest"], config["data_dir"] = asset_backend(args)
     config["model_name_or_path"] = args.model_path or "UniLIP-1B"
     config["pi05_pytorch_weight_path"] = str(Path(args.pi05_path or
@@ -205,7 +221,7 @@ def recipe(args: argparse.Namespace, map_name: str | None, shots: int | None,
                 "is_aux_loc_uncertainty_loss"):
         config[key] = False
     for key in LOW_LR:
-        config[key] = 2e-5
+        config[key] = FEW_SHOT_LR[family]
     for key in HIGH_LR:
         config[key] = 1e-4
     config["warmup_ratio"] = 0.003
@@ -226,13 +242,15 @@ def recipe(args: argparse.Namespace, map_name: str | None, shots: int | None,
         config["train_maps"] = config["val_maps"] = config["test_maps"] = [map_name]
         config["finetune_init_ckpt_path"] = rel(SOURCE)
         config["finetune_init_strict"] = True
-    validate_recipe(config, map_name, shots, zero_shot=zero_shot)
+    validate_recipe(config, map_name, shots, zero_shot=zero_shot, family=family)
     return config
 
 
 def validate_recipe(config: dict, map_name: str | None, shots: int | None,
-                    *, zero_shot: bool) -> None:
-    if config.get("exp32_gen_unseen4_experiment") != FAMILY or config.get("seed") != 42:
+                    *, zero_shot: bool, family: str = FAMILY) -> None:
+    if family not in FEW_SHOT_LR or (zero_shot and family != FAMILY):
+        raise ValueError("Unsupported family or zero-shot variant")
+    if config.get("exp32_gen_unseen4_experiment") != family or config.get("seed") != 42:
         raise ValueError("Recipe identity/seed differs")
     if any(key.startswith(("resume_", "training_stop_", "training_checkpoint_", "finetune_init_"))
            for key in config if key != "finetune_init_ckpt_path" and key != "finetune_init_strict"):
@@ -254,7 +272,7 @@ def validate_recipe(config: dict, map_name: str | None, shots: int | None,
                                                  "is_loc_perception_loss", "is_gen_aux_loss",
                                                  "is_repa_loss", "is_loc_repa_loss")):
         raise ValueError("Recipe enables auxiliary objective")
-    if any(config.get(key) != 2e-5 for key in LOW_LR) or any(config.get(key) != 1e-4 for key in HIGH_LR):
+    if any(config.get(key) != FEW_SHOT_LR[family] for key in LOW_LR) or any(config.get(key) != 1e-4 for key in HIGH_LR):
         raise ValueError("Recipe learning rates differ")
     if (config.get("warmup_ratio"), config.get("lr_scheduler_type"),
         config.get("lr_scheduler_kwargs")) != (0.003, "cosine_with_min_lr", {"min_lr_rate": 0.1}):
@@ -276,7 +294,7 @@ def model_snapshot(args: argparse.Namespace, map_name: str, shots: int,
                    *, strict_source: bool) -> tuple[dict, dict, Path]:
     _, source = source_checkpoint(strict=strict_source)
     config = recipe(args, map_name, shots, zero_shot=False)
-    plan = {"schema_version": 1, "family": FAMILY, "map": map_name, "shots": shots,
+    plan = {"schema_version": 1, "family": args.experiment, "map": map_name, "shots": shots,
             "support_seed": 0, "seed": 42, "max_steps": 400,
             "source": source, "asset_mode": args.asset_mode or "minimal",
             "config_sha256": digest(yaml_text(config)),
@@ -284,7 +302,7 @@ def model_snapshot(args: argparse.Namespace, map_name: str, shots: int,
                                 "microbatches_per_update": 1,
                                 "base_samples_per_update": shots,
                                 "base_sample_exposures_400_steps": shots * 400}}
-    return config, plan, model_dir(map_name, shots)
+    return config, plan, selected_model_dir(args, map_name, shots)
 
 
 def _check_overrides(args: argparse.Namespace, config: dict, plan: dict) -> None:
@@ -297,14 +315,14 @@ def _check_overrides(args: argparse.Namespace, config: dict, plan: dict) -> None
 
 def read_model_snapshot(args: argparse.Namespace, map_name: str, shots: int,
                         *, strict_source: bool) -> tuple[dict, dict, Path]:
-    out = model_dir(map_name, shots)
+    out = selected_model_dir(args, map_name, shots)
     cp, pp = out / "resolved_config.yaml", out / "experiment_plan.json"
     if not cp.is_file() or not pp.is_file():
         raise ValueError(f"Missing adaptation snapshot: {out}")
     config = seen37.read_yaml(cp)
     plan = json.loads(pp.read_text(encoding="utf-8"))
-    validate_recipe(config, map_name, shots, zero_shot=False)
-    if any(plan.get(k) != v for k, v in {"family": FAMILY, "map": map_name, "shots": shots,
+    validate_recipe(config, map_name, shots, zero_shot=False, family=args.experiment)
+    if any(plan.get(k) != v for k, v in {"family": args.experiment, "map": map_name, "shots": shots,
                                            "support_seed": 0, "seed": 42, "max_steps": 400}.items()):
         raise ValueError("Saved adaptation plan identity differs")
     if plan.get("config_sha256") != digest(yaml_text(config)) or plan.get("source", {}).get("path") != rel(SOURCE):
@@ -404,6 +422,10 @@ def train_command(config: dict, out: Path, shots: int, args: argparse.Namespace)
     local = copy.copy(args)
     local.experiment, local.shots = "exp37_fs_gen", shots
     command = legacy.train_command(config, out, local)
+    # The legacy builder pins this CLI option to 2e-5; Trainer reads CLI
+    # options after the YAML and would otherwise override the new family LR.
+    lr_option = command.index("--learning_rate") + 1
+    command[lr_option] = f"{config['learning_rate']:.0e}".replace("e-0", "e-")
     if args.master_port == 0:
         port_index = command.index("--master_port=0")
         command[port_index:port_index + 1] = ["--standalone", "--nnodes=1"]
@@ -424,7 +446,7 @@ def validate_predictions(output: Path, maps: tuple[str, ...], task: str) -> None
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("command", choices=("validate", "source-check", "status", "train", "infer", "metrics", "aggregate"))
-    p.add_argument("--experiment", choices=(FAMILY,), default=FAMILY)
+    p.add_argument("--experiment", choices=tuple(FEW_SHOT_LR), default=FAMILY)
     p.add_argument("--map", choices=MAPS)
     p.add_argument("--shots", type=int, default=100)
     p.add_argument("--zero-shot", action="store_true")
@@ -448,6 +470,10 @@ def parser() -> argparse.ArgumentParser:
 def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, str]], dict]:
     validate_matrix()
     source_recipe()
+    if args.experiment not in FEW_SHOT_LR:
+        raise ValueError(f"Unknown few-shot family: {args.experiment}")
+    if args.zero_shot and args.experiment != FAMILY:
+        raise ValueError(f"{args.experiment} is few-shot only; use {FAMILY} --zero-shot")
     if args.seed != 42 or args.support_seed != 0 or args.shots not in SHOTS:
         raise ValueError("Protocol fixes seed 42, support seed 0 and shots 100/50/20/10")
     if (not args.cuda_device or "," in args.cuda_device or
@@ -463,7 +489,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
         raise ValueError("aggregate spans all four maps; omit --map")
     commands: list[list[str]] = []
     writes: list[tuple[Path, str]] = []
-    details = {"family": FAMILY, "map": args.map, "shots": args.shots,
+    details = {"family": args.experiment, "map": args.map, "shots": args.shots,
                "zero_shot": args.zero_shot, "split": "query", "task": args.task,
                "execute": args.execute}
     if args.command == "validate":
@@ -484,7 +510,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             details["source_error"] = str(exc)
             details["source_status"] = "waiting" if not SOURCE.is_file() else "invalid"
         details["adaptations"] = [
-            {"map": m, "shots": n, **adaptation_status(model_dir(m, n))}
+            {"map": m, "shots": n, **adaptation_status(selected_model_dir(args, m, n))}
             for m in MAPS for n in SHOTS]
         return commands, writes, details
     if args.command == "train":
@@ -502,7 +528,8 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             if args.execute:
                 if args.zero_shot:
                     config, saved, _ = zero_snapshot(args, strict_source=True)
-                    output = eval_dir(None, args.shots, task, True, args.test_gen_batch_size)
+                    output = eval_dir(None, args.shots, task, True,
+                                      args.test_gen_batch_size, args.experiment)
                     inf = legacy.validate_inference(output, config, SOURCE, MAPS,
                         legacy.SPLITS["query"][task], task, None, None, saved["source"], args.test_gen_batch_size)
                     for m in MAPS:
@@ -511,11 +538,12 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
                     for m in MAPS:
                         config, saved, out = read_model_snapshot(args, m, args.shots, strict_source=True)
                         checkpoint = final_model(out, strict=True)
-                        output = eval_dir(m, args.shots, task, False, args.test_gen_batch_size)
+                        output = eval_dir(m, args.shots, task, False,
+                                          args.test_gen_batch_size, args.experiment)
                         inf = legacy.validate_inference(output, config, checkpoint, (m,),
                             legacy.SPLITS["query"][task], task, args.shots, 0, saved["source"], args.test_gen_batch_size)
                         legacy.validate_generation_result(output, m, task, legacy.SPLITS["query"][task], inf)
-            commands.append(legacy.aggregate_command(FAMILY, args.shots, task, args.zero_shot,
+            commands.append(legacy.aggregate_command(args.experiment, args.shots, task, args.zero_shot,
                                                       batch_size=args.test_gen_batch_size))
         return commands, writes, details
     if args.zero_shot:
@@ -526,7 +554,7 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
             writes.extend(new_writes)
         checkpoint, maps = SOURCE, MAPS
     else:
-        if args.execute or (model_dir(args.map, args.shots) / "resolved_config.yaml").is_file():
+        if args.execute or (selected_model_dir(args, args.map, args.shots) / "resolved_config.yaml").is_file():
             config, saved, out = read_model_snapshot(args, args.map, args.shots, strict_source=args.execute)
         else:
             config, saved, out = model_snapshot(args, args.map, args.shots, strict_source=False)
@@ -534,7 +562,8 @@ def plan(args: argparse.Namespace) -> tuple[list[list[str]], list[tuple[Path, st
     details["source"] = saved["source"]
     for task in selected_tasks(args.task):
         split = legacy.SPLITS["query"][task]
-        output = eval_dir(args.map, args.shots, task, args.zero_shot, args.test_gen_batch_size)
+        output = eval_dir(args.map, args.shots, task, args.zero_shot,
+                          args.test_gen_batch_size, args.experiment)
         if args.command == "infer":
             ecfg = legacy.eval_config(config, checkpoint, split, maps, task, args.test_gen_batch_size)
             cp, pp = output / "evaluation_config.yaml", output / "evaluation_plan.json"
@@ -591,7 +620,7 @@ def main(argv: list[str] | None = None) -> int:
             for command in commands:
                 subprocess.run(command, cwd=ROOT, env=env, check=True)
                 if args.command == "train":
-                    final_model(model_dir(args.map, args.shots), strict=True)
+                    final_model(selected_model_dir(args, args.map, args.shots), strict=True)
         return 0
     except (ValueError, OSError, KeyError, TypeError, yaml.YAMLError,
             subprocess.CalledProcessError) as exc:

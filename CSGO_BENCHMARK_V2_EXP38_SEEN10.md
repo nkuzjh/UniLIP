@@ -97,6 +97,34 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 
 表中batch按“定位／生成”记载。joint@4000的状态依据推理manifest、评测摘要和evaluation_config；本机仍无 `outputs/csgo_1b/exp38_s2_joint/`，不能据此确认local7550是否训练完成。“未见”仅指本机同步证据。执行命令见 [record.md](record.md#exp38-seen10-20261107)。
 
+<a id="exp32-gen-test-12000-results-20261116"></a>
+
+## exp32_gen@12000：Seen-10 test补充（2026-11-16）
+
+已同步离散与连续两项生成结果；均为完整Seen-10十图、seed42、推理batch16、minimal资产、十图等权宏平均。离散为`seen_discrete_test`共20000条；连续为`seen_continuous`共12800帧（十图各20×64帧）。本节是中间checkpoint记录，历史16000／final表及Table 1最终结果保持原身份。
+
+已核对20份逐图评测JSON：每图离散2000条、连续1280帧，报告的GT／预测覆盖率均为100%，缺失和额外预测均为0；重新计算的十图宏平均与summary一致。这里的覆盖数量取自评测产物，未重新遍历图片计数。两项指标配置均为`benchmark_v2_core`、CUDA、指标batch1、paired_size448；连续使用clip_length16／clip_stride16／fvd_size224。所列主指标均有有限数值，profile跳过的其他指标不填0。
+
+| 实验／checkpoint | 离散生成 | 连续生成 | 定位 | validation |
+|---|---|---|---|---|
+| `exp32_gen@12000` | ✅ 推理、十图评测及summary已完成 | ✅ 推理、十图评测及summary已完成 | 不适用，生成单任务 | 本次未见该checkpoint的同步结果 |
+
+### 离散生成 test
+
+| 实验 | checkpoint | 推理batch | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `exp32_gen` | 12000 | 16 | 13.511 | 0.399 | 0.630 | 0.505 | 39.169 |
+
+### 连续生成 test
+
+| 实验 | checkpoint | 推理batch | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `exp32_gen` | 12000 | 16 | 13.810 | 0.405 | 0.614 | 0.515 | 37.893 | 43.888 | 17.442 | 950.456 |
+
+指标来源：[离散summary](outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16/discrete/summary.json)、[连续summary](outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16/continuous/summary.json)。未列入主表的附加摘要指标：离散Pixel_MAE_255=42.6878、CLIP=0.8255，连续Pixel_MAE_255=41.1055。推理清单记录两项均为20采样步，模型模式沿用`preserve_loaded_module_modes_v1`且LoRA dropout仍活跃；指标计算batch与推理batch分开记录。
+
+**训练身份说明**：[checkpoint-12000/trainer_state.json](outputs/csgo_1b/exp32_gen/checkpoint-12000/trainer_state.json)记录`global_step=12000,max_steps=13650,num_train_epochs=35,epoch=30.76923`，最后日志LR约1.32289e-5；这是35 epochs调度中的中间权重。保存配置为生成LoRA开启、定位LoRA关闭、perception与aux-loc均关闭。因此不能仅凭同名目录，将本次12000与历史16000／19500视为同一19500步调度的训练曲线，或将差值全部归因于多训练了若干步。对应执行片段及完成标记见[record.md](record.md#exp32-gen-test-12000)。
+
 ## 中间节点对照：累计16000步 test（2026-11-12 更新）
 
 按指定对照节点，已同步并核对 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成结果，**三个任务均已完成**。推理manifest与结果摘要均绑定各自的 `checkpoint-16000/model.safetensors`；两份checkpoint的 `trainer_state.json` 均为 `global_step=16000,max_steps=19500`。定位／离散各20000条，连续12800帧，均覆盖完整十图。

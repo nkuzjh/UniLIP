@@ -3802,7 +3802,7 @@ python scripts/aggregate_csgo_benchmark_v2_metrics.py maps \
 
 #### Seen-10 TEST: exp32_gen checkpoint-12000
 
-使用exp32_gen checkpoint-12000评估Seen-10离散与连续两项。默认使用已验证的 minimal 资源包；以下命令依次执行初始化、离散推理与评测、连续推理与评测，并按地图汇总指标。推理 batch 为 16，指标计算 batch 为 1，seed 为 42。
+2026-11-16已同步并核对：exp32_gen checkpoint-12000的Seen-10 test离散20000条、连续12800帧推理与十图评测均完成；推理batch16、指标batch1、seed42，结果见[12000步实验记录](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp32-gen-test-12000-results-20261116)。本份Trainer状态为12000/13650、35 epochs计划，按中间checkpoint单列，不替换历史final结果。以下命令保留供复现或补跑，默认使用已验证的minimal资源包。
 ```bash
 set -euo pipefail
 SEEN_MAPS=(cs_agency cs_italy de_ancient de_anubis de_dust2 de_inferno de_mirage de_nuke de_overpass de_train)
@@ -9094,11 +9094,13 @@ done
 本段仅提供手动命令，尚未运行或登记为完成；原exp37系列配置和结果保持原身份。
 
 
-##### exp32_fs_gen：exp32_gen@12000 生成 zero-shot／few-shot（2026-11-15；仅手动执行）
+##### exp32_fs_gen：exp32_gen@12000 生成 zero-shot／few-shot（2026-11-15设计；2026-11-16结果同步）
 
 <a id="exp32-gen-12000-crossmap-manual"></a>
 
-本节记录运行服务器保存好checkpoint-12000后的手动执行方案；代码与配置准备后仅作规划与 CPU 验证，训练、推理、指标计算及结果聚合均等待手动执行。使用独立入口 `scripts/run_exp32_gen_unseen4.py` 和配置 `csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`。命令接口：`{validate,source-check,status,train,infer,metrics,aggregate}`；`--experiment exp32_fs_gen`（唯一family，默认）、`--map`、`--shots`（默认100）、`--zero-shot`、`--split query`（唯一）、`--task {all,gen,gen_continuous}`（默认all）、`--test-gen-batch-size`（默认32）、`--asset-mode {minimal,full}`（默认minimal）、`--data-dir`、`--model-path`、`--pi05-path`、`--seed 42`、`--support-seed 0`、`--cuda-device 0`、`--master-port 29642`（正整数固定端口，0为自动选择）、`--report-to none`、`--execute`。`validate`／`source-check`／`status`永远只读；train/infer/metrics/aggregate省略`--execute`时只做dry-run，显式加入才会写文件或运行。
+2026-11-16结果记录：zero-shot两类生成8份逐图指标和2份summary、四图四档few-shot的32份逐图指标和8份正式汇总均已同步，batch32／seed42／support0及四图宏平均已核对；query评测产物无缺失。截至2026-11-16 15:06:15 +08，本机14/16组训练模型与状态完整，2组仍在同步：de_vertigo／50／20-shot；已有指标不因此记为未评测，不自动重训。数值、逐图来源及同步清单见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp32-gen-12000-unseen4-results-20261116)和[总表](csgo_benchmark_v2_experiments_results.md#exp32-gen-12000-unseen4-results-20261116)。以下命令及磁盘写满恢复块保留历史复现，已完成的训练／query无需重跑；尤其不要原样重新执行旧故障归档块。
+
+以下为2026-11-15设计与初次实现时的手动方案；当时仅作规划与CPU验证，实际同步状态现以2026-11-16完成记录为准。使用独立入口 `scripts/run_exp32_gen_unseen4.py` 和配置 `csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`。命令接口：`{validate,source-check,status,train,infer,metrics,aggregate}`；`--experiment exp32_fs_gen`（原基线、默认；新增`exp32_fs_gen_lr1e5`／`exp32_fs_gen_lr5e6`见[学习率消融](#exp32-fs-gen-lr-ablation-20261116)）、`--map`、`--shots`（默认100）、`--zero-shot`、`--split query`（唯一）、`--task {all,gen,gen_continuous}`（默认all）、`--test-gen-batch-size`（默认32）、`--asset-mode {minimal,full}`（默认minimal）、`--data-dir`、`--model-path`、`--pi05-path`、`--seed 42`、`--support-seed 0`、`--cuda-device 0`、`--master-port 29642`（正整数固定端口，0为自动选择）、`--report-to none`、`--execute`。`validate`／`source-check`／`status`永远只读；train/infer/metrics/aggregate省略`--execute`时只做dry-run，显式加入才会写文件或运行。
 
 父模型来源必须严格为 `outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors`，并有同目录 `trainer_state.json` 和 `config.json`；检查Trainer步数、生成单任务配置与LoRA张量结构，其中`global_step`必须等于12000。`max_steps`允许13650，不要求final checkpoint。禁止使用final或其他step兜底；来源未通过检查就停止。few-shot每个任务只加载父模型权重并新建optimizer／scheduler，不恢复父训练状态。
 
@@ -9248,7 +9250,7 @@ python scripts/run_exp32_gen_unseen4.py metrics --map "$MAP" --shots "$SHOTS" "$
 ```
 
 
-###### Few-shot：磁盘写满后的续跑命令（2026-11-16；resume 队列）
+###### Few-shot：磁盘写满后的历史续跑命令（2026-11-16；query现已补齐）
 
 依据远程服务器 `2026-11-15 23:55 +08:00` 的检查结果安排以下队列。此次日志中的明确失败是 `No space left on device`：`de_palacio/20-shot` 在保存模型时中断；`cs_office/100-shot` 在保存推理图片时中断。这里的 resume 指继续实验队列；本入口没有训练 `--resume`，每个 few-shot 只保存 final400，不保存可恢复的中间 optimizer／scheduler／RNG。
 
@@ -9435,6 +9437,147 @@ BASH_FS_GEN_AGGREGATE
 FS_GEN_AGGREGATE_STATUS=$?
 printf '聚合退出码=%s；非0时按上方错误补缺。\n' "$FS_GEN_AGGREGATE_STATUS"
 ```
+
+<a id="exp32-fs-gen-lr-ablation-20261116"></a>
+
+###### Few-shot：学习率消融（2026-11-16新增；仅准备，不启动）
+
+在原`exp32_fs_gen`（LR=2e-5）基础上增加下列两个独立family。每组均为Unseen-4每图独立的100／50／20／10-shot，四图×四档共16次适配，两组共32次；不能从原few-shot final400继续训练。每个map／shot均重新加载同一份`outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors`，新建optimizer／scheduler与local step，只改变学习率，不改变训练目标、样本或推理设置。
+
+| Family | 主／活动LoRA LR | 定位私有连接层LR（不活动） | 训练与评测节点 | 状态 |
+|---|---|---|---|---|
+| `exp32_fs_gen` | 2e-5 | 1e-4 | final400，query离散＋连续 | 原基线；结果已记录 |
+| `exp32_fs_gen_lr1e5` | 1e-5 | 1e-4 | final400，query离散＋连续 | 未启动 |
+| `exp32_fs_gen_lr5e6` | 5e-6 | 1e-4 | final400，query离散＋连续 | 未启动 |
+
+LR替换范围为`learning_rate`、`mm_projector_lr`、`llm_lora_lr`、`llm_connector_lora_lr`、`gen_dit_lora_lr`及原LOW_LR组中的Action相关项；冻结的定位分支仍不参与生成单任务更新，HIGH_LR组保持1e-4。训练启动CLI与保存的resolved_config使用同一个family学习率，避免被旧入口的2e-5默认值覆盖。
+
+其余设置沿用原基线：400次更新；microbatch=shots、GAS=1；AdamW（betas=0.9／0.999、eps=1e-8、weight_decay=0、max_grad_norm=1）；cosine_with_min_lr、min_lr_rate=0.1、warmup_ratio=0.003；LoRA r=32、alpha=64、dropout=0.05；support seed=0、训练／推理seed=42；仅生成、辅助loss全部关闭。仅保存final400模型，不增加中间checkpoint；训练结束后在final400做query离散与连续推理、metric和四图等权聚合。生成推理batch=32、metric batch=1，保持现有Dropout模式，retention暂停。两个新family复用原`exp32_fs_gen`的zero-shot结果，不重复zero-shot；新family不接受`--zero-shot`。
+
+通过`csgo_configs/benchmark_v2_exp32_gen_unseen4.yaml`的family学习率矩阵和同一入口`scripts/run_exp32_gen_unseen4.py --experiment <family>`选择配方。模型路径为`outputs/csgo_1b/<family>_<map>/shot_<N>/seed_0`，query路径为`outputs_eval/benchmark_v2/<family>_<map>/shot_<N>/seed_0/infer_bs32/{discrete,continuous}`，四图汇总路径为`outputs_eval/benchmark_v2/<family>/shot_<N>/seed_0/infer_bs32/map_models/benchmark_v2_{discrete,continuous}_crossmap.json`。family、配方和路径独立，不覆盖原基线及另一学习率的产物。
+
+**先作CPU配方检查与训练dry-run。** 以下命令均不启动训练；`source-check`会只读检查同一份父模型及其来源。若本机尚未同步来源，在实际训练服务器完成来源检查。
+
+```bash
+python scripts/run_exp32_gen_unseen4.py validate --experiment exp32_fs_gen_lr1e5
+python scripts/run_exp32_gen_unseen4.py validate --experiment exp32_fs_gen_lr5e6
+python scripts/run_exp32_gen_unseen4.py train --experiment exp32_fs_gen_lr1e5 --map cs_office --shots 100 --master-port 0 --asset-mode minimal
+python scripts/run_exp32_gen_unseen4.py train --experiment exp32_fs_gen_lr5e6 --map cs_office --shots 100 --master-port 0 --asset-mode minimal
+python scripts/run_exp32_gen_unseen4.py source-check --experiment exp32_fs_gen
+```
+
+**手动执行方式。** 每个family分为两条队列：GPU0负责`cs_office/de_golden`，GPU1负责`de_palacio/de_vertigo`；同一队列每图按100／50／20／10-shot执行train→infer→metrics。按实际空闲设备修改每块的`GPU`。下面两组都使用GPU0／1，先完成一组再启动另一组；若并行则另选空闲GPU。`--master-port 0`沿用自动端口模式。以下块显式带`--execute`，由用户手动启动；任一步失败即停止该队列。训练与推理要求新的空输出目录，已经完成的map／shot不要原样重复执行train。
+
+默认最小数据集：每块保留`ASSETS=(--asset-mode minimal)`。使用全量资产时，将该行替换为`ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)`；train／infer／metrics共用此数组，split、四图、shot与样本数不变。模型或π05路径需覆盖时，可在`COMMON`追加`--model-path /实际UniLIP-1B路径 --pi05-path /实际pi05_base路径`，由训练快照保存。后面的聚合不指定资产覆盖，直接读取每个训练快照。
+
+**LR=1e-5：`exp32_fs_gen_lr1e5`。**
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_gen_lr1e5
+GPU=0
+MAPS=(cs_office de_golden)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
+    python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_lr1e5_office_golden.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_gen_lr1e5 office_golden PID=$!"
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_gen_lr1e5
+GPU=1
+MAPS=(de_palacio de_vertigo)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
+    python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_lr1e5_palacio_vertigo.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_gen_lr1e5 palacio_vertigo PID=$!"
+```
+
+**该family两队列全部完成并同步到同一服务器后，再单独执行四图聚合。** 不在单张地图结束时调用聚合。
+
+```bash
+bash -euo pipefail <<'BASH_EXP32_FS_GEN_LR1E5_AGGREGATE'
+for SHOT in 100 50 20 10; do
+  python scripts/run_exp32_gen_unseen4.py aggregate --experiment exp32_fs_gen_lr1e5 --shots "$SHOT" --split query --task all --test-gen-batch-size 32 --execute
+done
+BASH_EXP32_FS_GEN_LR1E5_AGGREGATE
+```
+
+**LR=5e-6：`exp32_fs_gen_lr5e6`。**
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_gen_lr5e6
+GPU=0
+MAPS=(cs_office de_golden)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
+    python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_lr5e6_office_golden.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_gen_lr5e6 office_golden PID=$!"
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_gen_lr5e6
+GPU=1
+MAPS=(de_palacio de_vertigo)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
+    python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
+  done
+done
+' >> fst_outs/exp32_fs_gen_lr5e6_palacio_vertigo.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_gen_lr5e6 palacio_vertigo PID=$!"
+```
+
+**该family两队列全部完成并同步到同一服务器后，再单独执行四图聚合。** 不在单张地图结束时调用聚合。
+
+```bash
+bash -euo pipefail <<'BASH_EXP32_FS_GEN_LR5E6_AGGREGATE'
+for SHOT in 100 50 20 10; do
+  python scripts/run_exp32_gen_unseen4.py aggregate --experiment exp32_fs_gen_lr5e6 --shots "$SHOT" --split query --task all --test-gen-batch-size 32 --execute
+done
+BASH_EXP32_FS_GEN_LR5E6_AGGREGATE
+```
+
 
 ##### exp37_fs_gen bs32
 
@@ -10503,10 +10646,10 @@ set -euo pipefail
 mkdir -p fst_outs
 nohup bash -c '
 EXPERIMENT=exp39_consloc2
-TRAIN_GPUS=1,3
+TRAIN_GPUS=0,1
 EVAL_GPU=1
 MASTER_PORT=29696
-python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
+python scripts/run_exp37_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 0 --micro-batch 64 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 for STEP in 16000 final; do
   python scripts/run_exp37_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
   python scripts/run_exp37_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute

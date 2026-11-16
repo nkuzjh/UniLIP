@@ -9,6 +9,7 @@
 - **2026-10-31 S0_G0 结果同步**：`exp32_3maps_stage2_control_g0` 已完成 local1800，local1200／1800 离散生成 validation 与 local1800 离散／连续生成 test 齐全；本地模型 checkpoint-600／1200／1800 及根目录最终模型已到。定位为 N/A。当日 [test 总表](#test-overall-20261031)纳入 **18 个模型**，[P／U 对比表](#stage2-pu-results-20261029)同步加入 S0_G0 的 local1800 validation，并更新最优标记与比较说明。
 - **2026-10-30 B2 设计增补**：再增加独立的 `exp32_3maps_B2_S3_J8`，当前计划为 **38 个独立运行名**。B2 是 P4＋U2 的联合配方；与 B1 只比较 perception attention 开关。设计登记时尚未执行训练与评测；11-01 已同步完整结果，见[B2 独立设计与结果](#b2-stage2-j8-20261030) · [Stage 2 配方](CSGO_BENCHMARK_V2_EXP32_3MAPS_STAGE2.md#b2-stage2-j8-20261030) · [手动命令](record.md#exp32_3maps-b2_s3_j8-2026-10-30-手动命令)。
 - **2026-11-01 U4／B1／B2 结果同步**：三组均完成 local1800，local1200／1800 validation 和最终 test 齐全；原九组9/9、P／U10/10完成。当前[test 总表](#test-overall-20261101)及 validation 对比表共21个模型，其中18个为Stage 2。最新取舍与后续优先级见[U4与both结果分析](#u4-both-analysis-20261101)。
+- **2026-11-16 G0 checkpoint结果补录**：`exp32_3maps_gen_single@3600/4800` 的离散和连续test均已同步，另补入3600离散validation；4800 validation暂无本地结果。两个节点属于同一单阶段G0运行，不新增实验身份，见[节点结果与来源](#g0-checkpoints-3600-4800-20261116)。
 - 固定 Seen-3：`de_ancient, de_dust2, de_nuke`，来自定版 Benchmark v2；训练 15,000 个源样本，验证每地图 500 条。架构沿用 exp32 的共享 LLM LoRA＋两个任务 head LoRA，不切换为 exp31 的冻结 LLM／全量 heads。
 - 原两轮统一 LoRA `r=32, alpha=64, dropout=0.05`、224 encoder input、短指令、源样本有效 batch 128、最多 50 epoch；新 Stage 2 保留相同模型与名义有效 batch，但显式使用 1800 optimizer steps 的新调度。满批设计口径下，单任务每次更新 128 个任务样本，paired joint 每次更新各 128 个定位／生成样本，目标是匹配每任务数据曝光而非计算量；本次 Stage 2 的实际布局存在 epoch 尾批例外，曝光并非严格匹配，见结果分析。
 - 初始方案为单 GPU、micro batch 4、GAS 32；本批已完成的第一轮七组实际保存的运行参数均为单 GPU、micro batch 64、GAS 2，源样本有效 batch 仍为 128。实际运行布局以各实验 `experiment_plan.json`／Trainer 状态为准；恢复时不改变卡数或 micro batch，跨服务器可改变具体 GPU 编号。
@@ -164,7 +165,7 @@ J5～J9 已同步的运行计划记录单 GPU、microbatch=64、GAS=2、seed=42�
 | ID | Experiment | 训练 | 推理 | Metric 计算 | validation | checkpoint steps | 训练证据 |
 |---|---|---|---|---|---|---|---|
 | L0 | `exp32_3maps_loc_single` | ✅ 50 epoch；5850/5850 | ✅ validation 定位：2400／3600／5850；test：5850 | ✅ validation＋test 定位 loc_metrics；生成不适用 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_loc_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_loc_single/experiment_plan.json) |
-| G0 | `exp32_3maps_gen_single` | ✅ 50 epoch；5850/5850 | ✅ validation 离散生成：2400／3600／5850；test 离散＋连续：5850 | ✅ validation 离散、test 离散＋连续三图汇总；定位不适用 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_gen_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_gen_single/experiment_plan.json) |
+| G0 | `exp32_3maps_gen_single` | ✅ 50 epoch；5850/5850 | ✅ validation 离散：2400／3600／5850；test 离散＋连续：3600／4800／5850 | ✅ 对应逐图指标与三图汇总齐全；定位不适用 | seen_validation；seed=42；每图500；4800 validation未同步 | 本地模型：2400、3600、4800、5850；2026-11-16补录3600／4800 test | [状态](outputs/csgo_1b/exp32_3maps_gen_single/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_gen_single/experiment_plan.json) |
 | J0 | `exp32_3maps_joint_original` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_original/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_original/experiment_plan.json) |
 | J1 | `exp32_3maps_joint_headlr` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_headlr/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_headlr/experiment_plan.json) |
 | J2 | `exp32_3maps_joint_sharedlr` | ✅ 50 epoch；5850/5850 | ✅ 定位＋离散生成：2400／5850 | ✅ 定位 loc_metrics＋离散生成三图汇总 | seen_validation；seed=42；每任务 1,500 条 | 2400、3600、5850 | [状态](outputs/csgo_1b/exp32_3maps_joint_sharedlr/trainer_state.json)／[计划](outputs/csgo_1b/exp32_3maps_joint_sharedlr/experiment_plan.json) |
@@ -246,10 +247,10 @@ J5～J10 已同步 2400 和 5850 的定位与离散生成 validation 指标；�
 
 ### 离散生成 validation 结果
 
-<!-- | G0 | `exp32_3maps_gen_single` | seen_validation | 3600 | 13.932 | 0.419 | 0.636 | 0.505 | 62.949 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-3600/validation/seed_42/discrete/summary.json) | -->
 | ID | Experiment | validation | checkpoint steps | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 源文件 |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
 | G0 | `exp32_3maps_gen_single` | seen_validation | 2400 | 13.284 | 0.391 | 0.665 | 0.499 | 75.977 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-2400/validation/seed_42/discrete/summary.json) |
+| G0 | `exp32_3maps_gen_single` | seen_validation | 3600 | 13.932 | 0.419 | 0.636 | 0.505 | 62.949 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-3600/validation/seed_42/discrete/summary.json) |
 | G0 | `exp32_3maps_gen_single` | seen_validation | 5850 | 14.402 | 0.418 | 0.613 | 0.520 | 62.252 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-5850/validation/seed_42/discrete/summary.json) |
 | J0 | `exp32_3maps_joint_original` | seen_validation | 2400 | 13.521 | 0.407 | 0.652 | 0.497 | 67.498 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_original/checkpoint-2400/validation/seed_42/discrete/summary.json) |
 | J0 | `exp32_3maps_joint_original` | seen_validation | 5850 | 14.592 | 0.425 | 0.606 | 0.523 | 61.835 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_joint_original/checkpoint-5850/validation/seed_42/discrete/summary.json) |
@@ -297,6 +298,32 @@ J5～J10 已同步 2400 和 5850 的定位与离散生成 validation 指标；�
 | A1_J8 辅助 loss 消融 | seen_validation | 2026-10-22 核对 2400／5900 定位＋离散生成指标齐全；3600 未发现本地结果 |
 | A2_J8／A3_J8 辅助 loss 消融 | seen_validation | 保留原已配置／待评测记录，本次未更新；结果留空 |
 | S0_J8～S3_J8 两阶段微调 | seen_validation | 2026-10-22 核对 local 1200／1800 的定位＋离散生成 validation 齐全；local600 未发现本地结果；2026-10-27 补齐 local1800 定位／离散／连续 test |
+
+<a id="g0-checkpoints-3600-4800-20261116"></a>
+
+## 2026-11-16：G0@3600／4800 生成结果补录
+
+`exp32_3maps_gen_single` 是 Seen-3 生成单任务G0；两个checkpoint属于同一次训练的中间节点，Trainer的 `global_step` 分别为3600和4800，`max_steps` 均为5850。本次补录已同步的指标，不新增训练或评测。原5850最终节点及2026-11-01历史test总表保留。
+
+核对范围为 `de_ancient/de_dust2/de_nuke`，inference seed=42，使用 `metrics_macro_map` 三图等权宏平均，显示三位小数。离散test为每图2,000、共6,000张；连续test为每图20条轨迹×64帧、共3,840帧。逐图指标均为 `benchmark_v2_core`，`Coverage_GT=Coverage_Pred=1`，无缺失或未匹配预测；summary、逐图指标和inference manifest的checkpoint／split／seed／样本数已核对。
+
+### 离散生成 test（seen_discrete_test）
+
+| checkpoint | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | Pixel_MAE_255↓ | CLIP↑ | 源文件 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 3600 | 13.806 | 0.396 | 0.642 | 0.507 | 37.507 | 41.817 | 0.824 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-3600/test/seed_42/discrete/summary.json) |
+| 4800 | 14.155 | 0.401 | 0.631 | 0.515 | 37.799 | 39.613 | 0.830 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-4800/test/seed_42/discrete/summary.json) |
+
+### 连续生成 test（seen_continuous）
+
+| checkpoint | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ | Pixel_MAE_255↓ | 源文件 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 3600 | 14.164 | 0.414 | 0.628 | 0.516 | 36.214 | 41.240 | 16.475 | 929.679 | 39.296 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-3600/test/seed_42/continuous/summary.json) |
+| 4800 | 14.911 | 0.430 | 0.596 | 0.532 | 32.685 | 38.030 | 16.125 | 934.970 | 35.906 | [summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-4800/test/seed_42/continuous/summary.json) |
+
+TWE／TDE／OFE分别为 `Temporal_Warping_Error`／`Temporal_Difference_Error`／`Optical_Flow_EPE`。3600→4800时，两类生成的PSNR／SSIM／LPIPS／Boundary_F1均改善，但FID由37.507升至37.799、FVD由929.679升至934.970，不能表述为所有指标一致改善。
+
+**validation状态**：3600离散validation已在上方结果表补入，三图各500、共1,500条，来源为[summary.json](outputs_eval/benchmark_v2/exp32_3maps_gen_single/checkpoint-3600/validation/seed_42/discrete/summary.json)；4800 validation目录及summary未发现，保持缺项。test结果分别标注对应split，不填入validation，也不据本次test结果重新选定checkpoint。逐图完整精度及源文件路径见各summary的 `per_map`／`source_files`。
 
 <a id="nine-ablation-results-20261026"></a>
 

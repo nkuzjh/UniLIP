@@ -1,10 +1,19 @@
 # Fixed transfer protocol for exp32_gen checkpoint-12000. The runner rejects drift.
 schema_version: 1
 family: exp32_fs_gen
+# Select a few-shot LR with run_exp32_gen_unseen4.py --experiment <family>.
+# Only LOW_LR changes; inactive localization HIGH_LR stays 1e-4.
+# Each new family covers the same 4 maps x 4 shots; reuse the baseline zero-shot.
+few_shot_learning_rates:
+  exp32_fs_gen: 2.0e-5
+  exp32_fs_gen_lr1e5: 1.0e-5
+  exp32_fs_gen_lr5e6: 5.0e-6
 source: outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors
 source_recipe: csgo_configs/exp32_gen.yaml
 manifest: data/csgo_benchmark_v2/benchmark_manifest.json
 minimal_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+# Default: --asset-mode minimal. Full assets: --asset-mode full --data-dir PATH.
+# The backend switch preserves the manifest, support/query split and sample counts.
 maps: [cs_office, de_golden, de_palacio, de_vertigo]
 shots: [100, 50, 20, 10]
 support_seed: 0

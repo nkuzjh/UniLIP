@@ -49,7 +49,7 @@
 | `exp31_2_3maps` | ✅ Seen-3，50 epochs， step 5900 | ✅ Seen-3 定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 | — | — |
 | `exp31_3_3maps` | ✅ Seen-3，50 epochs，step 5900 | ✅ Seen-3：定位 6,000 + 离散生成 6,000 + 连续生成 3,840 | ✅ Seen-3：定位/离散/连续 metric 与三地图聚合完成 | — | — |
 | `exp32_3maps_loc_single`（L0） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位 2400／3600／5850；test 待评测 | ✅ seen_validation 定位 三图指标；test 待评测 | ✅ seen_validation 定位，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、3600、5850 |
-| `exp32_3maps_gen_single`（G0） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 离散生成 2400／3600／5850；test 待评测 | ✅ seen_validation 离散生成 三图指标；test 待评测 | ✅ seen_validation 离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、3600、5850 |
+| `exp32_3maps_gen_single`（G0） | ✅ 本地核实50 epochs，5850/5850 | ✅ validation离散2400／3600／5850；test离散＋连续3600／4800／5850 | ✅ 对应逐图指标及三图宏平均齐全；2026-11-16补录3600／4800 test | ✅ seen_validation三图各500；seed=42；4800 validation未同步 | 本地checkpoint：2400、3600、4800、5850；validation与test节点按前列区分 |
 | `exp32_3maps_joint_original`（J0） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、5850 |
 | `exp32_3maps_joint_headlr`（J1） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、5850 |
 | `exp32_3maps_joint_sharedlr`（J2） | ✅ 本地核实 50 epochs，5850/5850 | ✅ seen_validation 定位＋离散生成 2400／5850；test 待评测 | ✅ seen_validation 定位＋离散生成 三图指标；test 待评测 | ✅ seen_validation 定位＋离散生成，三图各 500 条；seed=42 | 本地 checkpoint：2400、3600、5850；已评测 2400、5850 |
@@ -94,6 +94,8 @@
 
 ## 主线实验进度表
 
+2026-11-16补充：`exp32_gen@12000`的Seen-10 test离散／连续结果已同步，推理batch16、seed42。该份[Trainer状态](outputs/csgo_1b/exp32_gen/checkpoint-12000/trainer_state.json)为12000/13650、35 epochs计划，与历史19500步记录分开标注；完整指标及口径见[12000步专项记录](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp32-gen-test-12000-results-20261116)。
+
 | 实验版本 | 训练 | 推理 | Metric 计算 |
 |---|---|---|---|
 | `exp31` | ✅ Seen-10，step 19550；✅ 评测 checkpoint-6000 | ✅ Seen-10：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>✅ CrossMap-4 zero-shot | ✅ Seen-10：定位/离散/连续 metric 与聚合完成<br>✅ CrossMap-4 zero-shot |
@@ -103,6 +105,7 @@
 |---|---|---|---|
 | `exp32` | ✅ Seen-10，step 19550；✅  checkpoint-6000 | ✅ checkpoint-19550 Seen-10 ：定位 20,000 + 离散生成 20,000 + 连续生成 12,800<br>CrossMap-4 zero-shot；checkpoint-6000 未开始| ✅ checkpoint-19550 Seen-10 ：定位/离散/连续 metric 与聚合完成<br>CrossMap-4 zero-shot；checkpoint-6000未开始 |
 | `exp32_gen` | ✅ Seen-10，step 19500 | ✅ Seen-10：离散 20,000 + 连续 12,800<br>✅ CrossMap-4：离散 8,000 + 连续 5,120 | ✅ Seen-10 离散/连续<br>✅ CrossMap-4 离散/连续 |
+| `exp32_gen@12000`（2026-11-16同步） | ✅ 12000权重与状态；本份Trainer为12000/13650，非final | ✅ Seen-10 test：离散20,000＋连续12,800；batch16，seed42 | ✅ 十图离散／连续逐图指标和summary；定位不适用 |
 | `exp32_loc` | ✅ Seen-10，step 19500 | ✅ Seen-10，20,000 样本<br>CrossMap-4 zero-shot：未开始 | ✅ Seen-10 定位 metric<br>CrossMap-4 zero-shot：未开始 |
 |---|---|---|---|
 | `exp35_cs_office` 100-shot | 等待 parent checkpoint | 未开始 | 未开始 |
@@ -339,7 +342,11 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-3 ablation | Discrete generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss | 14.291 | 0.405 | 0.623 | 0.516 | 30.130 | — | 5900 |
 | Seen-3 ablation | Discrete generation | exp31_3_3maps | dust2, ancient, nuke | perception loss | 14.616 | 0.409 | 0.607 | 0.527 | 30.430 | — | 5900 |
 | Seen-3 validation | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 13.284 | 0.391 | 0.665 | 0.499 | 75.977 | seen_validation | 2400 |
+| Seen-3 validation | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 13.932 | 0.419 | 0.636 | 0.505 | 62.949 | seen_validation | 3600 |
 | Seen-3 validation | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.402 | 0.418 | 0.613 | 0.520 | 62.252 | seen_validation | 5850 |
+| Seen-3 test | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 13.806 | 0.396 | 0.642 | 0.507 | 37.507 | seen_discrete_test（test） | 3600 |
+| Seen-3 test | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.155 | 0.401 | 0.631 | 0.515 | 37.799 | seen_discrete_test（test） | 4800 |
+| Seen-3 test | Discrete generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.078 | 0.400 | 0.630 | 0.515 | 37.025 | seen_discrete_test（test） | 5850 |
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_original | dust2, ancient, nuke | J0：joint-only；原 LR；αloc=S3 | 13.521 | 0.407 | 0.652 | 0.497 | 67.498 | seen_validation | 2400 |
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_original | dust2, ancient, nuke | J0：joint-only；原 LR；αloc=S3 | 14.592 | 0.425 | 0.606 | 0.523 | 61.835 | seen_validation | 5850 |
 | Seen-3 validation | Discrete generation | exp32_3maps_joint_headlr | dust2, ancient, nuke | J1：joint-only；定位私有 LR 对齐；αloc=S3 | 13.529 | 0.398 | 0.653 | 0.499 | 69.793 | seen_validation | 2400 |
@@ -384,6 +391,10 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-3 validation | Discrete generation | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1200（Stage 2 local，计划） |
 | Seen-3 validation | Discrete generation | exp32_3maps_stage2_both_j8 | dust2, ancient, nuke | S3_J8：joint＋aux-loc＋perception；Stage 2 J8@5850 初始化 |  |  |  |  |  | seen_validation（待评测） | 1800（Stage 2 local，计划） |
 
+### G0@3600／4800 单阶段结果补录（2026-11-16）
+
+3600／4800的离散、连续test已补入本表；同时保留已有5850结果作为同族节点对照，未依据test重新指定最佳checkpoint。三图等权 `metrics_macro_map`、seed=42；离散test每图2,000（共6,000），连续每图20×64帧（共3,840）。3600离散validation为每图500（共1,500），4800 validation未同步，不以test代填。详细指标、coverage核对及源JSON见[主实验文档节点记录](CSGO_BENCHMARK_V2_EXP32_3MAPS.md#g0-checkpoints-3600-4800-20261116)。
+
 ### S0_G0 单任务续训（2026-10-31 同步）
 
 | Setting | Task | Experiment | Shot/map | ablation | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | validation | checkpoint steps |
@@ -402,7 +413,9 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-3 ablation | Continuous generation | exp31_1_3maps | dust2, ancient, nuke | - - | 14.761 | 0.423 | 0.616 | 34.344 | 39.686 | 886.168 | — | 5850 |
 | Seen-3 ablation | Continuous generation | exp31_2_3maps | dust2, ancient, nuke | aux-loc loss | 14.811 | 0.424 | 0.611 | 32.870 | 38.398 | 831.028 | — | 5900 |
 | Seen-3 ablation | Continuous generation | exp31_3_3maps | dust2, ancient, nuke | perception loss | 15.303 | 0.433 | 0.586 | 32.357 | 37.824 | 836.473 | — | 5900 |
-| Seen-3 test | Continuous generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
+| Seen-3 test | Continuous generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.164 | 0.414 | 0.628 | 36.214 | 41.240 | 929.679 | seen_continuous（test） | 3600 |
+| Seen-3 test | Continuous generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.911 | 0.430 | 0.596 | 32.685 | 38.030 | 934.970 | seen_continuous（test） | 4800 |
+| Seen-3 test | Continuous generation | exp32_3maps_gen_single | dust2, ancient, nuke | G0：生成单任务；无辅助 | 14.834 | 0.428 | 0.600 | 34.884 | 39.939 | 894.198 | seen_continuous（test） | 5850 |
 | Seen-3 test | Continuous generation | exp32_3maps_joint_original | dust2, ancient, nuke | J0：joint-only；原 LR；αloc=S3 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_joint_headlr | dust2, ancient, nuke | J1：joint-only；定位私有 LR 对齐；αloc=S3 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
 | Seen-3 test | Continuous generation | exp32_3maps_joint_sharedlr | dust2, ancient, nuke | J2：joint-only；定位私有 LR 对齐＋共享 LLM LR=3e-5；αloc=S3 |  |  |  |  |  |  | —（仅 test；待筛选后报告） | 待 validation 选定 |
@@ -583,6 +596,7 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 | Discrete generation | exp32 | - | 14.1528 | 0.4141 | 0.6035 | 0.5229 | 36.6005 | 19500 |
 | CrossMap-4 zero-shot | Discrete generation | exp32 | - | 11.5381 | 0.4075 | 0.7396 | 0.4471 | 88.0380 | 19500 |
 | Seen-10 | Discrete generation | exp32_gen | - | 13.965 | 0.4113 | 0.6106 | 0.5163 | 35.584 | 19500 |
+| Seen-10 test（batch16） | Discrete generation | [exp32_gen](outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16/discrete/summary.json) | - | 13.511 | 0.3991 | 0.6302 | 0.5049 | 39.169 | 12000 |
 | CrossMap-4 zero-shot | Discrete generation | exp32_gen | - | 11.081 | 0.3690 | 0.7210 | 0.4592 | 79.887 | 19500 |
 | Seen-10 | Discrete generation | exp32_1 | - | 13.9070 | 0.4072 | 0.6145 | 0.5151 | 36.2159 | 19500 |
 | CrossMap-4 zero-shot | Discrete generation | exp32_1 | - |  |  |  |  |  | 19500 |
@@ -717,6 +731,7 @@ J5～J8 的历史同一步数对照、逐图例外及当日后续执行计划见
 | Seen-10 | Continuous generation | exp32 | - | 14.5725 | 0.4190 | 0.5826 | 34.0925 | 40.3596 | 848.4586 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp32 | - | 11.5966 | 0.4018 | 0.7452 | 44.2626 | 50.0603 | 1255.7838 | 19500 |
 | Seen-10 | Continuous generation | exp32_gen | - | 14.342 | 0.4162 | 0.5929 | 35.698 | 41.867 | 848.071 | 19500 |
+| Seen-10 test（batch16） | Continuous generation | [exp32_gen](outputs_eval/benchmark_v2/exp32_gen/checkpoint-12000/test/seed_42/infer_bs16/continuous/summary.json) | - | 13.810 | 0.4047 | 0.6138 | 37.893 | 43.888 | 950.456 | 12000 |
 | CrossMap-4 zero-shot | Continuous generation | exp32_gen | - | 11.042 | 0.3628 | 0.7208 | 46.932 | 52.377 | 1349.984 | 19500 |
 | Seen-10 | Continuous generation | exp32_1 | - | 14.2285 | 0.4100 | 0.5981 | 36.1777 | 42.2848 | 891.6025 | 19500 |
 | CrossMap-4 zero-shot | Continuous generation | exp32_1 | - |  |  |  |  |  |  | 19500 |
@@ -1598,3 +1613,46 @@ U4／B1 与独立 B2 的直接对照、test 取舍及后续优先级见[2026-11-
 10-shot 相对 zero-shot，定位 XY 降低33.20%、离散 FID 降低37.56%、连续 FVD 降低27.16%；100-shot 相对 zero-shot 的 XY 与 FID 分别降低44.85%和52.16%，相对10-shot 又分别降低17.44%和23.38%。定位四项及离散主要指标从10到20、50、100-shot持续改善；连续 FVD 为935.167、890.729、952.189、917.984，非单调，不能据 Unseen query 选择20-shot或新超参。100-shot Yaw_Dist仍为76.902，最难地图 de_palacio 的 XY_Dist 为254.993；cs_office 100-shot XY改善74.57%，约贡献宏平均降幅的53.68%。
 
 每个shot固定400次更新，但训练 batch 等于shot，曝光量分别为4k、8k、20k、40k；结果不代表等FLOPs或独立样本数的单因果。当前没有joint/both匹配few-shot，不能声称联合或辅助获益。已完成的8组loc retention（cs_office与de_golden各四shot）四项定位误差均高于Seen-test source，XY约为source的1.41–5.10倍，已显示Seen定位退化；这不能外推到de_palacio/de_vertigo或生成 retention，详见[retention逐项结果](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp37-retention-observed-20261106)。剩余retention继续暂停。下一步优先按冻结配方补 joint，再比较预先由Seen验证确定的辅助候选，不据Unseen query调参。
+
+<a id="exp32-gen-12000-unseen4-results-20261116"></a>
+
+# exp32_gen@12000 Unseen-4：exp32_fs_gen（2026-11-16结果同步）
+
+family `exp32_fs_gen` 的实际父模型是生成单任务 **`exp32_gen@12000`**：`outputs/csgo_1b/exp32_gen/checkpoint-12000/model.safetensors`，不是联合模型exp32。zero-shot直接评测父模型；few-shot对四图×100／50／20／10-shot独立初始化并适配400步，再评测各自final400。support seed=0、训练／推理seed=42，生成bs32、metric batch=1、minimal资产、`benchmark_v2_core`；两类生成的manifest均记录保留加载后的模块模式（438个活动Dropout模块），不包含定位或retention。
+
+结果产物完整：zero-shot的8份逐图指标＋2份summary，以及few-shot的32份逐图指标＋8份正式map-models汇总，合计40/40份逐图指标、10/10份汇总。每图离散2000张、连续1280帧（20×64），覆盖完整、缺失／多余预测为0；四图汇总分别8000／5120，宏平均与逐图等权复算一致，FID／FVD也为四图指标均值。
+
+**训练快照仍在同步：截至2026-11-16 15:06:15 +08，本机14/16组有完整model.safetensors与trainer_state.json并核验400/400；另2组为de_vertigo／50／20-shot。** 这2组已有关联推理计划、manifest和指标，可报告本次结果；复现训练来源或在本机再次执行严格infer／metrics／aggregate前需补齐训练快照，不能由缺少本机权重推断需要重训。
+
+完整逐图指标与来源见[专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp32-gen-12000-unseen4-results-20261116)，手动命令与故障恢复历史见[record.md](record.md#exp32-gen-12000-crossmap-manual)。本节与上方exp37、早期exp34／36曲线独立，实际checkpoint与训练历史不互换。
+
+## 实验记录表
+
+| 目标地图 | 100-shot：模型／query／retention | 50-shot | 20-shot | 10-shot |
+|---|---|---|---|---|
+| cs_office | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 |
+| de_golden | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 |
+| de_palacio | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 |
+| de_vertigo | 本机400/400已核验／✅离散＋连续／暂停 | 模型／状态待同步／✅离散＋连续／暂停 | 模型／状态待同步／✅离散＋连续／暂停 | 本机400/400已核验／✅离散＋连续／暂停 |
+
+## 离散生成：四图等权macro（bs32）
+
+| Shot | 推理batch | PSNR↑ | LPIPS↓ | Boundary F1↑ | FID↓ | 正式四图汇总 |
+|---|---|---|---|---|---|---|
+| 0 | 32 | 11.4240 | 0.7437 | 0.4509 | 86.5092 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/summary.json) |
+| 100 | 32 | 13.2252 | 0.6603 | 0.4816 | 38.3044 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 50 | 32 | 12.9895 | 0.6710 | 0.4771 | 41.7068 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 20 | 32 | 12.7371 | 0.6790 | 0.4718 | 45.7469 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 10 | 32 | 12.5927 | 0.6830 | 0.4648 | 49.6388 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+
+## 连续生成：四图等权macro（bs32）
+
+| Shot | 推理batch | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 正式四图汇总 |
+|---|---|---|---|---|---|---|---|
+| 0 | 32 | 11.5286 | 0.7407 | 46.5496 | 52.0602 | 1465.3420 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/summary.json) |
+| 100 | 32 | 13.0793 | 0.6643 | 38.6184 | 44.5751 | 924.6540 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 50 | 32 | 12.8117 | 0.6791 | 37.5421 | 43.6995 | 909.8844 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 20 | 32 | 12.4522 | 0.6856 | 35.8228 | 42.1706 | 902.1280 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 10 | 32 | 12.2656 | 0.6881 | 36.5358 | 42.8512 | 896.3240 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+
+zero→100-shot的离散FID下降55.72%、连续FVD下降36.90%；离散PSNR随shot增加改善，但连续FVD从10-shot的896.3240升至100-shot的924.6540，不能由单一指标或query曲线反选shot。100-shot与旧exp37_fs_gen比较，PSNR接近，LPIPS／FID更高而FVD更低；来源预算不同，不构成辅助loss的单因果消融。2组本地训练快照缺失不影响已有指标列示，但限制本机独立复核权重和严格重跑，补同步清单与比较见[专题分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp32-gen-12000-unseen4-analysis-20261116)。

@@ -41,6 +41,116 @@ HEADER = {"tensor_count": 2578, "lora_tensor_count": 876,
 
 
 class Exp32GenUnseen4Tests(unittest.TestCase):
+    def test_learning_rate_families_preserve_recipe_except_low_lr_and_identity(self):
+        runner.validate_matrix()
+        point = ("cs_office", 10)
+        original = runner.recipe(args("train", "--map", point[0], "--shots", "10"),
+                                 *point, zero_shot=False)
+        self.assertEqual(original["exp32_gen_unseen4_experiment"], runner.FAMILY)
+        self.assertTrue(all(original[key] == 2e-5 for key in runner.LOW_LR))
+        for family, learning_rate in runner.FEW_SHOT_LR.items():
+            with self.subTest(family=family):
+                local = args("train", "--experiment", family, "--map", point[0],
+                             "--shots", "10")
+                cfg, saved, out = runner.model_snapshot(local, *point, strict_source=False)
+                self.assertEqual((saved["family"], cfg["exp32_gen_unseen4_experiment"]),
+                                 (family, family))
+                self.assertEqual(out, runner.model_dir(*point, family))
+                self.assertEqual(saved["effective_batch"], {
+                    "micro_batch": 10, "configured_gas": 1, "microbatches_per_update": 1,
+                    "base_samples_per_update": 10, "base_sample_exposures_400_steps": 4000})
+                self.assertEqual({key: cfg[key] for key in runner.LOW_LR},
+                                 dict.fromkeys(runner.LOW_LR, learning_rate))
+                self.assertEqual({key: cfg[key] for key in runner.HIGH_LR},
+                                 dict.fromkeys(runner.HIGH_LR, 1e-4))
+                expected = original.copy()
+                expected["exp32_gen_unseen4_experiment"] = family
+                for key in runner.LOW_LR:
+                    expected[key] = learning_rate
+                self.assertEqual(cfg, expected)
+                command = runner.train_command(cfg, out, 10, local)
+                self.assertEqual(command[command.index("--learning_rate") + 1],
+                                 {2e-5: "2e-5", 1e-5: "1e-5", 5e-6: "5e-6"}[learning_rate])
+                self.assertEqual(command[command.index("--per_device_train_batch_size") + 1], "10")
+                self.assertEqual(command[command.index("--gradient_accumulation_steps") + 1], "1")
+                self.assertEqual(command[command.index("--max_steps") + 1], "400")
+
+    def test_new_family_paths_and_zero_shot_rejection(self):
+        for family in ("exp32_fs_gen_lr1e5", "exp32_fs_gen_lr5e6"):
+            with self.subTest(family=family):
+                for map_name in runner.MAPS:
+                    for shots in runner.SHOTS:
+                        local = args("train", "--experiment", family, "--map", map_name,
+                                     "--shots", str(shots))
+                        _, _, out = runner.model_snapshot(local, map_name, shots,
+                                                           strict_source=False)
+                        self.assertIn(f"{family}_{map_name}", str(out))
+                _, writes, checked = runner.plan(args("validate", "--experiment", family))
+                self.assertEqual((writes, checked["validated_points"]), ([], 16))
+                with patch.object(runner, "source_checkpoint", return_value=(runner.SOURCE,
+                        {"path": runner.rel(runner.SOURCE), "verified": True})):
+                    _, writes, checked = runner.plan(args("source-check", "--experiment", family))
+                self.assertEqual((writes, checked["source"]["verified"]), ([], True))
+                local = args("infer", "--experiment", family, "--map", "de_golden",
+                             "--shots", "20")
+                with tempfile.TemporaryDirectory() as directory, patch.object(
+                        runner, "selected_model_dir", return_value=Path(directory) / "adapt"):
+                    # Read-only dry runs can plan against a missing adaptation.
+                    commands, writes, details = runner.plan(local)
+                    self.assertEqual(details["family"], family)
+                    self.assertEqual(len(commands), 2)
+                    self.assertTrue(all(f"{family}_de_golden" in str(path)
+                                        for path, _ in writes))
+                    self.assertTrue(all(f"{family}_de_golden" in command[
+                        command.index("--output_dir") + 1] for command in commands))
+                    self.assertFalse(list(Path(directory).iterdir()))
+                commands, writes, _ = runner.plan(args("aggregate", "--experiment", family,
+                                                       "--shots", "20"))
+                self.assertFalse(writes)
+                self.assertEqual(len(commands), 2)
+                for command in commands:
+                    self.assertIn(f"{family}_{{map}}", command[command.index("--input_pattern") + 1])
+                    self.assertIn(f"/{family}/", command[command.index("--output") + 1])
+                with self.assertRaisesRegex(ValueError, "few-shot only.*exp32_fs_gen --zero-shot"):
+                    runner.plan(args("infer", "--experiment", family, "--zero-shot"))
+                with tempfile.TemporaryDirectory() as directory, patch.object(
+                        runner, "selected_model_dir", return_value=Path(directory) / "adapt"), \
+                        patch.object(runner.subprocess, "run", side_effect=AssertionError("executed")), \
+                        redirect_stdout(StringIO()):
+                    self.assertEqual(runner.main(["train", "--experiment", family,
+                                                  "--map", "cs_office", "--shots", "10"]), 0)
+                    self.assertFalse(list(Path(directory).iterdir()))
+
+    def test_snapshot_rejects_other_family_and_learning_rate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            source = {"path": runner.rel(runner.SOURCE), "step": 12000, "verified": True}
+            default = args("train", "--map", "cs_office", "--shots", "10")
+            lower = args("train", "--experiment", "exp32_fs_gen_lr1e5",
+                         "--map", "cs_office", "--shots", "10")
+            lowest = args("train", "--experiment", "exp32_fs_gen_lr5e6",
+                          "--map", "cs_office", "--shots", "10")
+            with patch.object(runner, "source_checkpoint", return_value=(runner.SOURCE, source)), \
+                    patch.object(runner, "selected_model_dir", return_value=out):
+                cfg, saved, _ = runner.model_snapshot(default, "cs_office", 10,
+                                                       strict_source=False)
+                (out / "resolved_config.yaml").write_text(runner.yaml_text(cfg), encoding="utf-8")
+                (out / "experiment_plan.json").write_text(runner.json_text(saved), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "identity/seed"):
+                    runner.read_model_snapshot(lower, "cs_office", 10, strict_source=False)
+                cfg, saved, _ = runner.model_snapshot(lower, "cs_office", 10,
+                                                       strict_source=False)
+                (out / "resolved_config.yaml").write_text(runner.yaml_text(cfg), encoding="utf-8")
+                (out / "experiment_plan.json").write_text(runner.json_text(saved), encoding="utf-8")
+                self.assertEqual(runner.read_model_snapshot(lower, "cs_office", 10,
+                                                            strict_source=False)[1], saved)
+                with self.assertRaisesRegex(ValueError, "identity/seed"):
+                    runner.read_model_snapshot(lowest, "cs_office", 10, strict_source=False)
+                cfg["learning_rate"] = 2e-5
+                (out / "resolved_config.yaml").write_text(runner.yaml_text(cfg), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "learning rates differ"):
+                    runner.read_model_snapshot(lower, "cs_office", 10, strict_source=False)
+
     def test_validate_and_sixteen_fresh_batch_plans(self):
         commands, writes, details = runner.plan(args("validate"))
         self.assertEqual((commands, writes, details["validated_points"]), ([], [], 16))
