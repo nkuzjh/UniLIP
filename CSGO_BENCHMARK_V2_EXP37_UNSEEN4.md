@@ -895,6 +895,21 @@ family `exp32_fs_gen` 的实际父模型是生成单任务 **`exp32_gen@12000`**
 
 100-shot的exp32_fs_gen与旧exp37_fs_gen离散PSNR接近（13.2252／13.2324）；新对照的LPIPS、FID更高，而FVD更低（924.6540／944.1510），表现并非全面排序。对joint／both的差值也不单独证明联合任务或辅助loss的效果。当前优先补齐2组训练快照的同步与来源闭环，已有query指标无需重算；retention继续暂停。
 
+<a id="exp32-loc-19500-unseen4-plan-20261116"></a>
+
+## 2026-11-16：exp32_fs_loc_19500 zero-shot／few-shot实验计划（未启动）
+
+新增独立的`exp32_fs_loc_19500`，直接加载`outputs/csgo_1b/exp32_loc/checkpoint-19500/model.safetensors`。原`exp32_fs_loc`仍指向16000，不改已有模型、指标或上述exp37主线计数。代码入口为[run_exp32_loc_unseen4.py](scripts/run_exp32_loc_unseen4.py)，固定矩阵见[配置](csgo_configs/benchmark_v2_exp32_loc_unseen4.yaml)，可直接执行的手动命令见[zero-shot](record.md#exp32-loc-19500-zero-shot)与[few-shot](record.md#exp32-loc-19500-few-shot)。
+
+| 实验 | 来源与适配 | 计划评测 | 当前状态 |
+|---|---|---|---|
+| zero-shot | 直接exp32_loc@19500，不训练 | 四图×2000 query；batch16；定位四图macro | 未启动 |
+| 100／50／20／10-shot | 四图各自从19500初始化；共16组，每组400步 | 每模型2000 query；batch16；每档shot四图等权macro | 未启动 |
+
+Few-shot沿用16000对照：microbatch=shots、GAS=1；普通／活动LoRA LR=2e-5、Action connector／norm／projector LR=1e-4；AdamW、WD=0、cosine min_lr_rate=0.1、warmup_ratio=0.003；αloc=1，loc-only、辅助loss全关；LoRA32／64、dropout0.05；support0、训练／推理seed42。仅保存final400，训练中不验证；final400执行query，retention继续暂停。定位指标在infer内计算，metrics验证现有结果；所有新路径均使用19500的独立family。
+
+2026-11-16本机检查时19500来源模型、Trainer状态和config尚未同步；执行机须补齐并通过source-check，不回退其他step。本节仅登记计划，没有新增实验结果；不将未运行项目计为完成。默认minimal资产，全量切换方式见配置注释和record命令。
+
 ## 历史工作与执行优先级
 
 2026-11-13当前状态：选定的gen／loc／joint／both已完成对齐batch的zero-shot、四图四档few-shot及全部正式汇总，当前范围内无待补实验，见[完整结果](#exp37-unseen4-aligned-results-20261113)与[分析](#exp37-unseen4-aligned-analysis-20261113)。后续使用现有结果完成论文表格与证据复核，保持冻结配方，不按Unseen query重新挑选shot或候选。both_b1排除在本轮范围外，原规划保留；Seen-retention继续暂停。

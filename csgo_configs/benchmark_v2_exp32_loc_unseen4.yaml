@@ -1,0 +1,38 @@
+# Run with scripts/run_exp32_loc_unseen4.py; commands only execute with --execute.
+# Independent family: the original exp32_fs_loc@16000 outputs remain separate.
+schema_version: 1
+family: exp32_fs_loc_19500
+# Exact source only: keep model.safetensors, config.json and trainer_state.json
+# together; the saved Trainer global_step must be 19500. No final/other-step fallback.
+source: outputs/csgo_1b/exp32_loc/checkpoint-19500/model.safetensors
+source_recipe: csgo_configs/exp32_loc.yaml
+base_recipe: csgo_configs/exp37_s2_loc.yaml
+manifest: data/csgo_benchmark_v2/benchmark_manifest.json
+minimal_asset_manifest: data/csgo_benchmark_v2/minimal_dataset_report.json
+# Default minimal assets: --asset-mode minimal.
+# Full assets: --asset-mode full --data-dir /path/to/full/preprocessed_data.
+# The backend switch preserves the support/query split, maps and sample counts.
+# Later infer/metrics/aggregate can omit backend flags to use the saved snapshot.
+maps: [cs_office, de_golden, de_palacio, de_vertigo]
+shots: [100, 50, 20, 10]
+support_seed: 0
+seed: 42
+max_steps: 400
+test_loc_batch_size: 16
+# Each map/shot starts fresh from the source; microbatch=shots, GAS=1.
+# Save only final400, then run query localization; retention stays paused.
+# infer computes localization metrics; metrics/zero-shot aggregate validate them.
+training:
+  low_lr: 2.0e-05
+  high_lr: 1.0e-04
+  optimizer: adamw_torch
+  adam_beta1: 0.9
+  adam_beta2: 0.999
+  adam_epsilon: 1.0e-08
+  weight_decay: 0.0
+  max_grad_norm: 1.0
+  scheduler: cosine_with_min_lr
+  min_lr_rate: 0.1
+  warmup_ratio: 0.003
+  save_strategy: "no"
+  eval_strategy: "no"

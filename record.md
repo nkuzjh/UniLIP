@@ -8878,6 +8878,43 @@ CUDA_VISIBLE_DEVICES="$GPU" python eval_csgo_loc.py \
 ' >> fst_outs/exp32_fs_loc_zero_shot_step16000_bs16.nohup.out 2>&1 < /dev/null &
 ```
 
+<a id="exp32-loc-19500-zero-shot"></a>
+
+##### exp32_fs_loc_19500：exp32_loc@19500 定位 zero-shot（2026-11-16新增；未启动）
+
+新增独立family `exp32_fs_loc_19500`，精确加载 `outputs/csgo_1b/exp32_loc/checkpoint-19500/model.safetensors`；原`exp32_fs_loc`继续表示@16000，原命令、权重与结果目录保留。入口为 `scripts/run_exp32_loc_unseen4.py`，固定矩阵为 `csgo_configs/benchmark_v2_exp32_loc_unseen4.yaml`。来源检查要求同目录 `trainer_state.json`（global_step=19500）、`config.json`及定位单任务LoRA结构一致，不自动使用根目录final、16000、19550或exp37_s2_loc替代；本机2026-11-16检查时19500来源三文件尚未同步，须先在执行机补齐。训练使用的UniLIP-1B与π0.5基础资产仍须可用。
+
+zero-shot覆盖`cs_office/de_golden/de_palacio/de_vertigo`四图，每图2000条query，共8000条；seed=42、默认定位推理batch=16，不传support seed／shots到评测器。模型只输出定位，不运行生成或retention。`infer`调用`eval_csgo_loc.py`，同时计算逐图指标和四图等权macro；`metrics`只在CPU核对已保存的推理来源、batch和定位摘要，`aggregate --zero-shot`验证现有四图结果，不重新进行GPU推理。输出根目录：`outputs_loc/benchmark_v2/exp32_fs_loc_19500/zero_shot/seed_42/infer_bs16/`，主要结果为`benchmark_csgo_v2_loc.json`。
+
+默认minimal资产；全量资产用`--asset-mode full --data-dir /实际全量preprocessed_data路径`。首次生成快照时，如需覆盖基础模型或π0.5目录，传入`--model-path /实际UniLIP-1B路径 --pi05-path /实际pi05_base路径`；后续按同一快照执行。资源后端切换不改变split、地图或样本数。
+
+**执行前检查。** `validate`与不带`--execute`的命令只生成内存计划；`source-check`只读验证来源。以下命令不启动实验；source-check失败时先同步19500来源，再执行后续命令。
+
+```bash
+python scripts/run_exp32_loc_unseen4.py validate --experiment exp32_fs_loc_19500
+python scripts/run_exp32_loc_unseen4.py infer --experiment exp32_fs_loc_19500 --zero-shot --task loc --test-loc-batch-size 16 --asset-mode minimal
+python scripts/run_exp32_loc_unseen4.py train --experiment exp32_fs_loc_19500 --map cs_office --shots 100 --master-port 0 --asset-mode minimal
+python scripts/run_exp32_loc_unseen4.py source-check --experiment exp32_fs_loc_19500
+```
+
+**手动启动zero-shot。** `GPU=1`可改为空闲卡；输出非空时拒绝覆盖，不自动重启已有推理。此块带`--execute`，仅供用户手动运行。
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_loc_19500
+GPU=1
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+COMMON=(--experiment "$FAMILY" --zero-shot --split query --task loc --test-loc-batch-size 16 --cuda-device "$GPU" --seed 42 --report-to none "${ASSETS[@]}")
+python -u scripts/run_exp32_loc_unseen4.py source-check --experiment "$FAMILY"
+python -u scripts/run_exp32_loc_unseen4.py infer "${COMMON[@]}" --execute
+python -u scripts/run_exp32_loc_unseen4.py metrics "${COMMON[@]}" --execute
+python -u scripts/run_exp32_loc_unseen4.py aggregate "${COMMON[@]}" --execute
+' >> fst_outs/exp32_fs_loc_19500_zero_shot_bs16.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_loc_19500 zero-shot PID=$!"
+```
+
 #### 第二步：单个family／地图／shot，顺序训练与query评测（retention暂停）
 
 模板适用于上述任意family；四图为 `cs_office/de_golden/de_palacio/de_vertigo`，shot为100/50/20/10。训练成功后先目标图query，再全Seen-10 retention；query定位/离散各2000、连续1280帧；retention定位/离散各20000、连续12800帧。端口只是建议，手动启动前检查占用。
@@ -9093,6 +9130,83 @@ done
 
 本段仅提供手动命令，尚未运行或登记为完成；原exp37系列配置和结果保持原身份。
 
+
+<a id="exp32-loc-19500-few-shot"></a>
+
+##### exp32_fs_loc_19500：exp32_loc@19500 定位 few-shot（2026-11-16新增；未启动）
+
+使用[同一19500来源与入口](#exp32-loc-19500-zero-shot)，四张Unseen地图分别按100／50／20／10-shot独立适配，共16次训练。每次从`exp32_loc/checkpoint-19500/model.safetensors`仅加载模型，新建optimizer／scheduler／RNG及local step；不加载原@16000的few-shot模型，也不继承来源optimizer。除父checkpoint和独立family身份外，沿用原`exp32_fs_loc@16000`的定位适配设置。
+
+| 配置项 | 本组设置 |
+|---|---|
+| Family／父模型 | `exp32_fs_loc_19500`／`exp32_loc@19500` |
+| 地图与shot | cs_office、de_golden、de_palacio、de_vertigo；100／50／20／10 |
+| 更新与有效batch | 400步；单卡microbatch=shots、GAS=1；每个模型只训练自己的support |
+| 学习率 | 普通／活动LoRA 2e-5；Action connector／norm／projector 1e-4 |
+| 优化器 | AdamW；β=(0.9,0.999)，eps=1e-8，WD=0，clip=1 |
+| 调度 | cosine_with_min_lr，min_lr_rate=0.1，warmup_ratio=0.003 |
+| 训练目标 | loc-only；固定αloc=1；全部辅助loss关闭；冻结生成分支 |
+| LoRA与种子 | r=32，alpha=64，dropout=0.05；support seed=0，训练／推理seed=42 |
+| 保存与评测节点 | 仅final400模型；训练过程中不验证；final400做query定位与四图macro |
+| Query与retention | 每图2000条；定位batch=16；retention暂停 |
+
+模型目录：`outputs/csgo_1b/exp32_fs_loc_19500_<map>/shot_<N>/seed_0/`。逐图query目录：`outputs_loc/benchmark_v2/exp32_fs_loc_19500_<map>/shot_<N>/seed_0/infer_bs16/`。四图正式汇总：`outputs_loc/benchmark_v2/exp32_fs_loc_19500/shot_<N>/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json`。`infer`同时生成定位指标，`metrics`是来源与完整性的CPU验证，不额外运行GPU。训练只保存final400，没有用于断点恢复的中间optimizer checkpoint；不支持`--resume`，已完成的map／shot不要重新执行train。
+
+**手动训练与query队列。** 默认GPU1负责office／golden、GPU3负责palacio／vertigo；按空闲资源修改各块`GPU`即可。每条队列只用一张GPU，内部依次执行两图×四档shot；`--master-port 0`使用单节点自动端口。先结束占用这些GPU的zero-shot或其他队列，再启动相应块。命令使用minimal资产；切换全量时，替换每块的`ASSETS`行，train／infer／metrics共用同一数组。需要基础模型路径覆盖时，在`COMMON`中追加`--model-path`／`--pi05-path`，由训练快照保存。
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_loc_19500
+GPU=1
+MAPS=(cs_office de_golden)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+python -u scripts/run_exp32_loc_unseen4.py source-check --experiment "$FAMILY"
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --split query --task loc --test-loc-batch-size 16 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_loc_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_loc_unseen4.py infer "${COMMON[@]}" --execute
+    python -u scripts/run_exp32_loc_unseen4.py metrics "${COMMON[@]}" --execute
+  done
+done
+' >> fst_outs/exp32_fs_loc_19500_office_golden.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_loc_19500 office_golden PID=$!"
+```
+
+```bash
+mkdir -p fst_outs
+nohup bash -euo pipefail -c '
+FAMILY=exp32_fs_loc_19500
+GPU=3
+MAPS=(de_palacio de_vertigo)
+SHOTS=(100 50 20 10)
+ASSETS=(--asset-mode minimal)
+# 全量资产：将上一行替换为 ASSETS=(--asset-mode full --data-dir /实际全量preprocessed_data路径)
+python -u scripts/run_exp32_loc_unseen4.py source-check --experiment "$FAMILY"
+for MAP in "${MAPS[@]}"; do
+  for SHOT in "${SHOTS[@]}"; do
+    COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --split query --task loc --test-loc-batch-size 16 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
+    python -u scripts/run_exp32_loc_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_loc_unseen4.py infer "${COMMON[@]}" --execute
+    python -u scripts/run_exp32_loc_unseen4.py metrics "${COMMON[@]}" --execute
+  done
+done
+' >> fst_outs/exp32_fs_loc_19500_palacio_vertigo.nohup.out 2>&1 < /dev/null &
+echo "exp32_fs_loc_19500 palacio_vertigo PID=$!"
+```
+
+**两队列的16组query全部完成并同步到同一服务器后，再执行四图聚合。** 只合并相同shot、seed、推理batch的四图结果；任一图缺失或来源／配置不符会停止，不把缺失图按0补入。
+
+```bash
+bash -euo pipefail <<'BASH_EXP32_FS_LOC_19500_AGGREGATE'
+for SHOT in 100 50 20 10; do
+  python scripts/run_exp32_loc_unseen4.py aggregate --experiment exp32_fs_loc_19500 --shots "$SHOT" --split query --task loc --test-loc-batch-size 16 --execute
+done
+BASH_EXP32_FS_LOC_19500_AGGREGATE
+```
 
 ##### exp32_fs_gen：exp32_gen@12000 生成 zero-shot／few-shot（2026-11-15设计；2026-11-16结果同步）
 
@@ -9484,7 +9598,7 @@ ASSETS=(--asset-mode minimal)
 for MAP in "${MAPS[@]}"; do
   for SHOT in "${SHOTS[@]}"; do
     COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
-    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 29740 --execute
     python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
     python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
   done
@@ -9505,7 +9619,7 @@ ASSETS=(--asset-mode minimal)
 for MAP in "${MAPS[@]}"; do
   for SHOT in "${SHOTS[@]}"; do
     COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
-    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 29741 --execute
     python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
     python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
   done
@@ -9538,7 +9652,7 @@ ASSETS=(--asset-mode minimal)
 for MAP in "${MAPS[@]}"; do
   for SHOT in "${SHOTS[@]}"; do
     COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
-    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 29742 --execute
     python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
     python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
   done
@@ -9559,7 +9673,7 @@ ASSETS=(--asset-mode minimal)
 for MAP in "${MAPS[@]}"; do
   for SHOT in "${SHOTS[@]}"; do
     COMMON=(--experiment "$FAMILY" --map "$MAP" --shots "$SHOT" --task all --test-gen-batch-size 32 --cuda-device "$GPU" --seed 42 --support-seed 0 --report-to none "${ASSETS[@]}")
-    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 0 --execute
+    python -u scripts/run_exp32_gen_unseen4.py train "${COMMON[@]}" --master-port 29743 --execute
     python -u scripts/run_exp32_gen_unseen4.py infer "${COMMON[@]}" --split query --execute
     python -u scripts/run_exp32_gen_unseen4.py metrics "${COMMON[@]}" --split query --execute
   done
