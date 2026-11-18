@@ -1,0 +1,20 @@
+Diagnostic time: 2026-11-15T23:56:41.515744+08:00
+Python: /home/jiahao/miniconda3/envs/UniLIP/bin/python
+Read-only check: runner.plan() only. No experiment files written and no inference/metrics subprocess launched.
+Traceback (most recent call last):
+  File "<stdin>", line 17, in <module>
+  File "/data2/jiahao/UniLIP/scripts/run_exp32_gen_unseen4.py", line 514, in plan
+    raise ValueError(f"Refusing to overwrite existing inference output: {output}")
+ValueError: Refusing to overwrite existing inference output: /data2/jiahao/UniLIP/outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete
+
+Existing output image counts:
+discrete completion manifest exists: True
+cs_office 2000/2000
+de_golden 2000/2000
+de_palacio 2000/2000
+de_vertigo 2000/2000
+continuous completion manifest exists: False
+cs_office 1280/1280
+de_golden 992/1280
+de_palacio 0/1280
+de_vertigo 0/1280
