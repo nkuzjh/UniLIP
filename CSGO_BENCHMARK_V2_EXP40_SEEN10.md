@@ -66,15 +66,15 @@ Stage 2缩放沿用既有两阶段关系：以6000步版本的warmup200、ramp40
 
 ## 实验进度与结果记录
 
-首批代码、配置和手动命令已实现并完成CPU验收；新增`exp40_1_s2_both`的设计与验收另列于后文。下表没有这五组的实测结果，不把配置或CPU检查视为训练／评测完成。
+下表记录截至2026-11-19的本机同步状态。定位与生成的推理 batch 分别为32和16，seed均为42。当前实测指标和来源见[同步结果](#exp39-consloc2-results-20261119)。
 
 | 实验 | 训练状态 | 保存节点 | validation节点 | test节点 | 结果 |
 |---|---|---|---|---|---|
-| `exp39_consloc2` | 已配置；本次未启动或核定远端进度 | 每4000步＋final；keep2，结束保留16000／19550 | 16000／19550 | 16000／19550 | — |
-| `exp40_s2_P4` | 待用户手动启动 | local4000／7550 | local4000／7550 | local4000／7550 | — |
-| `exp40_s2_U2` | 待用户手动启动 | local4000／7550 | local4000／7550 | local4000／7550 | — |
-| `exp40_s2_both` | 待用户手动启动 | local4000／7550 | local4000／7550 | local4000／7550 | — |
-| `exp40_1_s2_both` | 待用户手动启动 | local2000／4000／6000 | local2000／4000／6000 | local2000／4000／6000 | — |
+| `exp39_consloc2` | 19550/19550，epoch50 | 本机有16000／19550权重和状态，keep2 | 两节点定位／离散均已同步 | 两节点三项均已同步 | [十份实测摘要](#exp39-consloc2-results-20261119) |
+| `exp40_s2_P4` | 本机未见训练产物 | 计划local4000／7550 | 两节点摘要未见 | 两节点摘要未见 | — |
+| `exp40_s2_U2` | 本机未见训练产物 | 计划local4000／7550 | 两节点摘要未见 | 两节点摘要未见 | — |
+| `exp40_s2_both` | 本机未见训练产物 | 计划local4000／7550 | 两节点摘要未见 | 两节点摘要未见 | — |
+| `exp40_1_s2_both` | 本机local2000/6000，累计18000 | 本机有local2000，计划local4000／6000 | 11-18远端截图显示2000两项完成，本机摘要未见 | 2000三项已同步。4000／6000摘要未见 | [2000 test](#exp40-1-s2-both-test-2000-20261119) |
 
 ### 实现验收（2026-11-13）
 
@@ -84,7 +84,7 @@ Stage 2缩放沿用既有两阶段关系：以6000步版本的warmup200、ramp40
 - 真实exp39@12000仅做CPU只读预检：模型SHA-256为`d1cb5c67aa0cc2103fca517c8ebdd622bc70db0ce96a8582fd0d7c55d6c3317f`，2830个张量、1128个LoRA张量，Trainer为12000/19550；未将大模型载入GPU。首次实际执行仍由入口重新检查并绑定来源。
 - 未启动任何新实验的训练、推理或指标计算；训练／结果目录不由文档和dry run创建。GPU可运行性和实际指标需由用户在远端执行后确认。
 
-## 对资源转向的判断
+## 对资源转向的判断（2026-11-13设计阶段）
 
 将后续预算转向exp39基座是合理的搜索决策。当前同累计16000步，exp39的离散五项指标均优于exp38各分支，且多数定位／连续指标更好；α4是值得继续检验的Stage 1设置。此前优先完成exp38 final的建议，主要服务于完成原路线的固定终点对照；当前可以优先追求新基座上的完整方案效果。
 
@@ -136,7 +136,7 @@ Stage 2缩放沿用既有两阶段关系：以6000步版本的warmup200、ramp40
 - 完整路径比19550多2450更新（12.53%），比19500多2500更新（12.82%）。该差异不属于既定50步容差；表格明确写累计22000，不能称作与19500／19550等更新预算。已有16000权重可复用，本轮实际新增训练为6000步；完整方法仍计入前缀成本。
 - 相对原both同时改变来源节点、学习率、Stage 2长度和累计预算，结果评价整体训练路线；不能单独归因于辅助或更高LR。若后续需要严格辅助归因，需另设同16000来源、同6000调度的无辅助对照，本次未新增。
 - 入口按实验管理来源、horizon、LR、warmup、ramp和checkpoint列表。来源hash只在使用同一Stage 1 checkpoint的分支间要求一致：原三组绑定exp39@12000，新组独立绑定exp39@16000；两组来源可以共存，不能跨来源或跨实验resume。
-- 仅用户手动带`--execute`才写运行产物或启动训练／推理／评测。本次只实现及CPU检查，实验仍待启动。
+- 入口在手动传入`--execute`时执行训练、推理或评测。已同步的训练和评测状态见[2000步结果](#exp40-1-s2-both-test-2000-20261119)。
 
 ### 新增实验实现验收（2026-11-13）
 
@@ -146,3 +146,72 @@ Stage 2缩放沿用既有两阶段关系：以6000步版本的warmup200、ramp40
 - record新增4个bash片段及2个nohup主体均通过语法检查；以占位函数模拟首次与三个恢复节点，确认2000→4000→6000顺序、恢复标志、各split与batch参数。未执行真实实验命令，原record字节和CRLF保持不变。
 - 扩展至旧exp38的83项测试时，旧exp38两个测试方法中的3个子用例报错：其`JOINT_EXPERIMENTS`已包含`exp38_s2_both`，使both误入“禁止辅助loss”检查。已核对旧入口及测试与当前HEAD一致，本次未修改；该问题不影响独立exp40入口，但不能将扩展测试记为全部通过。
 - 新实验的训练、定位和生成结果目录均未创建；GPU端训练／推理／评测尚未执行。
+
+<a id="exp39-consloc2-results-20261119"></a>
+
+## 2026-11-19：exp39_consloc2 实测结果
+
+训练状态为19550/19550、epoch50，本机保留16000和19550两个完整模型。它从原始 UniLIP＋π0.5 初始化，主定位权重为2，所有辅助目标关闭。与 `exp39` 的保存配方相比，训练目标只改变主定位权重，另外有实验名和保存节点／轮换设置差异。实际训练均为两卡×micro64×GAS1，有效基础 batch128、seed42。训练来源见[本组计划](outputs/csgo_1b/exp39_consloc2/experiment_plan.json)及[最终 Trainer 状态](outputs/csgo_1b/exp39_consloc2/checkpoint-19550/trainer_state.json)。
+
+以下均为 Seen-10 十图等权宏平均。已核对十份摘要的 checkpoint、split、seed、batch、样本数及逐图指标，重算宏平均与摘要一致。定位推理 batch32、10步，生成 batch16、20步，均使用 minimal 资产。生成指标为 CUDA 上的 `benchmark_v2_core`，计算 batch1、paired_size448，连续 FVD 使用 clip length16、stride16、size224。
+
+### 定位
+
+| Split | Checkpoint | 样本数 | 推理 batch | XY↓ | Z↓ | Pitch↓ | Yaw↓ | 摘要 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| validation | 16000 | 5000 | 32 | 105.445 | 5.548 | 3.530 | 44.022 | [JSON](outputs_loc/benchmark_v2/exp39_consloc2/checkpoint-16000/validation/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) |
+| validation | 19550 | 5000 | 32 | 94.558 | 5.115 | 3.191 | 40.600 | [JSON](outputs_loc/benchmark_v2/exp39_consloc2/checkpoint-19550/validation/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) |
+| test | 16000 | 20000 | 32 | 116.252 | 5.831 | 3.416 | 49.567 | [JSON](outputs_loc/benchmark_v2/exp39_consloc2/checkpoint-16000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) |
+| test | 19550 | 20000 | 32 | 105.651 | 5.415 | 3.096 | 46.347 | [JSON](outputs_loc/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) |
+
+### 离散生成
+
+| Split | Checkpoint | 样本数 | 推理 batch | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 摘要 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| validation | 16000 | 5000 | 16 | 14.407 | 0.431 | 0.597 | 0.523 | 62.774 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-16000/validation/seed_42/infer_bs16/discrete/summary.json) |
+| validation | 19550 | 5000 | 16 | 14.570 | 0.430 | 0.589 | 0.530 | 62.436 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-19550/validation/seed_42/infer_bs16/discrete/summary.json) |
+| test | 16000 | 20000 | 16 | 14.066 | 0.417 | 0.611 | 0.516 | 36.283 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json) |
+| test | 19550 | 20000 | 16 | 14.189 | 0.416 | 0.604 | 0.521 | 35.227 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs16/discrete/summary.json) |
+
+### 连续生成 test
+
+| Checkpoint | 帧数 | 推理 batch | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ | 摘要 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 16000 | 12800 | 16 | 14.420 | 0.422 | 0.593 | 0.530 | 34.471 | 40.709 | 17.222 | 888.619 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-16000/test/seed_42/infer_bs16/continuous/summary.json) |
+| 19550 | 12800 | 16 | 14.569 | 0.420 | 0.586 | 0.535 | 34.002 | 40.264 | 17.252 | 865.734 | [JSON](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs16/continuous/summary.json) |
+
+两节点六项生成评测的60份逐图 JSON 均记录匹配率100%，缺失和额外预测均为0。预测图片同步期间曾只见部分文件，本节覆盖数取自完整的评测 JSON。两节点 test 数值见[16000步对照](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-test-16000)和[final test对照](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-final-20261112)。
+
+<a id="exp40-1-s2-both-test-2000-20261119"></a>
+
+## 2026-11-19：exp40_1_s2_both local2000 test
+
+本机同步了 Stage 2 local2000、累计18000步的 checkpoint、状态及三项 test 摘要。计划绑定 `exp39@16000`，主 αloc=4，P4＋U2，实际两卡×micro4×GAS16，有效基础 batch128。test 定位／生成推理 batch32／16、seed42。三项均覆盖十图，已逐图复核。来源见[训练计划](outputs/csgo_1b/exp40_1_s2_both/experiment_plan.json)及[Trainer 状态](outputs/csgo_1b/exp40_1_s2_both/checkpoint-2000/trainer_state.json)。
+
+| 任务 | 样本数 | XY↓ | Z↓ | Pitch↓ | Yaw↓ | 摘要 |
+|---|---:|---:|---:|---:|---:|---|
+| 定位 | 20000 | 49.388 | 3.368 | 3.028 | 26.865 | [JSON](outputs_loc/benchmark_v2/exp40_1_s2_both/checkpoint-2000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) |
+
+| 任务 | 样本数 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 摘要 |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 离散生成 | 20000 | 13.593 | 0.404 | 0.624 | 0.510 | 37.657 | [JSON](outputs_eval/benchmark_v2/exp40_1_s2_both/checkpoint-2000/test/seed_42/infer_bs16/discrete/summary.json) |
+
+| 任务 | 帧数 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | TWE↓ | TDE↓ | OFE↓ | FVD↓ | 摘要 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 连续生成 | 12800 | 13.867 | 0.407 | 0.611 | 0.521 | 37.455 | 43.531 | 17.496 | 963.824 | [JSON](outputs_eval/benchmark_v2/exp40_1_s2_both/checkpoint-2000/test/seed_42/infer_bs16/continuous/summary.json) |
+
+<a id="exp38-exp39-exp40-analysis-20261119"></a>
+
+## 2026-11-19：exp38／exp39／exp40 分析
+
+**exp39 的 αloc=4 仍是当前最均衡的无辅助联合基座。** 同为累计16000步、定位／生成 batch32／16 时，α4 的四项定位宏平均均优于 α2、α8（`exp37`）和 α12。相对 α8，α4 还改善了离散五项和连续六项。α2 的 XY 为116.252，α4 为49.459，误差增加135.05%。Z 和 Yaw 分别增加89.79%和84.17%，三项在十图均变差。到19550步，α2 的 validation XY 从105.445降至94.558，test XY 从116.252降至105.651，四个定位误差在两个 split 上均继续下降。同期 α4 的 test XY 已为47.050，α2 仍高124.55%。α12 的 final XY 为95.145，同样远高于 α4。α8 的 final 为历史 batch1，四种权重共同比较以16000步为准。
+
+**αloc=2 在两个节点都以定位性能换来了更好的生成表现。** 同16000步相对 α4，离散4/5项改善，FID 从35.956升至36.283。连续八项均改善，FVD 从959.891降至888.619（−7.43%，十图均改善）。相对同节点生成单任务 `exp32_gen`，α2 在离散4/5、连续7/8项占优，FID、FVD 偏高，其中 FVD 为888.619比867.691。到19550步，在 batch32／16的 α2／4／12 三组对照中，α2 拿到13项生成指标中的12项最优，OFE 由 α4 最优。α2 的离散 PSNR／FID 为14.189／35.227，连续 FVD 为865.734，低于 α4 的921.205（十图均下降，宏平均−6.02%）和 α12 的879.816。自身从16000到final的 test 生成有10/13项改善，validation 离散有4/5项改善。α2／α12 保留为权重消融，联合基座优先 α4。源数值见[累计16000步对照](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-test-16000)及[final对照](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-final-20261112)。
+
+同16000步的单任务对照中，α4 联合模型的 XY、Pitch 优于 `exp32_loc`，Z、Yaw 略高。其离散 SSIM、FID 优于 `exp32_gen`，连续八项则均较差。当前实测给出了定位与生成之间的取舍，距离联合模型同时追平两个单任务仍有差距。详见[同累计步数三任务表](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-test-16000)。
+
+**exp38 的低学习率续训在累计16000步呈现局部收益。** 三个无辅助分支从同一 `exp37@12000` 续训。local4000 时，α4 相对 α8 改善 XY、Pitch、Yaw 和 FVD，Z 从2.974升至3.030。α12 相对 α8 改善 XY（52.309→50.624）、Pitch（3.236→2.667）和 FVD（973.564→937.934），Z 和 Yaw 走高。Stage 1 全程 α12 的大幅定位退化在这条晚期调权路线的观察点没有复现。保持 α8 的续训与单阶段 `exp37@16000` 相比，XY、Z、Yaw 改善，连续八项较差。单阶段 α4 的离散五项均优于同 batch 的三个 exp38 无辅助分支，XY 和 Yaw 也较低，这三个分支的 Z 更低。`exp38_s2_both` 对应的 FVD 为965.626，对照 joint 为973.564，同时 XY 从52.309升至54.076。两组推理 batch 分别为16／8和32／16，生成清单记录了活跃 Dropout，辅助损失的独立效应仍需同 batch 比较。四组 final 摘要尚缺，当前结论限于 local4000。详见[同累计步数三任务表](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-test-16000)。
+
+**exp40_1_s2_both 的已测2000步暂未表现出跨任务的净改善。** 对其实际起点 `exp39@16000`，XY（49.459→49.388）与 Yaw（26.914→26.865）变化很小，Z 从3.072升至3.368（+9.63%，十图均变差），Pitch 从2.883升至3.028。离散和连续的 LPIPS 及边界 F1 略有改善，离散 FID 从35.956升至37.657，连续 FVD 从959.891升至963.824。已经完成的 `exp39@19550` 在这17项指标均更好，但二者预算相差1550步。此对照反映从 α4 基座继续训练2000步后的整体变化，涉及重新设置学习率、重建优化器及新增辅助目标。同源、同调度的无辅助 Stage 2 对照仍是判断 P4＋U2 增量所需的证据。原三组 `exp40_s2_P4`、`exp40_s2_U2`、`exp40_s2_both` 暂无本机结果摘要，三种辅助配置当前无法排序。
+
+后续先同步 `exp40_1_s2_both` 的 local2000 validation，已有续训按既定4000／6000节点观察，报告累计20000／22000步。若重点是论文的约19550步对照，优先做从 `exp39@12000` 起步的 `exp40_s2_both` 与同源同调度的无辅助联合续训，按local4000／7550成对评测。后续超参筛选依据 validation，test 按预定节点汇报。

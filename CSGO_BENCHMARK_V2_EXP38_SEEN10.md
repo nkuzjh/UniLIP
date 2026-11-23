@@ -2,6 +2,8 @@
 
 **2026-11-13后续路线更新**：按用户决定，新增预算优先投入`exp39_consloc2`及从`exp39@12000`开始的`exp40_s2_P4`／`exp40_s2_U2`／`exp40_s2_both`，本轮不安排exp38继续至final。四组的配置、保存／评测节点和研究边界见[EXP40设计与进度](CSGO_BENCHMARK_V2_EXP40_SEEN10.md)，可执行命令见[record.md](record.md#exp39-exp40-seen10-20261113)。下文保留exp38／exp39既有设计、实测结果及历史建议，不将exp38缺少final视为最终失败的证据。
 
+**2026-11-19结果同步**。`exp39_consloc2` 的累计16000／19550步 test 三项已加入下方对照表。该组 validation 结果、`exp40_1_s2_both` 的累计18000步 test 三项及三系列分析见[最新结果与分析](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp38-exp39-exp40-analysis-20261119)。
+
 ## 设计方案（2026-11-07，先记录后实现；辅助配方按用户最新指令改为P4＋U2）
 
 新增 `exp38_s2_joint`（联合无辅助）与 `exp38_s2_both`（联合＋P4＋U2）两组。两组均复用现有 `exp37@12000` 模型权重，再训练 Stage 2 local7550步，研究路线总更新次数为 **12000＋7550＝19550**。本次只实现代码、配置与手动命令，不启动训练、推理或评测。
@@ -76,7 +78,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 
 ## 实施与实验进度
 
-设计先于实现保存；代码、配置和手动命令已完成，both配方统一采用 **P4＋U2、perception attention=false**。截至2026-11-13复查，四个exp38分支仍仅同步local4000的test三任务结果，local7550最终结果尚未见同步；exp39与exp39_consloc12均完成19550步，16000／19550的test三任务结果完整，19550实测值已回填下方[final综合对照](#exp38-exp39-final-20261112)。exp37@16000的生成评测此前已补齐。下列CPU验收为此前实现阶段的记录；本次仅复核本机同步产物并更新文档，不据本机缺项判断远端是否完成。
+截至2026-11-19，四个 exp38 分支均有 local4000 的 test 三项结果，本机尚无 local7550 的结果摘要。三个 exp39 配方的16000／19550 test 三项均已同步。下列 CPU 检查为实现阶段的验收记录。终点实测值见[final综合对照](#exp38-exp39-final-20261112)。
 
 - 新入口：[run_exp38_seen10.py](scripts/run_exp38_seen10.py)；配置：[joint](csgo_configs/exp38_s2_joint.yaml)、[both](csgo_configs/exp38_s2_both.yaml)。`validate` 和不带 `--execute` 的命令只读；首次train默认在4000停下，`--stop-after-step 0` 可一次跑完7550。
 - 新runner的9项CPU测试通过；精确保存／暂停恢复的8项CPU测试通过，使用临时目录中的合成小模型确认同一horizon、两节点完整恢复材料、跨epoch无额外checkpoint及不重复导出根模型。既有exp37入口23项、Unseen-4入口13项回归通过，共53项。
@@ -87,12 +89,12 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 | 实验 | 训练／本机checkpoint证据 | test累计16000 | test累计19550 | validation |
 |---|---|---|---|---|
 | `exp38_s2_joint` | 评测确认达到local4000；训练权重／Trainer状态未同步 | local4000三任务完成；batch32／16 | local7550未见同步结果；最终训练状态待核查 | 协议不新增 |
-| `exp38_s2_both` | 本机4000/7550；4000模型、计划及状态已同步 | local4000三任务完成；**batch16／8** | local7550未见同步结果 | 协议不新增 |
-| `exp38_s2_joint_constloc4` | 本机4000/7550；4000模型、计划及状态已同步 | local4000三任务完成；batch32／16 | local7550未见同步结果 | 协议不新增 |
-| `exp38_s2_joint_constloc12` | 本机4000/7550；4000模型、计划及状态已同步 | local4000三任务完成；batch32／16 | local7550未见同步结果 | 协议不新增 |
+| `exp38_s2_both` | 已评测 local4000；本机当前未见对应权重／Trainer状态 | local4000三任务完成；**batch16／8** | local7550未见同步结果 | 协议不新增 |
+| `exp38_s2_joint_constloc4` | 已评测 local4000；本机当前未见对应权重／Trainer状态 | local4000三任务完成；batch32／16 | local7550未见同步结果 | 协议不新增 |
+| `exp38_s2_joint_constloc12` | 已评测 local4000；本机当前未见对应权重／Trainer状态 | local4000三任务完成；batch32／16 | local7550未见同步结果 | 协议不新增 |
 | `exp39` | 19550/19550完成；12000／16000／19550模型和状态已同步 | 三任务完成；batch32／16 | 三任务完成；batch32／16 | 两节点未见同步结果 |
-| `exp39_consloc12` | 19550/19550完成；12000／16000／19550模型和状态已同步 | 三任务完成；batch32／16 | 三任务完成；batch32／16 | 两节点未见同步结果 |
-| `exp39_consloc2`（新增，主α2） | 配置与入口已实现；待用户手动启动；从原始初始化，辅助关闭 | 计划16000，尚无结果 | 计划19550，尚无结果 | 计划16000／19550；见[新实验记录](CSGO_BENCHMARK_V2_EXP40_SEEN10.md) |
+| `exp39_consloc12` | 19550/19550完成；本机有16000／19550的模型和状态 | 三任务完成；batch32／16 | 三任务完成；batch32／16 | 两节点未见同步结果 |
+| `exp39_consloc2`（主α2） | 19550/19550、epoch50；本机有16000／19550的模型和状态 | 三任务摘要已核对，batch32／16 | 三任务摘要已核对，batch32／16 | 两节点定位／离散摘要已核对，batch32／16。见[同步记录](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp39-consloc2-results-20261119) |
 | `exp37`（Stage 1 α8对照） | 已完成19550；12000／16000／19550权重已有 | **三任务推理及评测均完成**；batch32／16 | 历史batch1结果已有；同batch32／16对照尚缺 | 16000未见结果；final历史结果已有 |
 
 表中batch按“定位／生成”记载。joint@4000的状态依据推理manifest、评测摘要和evaluation_config；本机仍无 `outputs/csgo_1b/exp38_s2_joint/`，不能据此确认local7550是否训练完成。“未见”仅指本机同步证据。执行命令见 [record.md](record.md#exp38-seen10-20261107)。
@@ -125,7 +127,9 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 
 **训练身份说明**：[checkpoint-12000/trainer_state.json](outputs/csgo_1b/exp32_gen/checkpoint-12000/trainer_state.json)记录`global_step=12000,max_steps=13650,num_train_epochs=35,epoch=30.76923`，最后日志LR约1.32289e-5；这是35 epochs调度中的中间权重。保存配置为生成LoRA开启、定位LoRA关闭、perception与aux-loc均关闭。因此不能仅凭同名目录，将本次12000与历史16000／19500视为同一19500步调度的训练曲线，或将差值全部归因于多训练了若干步。对应执行片段及完成标记见[record.md](record.md#exp32-gen-test-12000)。
 
-## 中间节点对照：累计16000步 test（2026-11-12 更新）
+<a id="exp38-exp39-test-16000"></a>
+
+## 中间节点对照：累计16000步 test（2026-11-19 更新）
 
 按指定对照节点，已同步并核对 `exp32_loc@16000` 的 Seen-10 test 定位和 `exp32_gen@16000` 的 test 离散／连续生成结果，**三个任务均已完成**。推理manifest与结果摘要均绑定各自的 `checkpoint-16000/model.safetensors`；两份checkpoint的 `trainer_state.json` 均为 `global_step=16000,max_steps=19500`。定位／离散各20000条，连续12800帧，均覆盖完整十图。
 
@@ -141,7 +145,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 
 下方exp32单任务对照使用seed42、定位batch32、生成batch16；新增结果仅exp38_s2_both为定位batch16／生成batch8，已在表中独立标明。资产后端为minimal，generation metrics使用 `benchmark_v2_core`、指标batch1、paired_size448、逐图评测后十图等权宏平均。连续生成沿用clip_length16／clip_stride16／fvd_size224。定位推理脚本同时输出定位评测，无需再执行一轮定位推理来计算指标。完整可执行命令及full资产切换说明见 [exp32_gen@16000](record.md#exp32-gen-test-16000) 和 [exp32_loc@16000](record.md#exp32-loc-test-16000)。
 
-已核对十图逐图结果与摘要的宏平均值一致；生成逐图预测覆盖率均为100%，无缺失或额外预测。实测来源如下：
+已核对十图逐图结果与摘要的宏平均值一致，生成评测 JSON 记载十图预测覆盖率均为100%。11月19日加入 `exp39_consloc2` 三项实测值，原始摘要及本机图片同步范围见[αloc=2结果](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp39-consloc2-results-20261119)。exp32 单任务实测来源如下：
 
 - 定位：[benchmark_csgo_v2_loc.json](outputs_loc/benchmark_v2/exp32_loc/checkpoint-16000/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json)。
 - 离散生成：[discrete/summary.json](outputs_eval/benchmark_v2/exp32_gen/checkpoint-16000/test/seed_42/infer_bs16/discrete/summary.json)。
@@ -159,6 +163,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 | `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 32 | test推理／评测已完成 | 51.578 | 3.030 | 2.890 | 27.858 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 32 | test推理／评测已完成 | 50.624 | 3.016 | 2.667 | 28.138 |
 | `exp39` | 16000（单阶段） | 16000 | 32 | test推理／评测已完成 | 49.459 | 3.072 | 2.883 | 26.914 |
+| `exp39_consloc2` | 16000（单阶段） | 16000 | 32 | 十图摘要已核对 | 116.252 | 5.831 | 3.416 | 49.567 |
 | `exp39_consloc12` | 16000（单阶段） | 16000 | 32 | test推理／评测已完成 | 102.510 | 5.451 | 3.074 | 43.329 |
 | `exp37` | 16000（单阶段） | 16000 | 32 | test推理／评测已完成 | 53.576 | 3.085 | 3.193 | 28.149 |
 
@@ -172,6 +177,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 | `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 16 | test推理／评测已完成 | 13.514 | 0.403 | 0.633 | 0.505 | 37.212 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 16 | test推理／评测已完成 | 13.552 | 0.404 | 0.636 | 0.503 | 36.928 |
 | `exp39` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 13.708 | 0.410 | 0.626 | 0.508 | 35.956 |
+| `exp39_consloc2` | 16000（单阶段） | 16000 | 16 | 十图摘要已核对 | 14.066 | 0.417 | 0.611 | 0.516 | 36.283 |
 | `exp39_consloc12` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 13.799 | 0.414 | 0.621 | 0.510 | 35.719 |
 | `exp37` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 13.605 | 0.409 | 0.634 | 0.503 | 36.456 |
 
@@ -185,6 +191,7 @@ local4000是预先指定的中间test报告点，local7550是固定正式终点�
 | `exp38_s2_joint_constloc4` | Stage 2 local4000 | 16000 | 16 | test推理／评测已完成 | 13.801 | 0.408 | 0.622 | 0.513 | 38.025 | 44.052 | 17.331 | 962.502 |
 | `exp38_s2_joint_constloc12` | Stage 2 local4000 | 16000 | 16 | test推理／评测已完成 | 13.844 | 0.409 | 0.622 | 0.512 | 38.134 | 44.123 | 17.230 | 937.934 |
 | `exp39` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 13.925 | 0.411 | 0.615 | 0.517 | 37.257 | 43.354 | 17.390 | 959.891 |
+| `exp39_consloc2` | 16000（单阶段） | 16000 | 16 | 十图摘要已核对 | 14.420 | 0.422 | 0.593 | 0.530 | 34.471 | 40.709 | 17.222 | 888.619 |
 | `exp39_consloc12` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 14.106 | 0.416 | 0.606 | 0.521 | 36.298 | 42.453 | 17.269 | 915.466 |
 | `exp37` | 16000（单阶段） | 16000 | 16 | test推理／评测已完成 | 13.910 | 0.415 | 0.620 | 0.512 | 37.339 | 43.445 | 17.204 | 969.281 |
 
@@ -341,7 +348,7 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 
 <a id="exp38-exp39-final-20261112"></a>
 
-### 最终节点：final test 综合对照（2026-11-13 更新）
+### 最终节点：final test 综合对照（2026-11-19 更新）
 
 本节按final汇总。按用户确认，**19500与19550之间由batch／梯度累计形成的50步差异视为允许误差**，不据此排除单任务对照；末列仍如实记录累计更新数。两阶段的25500／25550同样保留实际值，其6000步续训成本不会并入单阶段19500／19550预算。
 
@@ -350,6 +357,7 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 - exp37_s2_gen／loc：19500＋6000＝**25500**；exp37_s2／both／both_b1：19550＋6000＝**25550**。这里的6000只用于既有exp37_s2系列。
 - 旧exp31／exp32系列与exp37采用历史batch1结果；“1（历史配置）”表示旧配置与记录的batch值，旧manifest未独立记录实际执行batch。exp37_s2／gen／loc／both使用batch8，both_b1定位batch32、生成batch16。推理batch与指标计算batch不同；各batch结果不混称严格同设置消融。exp37_s2_gen离散指标在CPU计算，其余所列Stage 2生成结果沿用各自已记录评测设置。
 - **2026-11-13复查：exp39与exp39_consloc12的19550步test三任务均完整，已回填6行、34个指标值。** 摘要绑定各自`checkpoint-19550/model.safetensors`，seed42，实际定位batch32、生成batch16；定位／离散各20000条、连续12800帧，完整覆盖十图。已复核十图等权宏平均，生成覆盖率100%；数值与此前[原始记录](#exp39-stage1-final-retained-20261112)一致，这是已有结果的回填，并非新运行。
+- **2026-11-19复查**。`exp39_consloc2@19550` 三项 test 结果已同步。定位／生成 batch32／16、seed42，定位／离散各20000条、连续12800帧，已复核来源及十图宏平均。
 - **exp38四个分支的final指标继续留“—”**：本机仅见local4000结果，未见local7550（累计19550）或local7500（累计19500）的最终推理／评测结果；exp39也未见另一个19500步结果集。exp38占位行的batch仍是runner默认定位32／生成16，累计steps是既定预算，不代表已完成。4000步结果继续只列在累计16000步表。本次不修改任何训练计划，不新增6000步训练，也不将未同步解释为远端未完成。
 - exp32_1的19550步沿用[此前训练状态核对](csgo_benchmark_v2_table1_seen10.md#exp37-定位最终test)；当前本机root训练状态缺失，三任务指标仍完整。exp32_gen／loc的19500步另由exp37_s2_gen／loc来源计划绑定确认。
 
@@ -376,6 +384,7 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 | `exp38_s2_joint_constloc4` | [exp37@12000→联合续训；αloc=4，无辅助](csgo_configs/exp38_s2_joint_constloc4.yaml) | final@local7550（预留） | — | — | — | — | 32（默认配置） | 19550（既定预算） |
 | `exp38_s2_joint_constloc12` | [exp37@12000→联合续训；αloc=12，无辅助](csgo_configs/exp38_s2_joint_constloc12.yaml) | final@local7550（预留） | — | — | — | — | 32（默认配置） | 19550（既定预算） |
 | [exp39](outputs_loc/benchmark_v2/exp39/checkpoint-19550/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) | [原始初始化→Stage 1联合；αloc=4，无辅助](csgo_configs/exp39.yaml) | final@19550 | 47.050 | 2.863 | 2.713 | 26.119 | 32 | 19550 |
+| [exp39_consloc2](outputs_loc/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) | [原始初始化→Stage 1联合；αloc=2，无辅助](csgo_configs/exp39_consloc2.yaml) | final@19550 | 105.651 | 5.415 | 3.096 | 46.347 | 32 | 19550 |
 | [exp39_consloc12](outputs_loc/benchmark_v2/exp39_consloc12/checkpoint-19550/test/seed_42/infer_bs32/benchmark_csgo_v2_loc.json) | [原始初始化→Stage 1联合；αloc=12，无辅助](csgo_configs/exp39_consloc12.yaml) | final@19550 | 95.145 | 5.157 | 3.132 | 41.284 | 32 | 19550 |
 
 #### test 离散生成
@@ -401,6 +410,7 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 | `exp38_s2_joint_constloc4` | [exp37@12000→联合续训；αloc=4，无辅助](csgo_configs/exp38_s2_joint_constloc4.yaml) | final@local7550（预留） | — | — | — | — | — | 16（默认配置） | 19550（既定预算） |
 | `exp38_s2_joint_constloc12` | [exp37@12000→联合续训；αloc=12，无辅助](csgo_configs/exp38_s2_joint_constloc12.yaml) | final@local7550（预留） | — | — | — | — | — | 16（默认配置） | 19550（既定预算） |
 | [exp39](outputs_eval/benchmark_v2/exp39/checkpoint-19550/test/seed_42/infer_bs16/discrete/summary.json) | [原始初始化→Stage 1联合；αloc=4，无辅助](csgo_configs/exp39.yaml) | final@19550 | 13.839 | 0.414 | 0.621 | 0.511 | 35.400 | 16 | 19550 |
+| [exp39_consloc2](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs16/discrete/summary.json) | [原始初始化→Stage 1联合；αloc=2，无辅助](csgo_configs/exp39_consloc2.yaml) | final@19550 | 14.189 | 0.416 | 0.604 | 0.521 | 35.227 | 16 | 19550 |
 | [exp39_consloc12](outputs_eval/benchmark_v2/exp39_consloc12/checkpoint-19550/test/seed_42/infer_bs16/discrete/summary.json) | [原始初始化→Stage 1联合；αloc=12，无辅助](csgo_configs/exp39_consloc12.yaml) | final@19550 | 13.926 | 0.411 | 0.614 | 0.516 | 35.530 | 16 | 19550 |
 
 #### test 连续生成
@@ -426,9 +436,12 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 | `exp38_s2_joint_constloc4` | [exp37@12000→联合续训；αloc=4，无辅助](csgo_configs/exp38_s2_joint_constloc4.yaml) | final@local7550（预留） | — | — | — | — | — | — | — | — | 16（默认配置） | 19550（既定预算） |
 | `exp38_s2_joint_constloc12` | [exp37@12000→联合续训；αloc=12，无辅助](csgo_configs/exp38_s2_joint_constloc12.yaml) | final@local7550（预留） | — | — | — | — | — | — | — | — | 16（默认配置） | 19550（既定预算） |
 | [exp39](outputs_eval/benchmark_v2/exp39/checkpoint-19550/test/seed_42/infer_bs16/continuous/summary.json) | [原始初始化→Stage 1联合；αloc=4，无辅助](csgo_configs/exp39.yaml) | final@19550 | 14.197 | 0.419 | 0.603 | 0.523 | 36.168 | 42.313 | 17.213 | 921.205 | 16 | 19550 |
+| [exp39_consloc2](outputs_eval/benchmark_v2/exp39_consloc2/checkpoint-19550/test/seed_42/infer_bs16/continuous/summary.json) | [原始初始化→Stage 1联合；αloc=2，无辅助](csgo_configs/exp39_consloc2.yaml) | final@19550 | 14.569 | 0.420 | 0.586 | 0.535 | 34.002 | 40.264 | 17.252 | 865.734 | 16 | 19550 |
 | [exp39_consloc12](outputs_eval/benchmark_v2/exp39_consloc12/checkpoint-19550/test/seed_42/infer_bs16/continuous/summary.json) | [原始初始化→Stage 1联合；αloc=12，无辅助](csgo_configs/exp39_consloc12.yaml) | final@19550 | 14.256 | 0.413 | 0.599 | 0.528 | 35.879 | 42.034 | 17.353 | 879.816 | 16 | 19550 |
 
-### 更新后的分析
+### 2026-11-13：分析快照
+
+结合 αloc=2 与 exp40_1 的新结果所得判断见[2026-11-19综合分析](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp38-exp39-exp40-analysis-20261119)。
 
 1. **Stage 1 α4相对α8的生成对照现已补齐，收益主要成立但并非所有指标占优。** 同16000步，exp39相对exp37的四项定位误差均更低，XY为53.576→49.459（−7.69%），Pitch为3.193→2.883（−9.69%）；离散五项均改善，PSNR为13.605→13.708、FID为36.456→35.956。连续八项中六项改善，FVD为969.281→959.891（−0.97%），但SSIM由0.415降至0.411、OFE由17.204升至17.390。因此可以更新为“α4改善了定位和大部分生成指标”，不能写成三任务全面最优。
 2. **Stage 1 α12显著损害定位，生成改善不足以支持统一模型采用该配方。** 同16000步相对α4，α12离散五项、连续八项宏指标均更好，但XY为49.459→102.510（+107.26%）、Z为3.072→5.451、Yaw为26.914→43.329；这三项十图全部变差。到19550终点，XY仍为95.145，对照α4为47.050，四项定位指标十图均较差。final的α12 FVD更低（879.816 vs921.205），但连续SSIM／OFE、离散SSIM／FID更差。这里是表现退化证据，不凭最终指标判定训练发散、梯度冲突或具体根因。
@@ -438,7 +451,7 @@ exp39的根Trainer状态为 `global_step=max_steps=19550,epoch=50`，三个check
 
 以上改善数与百分比使用未舍入的十图宏平均；逐图一致性描述覆盖范围，不把它当成独立重复实验。Stage 1／Stage 2分别比较，累计步数相同不等于FLOPs或GPU时间相同。
 
-### 后续工作顺序
+### 2026-11-13：后续工作顺序快照
 
 1. 先补齐both与joint的相同推理batch对照，再评价P4＋U2增量；同步已有结果即可，缺项再由用户执行。exp37@16000三任务现已齐，无需重复本节点推理或评测。
 2. 完成／同步exp38四分支固定local7550，以及exp37@19550的batch32／16对照；保留两组exp39的固定final，不用test选择不同指标的最佳checkpoint。

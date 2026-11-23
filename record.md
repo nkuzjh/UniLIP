@@ -11004,6 +11004,8 @@ python scripts/run_exp40_seen10.py validate
 
 ### exp39_consloc2：Stage 1主αloc=2，无辅助
 
+**2026-11-19同步状态**。训练已完成19550/19550，保留16000和19550两个权重。16000／19550 两节点的 validation 定位／离散和 test 定位／离散／连续共10份十图摘要已核对。下方11-18截图与命令用于追溯当时的补跑安排，继续补测以最新产物为准。见[指标与核对依据](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp39-consloc2-results-20261119)。
+
 从原始初始化训练到19550；2026-11-16改为每4000步保存完整checkpoint，即4000／8000／12000／16000，另存final=19550，最多保留最近2份。训练结束后仅保留16000／19550；12000会在final保存时清理。之后仍只评测16000与final两个节点，4000／8000／12000仅作中间保存。普通LR=1e-4，action connector／norm／projector LR=5e-4，warmup ratio=0.003，其他优化设置继承exp39。
 
 保存节点不触发自动暂停或评测，现有 --stop-after-step 0 命令仍连续训练到final；显式设置 --stop-after-step 4000／8000／12000／16000 可在对应保存点暂停。新设置在使用更新后入口启动或恢复时生效，正在运行的进程不会热更新，也不会补回已经错过的4000／8000权重。
@@ -11035,6 +11037,49 @@ python scripts/run_exp37_seen10.py train --experiment exp39_consloc2 --resume --
 ```
 
 
+#### 2026-11-18：按远端截图补齐剩余推理／评测
+
+以下状态来自用户提供的远端截图，不代表结果已同步并在本机核验。训练已完成`19550/19550, epoch=50`；保留checkpoint-16000和checkpoint-19550，两者恢复文件检查通过。训练为2卡×micro64×GAS1、seed42、keep2；本次仅使用一张GPU补评测，不恢复训练。
+
+| checkpoint | validation定位 | validation离散生成 | test定位 | test离散生成 | test连续生成 |
+|---|---|---|---|---|---|
+| 16000 | 未见完成产物 | 未见完成产物 | 已完成 | 已完成 | 已完成 |
+| 19550（final） | 未见完成产物 | 未见完成产物 | 已完成 | 中断于5504/20000，尚无指标 | 0/12800，尚无指标 |
+
+本次执行下面一个片段即可：先完成final test离散／连续生成，再补16000和19550的validation定位＋离散生成。跳过16000全部test和final test定位。`--resume`只用于train，此处不传该参数；本节前面的训练及训练恢复片段不用于此次补跑。
+
+当前生成入口不跳过已有图片：final离散生成会从首批重新推理全部20000张，并覆盖现有5504张；不是从第5505张接着生成。保留原推理batch16和seed42，沿用现有输出目录及其`inference_execution_plan.json`身份校验。若入口提示部分图片缺少该计划或配置不一致，先停止核对，不手改manifest绕过检查。
+
+截图中`CUDA_VISIBLE_DEVICES=0,1`；下面默认使用已分配的GPU 0，若需要可将`EVAL_GPU=0`改为`1`。在有效Slurm GPU分配内、UniLIP环境和项目根目录执行。日志追加到原`fst_outs/exp39_consloc2.nohup.out`；队列顺序执行，任一步失败即停止。本次仅提供并核对命令，未启动实验。
+
+```bash
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+export PYTHONUNBUFFERED=1
+EXPERIMENT=exp39_consloc2
+EVAL_GPU=0
+COMMON=(--experiment "$EXPERIMENT" --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute)
+
+# final test：离散生成（完整重跑20000张）及评测
+python scripts/run_exp37_seen10.py infer "${COMMON[@]}" --checkpoint-step 19550 --split test --task gen
+python scripts/run_exp37_seen10.py metrics "${COMMON[@]}" --checkpoint-step 19550 --split test --task gen
+
+# final test：连续生成及评测
+python scripts/run_exp37_seen10.py infer "${COMMON[@]}" --checkpoint-step 19550 --split test --task gen_continuous
+python scripts/run_exp37_seen10.py metrics "${COMMON[@]}" --checkpoint-step 19550 --split test --task gen_continuous
+
+# 两个节点的validation：定位＋离散生成，各5000条
+for STEP in 16000 19550; do
+  python scripts/run_exp37_seen10.py infer "${COMMON[@]}" --checkpoint-step "$STEP" --split validation --task all
+  python scripts/run_exp37_seen10.py metrics "${COMMON[@]}" --checkpoint-step "$STEP" --split validation --task all
+done
+' >> fst_outs/exp39_consloc2.nohup.out 2>&1 < /dev/null &
+```
+
+查看统一日志：`tail -f fst_outs/exp39_consloc2.nohup.out`。全部完成后，16000和19550两节点均应有test三项及validation两项的完整产物；定位指标由定位infer生成，metrics进行完整性校验。
+
+
 ### exp40_s2_P4：exp39@12000 → Stage 2
 
 仅perception：0～503步ramp到0.05，attention=false；aux-loc关闭。主定位αloc=4，普通LR=2e-5、action connector／norm／projector LR=1e-4、warmup252、cosine minimum ratio=0.1。首次仅加载Stage 1模型权重，重新建立optimizer／scheduler／RNG。
@@ -11046,7 +11091,7 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_s2_P4
-TRAIN_GPUS=0
+TRAIN_GPUS=0,1
 EVAL_GPU=0
 MASTER_PORT=29697
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
@@ -11062,14 +11107,16 @@ python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 **第二段：需要继续时，从本实验4000完整状态恢复到final=7550，再做final的validation与test。** 这段单独手动执行，不与第一段并发；累计final=12000＋7550=19550，保留4000和7550两个完整checkpoint。
 
 ```bash
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
+
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_s2_P4
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=2,3
+EVAL_GPU=2
 MASTER_PORT=29697
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_P4.nohup.out 2>&1 < /dev/null &
@@ -11090,8 +11137,8 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_s2_U2
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=2,3
+EVAL_GPU=3
 MASTER_PORT=29698
 python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
@@ -11166,7 +11213,7 @@ python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 ```
 
 
-### 中断恢复与结果解释
+#### 中断恢复与结果解释
 
 - exp40第一次保存前中断，没有可恢复checkpoint时，从首次train重新开始；有4000后不重跑首次train，先补缺失的4000评测，再按需运行第二段。7550训练完成后若只剩评测未完成，仅执行对应infer／metrics；不要对已完成训练再次调用resume train。
 - 上述4000与final均保存完整optimizer／scheduler／RNG。恢复只接续本实验，不能把Stage 1或另一个辅助分支当作resume来源。所有首次初始化、恢复、评测均有实验身份与产物配置检查。
@@ -11226,6 +11273,48 @@ done
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
+
+
+### 2026-11-18：补齐 local 2000 的评测并恢复训练
+
+远端截图显示最新完整权重为 `checkpoint-2000`，Stage 2 已保存 2000/6000 步，累计 18000 步。早期日志曾记录 local 2290，恢复以落盘的 2000 步 checkpoint 为准。2000 步的 validation 定位／离散生成及 test 定位已完成。test 离散／连续预测已覆盖 20000 张／12800 帧，推理清单检查通过，但逐图指标检查分别为 4/10 和 0/10，两项汇总均为 `CHECK`。
+
+下面先复用现有图片，执行 2000 步 test 的离散和连续 `metrics`。入口按任务计算全部十图的指标并汇总，离散已有的四图指标也会重算。之后从 `checkpoint-2000` 恢复到 local 4000，完成该节点的 validation 和 test，再从 `checkpoint-4000` 恢复到 local 6000／final 并评测。两个训练段均沿用原 6000 步调度及完整优化器状态。
+
+在有效 Slurm GPU 分配内、UniLIP 环境和项目根目录执行。`TRAIN_GPUS=1,3`、`EVAL_GPU=1` 沿用本节示例，按实际分配调整编号，训练保持两卡、每卡 microbatch 4、GAS 16、seed 42；评测使用一张卡，定位 batch32、生成 batch16。日志追加到 `fst_outs/exp40_1_s2_both.nohup.out`，任一步报错即停止队列。
+
+```bash
+# local 2000：复用已有 test 图片，补齐两种生成评测
+python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}" --checkpoint-step 2000 --split test --task gen
+python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}" --checkpoint-step 2000 --split test --task gen_continuous
+for STEP in 4000 6000; do
+
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+export PYTHONUNBUFFERED=1
+EXPERIMENT=exp40_1_s2_both
+TRAIN_GPUS=2,3
+EVAL_GPU=2
+MASTER_PORT=29740
+COMMON=(--experiment "$EXPERIMENT" --seed 42 --execute)
+EVAL_ARGS=("${COMMON[@]}" --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU")
+
+# 从本实验最新 checkpoint 分段恢复，并评测新节点
+for STEP in 6000; do
+  python scripts/run_exp40_seen10.py train "${COMMON[@]}" --resume --stop-after-step "$STEP" --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT"
+  for SPLIT in test; do
+    python scripts/run_exp40_seen10.py infer "${EVAL_ARGS[@]}" --checkpoint-step "$STEP" --split "$SPLIT" --task all
+    python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}" --checkpoint-step "$STEP" --split "$SPLIT" --task all
+  done
+done
+' >> fst_outs/exp40_1_s2_both.nohup.out 2>&1 < /dev/null &
+
+
+for SPLIT in validation test; do
+```
+
+查看进度可用 `tail -f fst_outs/exp40_1_s2_both.nohup.out`。若任务再次中断，按最新完整 checkpoint 和已有评测产物选择剩余命令。
 
 
 ### Slurm中断后：从已保存节点补评测并继续

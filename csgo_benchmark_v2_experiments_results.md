@@ -94,6 +94,8 @@
 
 ## 主线实验进度表
 
+2026-11-19 Seen-10 补充。`exp39_consloc2` 已完成19550步，16000／19550 两节点的 validation 两项和 test 三项均已同步。`exp40_1_s2_both` 的 local2000（累计18000）test 三项已核对。见[16000步及final对照](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp38-exp39-test-16000)和[同步记录与系列分析](CSGO_BENCHMARK_V2_EXP40_SEEN10.md#exp38-exp39-exp40-analysis-20261119)。
+
 2026-11-16补充：`exp32_gen@12000`的Seen-10 test离散／连续结果已同步，推理batch16、seed42。该份[Trainer状态](outputs/csgo_1b/exp32_gen/checkpoint-12000/trainer_state.json)为12000/13650、35 epochs计划，与历史19500步记录分开标注；完整指标及口径见[12000步专项记录](CSGO_BENCHMARK_V2_EXP38_SEEN10.md#exp32-gen-test-12000-results-20261116)。
 
 | 实验版本 | 训练 | 推理 | Metric 计算 |
