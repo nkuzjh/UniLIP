@@ -1713,3 +1713,62 @@ zero→100-shot的离散FID下降55.72%、连续FVD下降36.90%；离散PSNR随s
 | 10 | 16 | 225.0476 | 15.3695 | 4.8563 | 87.3746 | [JSON](outputs_loc/benchmark_v2/exp32_fs_loc_19500/shot_10/seed_0/infer_bs16/map_models/benchmark_v2_localization_crossmap.json) |
 
 zero→100-shot的XY／Z／Pitch／Yaw分别降低45.33%／33.48%／47.86%／16.76%；10-shot的XY降低33.48%。XY／Z／Yaw随shot增加逐步改善，Pitch在10→20-shot略有回升。100-shot四图XY均改善，office贡献约53.18%的宏平均XY降幅；palacio仍最难。相对16000来源的100-shot，新组XY／Pitch略低、Z／Yaw略高，不作全面优于的结论；每shot固定400更新但曝光不同。详见[逐图结果与分析](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp32-loc-19500-unseen4-results-20261117)。16训练模型、zero8000与few16×2000、四档聚合无缺失；retention暂停。本次未启动或重算实验。
+
+<!-- BEGIN exp32_lr_controls_20261117 -->
+
+<a id="exp32-lr-controls-results-20261117"></a>
+
+# exp32_gen@12000 Unseen-4：LR controls（2026-11-17）
+
+两组均从生成单任务 `exp32_gen/checkpoint-12000` 独立初始化；四地图 `cs_office`／`de_golden`／`de_palacio`／`de_vertigo`，每图100／50／20／10-shot，各适配400次optimizer update。`exp32_fs_gen_lr1e5` 的LOW_LR参数组为1e-5，`exp32_fs_gen_lr5e6` 为5e-6；同map／shot的其余训练配置一致；两组各16个trainer_state的实际学习率峰值及训练batch亦分别匹配family LR和shot数。support seed=0、训练／推理seed=42、推理batch32、metric batch1、minimal资产、`benchmark_v2_core`，不涉及定位或retention。沿用 `preserve_loaded_module_modes_v1`，两组均记录438个活动Dropout模块；对应点的batch、样本顺序、随机数策略与模式策略一致。
+
+两条LR曲线的 **0-shot共用同一个未适配的父模型**：`exp32_gen/checkpoint-12000`。直接复用 `exp32_fs_gen/zero_shot/seed_42/infer_bs32` 的既有结果；zero-shot没有学习率或support选择，表中“适配LR”仅标识其对应的few-shot曲线。共用基线按两条曲线分别展示，但只对应8份逐图指标和2份summary；CSV中0-shot的learning_rate留空、shared_baseline_family标为exp32_fs_gen。
+
+few-shot的32/32个最终模型均有完整safetensors及400/400训练状态，实际父模型／适配权重SHA256与推理计划一致；64/64份逐图指标、16/16份四图汇总通过核验。每图离散2000张，连续1280帧（20×64，FVD划分为80个16帧窗口）；缺失和多余预测均为0。每个LR／shot的汇总覆盖离散8000张、连续5120帧。以下均为四地图等权算术平均，FID／FVD也是逐图指标均值，并非混合全部地图重算。CSV保留完整浮点精度，表格四舍五入到四位小数。
+
+最后一份逐图指标写入时间（UTC+8）：lr1e5为2026-11-17 05:07:54；lr5e6为2026-11-17 07:18:48。本次仅检查和汇总已有产物，补写了原先缺少的4份10-shot正式汇总，没有重新训练、推理或计算指标。
+
+## 离散生成：四图等权macro
+
+| 适配LR | Shot | PSNR↑ | LPIPS↓ | Boundary_F1↑ | FID↓ | 来源 |
+|---|---|---|---|---|---|---|
+| 1e-5 | 0 | 11.4240 | 0.7437 | 0.4509 | 86.5092 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/summary.json) |
+| 5e-6 | 0 | 11.4240 | 0.7437 | 0.4509 | 86.5092 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/summary.json) |
+| 1e-5 | 100 | 12.9331 | 0.6742 | 0.4744 | 40.6420 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 100 | 12.6666 | 0.6861 | 0.4707 | 43.9155 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 50 | 12.8219 | 0.6793 | 0.4730 | 42.2741 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 50 | 12.6394 | 0.6875 | 0.4702 | 44.9284 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 20 | 12.4697 | 0.6879 | 0.4664 | 47.5396 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 20 | 12.3036 | 0.6970 | 0.4644 | 50.0037 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 10 | 12.3094 | 0.6938 | 0.4609 | 49.4868 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 10 | 12.0135 | 0.7040 | 0.4591 | 53.0195 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+
+## 连续生成：四图等权macro
+
+| 适配LR | Shot | PSNR↑ | LPIPS↓ | T-Warp↓ | T-Diff↓ | FVD↓ | 来源 |
+|---|---|---|---|---|---|---|---|
+| 1e-5 | 0 | 11.5286 | 0.7407 | 46.5496 | 52.0602 | 1465.3420 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/summary.json) |
+| 5e-6 | 0 | 11.5286 | 0.7407 | 46.5496 | 52.0602 | 1465.3420 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/summary.json) |
+| 1e-5 | 100 | 12.7529 | 0.6785 | 41.9546 | 47.6432 | 989.4074 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 100 | 12.4864 | 0.6909 | 44.0581 | 49.6018 | 1073.7345 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 50 | 12.6301 | 0.6850 | 40.1794 | 46.0669 | 985.4903 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 50 | 12.4716 | 0.6917 | 42.6736 | 48.3126 | 1045.5945 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 20 | 12.1667 | 0.6949 | 41.0097 | 46.8448 | 980.9406 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 20 | 12.0215 | 0.7035 | 44.1612 | 49.7462 | 1063.3940 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 10 | 12.0728 | 0.6986 | 42.1638 | 47.9211 | 990.8276 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 10 | 11.7902 | 0.7087 | 46.8057 | 52.1915 | 1112.9501 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+
+## 两组比较与证据
+
+在同一shot的四图宏平均上，1e-5的离散PSNR／LPIPS／Boundary_F1／FID／CLIP以及连续PSNR／LPIPS／Boundary_F1／T-Warp／T-Diff／FVD均优于5e-6。按100／50／20／10-shot，FID分别降低7.45%／5.91%／4.93%／6.66%，FVD分别降低7.85%／5.75%／7.75%／10.97%。
+
+优势不覆盖所有指标或地图：50-shot的离散和连续SSIM略低，50／20／10-shot的连续Flow EPE略高；golden的50／20／10-shot离散FID分别比5e-6高0.0645／0.7941／2.6271。连续FVD在16个逐图配对点上均更低，离散FID在13/16个配对点上更低。
+
+两组的离散PSNR和FID均随10→20→50→100-shot改善；连续FVD不单调。各shot固定400次更新，但训练batch等于shot，样本曝光为4000／8000／20000／40000，不能称为等计算预算。本次只有训练seed42和support seed0，以上是本轮观测，不能据此声称统计显著或据Unseen query反选超参数。
+
+完整指标及逐图表见[Unseen-4专题](CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md#exp32-lr-controls-results-20261117)。
+
+[宏平均CSV](docs/exp32_lr_controls_20261117/macro.csv) · [逐图完整CSV](docs/exp32_lr_controls_20261117/per_map.csv) · [两组差值CSV](docs/exp32_lr_controls_20261117/lr1e5_minus_lr5e6.csv) · [校验记录](docs/exp32_lr_controls_20261117/audit.json) · [可复核脚本](docs/exp32_lr_controls_20261117/audit_results.py)
+
+
+<!-- END exp32_lr_controls_20261117 -->

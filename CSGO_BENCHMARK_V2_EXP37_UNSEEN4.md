@@ -1191,3 +1191,171 @@ family `exp32_fs_gen` 的实际父模型是生成单任务 **`exp32_gen@12000`**
 ### 记录边界
 
 zero-shot三项数值与四图汇总已录入；定位／离散的指标内嵌推理清单一致，连续生成计时元数据差异按上节保留说明。`exp37_s1_fs_joint` 的Seen来源预算为19550步；现有 `exp37_fs_joint` 的父模型额外完成6000步Seen Stage 2，两组few-shot虽均为400步，父模型训练预算不同，结果分别列示。本次仅整理已同步产物，没有启动训练、推理或指标计算。
+
+<!-- BEGIN exp32_lr_controls_20261117 -->
+
+<a id="exp32-lr-controls-results-20261117"></a>
+
+# 2026-11-17：exp32_gen@12000 两组 LR control 完整结果
+
+两组均从生成单任务 `exp32_gen/checkpoint-12000` 独立初始化；四地图 `cs_office`／`de_golden`／`de_palacio`／`de_vertigo`，每图100／50／20／10-shot，各适配400次optimizer update。`exp32_fs_gen_lr1e5` 的LOW_LR参数组为1e-5，`exp32_fs_gen_lr5e6` 为5e-6；同map／shot的其余训练配置一致；两组各16个trainer_state的实际学习率峰值及训练batch亦分别匹配family LR和shot数。support seed=0、训练／推理seed=42、推理batch32、metric batch1、minimal资产、`benchmark_v2_core`，不涉及定位或retention。沿用 `preserve_loaded_module_modes_v1`，两组均记录438个活动Dropout模块；对应点的batch、样本顺序、随机数策略与模式策略一致。
+
+两条LR曲线的 **0-shot共用同一个未适配的父模型**：`exp32_gen/checkpoint-12000`。直接复用 `exp32_fs_gen/zero_shot/seed_42/infer_bs32` 的既有结果；zero-shot没有学习率或support选择，表中“适配LR”仅标识其对应的few-shot曲线。共用基线按两条曲线分别展示，但只对应8份逐图指标和2份summary；CSV中0-shot的learning_rate留空、shared_baseline_family标为exp32_fs_gen。
+
+few-shot的32/32个最终模型均有完整safetensors及400/400训练状态，实际父模型／适配权重SHA256与推理计划一致；64/64份逐图指标、16/16份四图汇总通过核验。每图离散2000张，连续1280帧（20×64，FVD划分为80个16帧窗口）；缺失和多余预测均为0。每个LR／shot的汇总覆盖离散8000张、连续5120帧。以下均为四地图等权算术平均，FID／FVD也是逐图指标均值，并非混合全部地图重算。CSV保留完整浮点精度，表格四舍五入到四位小数。
+
+最后一份逐图指标写入时间（UTC+8）：lr1e5为2026-11-17 05:07:54；lr5e6为2026-11-17 07:18:48。本次仅检查和汇总已有产物，补写了原先缺少的4份10-shot正式汇总，没有重新训练、推理或计算指标。
+
+## 产物与复核入口
+
+[宏平均CSV](docs/exp32_lr_controls_20261117/macro.csv) · [逐图完整CSV](docs/exp32_lr_controls_20261117/per_map.csv) · [两组差值CSV](docs/exp32_lr_controls_20261117/lr1e5_minus_lr5e6.csv) · [校验记录](docs/exp32_lr_controls_20261117/audit.json) · [可复核脚本](docs/exp32_lr_controls_20261117/audit_results.py)
+
+复核命令（只读现有模型与评测，重新导出CSV／校验JSON）：
+
+```bash
+/home/jiahao/miniconda3/envs/UniLIP/bin/python docs/exp32_lr_controls_20261117/audit_results.py
+```
+
+磁盘故障后的正式产物已通过校验；seed_0.diskfull_* 与 continuous.diskfull_* 归档未计入。此前损坏的lr1e5/golden/50-shot正式模型现在已完整写出；所有结果来源均指向当前正式目录。
+
+## 离散生成：四图等权macro，全部核心指标
+
+| 适配LR | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | Pixel MAE↓ | FID↓ | CLIP↑ | 来源 |
+|---|---|---|---|---|---|---|---|---|---|
+| 1e-5 | 0 | 11.4240 | 0.3904 | 0.7437 | 0.4509 | 57.3890 | 86.5092 | 0.7287 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/summary.json) |
+| 5e-6 | 0 | 11.4240 | 0.3904 | 0.7437 | 0.4509 | 57.3890 | 86.5092 | 0.7287 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/summary.json) |
+| 1e-5 | 100 | 12.9331 | 0.4221 | 0.6742 | 0.4744 | 47.0255 | 40.6420 | 0.8098 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 100 | 12.6666 | 0.4173 | 0.6861 | 0.4707 | 48.8363 | 43.9155 | 0.8032 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 50 | 12.8219 | 0.4208 | 0.6793 | 0.4730 | 47.8174 | 42.2741 | 0.8055 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 50 | 12.6394 | 0.4221 | 0.6875 | 0.4702 | 49.0102 | 44.9284 | 0.8021 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 20 | 12.4697 | 0.4199 | 0.6879 | 0.4664 | 50.1361 | 47.5396 | 0.7976 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 20 | 12.3036 | 0.4177 | 0.6970 | 0.4644 | 51.1854 | 50.0037 | 0.7922 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 1e-5 | 10 | 12.3094 | 0.4139 | 0.6938 | 0.4609 | 51.1401 | 49.4868 | 0.7913 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+| 5e-6 | 10 | 12.0135 | 0.4076 | 0.7040 | 0.4591 | 53.0503 | 53.0195 | 0.7839 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_discrete_crossmap.json) |
+
+## 连续生成：四图等权macro，全部核心指标
+
+| 适配LR | Shot | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | Pixel MAE↓ | T-Warp↓ | T-Diff↓ | Flow EPE↓ | FVD↓ | 来源 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1e-5 | 0 | 11.5286 | 0.3835 | 0.7407 | 0.4530 | 56.4734 | 46.5496 | 52.0602 | 16.4745 | 1465.3420 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/summary.json) |
+| 5e-6 | 0 | 11.5286 | 0.3835 | 0.7407 | 0.4530 | 56.4734 | 46.5496 | 52.0602 | 16.4745 | 1465.3420 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/summary.json) |
+| 1e-5 | 100 | 12.7529 | 0.4061 | 0.6785 | 0.4799 | 47.9017 | 41.9546 | 47.6432 | 16.4620 | 989.4074 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 100 | 12.4864 | 0.4005 | 0.6909 | 0.4753 | 49.8595 | 44.0581 | 49.6018 | 16.4940 | 1073.7345 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_100/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 50 | 12.6301 | 0.4060 | 0.6850 | 0.4724 | 48.8452 | 40.1794 | 46.0669 | 16.4813 | 985.4903 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 50 | 12.4716 | 0.4063 | 0.6917 | 0.4719 | 50.1815 | 42.6736 | 48.3126 | 16.4065 | 1045.5945 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_50/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 20 | 12.1667 | 0.3982 | 0.6949 | 0.4665 | 52.1934 | 41.0097 | 46.8448 | 16.9025 | 980.9406 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 20 | 12.0215 | 0.3977 | 0.7035 | 0.4642 | 53.0279 | 44.1612 | 49.7462 | 16.7269 | 1063.3940 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_20/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 1e-5 | 10 | 12.0728 | 0.3922 | 0.6986 | 0.4637 | 52.8461 | 42.1638 | 47.9211 | 17.4721 | 990.8276 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+| 5e-6 | 10 | 11.7902 | 0.3888 | 0.7087 | 0.4598 | 54.5183 | 46.8057 | 52.1915 | 17.2904 | 1112.9501 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6/shot_10/seed_0/infer_bs32/map_models/benchmark_v2_continuous_crossmap.json) |
+
+## LR差值：1e-5减5e-6
+
+除“降低%”列外，正值表示1e-5数值更高；指标方向见表头。降低%以5e-6为分母，正值表示1e-5误差更低。
+
+| Shot | Δ离散PSNR↑ | Δ离散LPIPS↓ | ΔFID↓ | FID降低% | Δ连续PSNR↑ | Δ连续LPIPS↓ | ΔFVD↓ | FVD降低% |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 100 | +0.2665 | -0.0119 | -3.2735 | +7.4542 | +0.2664 | -0.0124 | -84.3271 | +7.8536 |
+| 50 | +0.1825 | -0.0082 | -2.6543 | +5.9079 | +0.1585 | -0.0067 | -60.1042 | +5.7483 |
+| 20 | +0.1661 | -0.0091 | -2.4641 | +4.9279 | +0.1452 | -0.0086 | -82.4534 | +7.7538 |
+| 10 | +0.2959 | -0.0102 | -3.5327 | +6.6629 | +0.2827 | -0.0101 | -122.1224 | +10.9729 |
+
+## 离散生成：逐图结果（含共用zero-shot）
+
+| 适配LR | Shot | 地图 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | Pixel MAE↓ | FID↓ | CLIP↑ | 来源 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1e-5 | 0 | cs_office | 12.1203 | 0.4578 | 0.7672 | 0.4404 | 53.5213 | 91.6137 | 0.7434 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 1e-5 | 0 | de_golden | 12.0686 | 0.3692 | 0.6973 | 0.4564 | 51.8661 | 65.7325 | 0.7590 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 1e-5 | 0 | de_palacio | 10.8046 | 0.3419 | 0.7631 | 0.4680 | 62.5855 | 76.2114 | 0.7196 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 1e-5 | 0 | de_vertigo | 10.7025 | 0.3927 | 0.7473 | 0.4387 | 61.5829 | 112.4794 | 0.6930 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 5e-6 | 0 | cs_office | 12.1203 | 0.4578 | 0.7672 | 0.4404 | 53.5213 | 91.6137 | 0.7434 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 5e-6 | 0 | de_golden | 12.0686 | 0.3692 | 0.6973 | 0.4564 | 51.8661 | 65.7325 | 0.7590 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 5e-6 | 0 | de_palacio | 10.8046 | 0.3419 | 0.7631 | 0.4680 | 62.5855 | 76.2114 | 0.7196 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 5e-6 | 0 | de_vertigo | 10.7025 | 0.3927 | 0.7473 | 0.4387 | 61.5829 | 112.4794 | 0.6930 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 1e-5 | 100 | cs_office | 13.1559 | 0.5523 | 0.6582 | 0.4393 | 45.3703 | 42.3208 | 0.8497 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 1e-5 | 100 | de_golden | 14.5078 | 0.3662 | 0.6325 | 0.5173 | 37.6781 | 38.9158 | 0.8006 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 1e-5 | 100 | de_palacio | 12.4145 | 0.3481 | 0.7237 | 0.4980 | 50.5964 | 41.9397 | 0.7828 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 1e-5 | 100 | de_vertigo | 11.6543 | 0.4218 | 0.6823 | 0.4430 | 54.4571 | 39.3916 | 0.8061 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 5e-6 | 100 | cs_office | 13.0616 | 0.5513 | 0.6716 | 0.4315 | 46.0764 | 45.9606 | 0.8486 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 5e-6 | 100 | de_golden | 14.2092 | 0.3590 | 0.6410 | 0.5111 | 39.2938 | 41.3018 | 0.7947 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 5e-6 | 100 | de_palacio | 11.9614 | 0.3381 | 0.7421 | 0.4943 | 53.7914 | 47.4258 | 0.7706 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 5e-6 | 100 | de_vertigo | 11.4344 | 0.4207 | 0.6899 | 0.4459 | 56.1835 | 40.9739 | 0.7990 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_100/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 1e-5 | 50 | cs_office | 13.1571 | 0.5639 | 0.6681 | 0.4329 | 45.8414 | 44.3343 | 0.8431 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 1e-5 | 50 | de_golden | 14.4780 | 0.3613 | 0.6417 | 0.5108 | 37.8946 | 41.3085 | 0.7996 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 1e-5 | 50 | de_palacio | 12.0558 | 0.3354 | 0.7263 | 0.4976 | 52.6203 | 43.8062 | 0.7789 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 1e-5 | 50 | de_vertigo | 11.5967 | 0.4225 | 0.6811 | 0.4505 | 54.9133 | 39.6474 | 0.8005 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 5e-6 | 50 | cs_office | 13.0051 | 0.5661 | 0.6755 | 0.4286 | 46.6425 | 46.5956 | 0.8441 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 5e-6 | 50 | de_golden | 14.2086 | 0.3617 | 0.6474 | 0.5044 | 39.3294 | 41.2440 | 0.8010 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 5e-6 | 50 | de_palacio | 11.8805 | 0.3319 | 0.7358 | 0.4991 | 54.1125 | 47.8821 | 0.7657 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 5e-6 | 50 | de_vertigo | 11.4635 | 0.4288 | 0.6912 | 0.4488 | 55.9562 | 43.9920 | 0.7974 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_50/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 1e-5 | 20 | cs_office | 12.6941 | 0.5604 | 0.6809 | 0.4203 | 48.8799 | 53.1702 | 0.8318 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 1e-5 | 20 | de_golden | 13.9521 | 0.3503 | 0.6453 | 0.5081 | 40.4456 | 45.9213 | 0.7865 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 1e-5 | 20 | de_palacio | 12.0240 | 0.3398 | 0.7295 | 0.4959 | 53.0767 | 45.1996 | 0.7793 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 1e-5 | 20 | de_vertigo | 11.2086 | 0.4289 | 0.6959 | 0.4412 | 58.1423 | 45.8671 | 0.7927 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 5e-6 | 20 | cs_office | 12.5786 | 0.5516 | 0.6888 | 0.4221 | 48.9640 | 57.2383 | 0.8329 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 5e-6 | 20 | de_golden | 13.7942 | 0.3532 | 0.6531 | 0.5010 | 41.3411 | 45.1272 | 0.7889 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 5e-6 | 20 | de_palacio | 11.6459 | 0.3381 | 0.7425 | 0.4928 | 55.7955 | 49.9195 | 0.7611 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 5e-6 | 20 | de_vertigo | 11.1956 | 0.4279 | 0.7036 | 0.4416 | 58.6409 | 47.7297 | 0.7858 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_20/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 1e-5 | 10 | cs_office | 12.7514 | 0.5565 | 0.6841 | 0.4278 | 48.2480 | 50.1604 | 0.8266 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 1e-5 | 10 | de_golden | 13.5888 | 0.3335 | 0.6537 | 0.4947 | 42.2516 | 56.2038 | 0.7826 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 1e-5 | 10 | de_palacio | 11.6775 | 0.3164 | 0.7329 | 0.4821 | 55.6054 | 43.6734 | 0.7688 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 1e-5 | 10 | de_vertigo | 11.2201 | 0.4494 | 0.7047 | 0.4388 | 58.4556 | 47.9097 | 0.7872 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+| 5e-6 | 10 | cs_office | 12.4422 | 0.5365 | 0.6950 | 0.4253 | 49.7721 | 56.1718 | 0.8239 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json) |
+| 5e-6 | 10 | de_golden | 13.3102 | 0.3346 | 0.6573 | 0.4939 | 43.6161 | 53.5767 | 0.7812 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json) |
+| 5e-6 | 10 | de_palacio | 11.2458 | 0.3108 | 0.7499 | 0.4817 | 58.6327 | 50.0804 | 0.7486 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_palacio.json) |
+| 5e-6 | 10 | de_vertigo | 11.0558 | 0.4485 | 0.7140 | 0.4356 | 60.1803 | 52.2490 | 0.7818 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_10/seed_0/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json) |
+
+## 连续生成：逐图结果（含共用zero-shot）
+
+| 适配LR | Shot | 地图 | PSNR↑ | SSIM↑ | LPIPS↓ | Boundary_F1↑ | Pixel MAE↓ | T-Warp↓ | T-Diff↓ | Flow EPE↓ | FVD↓ | 来源 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1e-5 | 0 | cs_office | 12.3499 | 0.4567 | 0.7662 | 0.4466 | 51.6699 | 38.2416 | 44.3694 | 15.9556 | 1657.7913 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 1e-5 | 0 | de_golden | 12.6490 | 0.3734 | 0.6967 | 0.4558 | 48.0583 | 44.9944 | 49.3711 | 16.8256 | 1521.5362 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 1e-5 | 0 | de_palacio | 10.6452 | 0.3223 | 0.7545 | 0.4704 | 63.2149 | 54.3147 | 59.4946 | 17.3631 | 1248.1267 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 1e-5 | 0 | de_vertigo | 10.4701 | 0.3814 | 0.7451 | 0.4391 | 62.9504 | 48.6476 | 55.0054 | 15.7538 | 1433.9136 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 5e-6 | 0 | cs_office | 12.3499 | 0.4567 | 0.7662 | 0.4466 | 51.6699 | 38.2416 | 44.3694 | 15.9556 | 1657.7913 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 5e-6 | 0 | de_golden | 12.6490 | 0.3734 | 0.6967 | 0.4558 | 48.0583 | 44.9944 | 49.3711 | 16.8256 | 1521.5362 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 5e-6 | 0 | de_palacio | 10.6452 | 0.3223 | 0.7545 | 0.4704 | 63.2149 | 54.3147 | 59.4946 | 17.3631 | 1248.1267 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 5e-6 | 0 | de_vertigo | 10.4701 | 0.3814 | 0.7451 | 0.4391 | 62.9504 | 48.6476 | 55.0054 | 15.7538 | 1433.9136 | [共用JSON](outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 1e-5 | 100 | cs_office | 13.1191 | 0.5234 | 0.6690 | 0.4531 | 45.4069 | 39.4676 | 45.1898 | 14.7166 | 845.2540 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 1e-5 | 100 | de_golden | 14.4645 | 0.3592 | 0.6280 | 0.5200 | 37.6995 | 34.2717 | 39.2669 | 17.7896 | 1250.0354 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 1e-5 | 100 | de_palacio | 12.2937 | 0.3346 | 0.7373 | 0.4985 | 51.0625 | 43.6117 | 49.4969 | 16.9172 | 968.0072 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 1e-5 | 100 | de_vertigo | 11.1340 | 0.4071 | 0.6796 | 0.4478 | 57.4380 | 50.4675 | 56.6193 | 16.4244 | 894.3330 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 5e-6 | 100 | cs_office | 12.9517 | 0.5229 | 0.6852 | 0.4391 | 46.4720 | 38.8475 | 44.8090 | 14.9502 | 893.7735 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 5e-6 | 100 | de_golden | 14.2396 | 0.3524 | 0.6375 | 0.5146 | 39.1761 | 36.5538 | 41.3271 | 17.7690 | 1353.3277 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 5e-6 | 100 | de_palacio | 11.8560 | 0.3234 | 0.7518 | 0.5012 | 54.2453 | 48.1830 | 53.6894 | 16.9958 | 1114.1795 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 5e-6 | 100 | de_vertigo | 10.8983 | 0.4033 | 0.6890 | 0.4463 | 59.5444 | 52.6480 | 58.5816 | 16.2610 | 933.6573 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_100/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 1e-5 | 50 | cs_office | 12.7395 | 0.5359 | 0.6900 | 0.4311 | 47.9617 | 37.8436 | 43.9422 | 14.8435 | 746.6038 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 1e-5 | 50 | de_golden | 14.5959 | 0.3569 | 0.6339 | 0.5112 | 37.2746 | 31.6237 | 36.9323 | 17.4244 | 1169.9256 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 1e-5 | 50 | de_palacio | 12.1015 | 0.3253 | 0.7365 | 0.4986 | 52.2301 | 43.5691 | 49.4117 | 17.3524 | 1042.5592 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 1e-5 | 50 | de_vertigo | 11.0836 | 0.4060 | 0.6797 | 0.4488 | 57.9143 | 47.6813 | 53.9812 | 16.3048 | 982.8724 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 5e-6 | 50 | cs_office | 12.8300 | 0.5433 | 0.6925 | 0.4309 | 47.7979 | 38.6913 | 44.5874 | 14.9342 | 754.7597 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 5e-6 | 50 | de_golden | 14.3465 | 0.3539 | 0.6418 | 0.5059 | 38.6800 | 35.3834 | 40.3335 | 17.4961 | 1324.3796 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 5e-6 | 50 | de_palacio | 11.7739 | 0.3196 | 0.7437 | 0.5031 | 54.6141 | 45.9625 | 51.6186 | 17.1488 | 1095.1131 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 5e-6 | 50 | de_vertigo | 10.9362 | 0.4085 | 0.6890 | 0.4477 | 59.6338 | 50.6574 | 56.7108 | 16.0469 | 1008.1255 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_50/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 1e-5 | 20 | cs_office | 12.3438 | 0.5275 | 0.6960 | 0.4270 | 51.1382 | 38.0699 | 44.0650 | 15.4309 | 807.3778 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 1e-5 | 20 | de_golden | 13.8683 | 0.3406 | 0.6451 | 0.5076 | 40.8257 | 35.8893 | 40.7727 | 18.2133 | 1076.2038 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 1e-5 | 20 | de_palacio | 12.0012 | 0.3222 | 0.7361 | 0.4980 | 52.7439 | 42.4311 | 48.3817 | 17.5032 | 1105.7746 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 1e-5 | 20 | de_vertigo | 10.4537 | 0.4027 | 0.7024 | 0.4335 | 64.0658 | 47.6486 | 54.1600 | 16.4629 | 934.4060 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 5e-6 | 20 | cs_office | 12.2011 | 0.5216 | 0.7039 | 0.4247 | 51.2058 | 42.4926 | 48.1123 | 15.9138 | 809.8648 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 5e-6 | 20 | de_golden | 13.7878 | 0.3439 | 0.6517 | 0.5016 | 41.3210 | 38.1001 | 42.9086 | 17.9312 | 1244.3238 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 5e-6 | 20 | de_palacio | 11.4799 | 0.3198 | 0.7526 | 0.4931 | 56.4301 | 46.7640 | 52.4141 | 16.8847 | 1164.5306 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 5e-6 | 20 | de_vertigo | 10.6172 | 0.4057 | 0.7059 | 0.4373 | 63.1547 | 49.2882 | 55.5500 | 16.1777 | 1034.8568 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_20/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 1e-5 | 10 | cs_office | 12.5205 | 0.5213 | 0.7029 | 0.4336 | 49.4309 | 41.3586 | 47.1274 | 17.8967 | 809.7540 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_cs_office/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 1e-5 | 10 | de_golden | 13.6938 | 0.3225 | 0.6477 | 0.5033 | 41.8802 | 36.9197 | 41.6950 | 18.4552 | 1140.7451 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_golden/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 1e-5 | 10 | de_palacio | 11.4729 | 0.2991 | 0.7322 | 0.4847 | 56.8035 | 45.8858 | 51.6493 | 18.1284 | 1120.9464 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_palacio/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 1e-5 | 10 | de_vertigo | 10.6042 | 0.4260 | 0.7115 | 0.4330 | 63.2698 | 44.4910 | 51.2128 | 15.4083 | 891.8650 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr1e5_de_vertigo/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+| 5e-6 | 10 | cs_office | 12.1299 | 0.5056 | 0.7156 | 0.4222 | 51.2204 | 46.9472 | 52.2587 | 17.6540 | 907.6999 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_cs_office/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json) |
+| 5e-6 | 10 | de_golden | 13.4331 | 0.3271 | 0.6530 | 0.4986 | 42.9905 | 40.2951 | 44.8852 | 18.2900 | 1303.7238 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_golden/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_golden.json) |
+| 5e-6 | 10 | de_palacio | 11.0021 | 0.2944 | 0.7478 | 0.4858 | 60.4725 | 52.3767 | 57.5688 | 17.8517 | 1182.9286 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_palacio/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json) |
+| 5e-6 | 10 | de_vertigo | 10.5956 | 0.4281 | 0.7184 | 0.4328 | 63.3900 | 47.6037 | 54.0532 | 15.3660 | 1057.4479 | [JSON](outputs_eval/benchmark_v2/exp32_fs_gen_lr5e6_de_vertigo/shot_10/seed_0/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json) |
+
+## 结果解释
+
+在同一shot的四图宏平均上，1e-5的离散PSNR／LPIPS／Boundary_F1／FID／CLIP以及连续PSNR／LPIPS／Boundary_F1／T-Warp／T-Diff／FVD均优于5e-6。按100／50／20／10-shot，FID分别降低7.45%／5.91%／4.93%／6.66%，FVD分别降低7.85%／5.75%／7.75%／10.97%。
+
+优势不覆盖所有指标或地图：50-shot的离散和连续SSIM略低，50／20／10-shot的连续Flow EPE略高；golden的50／20／10-shot离散FID分别比5e-6高0.0645／0.7941／2.6271。连续FVD在16个逐图配对点上均更低，离散FID在13/16个配对点上更低。
+
+两组的离散PSNR和FID均随10→20→50→100-shot改善；连续FVD不单调。各shot固定400次更新，但训练batch等于shot，样本曝光为4000／8000／20000／40000，不能称为等计算预算。本次只有训练seed42和support seed0，以上是本轮观测，不能据此声称统计显著或据Unseen query反选超参数。
+
+
+<!-- END exp32_lr_controls_20261117 -->

@@ -1242,3 +1242,4 @@ data/csgo_benchmark_v2/images
 outputs_diagnostics/
 
 # /fst_outs/*.nohup.out
+docs/
