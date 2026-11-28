@@ -11137,10 +11137,11 @@ mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_s2_U2
-TRAIN_GPUS=2,3
-EVAL_GPU=3
+TRAIN_GPUS=0,2
+EVAL_GPU=2
 MASTER_PORT=29698
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 2000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
@@ -11177,17 +11178,27 @@ P4＋U2：0～503步分别ramp到perception0.05／aux-loc1，attention=false、c
 **第一段：训练到local4000，保存后停止，再做该节点的validation与test。** 全程scheduler horizon仍为7550，不压缩为4000；local4000对应累计16000。此片段不会自动继续训练至final。
 
 ```bash
+python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
+
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
 EXPERIMENT=exp40_s2_both
-TRAIN_GPUS=0,1
-EVAL_GPU=0
 MASTER_PORT=29699
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-' >> fst_outs/exp40_s2_both.nohup.out 2>&1 < /dev/null &
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 0 --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 0 --execute
+' >> fst_outs/exp40_s2_both_eval4000_cuda0.nohup.out 2>&1 < /dev/null &
+
+mkdir -p fst_outs
+nohup bash -c '
+set -euo pipefail
+EXPERIMENT=exp40_s2_both
+MASTER_PORT=29699
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 1 --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 1 --execute
+python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 1 --execute
+python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices 1--execute
+' >> fst_outs/exp40_s2_both_eval4000_eval7550_cuda1.nohup.out 2>&1 < /dev/null &
 
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
@@ -11365,3 +11376,97 @@ python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
 ```
+
+
+### B3 supplementary 的 Unseen-4 定位推理（2026-11-24）
+
+在 10.119.46.67 上调用以下入口。zero-shot 使用本机的 exp37_s2_both/checkpoint-6000。100-shot 使用四个地图各自 support seed 0、适配 400 步的 checkpoint。备用服务器的权重卷通过只读 SSHFS 挂载到 `ours_recovery/weights`，本次挂载使用工作站转发的 SSH agent。首次使用 Hugging Face 模型 ID 的离线尝试在 tokenizer 查询 model_info 时退出，未产生预测。正式入口将原配置中的模型 ID 解析到已缓存的同一 revision `014c0583a0d4bedf29fbe2dbff4f865eb998e171`。
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh zero_shot
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh cs_office
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_golden
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_palacio
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_vertigo
+```
+
+实际调度在同一张 GPU 上启动 zero-shot 和逐图 100-shot 队列，后者依次调用四张地图。脚本从以上入口切到 `/home/jiahao/task/UniLIP` 运行原始 `eval_csgo_loc.py`，采用 crossmap_query_test、inference seed 42、batch 16 及冻结的 minimal asset manifest。展开后的 YAML 位于 `configs_supp_vis/`，逐帧预测和指标位于 `predictions/exp37_fs_both_zero_shot_supp_vis/` 与 `predictions/exp37_fs_both_<map>_100shot_supp_vis/`，日志位于 `logs/`。
+
+#### B3 只读权重挂载与验收命令
+
+在已通过 SSH agent 转发获得备用服务器认证的 10.119.46.67 会话中，先挂载权重卷，并确认输出带 ro。四组 100-shot 推理及核验完成后再运行卸载命令。
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+mkdir -p weights
+mountpoint -q "$PWD/weights" || sshfs -o ro jiahao@10.119.46.65:/data/jiahao/UniLIP_outputs/outputs/csgo_1b "$PWD/weights"
+findmnt -n -o SOURCE,OPTIONS -T "$PWD/weights"
+```
+
+在 ours_recovery 中运行下列 CPU 核验。首次取历史参考、首次记录允许误差的命令分别为 `verify_supp_vis.py freeze` 和 `audit_drift_supp_vis.py freeze`，保存文件为 `verification_reference_supp_vis.json` 和 `accepted_drift_criteria_supp_vis.json`。已存在的冻结文件可直接用于复查。严格核验单独记录数值一致性；允许误差的核验另写报告。需要核对数值偏差时，即使前者退出 1，仍运行后者。
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+py=/home/jiahao/miniconda3/envs/UniLIP/bin/python
+"$py" verify_supp_vis.py sanity10
+for target in zero cs_office de_golden de_palacio de_vertigo; do
+    "$py" verify_supp_vis.py "$target"
+    "$py" audit_drift_supp_vis.py "$target"
+done
+"$py" audit_drift_supp_vis.py publish
+```
+
+逐帧预测为每个 `predictions/exp37_fs_both_*_supp_vis/loc_results.json`，对应的分图评价为同目录 `benchmark_csgo_v2_loc.json`。各目标的核验明细在 `verification_<target>_supp_vis.json` 与 `accepted_drift_<target>_supp_vis.json`，五组汇总在 `final_acceptance_supp_vis.json`。全部权重访问结束后执行：
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+fusermount -u "$PWD/weights"
+```
+
+B3 最终核验：五组均完成，0-shot 有 8,000 行，四组 100-shot 各 2,000 行。同一查询集逐行匹配，无重复，GT 和协议一致。0-shot 四图的 16 个指标全精度复现历史值；100-shot 各图的四个指标均有环境差异，按允许误差复核后用于可视化，论文原指标保持原值。Office、Golden、Palacio、Vertigo 的四指标最大相对偏差分别为 0.29970538%、0.38889790%、0.16035889%、0.47929945%。`final_acceptance_supp_vis.json` 的 SHA-256 为 37c193d439db10a28d02df320c8e8e71776b744c6046ce42337a09847eea31b2。恢复图为父目录的 `ours_loc_unseen4.pdf`，预览为 `../preview/ours_loc_unseen4.png`。四图 0-shot 均无预测越界，仅 Office 100-shot 有 25/2,000 个预测位置超出像素边界 [0,1023]；12 个 yaw 直方图均覆盖 2,000 帧。其余逐图差值和来源见 `../REPORT.md`。
+
+### Unseen-4 四组 50-shot 定位补齐（2026-11-24）
+
+在主机 10.119.46.67 的已授权会话中使用同一张共享 GPU 0。四份已有 checkpoint 均来自 10.119.46.65 的只读挂载，分别使用地图独立的 50-shot、support seed 0 和第 400 步权重。冻结查询清单为 crossmap_query_test，每图 2,000 帧。推理采用 seed 42 和 batch 16，入口会生成带 `_50shot_supp_vis` 后缀的工作配置。已缓存 backbone revision 为 `014c0583a0d4bedf29fbe2dbff4f865eb998e171`。在具有备用机 SSH 认证或已转发 agent 的主机会话中先挂载并核对 ro 标记。
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+mkdir -p weights
+mountpoint -q "$PWD/weights" || sshfs -o ro jiahao@10.119.46.65:/data/jiahao/UniLIP_outputs/outputs/csgo_1b "$PWD/weights"
+findmnt -n -o SOURCE,OPTIONS -T "$PWD/weights"
+```
+
+实际执行两条并行队列，各自按顺序运行两张地图。第一条队列为 Office → Palacio：
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh cs_office 50 &&
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_palacio 50
+```
+
+第二条队列为 Golden → Vertigo：
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_golden 50 &&
+CUDA_VISIBLE_DEVICES=0 bash ./run_loc_supp_vis.sh de_vertigo 50
+```
+
+四组输出分别位于 `predictions/exp37_fs_both_<map>_50shot_supp_vis/`。文件 `loc_results.json` 保存逐帧预测，`benchmark_csgo_v2_loc.json` 保存模型输出的汇总。两条队列和读取 checkpoint 的核验均结束后，可执行 `cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery && fusermount -u "$PWD/weights"`。
+
+50-shot CPU 核验使用下列入口。首次 `verify_50shot_supp_vis.py freeze` 将历史参考存入 `verification_reference_50shot_supp_vis.json`。该参考及 `accepted_drift_criteria_50shot_supp_vis.json` 在读取本批预测之前冻结。复查已有预测时，逐图保留严格核验和独立的允许误差审计；即使严格核验判为历史数值未完全复现，也读取第二级核验的详细结果。
+
+```bash
+cd /home/jiahao/task/UniLIP/supp_vis_20261124/ours_recovery
+py=/home/jiahao/miniconda3/envs/UniLIP/bin/python
+for map in cs_office de_golden de_palacio de_vertigo; do
+    if ! "$py" verify_50shot_supp_vis.py "$map"; then
+        echo "Strict audit requires review: $map"
+    fi
+    "$py" audit_drift_50shot_supp_vis.py "$map" || exit 1
+done
+"$py" audit_drift_50shot_supp_vis.py publish
+```
+
+四图共 8,000 条预测，样本顺序、真值、权重和协议通过；16 项模型汇总与按逐帧文件独立重算的值全部一致。相对历史，四个 run 的严格数值复现均未通过，全部应用既有授权误差标准，状态为 `accepted_environment_drift`。16 项偏差均小于各自历史均值的 0.5%，最大为 Golden pitch，4.358093738555908° → 4.336394309997559°，相对差 0.497911%。完整四图逐指标复算值、历史值和差值见父目录 `REPORT.md`，原始参考继续保留。最终 `final_acceptance_50shot_supp_vis.json` SHA-256 为 `ab98e17189e2230700bf43ad749953ee2444a859b09d359c3dcad7a4ea07a238`。

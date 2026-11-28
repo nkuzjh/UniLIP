@@ -157,38 +157,70 @@ unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,0,de_palacio,,,,,10.8046,0.7
 unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,0,de_palacio,,,,,10.6452,0.7545,,,54.3147,59.4946,1248.1267,outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_palacio.json,同父模型0-shot，无适配学习率
 unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,0,de_vertigo,,,,,10.7025,0.7473,0.4387,112.4794,,,,outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_vertigo.json,同父模型0-shot，无适配学习率
 unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,0,de_vertigo,,,,,10.4701,0.7451,,,48.6476,55.0054,1433.9136,outputs_eval/benchmark_v2/exp32_fs_gen/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_de_vertigo.json,同父模型0-shot，无适配学习率
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,cs_office,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_golden,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_palacio,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
-unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_vertigo,,,,,,,,,,,,,本机未找到指定学习率产物；记录见 record.md:9818
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,cs_office,,,,,12.4422,0.6950,0.4253,56.1718,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1302,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,cs_office,,,,,12.1299,0.7156,,,46.9472,52.2587,907.6999,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1347,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_golden,,,,,13.3102,0.6573,0.4939,53.5767,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1303,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_golden,,,,,13.4331,0.6530,,,40.2951,44.8852,1303.7238,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1348,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_palacio,,,,,11.2458,0.7499,0.4817,50.0804,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1304,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_palacio,,,,,11.0021,0.7478,,,52.3767,57.5688,1182.9286,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1349,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,10,de_vertigo,,,,,11.0558,0.7140,0.4356,52.2490,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1305,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,10,de_vertigo,,,,,10.5956,0.7184,,,47.6037,54.0532,1057.4479,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1350,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,cs_office,,,,,12.5786,0.6888,0.4221,57.2383,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1294,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,cs_office,,,,,12.2011,0.7039,,,42.4926,48.1123,809.8648,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1339,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_golden,,,,,13.7942,0.6531,0.5010,45.1272,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1295,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_golden,,,,,13.7878,0.6517,,,38.1001,42.9086,1244.3238,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1340,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_palacio,,,,,11.6459,0.7425,0.4928,49.9195,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1296,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_palacio,,,,,11.4799,0.7526,,,46.7640,52.4141,1164.5306,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1341,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,20,de_vertigo,,,,,11.1956,0.7036,0.4416,47.7297,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1297,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,20,de_vertigo,,,,,10.6172,0.7059,,,49.2882,55.5500,1034.8568,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1342,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,cs_office,,,,,13.0051,0.6755,0.4286,46.5956,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1286,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,cs_office,,,,,12.8300,0.6925,,,38.6913,44.5874,754.7597,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1331,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_golden,,,,,14.2086,0.6474,0.5044,41.2440,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1287,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_golden,,,,,14.3465,0.6418,,,35.3834,40.3335,1324.3796,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1332,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_palacio,,,,,11.8805,0.7358,0.4991,47.8821,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1288,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_palacio,,,,,11.7739,0.7437,,,45.9625,51.6186,1095.1131,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1333,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,50,de_vertigo,,,,,11.4635,0.6912,0.4488,43.9920,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1289,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,50,de_vertigo,,,,,10.9362,0.6890,,,50.6574,56.7108,1008.1255,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1334,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,cs_office,,,,,13.0616,0.6716,0.4315,45.9606,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1278,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,cs_office,,,,,12.9517,0.6852,,,38.8475,44.8090,893.7735,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1323,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_golden,,,,,14.2092,0.6410,0.5111,41.3018,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1279,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_golden,,,,,14.2396,0.6375,,,36.5538,41.3271,1353.3277,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1324,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_palacio,,,,,11.9614,0.7421,0.4943,47.4258,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1280,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_palacio,,,,,11.8560,0.7518,,,48.1830,53.6894,1114.1795,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1325,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only,exp32_fs_gen_lr5e6,12000,100,de_vertigo,,,,,11.4344,0.6899,0.4459,40.9739,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1281,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only,exp32_fs_gen_lr5e6,12000,100,de_vertigo,,,,,10.8983,0.6890,,,52.6480,58.5816,933.6573,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1326,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,cs_office,,,,,12.7514,0.6841,0.4278,50.1604,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1298,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,cs_office,,,,,12.5205,0.7029,,,41.3586,47.1274,809.7540,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1343,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_golden,,,,,13.5888,0.6537,0.4947,56.2038,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1299,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_golden,,,,,13.6938,0.6477,,,36.9197,41.6950,1140.7451,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1344,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_palacio,,,,,11.6775,0.7329,0.4821,43.6734,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1300,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_palacio,,,,,11.4729,0.7322,,,45.8858,51.6493,1120.9464,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1345,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_vertigo,,,,,11.2201,0.7047,0.4388,47.9097,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1301,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,10,de_vertigo,,,,,10.6042,0.7115,,,44.4910,51.2128,891.8650,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1346,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,cs_office,,,,,12.6941,0.6809,0.4203,53.1702,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1290,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,cs_office,,,,,12.3438,0.6960,,,38.0699,44.0650,807.3778,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1335,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_golden,,,,,13.9521,0.6453,0.5081,45.9213,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1291,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_golden,,,,,13.8683,0.6451,,,35.8893,40.7727,1076.2038,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1336,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_palacio,,,,,12.0240,0.7295,0.4959,45.1996,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1292,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_palacio,,,,,12.0012,0.7361,,,42.4311,48.3817,1105.7746,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1337,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_vertigo,,,,,11.2086,0.6959,0.4412,45.8671,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1293,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,20,de_vertigo,,,,,10.4537,0.7024,,,47.6486,54.1600,934.4060,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1338,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,cs_office,,,,,13.1571,0.6681,0.4329,44.3343,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1282,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,cs_office,,,,,12.7395,0.6900,,,37.8436,43.9422,746.6038,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1327,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_golden,,,,,14.4780,0.6417,0.5108,41.3085,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1283,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_golden,,,,,14.5959,0.6339,,,31.6237,36.9323,1169.9256,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1328,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_palacio,,,,,12.0558,0.7263,0.4976,43.8062,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1284,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_palacio,,,,,12.1015,0.7365,,,43.5691,49.4117,1042.5592,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1329,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_vertigo,,,,,11.5967,0.6811,0.4505,39.6474,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1285,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,50,de_vertigo,,,,,11.0836,0.6797,,,47.6813,53.9812,982.8724,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1330,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,cs_office,,,,,13.1559,0.6582,0.4393,42.3208,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1274,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,cs_office,,,,,13.1191,0.6690,,,39.4676,45.1898,845.2540,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1319,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_golden,,,,,14.5078,0.6325,0.5173,38.9158,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1275,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_golden,,,,,14.4645,0.6280,,,34.2717,39.2669,1250.0354,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1320,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_palacio,,,,,12.4145,0.7237,0.4980,41.9397,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1276,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_palacio,,,,,12.2937,0.7373,,,43.6117,49.4969,968.0072,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1321,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,discrete,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_vertigo,,,,,11.6543,0.6823,0.4430,39.3916,,,,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1277,同步的逐图记录（四位小数）；本机未见该评测 JSON
+unseen-4,trajectory,gen_only LR control,exp32_fs_gen_lr1e5,12000,100,de_vertigo,,,,,11.1340,0.6796,,,50.4675,56.6193,894.3330,CSGO_BENCHMARK_V2_EXP37_UNSEEN4.md:1322,同步的逐图记录（四位小数）；本机未见该评测 JSON
 unseen-4,discrete,MT,exp37_s1_fs_joint,19550,0,cs_office,,,,,11.0765,0.7416,0.4433,124.8473,,,,outputs_eval/benchmark_v2/exp37_s1_fs_joint/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_cs_office.json,
 unseen-4,trajectory,MT,exp37_s1_fs_joint,19550,0,cs_office,,,,,11.3409,0.7468,,,33.0102,39.8454,1066.8657,outputs_eval/benchmark_v2/exp37_s1_fs_joint/zero_shot/seed_42/infer_bs32/continuous/benchmark_csgo_v2_conti_cs_office.json,
 unseen-4,discrete,MT,exp37_s1_fs_joint,19550,0,de_golden,,,,,11.7131,0.6819,0.4862,83.8390,,,,outputs_eval/benchmark_v2/exp37_s1_fs_joint/zero_shot/seed_42/infer_bs32/discrete/benchmark_csgo_v2_de_golden.json,
