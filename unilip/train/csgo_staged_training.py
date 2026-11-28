@@ -44,12 +44,14 @@ class SaveAtExactStepsCallback(TrainerCallback):
 
 
 def validate_checkpoint_saving(training_args, steps, stop_after_step, save_final_model_at_output_root,
-                               *, allow_checkpoint_rotation=False):
+                               *, allow_checkpoint_rotation=False, allow_extra_stop=False):
     """Validate the opt-in, fully resumable checkpoint plan before training."""
     if not isinstance(save_final_model_at_output_root, bool):
         raise ValueError("save_final_model_at_output_root must be a boolean")
     if not isinstance(allow_checkpoint_rotation, bool):
         raise ValueError("training_checkpoint_allow_rotation must be a boolean")
+    if not isinstance(allow_extra_stop, bool):
+        raise ValueError("training_checkpoint_allow_extra_stop must be a boolean")
     if steps is None:
         if not save_final_model_at_output_root:
             raise ValueError("save_final_model_at_output_root=false requires training_checkpoint_steps")
@@ -58,8 +60,13 @@ def validate_checkpoint_saving(training_args, steps, stop_after_step, save_final
     callback = SaveAtExactStepsCallback(steps)
     if training_args.max_steps <= 0 or steps[-1] != training_args.max_steps:
         raise ValueError("training_checkpoint_steps must end at training max_steps")
-    if stop_after_step is not None and stop_after_step not in callback.steps:
-        raise ValueError("training_stop_after_step must be in training_checkpoint_steps")
+    if stop_after_step is not None:
+        if type(stop_after_step) is not int or not 0 < stop_after_step <= training_args.max_steps:
+            raise ValueError("training_stop_after_step must be a positive step at or below max_steps")
+        if stop_after_step not in callback.steps:
+            if not allow_extra_stop:
+                raise ValueError("training_stop_after_step must be in training_checkpoint_steps")
+            callback = SaveAtExactStepsCallback(sorted([*steps, stop_after_step]))
     if training_args.save_strategy != "no":
         raise ValueError("training_checkpoint_steps requires save_strategy=no")
     if training_args.save_only_model:
@@ -67,7 +74,7 @@ def validate_checkpoint_saving(training_args, steps, stop_after_step, save_final
     limit = training_args.save_total_limit
     if allow_checkpoint_rotation and (type(limit) is not int or limit <= 0):
         raise ValueError("checkpoint rotation requires a positive save_total_limit")
-    if not allow_checkpoint_rotation and limit is not None and limit < len(steps):
+    if not allow_checkpoint_rotation and limit is not None and limit < len(callback.steps):
         raise ValueError("save_total_limit must retain every training_checkpoint_steps checkpoint")
     return callback
 

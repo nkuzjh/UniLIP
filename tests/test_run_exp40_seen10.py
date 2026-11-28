@@ -99,8 +99,9 @@ class Exp40RunnerTests(unittest.TestCase):
                 self.assertEqual(config["aux_loc_combined_num_samples"], 2)
                 self.assertEqual(config["aux_loc_combined_candidate_tau"], 1.0)
                 self.assertEqual(config["finetune_init_ckpt_path"], RUN.SOURCE)
-                self.assertEqual(config["training_stop_after_step"], 4000)
-                self.assertEqual(config["training_checkpoint_steps"], [4000, 7550])
+                save_steps = [2000, 4000, 7550] if arm == RUN.U2_EXPERIMENT else [4000, 7550]
+                self.assertEqual(config["training_stop_after_step"], save_steps[0])
+                self.assertEqual(config["training_checkpoint_steps"], save_steps)
                 self.assertIs(config["save_final_model_at_output_root"], False)
                 self.assertEqual(config["lr_scheduler_kwargs"], {"min_lr_rate": .1})
                 for lr in RUN.LR_STAGE2:
@@ -108,10 +109,15 @@ class Exp40RunnerTests(unittest.TestCase):
                 commands, plan, _ = RUN.training_plan(self.args("train", arm), config)
                 command = commands[0]
                 for flag, value in (("--max_steps", "7550"), ("--warmup_steps", "252"),
-                                    ("--save_strategy", "no"), ("--save_total_limit", "2"),
+                                    ("--save_strategy", "no"),
                                     ("--save_only_model", "False"), ("--gradient_accumulation_steps", "32")):
                     self.assertEqual(option(command, flag), value)
-                self.assertEqual(plan["cumulative_steps"], {"4000": 16000, "7550": 19550})
+                if arm == RUN.U2_EXPERIMENT:
+                    self.assertNotIn("--save_total_limit", command)
+                    self.assertIsNone(plan["runtime"]["save_total_limit"])
+                else:
+                    self.assertEqual(option(command, "--save_total_limit"), "2")
+                self.assertEqual(plan["cumulative_steps"], {str(s): 12000 + s for s in save_steps})
                 self.assertEqual(plan["evaluation_steps"], {"validation": [4000, 7550], "test": [4000, 7550]})
         changed = self.config("exp40_s2_P4")
         changed["alpha_loc_loss"] = 8.0
@@ -121,7 +127,6 @@ class Exp40RunnerTests(unittest.TestCase):
     def test_legacy_plan_fingerprints_stay_fixed(self):
         expected = {
             "exp40_s2_P4": "c54dd93b31aed08896745f9ec080239cadac033dd5c863170ac55d2785653440",
-            "exp40_s2_U2": "00aa9df8d67411e61482ea283991b7a940478898825acdc4fd2d7e0f497188be",
             "exp40_s2_both": "e57b1be6c0bca748fa84d98e458a6359eaa7713f97c96b6e2ba6e1f282d3b14e",
         }
         for arm, digest in expected.items():
@@ -129,6 +134,81 @@ class Exp40RunnerTests(unittest.TestCase):
                 args = self.args("train", arm)
                 _, plan, _ = RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
                 self.assertEqual(plan["fingerprint"], digest)
+
+    def test_u2_custom_pause_can_resume_without_changing_the_fixed_schedule(self):
+        arm = RUN.U2_EXPERIMENT
+        checkpoint, config, original = self.managed(arm, 2750)
+        saved = checkpoint.parent / "resolved_config.yaml"
+        config["training_stop_after_step"] = 2750
+        saved.write_text(yaml.safe_dump(config))
+        for flags, stop in (([], None), (["--stop-after-step", "0"], None),
+                            (["--stop-after-step", "4321"], 4321)):
+            args = self.args("train", arm, "--resume", *flags)
+            resolved = RUN.resolve_config(args, for_training=True)
+            RUN.validate_config(resolved)
+            commands, plan, _ = RUN.training_plan(args, resolved)
+            self.assertEqual(resolved.get("training_stop_after_step"), stop)
+            self.assertEqual(resolved["training_checkpoint_steps"], [2000, 4000, 7550])
+            self.assertEqual(plan["fingerprint"], original["fingerprint"])
+            self.assertEqual(plan["resume_checkpoint"], RUN.relative(checkpoint))
+            self.assertEqual(option(commands[0], "--max_steps"), "7550")
+        for stop in (-1, 7551):
+            with self.assertRaisesRegex(ValueError, "stop-after-step"):
+                self.config(arm, "--stop-after-step", str(stop))
+        args = self.args("train", arm, "--resume", "--stop-after-step", "2000")
+        with self.assertRaisesRegex(ValueError, "reached requested stop"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
+        for step in (2000, 2750):
+            for command in ("infer", "metrics"):
+                args = self.args(command, arm, "--checkpoint-step", str(step))
+                with self.assertRaisesRegex(ValueError, "evaluation requires checkpoint"):
+                    RUN.evaluation_plan(args, RUN.resolve_config(args, for_training=False))
+
+    def test_u2_legacy_run_can_resume_and_reuse_evaluation_snapshot(self):
+        arm = RUN.U2_EXPERIMENT
+        checkpoint, config, plan = self.managed(arm, 4000)
+        out = checkpoint.parent
+        config_path = out / "resolved_config.yaml"
+        plan_path = out / "experiment_plan.json"
+        config["training_checkpoint_steps"] = [4000, 7550]
+        config["training_stop_after_step"] = 4000
+        config.pop("training_checkpoint_allow_extra_stop")
+        plan["runtime"].update(checkpoint_steps=[4000, 7550], save_total_limit=2)
+        plan["fingerprint"] = RUN.fingerprint(config, plan["runtime"])
+        self.assertEqual(plan["fingerprint"], "00aa9df8d67411e61482ea283991b7a940478898825acdc4fd2d7e0f497188be")
+        config_path.write_text(yaml.safe_dump(config))
+        plan_path.write_text(json.dumps(plan))
+
+        args = self.args("infer", arm, "--checkpoint-step", "4000", "--task", "gen", "--execute")
+        saved = RUN.resolve_config(args, for_training=False)
+        RUN.validate_config(saved, allow_legacy_u2=True)
+        _, path, eval_config = RUN.evaluation_plan(args, saved)
+        for snapshot, value in RUN.evaluation_snapshots(args, path, eval_config).items():
+            snapshot.parent.mkdir(parents=True)
+            snapshot.write_text(yaml.safe_dump(dict(value, training_checkpoint_steps=[4000, 7550])))
+        eval_argv = ["metrics", "--experiment", arm, "--checkpoint-step", "4000", "--task", "gen"]
+        with patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(eval_argv), 0)
+
+        before = (config_path.read_bytes(), plan_path.read_bytes())
+        args = self.args("train", arm, "--resume", "--stop-after-step", "5000")
+        resolved = RUN.resolve_config(args, for_training=True)
+        RUN.validate_config(resolved)
+        _, migrated, _ = RUN.training_plan(args, resolved)
+        self.assertEqual(migrated["resume_checkpoint"], RUN.relative(checkpoint))
+        self.assertEqual(migrated["runtime"]["checkpoint_steps"], [2000, 4000, 7550])
+        self.assertNotEqual(migrated["fingerprint"], plan["fingerprint"])
+        self.assertEqual((config_path.read_bytes(), plan_path.read_bytes()), before)
+        config_path.write_text(yaml.safe_dump(resolved))
+        plan_path.write_text(json.dumps(migrated))
+        with patch("sys.stdout", io.StringIO()):
+            self.assertEqual(RUN.main(eval_argv), 0)
+
+        config_path.write_bytes(before[0])
+        plan["runtime"]["gradient_accumulation_steps"] = 99
+        plan_path.write_text(json.dumps(plan))
+        with self.assertRaisesRegex(ValueError, "recipe or runtime changed"):
+            RUN.training_plan(args, RUN.resolve_config(args, for_training=True))
 
     def test_exp40_1_fixed_recipe_and_schedule(self):
         arm = "exp40_1_s2_both"

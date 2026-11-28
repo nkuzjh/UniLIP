@@ -2,7 +2,8 @@
 # P4 perception: disabled; U2 combined aux-loc: enabled, 0 to 1; ramp ends at local step 503.
 # Strict model-only source initialization creates a fresh AdamW optimizer, scheduler and RNG.
 # Resume uses this arm's own complete checkpoint, including optimizer, scheduler, RNG and local step.
-# Local horizon 7550; save full checkpoints only at 4000 and 7550, retain 2, no root model export.
+# Local horizon 7550. Save full checkpoints at 2000, 4000, 7550 and at any requested pause.
+# Preserve saved checkpoints for resume. Evaluate at 4000 and 7550; skip root model export.
 # Effective base batch 128 (one GPU default micro 4/GAS 32); inference defaults loc 32/gen 16.
 # Default assets are minimal; switch to full with --asset-mode full --data-dir PATH on first train.
 # Run via scripts/run_exp40_seen10.py; plan is read-only until --execute.
@@ -117,7 +118,9 @@ alpha_loc_aux_schedule_values:
 - 0.0
 - 1.0
 training_checkpoint_steps:
+- 2000
 - 4000
 - 7550
+training_checkpoint_allow_extra_stop: true
 save_final_model_at_output_root: false
 exp40_experiment: exp40_s2_U2

@@ -10987,7 +10987,7 @@ exp39_consloc12首个checkpoint为12000；exp38新组首个为local4000。保存
 |---|---|---|---|---|---|
 | exp39_consloc2 | run_exp37_seen10.py | 原始UniLIP＋π0.5 | 4000／8000／12000／16000／19550（滚动keep2） | 16000／19550 | 19550 |
 | exp40_s2_P4 | run_exp40_seen10.py | exp39@12000 | local4000／7550 | local4000／7550 | 19550 |
-| exp40_s2_U2 | run_exp40_seen10.py | 同上 | local4000／7550 | local4000／7550 | 19550 |
+| exp40_s2_U2 | run_exp40_seen10.py | 同上 | local2000／4000／7550＋自定义暂停点 | local4000／7550 | 19550 |
 | exp40_s2_both | run_exp40_seen10.py | 同上 | local4000／7550 | local4000／7550 | 19550 |
 
 定位推理batch32、生成batch16、seed42，metrics参数与infer一致；validation的all只包含定位＋离散生成，test的all额外包含连续生成。定位infer已计算指标，metrics验证定位摘要；生成metrics计算并汇总指标。指标计算batch为1，与推理batch不同。
@@ -11126,48 +11126,59 @@ python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoi
 ```
 
 
+<a id="exp40-s2-u2-checkpoints"></a>
+
 ### exp40_s2_U2：exp39@12000 → Stage 2
 
 仅aux-loc：0～503步ramp到1，combined、2候选、candidate_tau=1；perception关闭。主定位αloc=4，普通LR=2e-5、action connector／norm／projector LR=1e-4、warmup252、cosine minimum ratio=0.1。首次仅加载Stage 1模型权重，重新建立optimizer／scheduler／RNG。
 
-**第一段：训练到local4000，保存后停止，再做该节点的validation与test。** 全程scheduler horizon仍为7550，不压缩为4000；local4000对应累计16000。此片段不会自动继续训练至final。
+**2026-11-28 保存设置。** 自动在 local 2000、4000、7550（final）保存完整 checkpoint。`--stop-after-step` 可选任意 1～7550 的绝对 local optimizer step，到达时额外保存模型、optimizer、scheduler、RNG 和 Trainer 状态后暂停。当指定步数也是固定保存点时只保存一次。`--stop-after-step 0` 训练到7550。各段都按7550步计算学习率调度，自定义暂停点和固定点均保留。
+
+**首次完整 test 队列。** 从头训练至4000，中途在2000保存后继续。4000保存后做 test 三项，然后恢复到7550并做 final test 三项。日志追加到 `fst_outs/exp40_s2_U2.nohup.out`，任一步失败会停止队列。训练示例使用GPU 0、2，有效基础batch为2×4×16＝128。已有 checkpoint 时用下方恢复命令。
 
 ```bash
 mkdir -p fst_outs
 nohup bash -c '
 set -euo pipefail
+export PYTHONUNBUFFERED=1
 EXPERIMENT=exp40_s2_U2
 TRAIN_GPUS=0,2
 EVAL_GPU=2
 MASTER_PORT=29698
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 2000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --stop-after-step 4000 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --asset-mode minimal --execute --resume
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
+COMMON=(--experiment "$EXPERIMENT" --seed 42 --execute)
+TRAIN_ARGS=("${COMMON[@]}" --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT")
+EVAL_ARGS=("${COMMON[@]}" --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --cuda-devices "$EVAL_GPU")
 
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step 4000 --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+python scripts/run_exp40_seen10.py train "${TRAIN_ARGS[@]}" --stop-after-step 4000 --asset-mode minimal
+python scripts/run_exp40_seen10.py infer "${EVAL_ARGS[@]}" --checkpoint-step 4000
+python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}" --checkpoint-step 4000
+
+python scripts/run_exp40_seen10.py train "${TRAIN_ARGS[@]}" --resume --stop-after-step 0
+python scripts/run_exp40_seen10.py infer "${EVAL_ARGS[@]}" --checkpoint-step final
+python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}" --checkpoint-step final
+' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
 ```
 
-
-**第二段：需要继续时，从本实验4000完整状态恢复到final=7550，再做final的validation与test。** 这段单独手动执行，不与第一段并发；累计final=12000＋7550=19550，保留4000和7550两个完整checkpoint。
+**单独指定暂停点。** 下例从本实验最近的完整 checkpoint 恢复，在 `STOP_AFTER_STEP=3000` 保存后退出。恢复时令目标步数大于最新 checkpoint；设为 `0` 可继续至final。首次启动可去掉 `--resume`。本片段只运行训练，评测使用后面的单节点命令。恢复时使用原 GPU 数、microbatch 和 seed，资产路径继承已保存配置。旧的4000／7550配方在校验来源和训练参数后也可恢复，已经经过的保存点不会补回。
 
 ```bash
-mkdir -p fst_outs
-nohup bash -c '
-set -euo pipefail
 EXPERIMENT=exp40_s2_U2
-TRAIN_GPUS=0
-EVAL_GPU=0
+TRAIN_GPUS=0,2
 MASTER_PORT=29698
-python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step 0 --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --execute
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split test --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-' >> fst_outs/exp40_s2_U2.nohup.out 2>&1 < /dev/null &
+STOP_AFTER_STEP=3000
+python scripts/run_exp40_seen10.py train --experiment "$EXPERIMENT" --resume --stop-after-step "$STOP_AFTER_STEP" --micro-batch 4 --cuda-devices "$TRAIN_GPUS" --master-port "$MASTER_PORT" --seed 42 --execute
+```
 
-python scripts/run_exp40_seen10.py infer --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
-python scripts/run_exp40_seen10.py metrics --experiment "$EXPERIMENT" --checkpoint-step final --split validation --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute
+**单独评测。** `STEP` 可为4000或final，`SPLIT` 可为test或validation。test 包含定位、离散生成和连续生成，validation 包含前两项。
+
+```bash
+EXPERIMENT=exp40_s2_U2
+STEP=4000
+SPLIT=test
+EVAL_GPU=2
+EVAL_ARGS=(--experiment "$EXPERIMENT" --checkpoint-step "$STEP" --split "$SPLIT" --task all --test-loc-batch-size 32 --test-gen-batch-size 16 --seed 42 --cuda-devices "$EVAL_GPU" --execute)
+python scripts/run_exp40_seen10.py infer "${EVAL_ARGS[@]}"
+python scripts/run_exp40_seen10.py metrics "${EVAL_ARGS[@]}"
 ```
 
 

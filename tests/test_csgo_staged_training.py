@@ -190,6 +190,31 @@ class CSGOStagedTrainingTests(unittest.TestCase):
                 ["checkpoint-2", "checkpoint-5"],
             )
 
+    def test_custom_pauses_keep_full_state_and_all_planned_checkpoints(self):
+        with tempfile.TemporaryDirectory() as output_dir:
+            args = TrainingArguments(
+                output_dir=output_dir, max_steps=7, per_device_train_batch_size=1,
+                save_strategy="no", save_only_model=False,
+                use_cpu=True, report_to="none", disable_tqdm=True,
+            )
+            steps = [2, 4, 7]
+            resume = None
+            for stop, expected in ((3, {2, 3}), (5, {2, 3, 4, 5}), (None, {2, 3, 4, 5, 7})):
+                callbacks = [validate_checkpoint_saving(args, steps, stop, False, allow_extra_stop=True)]
+                if stop is not None:
+                    callbacks.append(StopAndSaveAtStepCallback(stop))
+                trainer = Trainer(model=TinyTrainModel(PretrainedConfig()), args=args,
+                                  train_dataset=TinyDataset(), callbacks=callbacks)
+                trainer.train(resume_from_checkpoint=resume)
+                self.assertEqual(trainer.state.global_step, stop or 7)
+                found = {p.name for p in Path(output_dir).glob("checkpoint-*")}
+                self.assertEqual(found, {f"checkpoint-{step}" for step in expected})
+                resume = str(Path(output_dir) / f"checkpoint-{stop or 7}")
+                state = json.loads((Path(resume) / "trainer_state.json").read_text())
+                self.assertEqual((state["global_step"], state["max_steps"]), (stop or 7, 7))
+                for name in ("model.safetensors", "training_args.bin", "optimizer.pt", "scheduler.pt", "rng_state.pth"):
+                    self.assertTrue((Path(resume) / name).is_file(), name)
+
     def test_rolling_full_checkpoints_survive_pause_and_resume(self):
         with tempfile.TemporaryDirectory() as output_dir:
             args = TrainingArguments(
